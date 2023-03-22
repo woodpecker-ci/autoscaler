@@ -39,7 +39,10 @@ func (a *Autoscaler) getLoad(ctx context.Context) (freeWorker, pendingTasks int,
 func (a *Autoscaler) loadAgents(ctx context.Context) error {
 	a.agents = []*woodpecker.Agent{}
 
-	agents := []*woodpecker.Agent{}
+	agents, err := a.client.AgentList()
+	if err != nil {
+		return err
+	}
 	r, _ := regexp.Compile(fmt.Sprintf("pool-%d-agent-.*?", a.poolID))
 
 	for _, agent := range agents {
@@ -61,9 +64,7 @@ func (a *Autoscaler) getActiveAgents() int {
 	return activeAgents
 }
 
-func (a *Autoscaler) createAgents(ctx context.Context, _amount int) error {
-	amount := int(math.Min(float64(_amount+a.getActiveAgents()), float64(a.maxAgents)))
-
+func (a *Autoscaler) createAgents(ctx context.Context, amount int) error {
 	for i := 0; i < amount; i++ {
 		agent, err := a.client.AgentCreate(&woodpecker.Agent{
 			Name: fmt.Sprintf("pool-%d-agent-%d", a.poolID, i),
@@ -83,9 +84,7 @@ func (a *Autoscaler) createAgents(ctx context.Context, _amount int) error {
 	return nil
 }
 
-func (a *Autoscaler) drainAgents(ctx context.Context, _amount int) error {
-	amount := int(math.Max(float64(a.getActiveAgents()-_amount), float64(a.minAgents)))
-
+func (a *Autoscaler) drainAgents(ctx context.Context, amount int) error {
 	for i := 0; i < amount; i++ {
 		for _, agent := range a.agents {
 			if !agent.NoSchedule {
@@ -101,29 +100,27 @@ func (a *Autoscaler) drainAgents(ctx context.Context, _amount int) error {
 	return nil
 }
 
-func (a *Autoscaler) isAgentRunningWorkflows(agent *woodpecker.Agent) bool {
-	info, err := a.client.QueueInfo()
+func (a *Autoscaler) isAgentRunningWorkflows(agent *woodpecker.Agent) (bool, error) {
+	tasks, err := a.client.AgentTasksList(agent.ID)
 	if err != nil {
-		return false
+		return false, err
 	}
 
-	for _, task := range info.Running {
-		if task.AgentID == agent.ID {
-			return true
-		}
-	}
-
-	return false
+	return len(tasks) > 0, nil
 }
 
 func (a *Autoscaler) removeDrainedAgents(ctx context.Context) error {
 	for _, agent := range a.agents {
 		if agent.NoSchedule {
-			if a.isAgentRunningWorkflows(agent) {
+			isRunningWorkflows, err := a.isAgentRunningWorkflows(agent)
+			if err != nil {
+				return err
+			}
+			if isRunningWorkflows {
 				continue
 			}
 
-			err := a.provider.RemoveAgent(ctx, agent)
+			err = a.provider.RemoveAgent(ctx, agent)
 			if err != nil {
 				return err
 			}
@@ -160,13 +157,17 @@ func (a *Autoscaler) Reconcile(ctx context.Context) error {
 		SamplingInterval: 1000 * time.Millisecond,
 	})
 
-	diffAmount := a.pidCtrl.State.ControlSignal
+	activeAgents := a.getActiveAgents()
+	diffAmount := math.Floor(a.pidCtrl.State.ControlSignal / float64(a.workflowsPerAgent))
+	diffAmount = math.Min(diffAmount, float64(a.maxAgents-activeAgents))
+	diffAmount = math.Max(diffAmount, float64(a.minAgents-activeAgents))
+
 	if diffAmount > 0 {
-		return a.createAgents(ctx, int(math.Floor(diffAmount)))
+		return a.createAgents(ctx, int(diffAmount))
 	}
 
 	if diffAmount < 0 {
-		err := a.drainAgents(ctx, int(math.Floor(diffAmount)))
+		err := a.drainAgents(ctx, int(diffAmount))
 		if err != nil {
 			return err
 		}
@@ -175,14 +176,14 @@ func (a *Autoscaler) Reconcile(ctx context.Context) error {
 	return a.removeDrainedAgents(ctx)
 }
 
-func run(ctx *cli.Context) error {
-	client, err := NewClient(ctx)
+func run(c *cli.Context) error {
+	client, err := NewClient(c)
 	if err != nil {
 		return err
 	}
 
 	provider := &provider.Hetzner{
-		ApiToken: "token123",
+		ApiToken: c.String("hetzner-api-token"),
 	}
 	err = provider.Init()
 	if err != nil {
@@ -190,10 +191,10 @@ func run(ctx *cli.Context) error {
 	}
 
 	autoscaler := &Autoscaler{
-		poolID:            ctx.Int("pool-id"),
-		minAgents:         ctx.Int("min-agents"),
-		maxAgents:         ctx.Int("max-agents"),
-		workflowsPerAgent: ctx.Int("workflows-per-agent"),
+		poolID:            c.Int("pool-id"),
+		minAgents:         c.Int("min-agents"),
+		maxAgents:         c.Int("max-agents"),
+		workflowsPerAgent: c.Int("workflows-per-agent"),
 		pidCtrl: pid.Controller{
 			Config: pid.ControllerConfig{
 				ProportionalGain: 2.0,
@@ -206,7 +207,7 @@ func run(ctx *cli.Context) error {
 	}
 
 	for {
-		if err := autoscaler.Reconcile(ctx.Context); err != nil {
+		if err := autoscaler.Reconcile(c.Context); err != nil {
 			return err
 		}
 		time.Sleep(1000 * time.Millisecond)
@@ -238,6 +239,36 @@ func main() {
 				Name:  "workflows-per-agent",
 				Value: 2,
 				Usage: "max workflows an agent will executed in parallel",
+			},
+			&cli.StringFlag{
+				Name:    "server",
+				Value:   "http://localhost:8000",
+				Usage:   "the woodpecker server address",
+				EnvVars: []string{"WOODPECKER_SERVER"},
+			},
+			&cli.StringFlag{
+				Name:    "token",
+				Usage:   "the woodpecker api token",
+				EnvVars: []string{"WOODPECKER_TOKEN"},
+			},
+			&cli.StringFlag{
+				Name:  "socks-proxy",
+				Usage: "the socks proxy address",
+			},
+			&cli.BoolFlag{
+				Name:  "socks-proxy-off",
+				Usage: "disable the socks proxy",
+			},
+			&cli.BoolFlag{
+				Name:  "skip-verify",
+				Usage: "skip ssl verification",
+			},
+
+			// hetzner
+			&cli.StringFlag{
+				Name:    "hetzner-api-token",
+				Usage:   "the hetzner api token",
+				EnvVars: []string{"WOODPECKER_HETZNER_API_TOKEN"},
 			},
 		},
 		Action: run,
