@@ -4,8 +4,7 @@ import (
 	"context"
 
 	"github.com/hetznercloud/hcloud-go/hcloud"
-
-	"github.com/woodpecker-ci/woodpecker/server/model"
+	"github.com/woodpecker-ci/woodpecker/woodpecker-go/woodpecker"
 )
 
 type Hetzner struct {
@@ -40,7 +39,7 @@ func (p *Hetzner) Init() error {
 	return nil
 }
 
-func (p *Hetzner) DeployAgent(ctx context.Context, agent *model.Agent) error {
+func (p *Hetzner) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
 	_, _, err := p.client.Server.Create(ctx, hcloud.ServerCreateOpts{
 		Name:  agent.Name,
 		Image: &hcloud.Image{Name: "ubuntu-20.04"},
@@ -56,7 +55,7 @@ func (p *Hetzner) DeployAgent(ctx context.Context, agent *model.Agent) error {
 	return err
 }
 
-func (p *Hetzner) RemoveAgent(ctx context.Context, agent *model.Agent) error {
+func (p *Hetzner) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) error {
 	_, err := p.client.Server.Delete(ctx, &hcloud.Server{Name: agent.Name})
 	return err
 }
