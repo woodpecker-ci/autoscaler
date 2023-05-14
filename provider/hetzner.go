@@ -2,60 +2,85 @@ package provider
 
 import (
 	"context"
+	"fmt"
+	"regexp"
 
 	"github.com/hetznercloud/hcloud-go/hcloud"
+
+	"github.com/woodpecker-ci/autoscaler/config"
 	"github.com/woodpecker-ci/woodpecker/woodpecker-go/woodpecker"
 )
 
 type Hetzner struct {
-	ApiToken string
-	client   *hcloud.Client
+	ApiToken   string
+	ServerType string
+	Config     *config.Config
+	Location   string
+	client     *hcloud.Client
 }
 
-var template = `
-static USER_DATA_TEMPLATE: &str = r#"#cloud-config
-write_files:
-- content: |
-    # docker-compose.yml
-    version: '3'
-    services:
-      woodpecker-agent:
-        image: {{ image }}
-        command: agent
-        restart: always
-        volumes:
-          - /var/run/docker.sock:/var/run/docker.sock
-        environment:
-          {{#each params}}
-          - {{ this.0 }}={{ this.1 }}
-          {{/each}}
-  path: /root/docker-compose.yml
-runcmd:
-- [ sh, -xc, "cd /root; docker run --rm --privileged multiarch/qemu-user-static --reset -p yes; docker compose up -d" ]
-`
-
-func (p *Hetzner) Init() error {
+func (p *Hetzner) Setup() error {
 	p.client = hcloud.NewClient(hcloud.WithToken(p.ApiToken))
 	return nil
 }
 
 func (p *Hetzner) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
-	_, _, err := p.client.Server.Create(ctx, hcloud.ServerCreateOpts{
-		Name:  agent.Name,
-		Image: &hcloud.Image{Name: "ubuntu-20.04"},
+	userData, err := getUserDataTemplate(p.Config, agent)
+	if err != nil {
+		return err
+	}
+
+	_, _, err = p.client.Server.Create(ctx, hcloud.ServerCreateOpts{
+		Name:     agent.Name,
+		UserData: userData,
+		Image:    &hcloud.Image{Name: "ubuntu-22.04"},
 		Location: &hcloud.Location{
-			Name: "nbg1",
+			Name: p.Location,
 		},
 		ServerType: &hcloud.ServerType{
-			Name: "cx11",
+			Name: p.ServerType,
 		},
-		UserData: template,
 	})
 
 	return err
 }
 
+func (p *Hetzner) getAgent(ctx context.Context, agent *woodpecker.Agent) (*hcloud.Server, error) {
+	server, _, err := p.client.Server.GetByName(ctx, agent.Name)
+	return server, err
+}
+
 func (p *Hetzner) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) error {
-	_, err := p.client.Server.Delete(ctx, &hcloud.Server{Name: agent.Name})
+	server, err := p.getAgent(ctx, agent)
+	if err != nil {
+		return err
+	}
+
+	if server == nil {
+		return nil
+	}
+
+	_, _, err = p.client.Server.DeleteWithResult(ctx, server)
 	return err
+}
+
+func (p *Hetzner) ListDeployedAgentNames(ctx context.Context) ([]string, error) {
+	servers, err := p.client.Server.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var names []string
+
+	poolID := 1 // TODO
+
+	r, _ := regexp.Compile(fmt.Sprintf("pool-%d-agent-.*?", poolID))
+
+	for _, server := range servers {
+		if r.MatchString(server.Name) {
+			names = append(names, server.Name)
+		}
+	}
+
+	return names, nil
 }
