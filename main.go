@@ -250,6 +250,7 @@ func setupProvider(c *cli.Context, config *config.Config) (provider.Provider, er
 			ApiToken:   c.String("hetzner-api-token"),
 			Location:   c.String("hetzner-location"),
 			ServerType: c.String("hetzner-server-type"),
+			SSHKeyID:   c.Int("hetzner-ssh-key-id"),
 			Config:     config,
 		}, nil
 	}
@@ -377,7 +378,7 @@ func main() {
 			},
 			&cli.StringSliceFlag{
 				Name:    "agent-env",
-				Usage:   "additional agent environment variables",
+				Usage:   "additional agent environment variables a list with key=value pairs",
 				EnvVars: []string{"WOODPECKER_AGENT_ENV"},
 			},
 
@@ -398,6 +399,12 @@ func main() {
 				Value:   "cx11",
 				Usage:   "the hetzner server type",
 				EnvVars: []string{"WOODPECKER_HETZNER_SERVER_TYPE"},
+			},
+			&cli.IntFlag{
+				Name:    "hetzner-ssh-key-id",
+				Value:   -1,
+				Usage:   "an id of a hetzner ssh key",
+				EnvVars: []string{"WOODPECKER_HETZNER_SSH_KEY_ID"},
 			},
 		},
 		Action: run,

@@ -14,6 +14,7 @@ import (
 type Hetzner struct {
 	ApiToken   string
 	ServerType string
+	SSHKeyID   int
 	Config     *config.Config
 	Location   string
 	client     *hcloud.Client
@@ -30,6 +31,14 @@ func (p *Hetzner) DeployAgent(ctx context.Context, agent *woodpecker.Agent) erro
 		return err
 	}
 
+	sshKeys := []*hcloud.SSHKey{}
+
+	if p.SSHKeyID > 0 {
+		sshKeys = append(sshKeys, &hcloud.SSHKey{
+			ID: p.SSHKeyID,
+		})
+	}
+
 	_, _, err = p.client.Server.Create(ctx, hcloud.ServerCreateOpts{
 		Name:     agent.Name,
 		UserData: userData,
@@ -40,6 +49,7 @@ func (p *Hetzner) DeployAgent(ctx context.Context, agent *woodpecker.Agent) erro
 		ServerType: &hcloud.ServerType{
 			Name: p.ServerType,
 		},
+		SSHKeys: sshKeys,
 	})
 
 	return err
@@ -72,9 +82,7 @@ func (p *Hetzner) ListDeployedAgentNames(ctx context.Context) ([]string, error) 
 
 	var names []string
 
-	poolID := 1 // TODO
-
-	r, _ := regexp.Compile(fmt.Sprintf("pool-%d-agent-.*?", poolID))
+	r, _ := regexp.Compile(fmt.Sprintf("pool-%d-agent-.*?", p.Config.PoolID))
 
 	for _, server := range servers {
 		if r.MatchString(server.Name) {
