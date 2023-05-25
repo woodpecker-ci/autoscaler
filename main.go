@@ -280,7 +280,7 @@ func run(c *cli.Context) error {
 		PoolID:            c.Int("pool-id"),
 		GRPCAddress:       c.String("grpc-addr"),
 		GRPCSecure:        c.Bool("grpc-secure"),
-		Image:             c.String("image"),
+		Image:             c.String("agent-image"),
 		Environment:       agentEnvironment,
 	}
 
