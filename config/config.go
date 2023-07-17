@@ -4,7 +4,7 @@ type Config struct {
 	MinAgents         int
 	MaxAgents         int
 	WorkflowsPerAgent int
-	PoolID            int
+	PoolID            string
 	Image             string
 	Environment       map[string]string
 	GRPCAddress       string

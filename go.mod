@@ -3,6 +3,7 @@ module github.com/woodpecker-ci/autoscaler
 go 1.20
 
 require (
+	github.com/franela/goblin v0.0.0-20211003143422-0a4f594942bf
 	github.com/hetznercloud/hcloud-go v1.41.0
 	github.com/joho/godotenv v1.5.1
 	github.com/rs/zerolog v1.29.1
