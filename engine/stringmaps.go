@@ -12,7 +12,7 @@ func SliceToMap(list []string, del string) map[string]string {
 	return m
 }
 
-func MergeMaps(m1 map[string]string, m2 map[string]string) map[string]string {
+func MergeMaps(m1, m2 map[string]string) map[string]string {
 	merged := make(map[string]string)
 	for k, v := range m1 {
 		merged[k] = v

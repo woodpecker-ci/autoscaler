@@ -69,7 +69,7 @@ final_message: "The system is finally up, after $UPTIME seconds"
 `
 
 type Driver struct {
-	ApiToken    string
+	APIToken    string
 	ServerType  string
 	UserData    *template.Template
 	Image       string
@@ -84,7 +84,7 @@ type Driver struct {
 
 func New(c *cli.Context, config *config.Config) (engine.Provider, error) {
 	d := &Driver{
-		ApiToken:    c.String("hetznercloud-api-token"),
+		APIToken:    c.String("hetznercloud-api-token"),
 		Location:    c.String("hetznercloud-location"),
 		ServerType:  c.String("hetznercloud-server-type"),
 		Image:       c.String("hetznercloud-image"),
@@ -93,7 +93,7 @@ func New(c *cli.Context, config *config.Config) (engine.Provider, error) {
 		Config:      config,
 	}
 
-	d.client = hcloud.NewClient(hcloud.WithToken(d.ApiToken))
+	d.client = hcloud.NewClient(hcloud.WithToken(d.APIToken))
 
 	if userdata := c.String("hetznercloud-user-data"); userdata != "" {
 		optionUserDataDefault = userdata
@@ -109,7 +109,7 @@ func New(c *cli.Context, config *config.Config) (engine.Provider, error) {
 	labels := engine.SliceToMap(c.StringSlice("hetznercloud-labels"), "=")
 	for _, key := range maps.Keys(labels) {
 		if strings.HasPrefix(key, d.LabelPrefix) {
-			return nil, fmt.Errorf("%s: %s", ErrIllegalLablePrefix, d.LabelPrefix)
+			return nil, fmt.Errorf("%w: %s", ErrIllegalLablePrefix, d.LabelPrefix)
 		}
 	}
 

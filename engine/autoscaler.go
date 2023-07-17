@@ -26,6 +26,7 @@ func NewAutoscaler(provider Provider, client woodpecker.Client, config *config.C
 	}
 }
 
+// nolint:revive
 func (a *Autoscaler) getQueueInfo(ctx context.Context) (freeTasks, runningTasks, pendingTasks int, err error) {
 	info, err := a.client.QueueInfo()
 	if err != nil {
@@ -35,6 +36,7 @@ func (a *Autoscaler) getQueueInfo(ctx context.Context) (freeTasks, runningTasks,
 	return info.Stats.Workers, info.Stats.Running, info.Stats.Pending + info.Stats.WaitingOnDeps, nil
 }
 
+// nolint:revive
 func (a *Autoscaler) loadAgents(ctx context.Context) error {
 	a.agents = []*woodpecker.Agent{}
 
@@ -85,6 +87,7 @@ func (a *Autoscaler) createAgents(ctx context.Context, amount int) error {
 	return nil
 }
 
+// nolint:revive
 func (a *Autoscaler) drainAgents(ctx context.Context, amount int) error {
 	for i := 0; i < amount; i++ {
 		for _, agent := range a.agents {
