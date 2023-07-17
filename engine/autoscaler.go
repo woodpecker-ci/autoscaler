@@ -55,12 +55,13 @@ func (a *Autoscaler) loadAgents(ctx context.Context) error {
 	return nil
 }
 
-func (a *Autoscaler) getPoolAgents() []*woodpecker.Agent {
+func (a *Autoscaler) getPoolAgents(excludeDrained bool) []*woodpecker.Agent {
 	agents := make([]*woodpecker.Agent, 0)
 	for _, agent := range a.agents {
-		if !agent.NoSchedule {
-			agents = append(agents, agent)
+		if excludeDrained && agent.NoSchedule {
+			continue
 		}
+		agents = append(agents, agent)
 	}
 	return agents
 }
@@ -151,7 +152,7 @@ func (a *Autoscaler) removeDrainedAgents(ctx context.Context) error {
 func (a *Autoscaler) removeDetachedAgents(ctx context.Context) error {
 	logger := log.With().Str("process", "removeDetachedAgents").Logger()
 
-	registeredAgents := a.getPoolAgents()
+	registeredAgents := a.getPoolAgents(false)
 	deployedAgentNames, err := a.provider.ListDeployedAgentNames(ctx)
 	if err != nil {
 		return err
@@ -212,7 +213,7 @@ func (a *Autoscaler) calcAgents(ctx context.Context) (float64, error) {
 	availableAgents := math.Ceil(float64(freeTasks+runningTasks) / float64((a.config.WorkflowsPerAgent)))
 	reqAgents := math.Ceil(float64(pendingTasks+runningTasks) / float64(a.config.WorkflowsPerAgent))
 
-	availablePoolAgents := len(a.getPoolAgents())
+	availablePoolAgents := len(a.getPoolAgents(true))
 	maxUp := float64(a.config.MaxAgents - availablePoolAgents)
 	maxDown := float64(availablePoolAgents - a.config.MinAgents)
 
@@ -235,6 +236,14 @@ func (a *Autoscaler) Reconcile(ctx context.Context) error {
 		log.Error().Err(err).Msg("load agents failed")
 	}
 
+	if err := a.removeDrainedAgents(ctx); err != nil {
+		log.Error().Str("process", "removeDrainedAgents").Err(err).Msg("remove agents failed")
+	}
+
+	if err := a.removeDetachedAgents(ctx); err != nil {
+		log.Error().Str("process", "removeDetachedAgents").Err(err).Msg("remove agents failed")
+	}
+
 	reqPoolAgents, err := a.calcAgents(ctx)
 	if err != nil {
 		log.Error().Err(err).Msg("calculate agents failed")
@@ -255,14 +264,6 @@ func (a *Autoscaler) Reconcile(ctx context.Context) error {
 		if err := a.drainAgents(ctx, drainAgents); err != nil {
 			return err
 		}
-	}
-
-	if err := a.removeDetachedAgents(ctx); err != nil {
-		log.Error().Str("process", "removeDetachedAgents").Err(err).Msg("remove agents failed")
-	}
-
-	if err := a.removeDrainedAgents(ctx); err != nil {
-		log.Error().Str("process", "removeDrainedAgents").Err(err).Msg("remove agents failed")
 	}
 
 	return nil
