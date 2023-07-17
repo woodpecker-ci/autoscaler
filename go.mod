@@ -9,6 +9,7 @@ require (
 	github.com/rs/zerolog v1.29.1
 	github.com/urfave/cli/v2 v2.25.3
 	github.com/woodpecker-ci/woodpecker v0.15.1-0.20230514144654-1f9d94356439
+	golang.org/x/exp v0.0.0-20230425010034-47ecfdc1ba53
 	golang.org/x/net v0.10.0
 	golang.org/x/oauth2 v0.8.0
 )

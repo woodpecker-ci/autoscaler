@@ -28,9 +28,11 @@ func setupProvider(ctx *cli.Context, config *config.Config) (engine.Provider, er
 }
 
 func run(ctx *cli.Context) error {
+	log.Log().Msgf("Start autoscaler LogLevel = %s", zerolog.GlobalLevel().String())
+
 	client, err := server.NewClient(ctx)
 	if err != nil {
-		log.Fatal().Err(err).Msg("")
+		return err
 	}
 
 	agentEnvironment := make(map[string]string)
@@ -55,14 +57,14 @@ func run(ctx *cli.Context) error {
 
 	provider, err := setupProvider(ctx, config)
 	if err != nil {
-		log.Fatal().Err(err).Msg("")
+		return err
 	}
 
 	autoscaler := engine.NewAutoscaler(provider, client, config)
 
 	interval, err := time.ParseDuration(ctx.String("interval"))
 	if err != nil {
-		log.Error().Err(err).Msgf("failed to parse reconcilation interval, use default: %v", optionIntervalDefault)
+		log.Error().Err(err).Msgf("cant parse reconciliation interval, use default: %v", optionIntervalDefault)
 		interval, _ = time.ParseDuration(optionIntervalDefault)
 	}
 
@@ -89,7 +91,7 @@ func main() {
 				logLevelFlag := ctx.String("log-level")
 				lvl, err := zerolog.ParseLevel(logLevelFlag)
 				if err != nil {
-					log.Warn().Msgf("unknown logging level: %s", logLevelFlag)
+					log.Warn().Str("level", logLevelFlag).Msg("unknown logging level")
 				}
 				zerolog.SetGlobalLevel(lvl)
 			}
@@ -103,6 +105,6 @@ func main() {
 	app.Flags = append(app.Flags, hetznercloud.DriverFlags...)
 
 	if err := app.Run(os.Args); err != nil {
-		log.Error().Err(err).Msg("")
+		log.Fatal().Err(err).Msg("")
 	}
 }
