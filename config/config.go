@@ -1,5 +1,7 @@
 package config
 
+import "time"
+
 type Config struct {
 	MinAgents         int
 	MaxAgents         int
@@ -9,4 +11,6 @@ type Config struct {
 	Environment       map[string]string
 	GRPCAddress       string
 	GRPCSecure        bool
+	Interval          time.Duration
+	MinAge            time.Duration
 }

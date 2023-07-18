@@ -6,7 +6,10 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-const optionIntervalDefault = "1m"
+const (
+	optionIntervalDefault = "1m"
+	optionMinAgeDefault   = "10m"
+)
 
 var flags = []cli.Flag{
 	&cli.StringFlag{
@@ -37,6 +40,12 @@ var flags = []cli.Flag{
 		Value:   10,
 		Usage:   "maximum amount of agents",
 		EnvVars: []string{"WOODPECKER_MAX_AGENTS"},
+	},
+	&cli.StringFlag{
+		Name:    "min-age",
+		Value:   optionMinAgeDefault,
+		Usage:   "minimum age of a agent before termination",
+		EnvVars: []string{"WOODPECKER_MIN_AGE"},
 	},
 	&cli.IntFlag{
 		Name:    "workflows-per-agent",

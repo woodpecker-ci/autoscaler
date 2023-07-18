@@ -9,13 +9,13 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/woodpecker-ci/autoscaler/drivers/hetznercloud"
+	"github.com/woodpecker-ci/autoscaler/engine"
 	"github.com/woodpecker-ci/autoscaler/server"
 
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/urfave/cli/v2"
 
 	"github.com/woodpecker-ci/autoscaler/config"
-	"github.com/woodpecker-ci/autoscaler/engine"
 )
 
 func setupProvider(ctx *cli.Context, config *config.Config) (engine.Provider, error) {
@@ -62,17 +62,23 @@ func run(ctx *cli.Context) error {
 
 	autoscaler := engine.NewAutoscaler(provider, client, config)
 
-	interval, err := time.ParseDuration(ctx.String("interval"))
+	config.MinAge, err = time.ParseDuration(ctx.String("min-age"))
 	if err != nil {
-		log.Error().Err(err).Msgf("cant parse reconciliation interval, use default: %v", optionIntervalDefault)
-		interval, _ = time.ParseDuration(optionIntervalDefault)
+		log.Error().Err(err).Msgf("cant parse reconciliation interval, use default: %v", optionMinAgeDefault)
+		config.MinAge, _ = time.ParseDuration(optionMinAgeDefault)
+	}
+
+	config.Interval, err = time.ParseDuration(ctx.String("interval"))
+	if err != nil {
+		log.Error().Err(err).Msgf("cant parse agent min age, use default: %v", optionIntervalDefault)
+		config.Interval, _ = time.ParseDuration(optionIntervalDefault)
 	}
 
 	for {
 		select {
 		case <-ctx.Done():
 			return nil
-		case <-time.After(interval):
+		case <-time.After(config.Interval):
 			if err := autoscaler.Reconcile(ctx.Context); err != nil {
 				return err
 			}
