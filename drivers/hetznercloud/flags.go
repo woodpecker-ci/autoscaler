@@ -31,11 +31,10 @@ var DriverFlags = []cli.Flag{
 		EnvVars:  []string{"WOODPECKER_HETZNERCLOUD_SERVER_TYPE"},
 		Category: category,
 	},
-	&cli.IntFlag{
-		Name:     "hetznercloud-ssh-key-id",
-		Value:    -1,
-		Usage:    "id of a hetzner cloud ssh key",
-		EnvVars:  []string{"WOODPECKER_HETZNERCLOUD_SSH_KEY_ID"},
+	&cli.StringSliceFlag{
+		Name:     "hetznercloud-ssh-keys",
+		Usage:    "names of a hetzner cloud ssh keys",
+		EnvVars:  []string{"WOODPECKER_HETZNERCLOUD_SSH_KEYS"},
 		Category: category,
 	},
 	&cli.StringFlag{
@@ -56,6 +55,32 @@ var DriverFlags = []cli.Flag{
 		Name:     "hetznercloud-labels",
 		Usage:    "hetzner cloud server labels",
 		EnvVars:  []string{"WOODPECKER_HETZNERCLOUD_LABELS"},
+		Category: category,
+	},
+	&cli.StringSliceFlag{
+		Name:     "hetznercloud-firewalls",
+		Usage:    "hetzner cloud firewalls",
+		EnvVars:  []string{"WOODPECKER_HETZNERCLOUD_FIREWALLS"},
+		Category: category,
+	},
+	&cli.StringSliceFlag{
+		Name:     "hetznercloud-networks",
+		Usage:    "hetzner cloud networks",
+		EnvVars:  []string{"WOODPECKER_HETZNERCLOUD_NETWORKS"},
+		Category: category,
+	},
+	&cli.BoolFlag{
+		Name:     "hetznercloud-public-ipv4-enable",
+		Value:    true,
+		Usage:    "enables hetzner cloud public ipv4 network",
+		EnvVars:  []string{"WOODPECKER_HETZNERCLOUD_PUBLIC_IPV4_ENABLE"},
+		Category: category,
+	},
+	&cli.BoolFlag{
+		Name:     "hetznercloud-public-ipv6-enable",
+		Value:    true,
+		Usage:    "enables hetzner cloud public ipv6 network",
+		EnvVars:  []string{"WOODPECKER_HETZNERCLOUD_PUBLIC_IPV6_ENABLE"},
 		Category: category,
 	},
 }
