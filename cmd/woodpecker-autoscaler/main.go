@@ -64,13 +64,13 @@ func run(ctx *cli.Context) error {
 
 	config.MinAge, err = time.ParseDuration(ctx.String("min-age"))
 	if err != nil {
-		log.Error().Err(err).Msgf("cant parse reconciliation interval, use default: %v", optionMinAgeDefault)
+		log.Error().Err(err).Msgf("cant parse agent min age, use default: %v", optionMinAgeDefault)
 		config.MinAge, _ = time.ParseDuration(optionMinAgeDefault)
 	}
 
 	config.Interval, err = time.ParseDuration(ctx.String("interval"))
 	if err != nil {
-		log.Error().Err(err).Msgf("cant parse agent min age, use default: %v", optionIntervalDefault)
+		log.Error().Err(err).Msgf("cant parse reconciliation interval, use default: %v", optionIntervalDefault)
 		config.Interval, _ = time.ParseDuration(optionIntervalDefault)
 	}
 
