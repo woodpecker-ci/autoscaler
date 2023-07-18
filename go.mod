@@ -3,11 +3,13 @@ module github.com/woodpecker-ci/autoscaler
 go 1.20
 
 require (
+	github.com/franela/goblin v0.0.0-20211003143422-0a4f594942bf
 	github.com/hetznercloud/hcloud-go v1.41.0
 	github.com/joho/godotenv v1.5.1
 	github.com/rs/zerolog v1.29.1
 	github.com/urfave/cli/v2 v2.25.3
 	github.com/woodpecker-ci/woodpecker v0.15.1-0.20230514144654-1f9d94356439
+	golang.org/x/exp v0.0.0-20230425010034-47ecfdc1ba53
 	golang.org/x/net v0.10.0
 	golang.org/x/oauth2 v0.8.0
 )

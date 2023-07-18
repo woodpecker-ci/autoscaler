@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"crypto/tls"
@@ -37,7 +37,7 @@ func NewClient(c *cli.Context) (woodpecker.Client, error) {
 	// attempt to find system CA certs
 	certs, err := x509.SystemCertPool()
 	if err != nil {
-		log.Error().Msgf("failed to find system CA certs: %v", err)
+		log.Error().Err(err).Msg("CA certs not found")
 	}
 	tlsConfig := &tls.Config{
 		RootCAs:            certs,
