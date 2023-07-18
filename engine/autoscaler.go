@@ -9,6 +9,8 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/woodpecker-ci/autoscaler/config"
 	"github.com/woodpecker-ci/woodpecker/woodpecker-go/woodpecker"
+
+	xerrors "github.com/pkg/errors"
 )
 
 type Autoscaler struct {
@@ -30,7 +32,7 @@ func NewAutoscaler(provider Provider, client woodpecker.Client, config *config.C
 func (a *Autoscaler) getQueueInfo(ctx context.Context) (freeTasks, runningTasks, pendingTasks int, err error) {
 	info, err := a.client.QueueInfo()
 	if err != nil {
-		return -1, -1, -1, err
+		return -1, -1, -1, xerrors.Wrap(err, "getQueueInfo")
 	}
 
 	return info.Stats.Workers, info.Stats.Running, info.Stats.Pending + info.Stats.WaitingOnDeps, nil
@@ -42,7 +44,7 @@ func (a *Autoscaler) loadAgents(ctx context.Context) error {
 
 	agents, err := a.client.AgentList()
 	if err != nil {
-		return err
+		return xerrors.Wrap(err, "loadAgents")
 	}
 	r, _ := regexp.Compile(fmt.Sprintf("pool-%s-agent-.*?", a.config.PoolID))
 
@@ -72,7 +74,7 @@ func (a *Autoscaler) createAgents(ctx context.Context, amount int) error {
 			Name: fmt.Sprintf("pool-%s-agent-%s", a.config.PoolID, RandomString(4)),
 		})
 		if err != nil {
-			return err
+			return xerrors.Wrap(err, "createAgents")
 		}
 
 		log.Info().Str("agent", agent.Name).Msg("deploy agent")
@@ -97,7 +99,7 @@ func (a *Autoscaler) drainAgents(ctx context.Context, amount int) error {
 				agent.NoSchedule = true
 				_, err := a.client.AgentUpdate(agent)
 				if err != nil {
-					return err
+					return xerrors.Wrap(err, "drainAgents")
 				}
 				break
 			}
@@ -110,7 +112,7 @@ func (a *Autoscaler) drainAgents(ctx context.Context, amount int) error {
 func (a *Autoscaler) AgentIdle(agent *woodpecker.Agent) (bool, error) {
 	tasks, err := a.client.AgentTasksList(agent.ID)
 	if err != nil {
-		return false, err
+		return false, xerrors.Wrap(err, "AgentIdle")
 	}
 
 	return len(tasks) == 0, nil
@@ -139,7 +141,7 @@ func (a *Autoscaler) removeDrainedAgents(ctx context.Context) error {
 
 			err = a.client.AgentDelete(agent.ID)
 			if err != nil {
-				return err
+				return xerrors.Wrap(err, "AgentDelete")
 			}
 
 			a.agents = append(a.agents[:0], a.agents[1:]...)
@@ -169,7 +171,7 @@ func (a *Autoscaler) removeDetachedAgents(ctx context.Context) error {
 		}
 
 		if !found {
-			logger.Info().Str("agent", agentName).Str("reason", "not found/drained on woodpecker").Msg("remove agent")
+			logger.Info().Str("agent", agentName).Str("reason", "not found on woodpecker").Msg("remove agent")
 			if err := a.provider.RemoveAgent(ctx, &woodpecker.Agent{Name: agentName}); err != nil {
 				return err
 			}
@@ -189,7 +191,7 @@ func (a *Autoscaler) removeDetachedAgents(ctx context.Context) error {
 		if !found {
 			logger.Info().Str("agent", agent.Name).Str("reason", "not found on provider").Msg("remove agent")
 			if err = a.client.AgentDelete(agent.ID); err != nil {
-				return err
+				return xerrors.Wrap(err, "removeDetachedAgents")
 			}
 		}
 	}
@@ -233,27 +235,22 @@ func (a *Autoscaler) calcAgents(ctx context.Context) (float64, error) {
 
 func (a *Autoscaler) Reconcile(ctx context.Context) error {
 	if err := a.loadAgents(ctx); err != nil {
-		log.Error().Err(err).Msg("load agents failed")
-	}
-
-	if err := a.removeDrainedAgents(ctx); err != nil {
-		log.Error().Str("process", "removeDrainedAgents").Err(err).Msg("remove agents failed")
-	}
-
-	if err := a.removeDetachedAgents(ctx); err != nil {
-		log.Error().Str("process", "removeDetachedAgents").Err(err).Msg("remove agents failed")
+		log.Error().Stack().Err(err).Msg("load agents failed")
+		return nil
 	}
 
 	reqPoolAgents, err := a.calcAgents(ctx)
 	if err != nil {
-		log.Error().Err(err).Msg("calculate agents failed")
+		log.Error().Stack().Err(err).Msg("calculate agents failed")
+		return nil
 	}
 
 	if reqPoolAgents > 0 {
 		log.Info().Msgf("start %v agents", reqPoolAgents)
 
 		if err := a.createAgents(ctx, int(reqPoolAgents)); err != nil {
-			log.Error().Err(err).Msgf("create agents failed")
+			log.Error().Stack().Err(err).Msgf("create agents failed")
+			return nil
 		}
 	}
 
@@ -262,8 +259,19 @@ func (a *Autoscaler) Reconcile(ctx context.Context) error {
 
 		log.Info().Msgf("stop %v agents", drainAgents)
 		if err := a.drainAgents(ctx, drainAgents); err != nil {
-			return err
+			log.Error().Stack().Err(err).Msg("remove agents failed")
+			return nil
 		}
+	}
+
+	if err := a.removeDetachedAgents(ctx); err != nil {
+		log.Error().Stack().Err(err).Msg("remove agents failed")
+		return nil
+	}
+
+	if err := a.removeDrainedAgents(ctx); err != nil {
+		log.Error().Stack().Err(err).Msg("remove agents failed")
+		return nil
 	}
 
 	return nil

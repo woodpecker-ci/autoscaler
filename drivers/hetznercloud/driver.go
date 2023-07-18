@@ -15,6 +15,8 @@ import (
 	"github.com/woodpecker-ci/autoscaler/config"
 	"github.com/woodpecker-ci/autoscaler/engine"
 	"github.com/woodpecker-ci/woodpecker/woodpecker-go/woodpecker"
+
+	xerrors "github.com/pkg/errors"
 )
 
 var (
@@ -101,7 +103,7 @@ func New(c *cli.Context, config *config.Config) (engine.Provider, error) {
 
 	userdata, err := template.New("user-data").Parse(optionUserDataDefault)
 	if err != nil {
-		return nil, err
+		return nil, xerrors.Wrap(err, "")
 	}
 
 	d.UserData = userdata
@@ -134,12 +136,12 @@ func (d *Driver) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error
 
 	userdataString, err := engine.RenderUserDataTemplate(d.Config, agent, d.UserData)
 	if err != nil {
-		return err
+		return xerrors.Wrap(err, "")
 	}
 
 	image, _, err := d.client.Image.GetByName(ctx, d.Image)
 	if err != nil {
-		return err
+		return xerrors.Wrap(err, "")
 	}
 
 	_, _, err = d.client.Server.Create(ctx, hcloud.ServerCreateOpts{
@@ -156,18 +158,18 @@ func (d *Driver) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error
 		Labels:  labels,
 	})
 
-	return err
+	return xerrors.Wrap(err, "")
 }
 
 func (d *Driver) getAgent(ctx context.Context, agent *woodpecker.Agent) (*hcloud.Server, error) {
 	server, _, err := d.client.Server.GetByName(ctx, agent.Name)
-	return server, err
+	return server, xerrors.Wrap(err, "")
 }
 
 func (d *Driver) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) error {
 	server, err := d.getAgent(ctx, agent)
 	if err != nil {
-		return err
+		return xerrors.Wrap(err, "")
 	}
 
 	if server == nil {
@@ -175,13 +177,13 @@ func (d *Driver) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) error
 	}
 
 	_, _, err = d.client.Server.DeleteWithResult(ctx, server)
-	return err
+	return xerrors.Wrap(err, "")
 }
 
 func (d *Driver) ListDeployedAgentNames(ctx context.Context) ([]string, error) {
 	servers, err := d.client.Server.All(ctx)
 	if err != nil {
-		return nil, err
+		return nil, xerrors.Wrap(err, "")
 	}
 
 	var names []string

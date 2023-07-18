@@ -8,6 +8,7 @@ import (
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"github.com/rs/zerolog/pkgerrors"
 	"github.com/woodpecker-ci/autoscaler/drivers/hetznercloud"
 	"github.com/woodpecker-ci/autoscaler/server"
 
@@ -28,6 +29,7 @@ func setupProvider(ctx *cli.Context, config *config.Config) (engine.Provider, er
 }
 
 func run(ctx *cli.Context) error {
+	zerolog.ErrorStackMarshaler = pkgerrors.MarshalStack
 	log.Log().Msgf("Start autoscaler LogLevel = %s", zerolog.GlobalLevel().String())
 
 	client, err := server.NewClient(ctx)
@@ -87,6 +89,7 @@ func main() {
 		Flags: flags,
 		Before: func(ctx *cli.Context) error {
 			zerolog.SetGlobalLevel(zerolog.InfoLevel)
+			zerolog.ErrorStackMarshaler = pkgerrors.MarshalStack
 			if ctx.IsSet("log-level") {
 				logLevelFlag := ctx.String("log-level")
 				lvl, err := zerolog.ParseLevel(logLevelFlag)
@@ -105,6 +108,6 @@ func main() {
 	app.Flags = append(app.Flags, hetznercloud.DriverFlags...)
 
 	if err := app.Run(os.Args); err != nil {
-		log.Fatal().Err(err).Msg("")
+		log.Fatal().Stack().Err(err).Msg("")
 	}
 }
