@@ -8,7 +8,6 @@ import (
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"github.com/rs/zerolog/pkgerrors"
 	"github.com/woodpecker-ci/autoscaler/drivers/hetznercloud"
 	"github.com/woodpecker-ci/autoscaler/server"
 
@@ -22,14 +21,13 @@ import (
 func setupProvider(ctx *cli.Context, config *config.Config) (engine.Provider, error) {
 	switch driver := ctx.String("provider"); driver {
 	case "hetznercloud":
-		return hetznercloud.New(ctx, config)
+		return hetznercloud.New(ctx, config, driver)
 	}
 
 	return nil, fmt.Errorf("unknown provider: %s", ctx.String("provider"))
 }
 
 func run(ctx *cli.Context) error {
-	zerolog.ErrorStackMarshaler = pkgerrors.MarshalStack
 	log.Log().Msgf("Start autoscaler LogLevel = %s", zerolog.GlobalLevel().String())
 
 	client, err := server.NewClient(ctx)
@@ -89,12 +87,11 @@ func main() {
 		Flags: flags,
 		Before: func(ctx *cli.Context) error {
 			zerolog.SetGlobalLevel(zerolog.InfoLevel)
-			zerolog.ErrorStackMarshaler = pkgerrors.MarshalStack
 			if ctx.IsSet("log-level") {
 				logLevelFlag := ctx.String("log-level")
 				lvl, err := zerolog.ParseLevel(logLevelFlag)
 				if err != nil {
-					log.Warn().Str("level", logLevelFlag).Msg("unknown logging level")
+					log.Warn().Msgf("LogLevel = %s is unknown", logLevelFlag)
 				}
 				zerolog.SetGlobalLevel(lvl)
 			}
@@ -108,6 +105,6 @@ func main() {
 	app.Flags = append(app.Flags, hetznercloud.DriverFlags...)
 
 	if err := app.Run(os.Args); err != nil {
-		log.Fatal().Stack().Err(err).Msg("")
+		log.Fatal().Err(err).Msg("")
 	}
 }

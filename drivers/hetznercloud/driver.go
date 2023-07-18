@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"regexp"
 	"strings"
 	"text/template"
 
@@ -15,13 +14,11 @@ import (
 	"github.com/woodpecker-ci/autoscaler/config"
 	"github.com/woodpecker-ci/autoscaler/engine"
 	"github.com/woodpecker-ci/woodpecker/woodpecker-go/woodpecker"
-
-	xerrors "github.com/pkg/errors"
 )
 
 var (
 	ErrIllegalLablePrefix = errors.New("illegal label prefix")
-	ErrCreateServer       = errors.New("failed to create server")
+	ErrImageNotFound      = errors.New("image not found")
 )
 
 var optionUserDataDefault = `
@@ -71,21 +68,25 @@ final_message: "The system is finally up, after $UPTIME seconds"
 `
 
 type Driver struct {
-	APIToken    string
-	ServerType  string
-	UserData    *template.Template
-	Image       string
-	SSHKeyID    int
-	Labels      map[string]string
-	LabelPrefix string
-	Config      *config.Config
-	Location    string
-	Name        string
-	client      *hcloud.Client
+	APIToken      string
+	ServerType    string
+	UserData      *template.Template
+	Image         string
+	SSHKeyID      int
+	LabelPrefix   string
+	LabelPool     string
+	LabelImage    string
+	DefaultLabels map[string]string
+	Labels        map[string]string
+	Config        *config.Config
+	Location      string
+	Name          string
+	client        *hcloud.Client
 }
 
-func New(c *cli.Context, config *config.Config) (engine.Provider, error) {
+func New(c *cli.Context, config *config.Config, name string) (engine.Provider, error) {
 	d := &Driver{
+		Name:        name,
 		APIToken:    c.String("hetznercloud-api-token"),
 		Location:    c.String("hetznercloud-location"),
 		ServerType:  c.String("hetznercloud-server-type"),
@@ -95,6 +96,13 @@ func New(c *cli.Context, config *config.Config) (engine.Provider, error) {
 		Config:      config,
 	}
 
+	d.LabelPool = fmt.Sprintf("%spool", d.LabelPrefix)
+	d.LabelImage = fmt.Sprintf("%simage", d.LabelPrefix)
+
+	d.DefaultLabels = make(map[string]string, 0)
+	d.DefaultLabels[d.LabelPool] = d.Config.PoolID
+	d.DefaultLabels[d.LabelImage] = d.Image
+
 	d.client = hcloud.NewClient(hcloud.WithToken(d.APIToken))
 
 	if userdata := c.String("hetznercloud-user-data"); userdata != "" {
@@ -103,7 +111,7 @@ func New(c *cli.Context, config *config.Config) (engine.Provider, error) {
 
 	userdata, err := template.New("user-data").Parse(optionUserDataDefault)
 	if err != nil {
-		return nil, xerrors.Wrap(err, "")
+		return nil, fmt.Errorf("%s: %w", d.Name, err)
 	}
 
 	d.UserData = userdata
@@ -111,7 +119,7 @@ func New(c *cli.Context, config *config.Config) (engine.Provider, error) {
 	labels := engine.SliceToMap(c.StringSlice("hetznercloud-labels"), "=")
 	for _, key := range maps.Keys(labels) {
 		if strings.HasPrefix(key, d.LabelPrefix) {
-			return nil, fmt.Errorf("%w: %s", ErrIllegalLablePrefix, d.LabelPrefix)
+			return nil, fmt.Errorf("%s: %w: %s", d.Name, ErrIllegalLablePrefix, d.LabelPrefix)
 		}
 	}
 
@@ -129,19 +137,19 @@ func (d *Driver) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error
 		})
 	}
 
-	defaultLabels := make(map[string]string, 0)
-	defaultLabels[fmt.Sprintf("%spool", d.LabelPrefix)] = d.Config.PoolID
-	defaultLabels[fmt.Sprintf("%simage", d.LabelPrefix)] = d.Image
-	labels := engine.MergeMaps(defaultLabels, d.Labels)
+	labels := engine.MergeMaps(d.DefaultLabels, d.Labels)
 
 	userdataString, err := engine.RenderUserDataTemplate(d.Config, agent, d.UserData)
 	if err != nil {
-		return xerrors.Wrap(err, "")
+		return fmt.Errorf("%s: %w", d.Name, err)
 	}
 
 	image, _, err := d.client.Image.GetByName(ctx, d.Image)
 	if err != nil {
-		return xerrors.Wrap(err, "")
+		return fmt.Errorf("%s: %w", d.Image, err)
+	}
+	if image == nil {
+		return fmt.Errorf("%s: %w: %s", d.Name, ErrImageNotFound, d.Image)
 	}
 
 	_, _, err = d.client.Server.Create(ctx, hcloud.ServerCreateOpts{
@@ -157,19 +165,26 @@ func (d *Driver) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error
 		SSHKeys: sshKeys,
 		Labels:  labels,
 	})
+	if err != nil {
+		return fmt.Errorf("%s: %w", d.Name, err)
+	}
 
-	return xerrors.Wrap(err, "")
+	return nil
 }
 
 func (d *Driver) getAgent(ctx context.Context, agent *woodpecker.Agent) (*hcloud.Server, error) {
 	server, _, err := d.client.Server.GetByName(ctx, agent.Name)
-	return server, xerrors.Wrap(err, "")
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", d.Name, err)
+	}
+
+	return server, nil
 }
 
 func (d *Driver) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) error {
 	server, err := d.getAgent(ctx, agent)
 	if err != nil {
-		return xerrors.Wrap(err, "")
+		return fmt.Errorf("%s: %w", d.Name, err)
 	}
 
 	if server == nil {
@@ -177,23 +192,26 @@ func (d *Driver) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) error
 	}
 
 	_, _, err = d.client.Server.DeleteWithResult(ctx, server)
-	return xerrors.Wrap(err, "")
+	if err != nil {
+		return fmt.Errorf("%s: %w", d.Name, err)
+	}
+
+	return nil
 }
 
 func (d *Driver) ListDeployedAgentNames(ctx context.Context) ([]string, error) {
-	servers, err := d.client.Server.All(ctx)
-	if err != nil {
-		return nil, xerrors.Wrap(err, "")
-	}
-
 	var names []string
 
-	r, _ := regexp.Compile(fmt.Sprintf("pool-%s-agent-.*?", d.Config.PoolID))
+	servers, err := d.client.Server.AllWithOpts(ctx,
+		hcloud.ServerListOpts{
+			ListOpts: hcloud.ListOpts{LabelSelector: fmt.Sprintf("%s==%s", d.LabelPool, d.Config.PoolID)},
+		})
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", d.Name, err)
+	}
 
 	for _, server := range servers {
-		if r.MatchString(server.Name) {
-			names = append(names, server.Name)
-		}
+		names = append(names, server.Name)
 	}
 
 	return names, nil

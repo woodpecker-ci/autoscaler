@@ -5,12 +5,11 @@ import (
 	"fmt"
 	"math"
 	"regexp"
+	"time"
 
 	"github.com/rs/zerolog/log"
 	"github.com/woodpecker-ci/autoscaler/config"
 	"github.com/woodpecker-ci/woodpecker/woodpecker-go/woodpecker"
-
-	xerrors "github.com/pkg/errors"
 )
 
 type Autoscaler struct {
@@ -32,7 +31,7 @@ func NewAutoscaler(provider Provider, client woodpecker.Client, config *config.C
 func (a *Autoscaler) getQueueInfo(ctx context.Context) (freeTasks, runningTasks, pendingTasks int, err error) {
 	info, err := a.client.QueueInfo()
 	if err != nil {
-		return -1, -1, -1, xerrors.Wrap(err, "getQueueInfo")
+		return -1, -1, -1, fmt.Errorf("client.QueueInfo: %w", err)
 	}
 
 	return info.Stats.Workers, info.Stats.Running, info.Stats.Pending + info.Stats.WaitingOnDeps, nil
@@ -44,7 +43,7 @@ func (a *Autoscaler) loadAgents(ctx context.Context) error {
 
 	agents, err := a.client.AgentList()
 	if err != nil {
-		return xerrors.Wrap(err, "loadAgents")
+		return fmt.Errorf("client.AgentList: %w", err)
 	}
 	r, _ := regexp.Compile(fmt.Sprintf("pool-%s-agent-.*?", a.config.PoolID))
 
@@ -74,7 +73,7 @@ func (a *Autoscaler) createAgents(ctx context.Context, amount int) error {
 			Name: fmt.Sprintf("pool-%s-agent-%s", a.config.PoolID, RandomString(4)),
 		})
 		if err != nil {
-			return xerrors.Wrap(err, "createAgents")
+			return fmt.Errorf("client.AgentCreate: %w", err)
 		}
 
 		log.Info().Str("agent", agent.Name).Msg("deploy agent")
@@ -94,12 +93,16 @@ func (a *Autoscaler) createAgents(ctx context.Context, amount int) error {
 func (a *Autoscaler) drainAgents(ctx context.Context, amount int) error {
 	for i := 0; i < amount; i++ {
 		for _, agent := range a.agents {
-			if !agent.NoSchedule {
+			created := time.Unix(agent.Created, 0)
+			duration, _ := time.ParseDuration("10m")
+			minAge := created.Add(duration)
+
+			if !agent.NoSchedule && minAge.Unix() < time.Now().Unix() {
 				log.Info().Str("agent", agent.Name).Msg("drain agent")
 				agent.NoSchedule = true
 				_, err := a.client.AgentUpdate(agent)
 				if err != nil {
-					return xerrors.Wrap(err, "drainAgents")
+					return fmt.Errorf("client.AgentUpdate: %w", err)
 				}
 				break
 			}
@@ -112,15 +115,13 @@ func (a *Autoscaler) drainAgents(ctx context.Context, amount int) error {
 func (a *Autoscaler) AgentIdle(agent *woodpecker.Agent) (bool, error) {
 	tasks, err := a.client.AgentTasksList(agent.ID)
 	if err != nil {
-		return false, xerrors.Wrap(err, "AgentIdle")
+		return false, fmt.Errorf("client.AgentTasksList: %w", err)
 	}
 
 	return len(tasks) == 0, nil
 }
 
 func (a *Autoscaler) removeDrainedAgents(ctx context.Context) error {
-	logger := log.With().Str("process", "removeDrainedAgents").Logger()
-
 	for _, agent := range a.agents {
 		if agent.NoSchedule {
 			isIdle, err := a.AgentIdle(agent)
@@ -128,11 +129,11 @@ func (a *Autoscaler) removeDrainedAgents(ctx context.Context) error {
 				return err
 			}
 			if !isIdle {
-				logger.Info().Str("agent", agent.Name).Msg("agent is processing workload")
+				log.Info().Str("agent", agent.Name).Msg("agent is processing workload")
 				continue
 			}
 
-			logger.Info().Str("agent", agent.Name).Msgf("remove agent")
+			log.Info().Str("agent", agent.Name).Msgf("remove agent")
 
 			err = a.provider.RemoveAgent(ctx, agent)
 			if err != nil {
@@ -141,7 +142,7 @@ func (a *Autoscaler) removeDrainedAgents(ctx context.Context) error {
 
 			err = a.client.AgentDelete(agent.ID)
 			if err != nil {
-				return xerrors.Wrap(err, "AgentDelete")
+				return fmt.Errorf("client.AgentDelete: %w", err)
 			}
 
 			a.agents = append(a.agents[:0], a.agents[1:]...)
@@ -152,8 +153,6 @@ func (a *Autoscaler) removeDrainedAgents(ctx context.Context) error {
 }
 
 func (a *Autoscaler) removeDetachedAgents(ctx context.Context) error {
-	logger := log.With().Str("process", "removeDetachedAgents").Logger()
-
 	registeredAgents := a.getPoolAgents(false)
 	deployedAgentNames, err := a.provider.ListDeployedAgentNames(ctx)
 	if err != nil {
@@ -171,7 +170,7 @@ func (a *Autoscaler) removeDetachedAgents(ctx context.Context) error {
 		}
 
 		if !found {
-			logger.Info().Str("agent", agentName).Str("reason", "not found on woodpecker").Msg("remove agent")
+			log.Info().Str("agent", agentName).Str("reason", "not found on woodpecker").Msg("remove agent")
 			if err := a.provider.RemoveAgent(ctx, &woodpecker.Agent{Name: agentName}); err != nil {
 				return err
 			}
@@ -189,9 +188,9 @@ func (a *Autoscaler) removeDetachedAgents(ctx context.Context) error {
 		}
 
 		if !found {
-			logger.Info().Str("agent", agent.Name).Str("reason", "not found on provider").Msg("remove agent")
+			log.Info().Str("agent", agent.Name).Str("reason", "not found on provider").Msg("remove agent")
 			if err = a.client.AgentDelete(agent.ID); err != nil {
-				return xerrors.Wrap(err, "removeDetachedAgents")
+				return fmt.Errorf("client.AgentDelete: %w", err)
 			}
 		}
 	}
@@ -207,11 +206,7 @@ func (a *Autoscaler) calcAgents(ctx context.Context) (float64, error) {
 		return 0, err
 	}
 
-	log.Debug().
-		Int("freeTasks", freeTasks).
-		Int("runningTasks", runningTasks).
-		Int("pendingTasks", pendingTasks).
-		Msgf("queue info")
+	log.Debug().Msgf("queue info: freeTasks = %v runningTasks = %v pendingTasks = %v", freeTasks, runningTasks, pendingTasks)
 	availableAgents := math.Ceil(float64(freeTasks+runningTasks) / float64((a.config.WorkflowsPerAgent)))
 	reqAgents := math.Ceil(float64(pendingTasks+runningTasks) / float64(a.config.WorkflowsPerAgent))
 
@@ -223,54 +218,49 @@ func (a *Autoscaler) calcAgents(ctx context.Context) (float64, error) {
 	reqPoolAgents = math.Max(reqPoolAgents, -maxDown)
 	reqPoolAgents = math.Min(reqPoolAgents, maxUp)
 
-	log.Debug().
-		Float64("availableAgents", availableAgents).
-		Float64("reqAgents", reqAgents).
-		Int("availablePoolAgents", availablePoolAgents).
-		Float64("maxUp", maxUp).Float64("maxDown", maxDown).
-		Msgf("calculation info")
+	log.Debug().Msgf("capacity info: agents = %v/%v pool = %v/%v limits = %v/%v", availableAgents, reqAgents, availablePoolAgents, reqPoolAgents, maxUp, maxDown)
 
 	return reqPoolAgents, nil
 }
 
 func (a *Autoscaler) Reconcile(ctx context.Context) error {
 	if err := a.loadAgents(ctx); err != nil {
-		log.Error().Stack().Err(err).Msg("load agents failed")
+		log.Error().Err(err).Msg("load agents failed")
 		return nil
 	}
 
 	reqPoolAgents, err := a.calcAgents(ctx)
 	if err != nil {
-		log.Error().Stack().Err(err).Msg("calculate agents failed")
+		log.Error().Err(err).Msg("calculate agents failed")
 		return nil
 	}
 
 	if reqPoolAgents > 0 {
-		log.Info().Msgf("start %v agents", reqPoolAgents)
+		log.Debug().Msgf("start %v additional agents", reqPoolAgents)
 
 		if err := a.createAgents(ctx, int(reqPoolAgents)); err != nil {
-			log.Error().Stack().Err(err).Msgf("create agents failed")
+			log.Error().Err(err).Msgf("create agents failed")
 			return nil
 		}
 	}
 
 	if reqPoolAgents < 0 {
-		drainAgents := int(math.Abs(float64(reqPoolAgents)))
+		num := int(math.Abs(float64(reqPoolAgents)))
 
-		log.Info().Msgf("stop %v agents", drainAgents)
-		if err := a.drainAgents(ctx, drainAgents); err != nil {
-			log.Error().Stack().Err(err).Msg("remove agents failed")
+		log.Debug().Msgf("try to stop %v agents", num)
+		if err := a.drainAgents(ctx, num); err != nil {
+			log.Error().Err(err).Msg("remove agents failed")
 			return nil
 		}
 	}
 
 	if err := a.removeDetachedAgents(ctx); err != nil {
-		log.Error().Stack().Err(err).Msg("remove agents failed")
+		log.Error().Err(err).Msg("remove agents failed")
 		return nil
 	}
 
 	if err := a.removeDrainedAgents(ctx); err != nil {
-		log.Error().Stack().Err(err).Msg("remove agents failed")
+		log.Error().Err(err).Msg("remove agents failed")
 		return nil
 	}
 
