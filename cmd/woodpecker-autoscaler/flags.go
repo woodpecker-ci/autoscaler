@@ -44,7 +44,7 @@ var flags = []cli.Flag{
 	&cli.StringFlag{
 		Name:    "min-age",
 		Value:   optionMinAgeDefault,
-		Usage:   "minimum age of a agent before termination",
+		Usage:   "minimum age of agents before terminating",
 		EnvVars: []string{"WOODPECKER_MIN_AGE"},
 	},
 	&cli.IntFlag{
