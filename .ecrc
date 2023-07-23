@@ -1,0 +1,13 @@
+{
+  "Exclude": [
+    ".git",
+    "go.mod",
+    "go.sum",
+    "vendor",
+    "fixtures",
+    "LICENSE",
+    "drivers/hetznercloud/driver.go",
+    "_test.go",
+    "Makefile"
+  ]
+}

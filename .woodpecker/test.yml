@@ -1,0 +1,40 @@
+when:
+  - event: pull_request
+  - event: push
+    branch: [main]
+
+variables:
+  - &golang_image "golang:1.20.2"
+  - &when
+    - path: &when_path # related config files
+        - ".woodpecker/test.yml"
+        - ".golangci.yml"
+        # go source code
+        - "**/*.go"
+        - "go.*"
+        # schema changes
+        - "pipeline/schema/**"
+      branch:
+        exclude: ${CI_REPO_DEFAULT_BRANCH}
+      event: push
+    - path: *when_path
+      event: [pull_request, tag, deployment]
+
+steps:
+  lint:
+    image: *golang_image
+    group: test
+    commands:
+      - make lint
+    when: *when
+
+  lint-editorconfig:
+    image: mstruebing/editorconfig-checker
+    group: test
+
+  test:
+    image: *golang_image
+    group: test
+    commands:
+      - make test
+    when: *when

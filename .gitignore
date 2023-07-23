@@ -1,2 +1,37 @@
-.env
-/dist
+### IDEs ###
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+### GO ###
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+vendor/
+__debug_bin
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+### Docker ###
+docker-compose.yml
+
+### Other ##
+# runetime or build relicts
+*.sqlite
+*.out
+/.env
+/.pnpm-store
+extras/
+/build/
+/dist/
+
+docs/venv
