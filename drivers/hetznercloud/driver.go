@@ -19,6 +19,9 @@ import (
 var (
 	ErrIllegalLablePrefix = errors.New("illegal label prefix")
 	ErrImageNotFound      = errors.New("image not found")
+	ErrSSHKeyNotFound     = errors.New("SSH key not found")
+	ErrNetworkNotFound    = errors.New("network not found")
+	ErrFirewallNotFound   = errors.New("firewall not found")
 )
 
 var optionUserDataDefault = `
@@ -72,7 +75,7 @@ type Driver struct {
 	ServerType    string
 	UserData      *template.Template
 	Image         string
-	SSHKeyID      int
+	SSHKeys       []string
 	LabelPrefix   string
 	LabelPool     string
 	LabelImage    string
@@ -80,6 +83,10 @@ type Driver struct {
 	Labels        map[string]string
 	Config        *config.Config
 	Location      string
+	Networks      []string
+	Firewalls     []string
+	EnableIPv4    bool
+	EnableIPv6    bool
 	Name          string
 	client        *hcloud.Client
 }
@@ -91,7 +98,11 @@ func New(c *cli.Context, config *config.Config, name string) (engine.Provider, e
 		Location:    c.String("hetznercloud-location"),
 		ServerType:  c.String("hetznercloud-server-type"),
 		Image:       c.String("hetznercloud-image"),
-		SSHKeyID:    c.Int("hetznercloud-ssh-key-id"),
+		SSHKeys:     c.StringSlice("hetznercloud-ssh-keys"),
+		Firewalls:   c.StringSlice("hetznercloud-firewalls"),
+		Networks:    c.StringSlice("hetznercloud-networks"),
+		EnableIPv4:  c.Bool("hetznercloud-public-ipv4-enable"),
+		EnableIPv6:  c.Bool("hetznercloud-public-ipv6-enable"),
 		LabelPrefix: "wp.scaler/",
 		Config:      config,
 	}
@@ -129,14 +140,6 @@ func New(c *cli.Context, config *config.Config, name string) (engine.Provider, e
 }
 
 func (d *Driver) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
-	sshKeys := []*hcloud.SSHKey{}
-
-	if d.SSHKeyID > 0 {
-		sshKeys = append(sshKeys, &hcloud.SSHKey{
-			ID: d.SSHKeyID,
-		})
-	}
-
 	labels := engine.MergeMaps(d.DefaultLabels, d.Labels)
 
 	userdataString, err := engine.RenderUserDataTemplate(d.Config, agent, d.UserData)
@@ -152,6 +155,42 @@ func (d *Driver) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error
 		return fmt.Errorf("%s: %w: %s", d.Name, ErrImageNotFound, d.Image)
 	}
 
+	sshKeys := make([]*hcloud.SSHKey, 0)
+	for _, item := range d.SSHKeys {
+		key, _, err := d.client.SSHKey.GetByName(ctx, item)
+		if err != nil {
+			return fmt.Errorf("%s: %w", d.Image, err)
+		}
+		if key == nil {
+			return fmt.Errorf("%s: %w: %s", d.Name, ErrSSHKeyNotFound, item)
+		}
+		sshKeys = append(sshKeys, key)
+	}
+
+	networks := make([]*hcloud.Network, 0)
+	for _, item := range d.Networks {
+		network, _, err := d.client.Network.GetByName(ctx, item)
+		if err != nil {
+			return fmt.Errorf("%s: %w", d.Image, err)
+		}
+		if network == nil {
+			return fmt.Errorf("%s: %w: %s", d.Name, ErrNetworkNotFound, item)
+		}
+		networks = append(networks, network)
+	}
+
+	firewalls := make([]*hcloud.ServerCreateFirewall, 0)
+	for _, item := range d.Firewalls {
+		fw, _, err := d.client.Firewall.GetByName(ctx, item)
+		if err != nil {
+			return fmt.Errorf("%s: %w", d.Image, err)
+		}
+		if fw == nil {
+			return fmt.Errorf("%s: %w: %s", d.Name, ErrFirewallNotFound, item)
+		}
+		firewalls = append(firewalls, &hcloud.ServerCreateFirewall{Firewall: hcloud.Firewall{ID: fw.ID}})
+	}
+
 	_, _, err = d.client.Server.Create(ctx, hcloud.ServerCreateOpts{
 		Name:     agent.Name,
 		UserData: userdataString,
@@ -162,8 +201,14 @@ func (d *Driver) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error
 		ServerType: &hcloud.ServerType{
 			Name: d.ServerType,
 		},
-		SSHKeys: sshKeys,
-		Labels:  labels,
+		SSHKeys:   sshKeys,
+		Networks:  networks,
+		Firewalls: firewalls,
+		Labels:    labels,
+		PublicNet: &hcloud.ServerCreatePublicNet{
+			EnableIPv4: d.EnableIPv4,
+			EnableIPv6: d.EnableIPv6,
+		},
 	})
 	if err != nil {
 		return fmt.Errorf("%s: %w", d.Name, err)
