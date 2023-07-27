@@ -44,7 +44,7 @@ var flags = []cli.Flag{
 	&cli.StringFlag{
 		Name:    "min-age",
 		Value:   optionMinAgeDefault,
-		Usage:   "minimum age of agents before terminating",
+		Usage:   "minimum age of agents before terminating as duration string like 2h45m (https://pkg.go.dev/maze.io/x/duration#ParseDuration)",
 		EnvVars: []string{"WOODPECKER_MIN_AGE"},
 	},
 	&cli.IntFlag{
