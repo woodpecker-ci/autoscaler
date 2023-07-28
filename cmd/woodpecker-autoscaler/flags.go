@@ -20,9 +20,10 @@ var flags = []cli.Flag{
 		EnvVars: []string{"WOODPECKER_RECONCILIATION_INTERVAL"},
 	},
 	&cli.StringFlag{
-		Name:  "pool-id",
-		Value: "1",
-		Usage: "id of the scaler pool",
+		Name:    "pool-id",
+		Value:   "1",
+		Usage:   "id of the autoscaler pool",
+		EnvVars: []string{"WOODPECKER_POOL_ID"},
 	},
 	&cli.IntFlag{
 		Name:    "min-agents",
@@ -49,13 +50,13 @@ var flags = []cli.Flag{
 		EnvVars: []string{"WOODPECKER_WORKFLOWS_PER_AGENT"},
 	},
 	&cli.StringFlag{
-		Name:    "server",
+		Name:    "server-url",
 		Value:   "http://localhost:8000",
 		Usage:   "woodpecker server address",
 		EnvVars: []string{"WOODPECKER_SERVER"},
 	},
 	&cli.StringFlag{
-		Name:     "token",
+		Name:     "server-token",
 		Usage:    "woodpecker api token",
 		EnvVars:  []string{"WOODPECKER_TOKEN"},
 		FilePath: os.Getenv("WOODPECKER_TOKEN_FILE"),
@@ -74,7 +75,7 @@ var flags = []cli.Flag{
 	},
 	&cli.StringFlag{
 		Name:    "provider",
-		Value:   "hetznercloud",
+		Value:   "",
 		Usage:   "cloud provider to use",
 		EnvVars: []string{"WOODPECKER_PROVIDER"},
 	},

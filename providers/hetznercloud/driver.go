@@ -103,7 +103,7 @@ func New(c *cli.Context, config *config.Config, name string) (engine.Provider, e
 		Networks:    c.StringSlice("hetznercloud-networks"),
 		EnableIPv4:  c.Bool("hetznercloud-public-ipv4-enable"),
 		EnableIPv6:  c.Bool("hetznercloud-public-ipv6-enable"),
-		LabelPrefix: "wp.scaler/",
+		LabelPrefix: "wp.autoscaler/",
 		Config:      config,
 	}
 

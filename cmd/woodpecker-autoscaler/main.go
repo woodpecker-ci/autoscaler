@@ -8,8 +8,8 @@ import (
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"github.com/woodpecker-ci/autoscaler/drivers/hetznercloud"
 	"github.com/woodpecker-ci/autoscaler/engine"
+	"github.com/woodpecker-ci/autoscaler/providers/hetznercloud"
 	"github.com/woodpecker-ci/autoscaler/server"
 
 	_ "github.com/joho/godotenv/autoload"
@@ -22,13 +22,15 @@ func setupProvider(ctx *cli.Context, config *config.Config) (engine.Provider, er
 	switch driver := ctx.String("provider"); driver {
 	case "hetznercloud":
 		return hetznercloud.New(ctx, config, driver)
+	case "":
+		return nil, fmt.Errorf("Please select a provider")
 	}
 
 	return nil, fmt.Errorf("unknown provider: %s", ctx.String("provider"))
 }
 
 func run(ctx *cli.Context) error {
-	log.Log().Msgf("Start autoscaler LogLevel = %s", zerolog.GlobalLevel().String())
+	log.Log().Msgf("Starting autoscaler with log-level=%s", zerolog.GlobalLevel().String())
 
 	client, err := server.NewClient(ctx)
 	if err != nil {
@@ -77,9 +79,7 @@ func run(ctx *cli.Context) error {
 		case <-ctx.Done():
 			return nil
 		case <-time.After(reconciliationInterval):
-			if err := autoscaler.Reconcile(ctx.Context); err != nil {
-				return err
-			}
+			autoscaler.Reconcile(ctx.Context)
 		}
 	}
 }

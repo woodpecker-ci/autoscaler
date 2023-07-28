@@ -27,8 +27,7 @@ func NewAutoscaler(provider Provider, client woodpecker.Client, config *config.C
 	}
 }
 
-// nolint:revive
-func (a *Autoscaler) getQueueInfo(ctx context.Context) (freeTasks, runningTasks, pendingTasks int, err error) {
+func (a *Autoscaler) getQueueInfo(_ context.Context) (freeTasks, runningTasks, pendingTasks int, err error) {
 	info, err := a.client.QueueInfo()
 	if err != nil {
 		return -1, -1, -1, fmt.Errorf("client.QueueInfo: %w", err)
@@ -37,8 +36,7 @@ func (a *Autoscaler) getQueueInfo(ctx context.Context) (freeTasks, runningTasks,
 	return info.Stats.Workers, info.Stats.Running, info.Stats.Pending + info.Stats.WaitingOnDeps, nil
 }
 
-// nolint:revive
-func (a *Autoscaler) loadAgents(ctx context.Context) error {
+func (a *Autoscaler) loadAgents(_ context.Context) error {
 	a.agents = []*woodpecker.Agent{}
 
 	agents, err := a.client.AgentList()
@@ -76,7 +74,7 @@ func (a *Autoscaler) createAgents(ctx context.Context, amount int) error {
 			return fmt.Errorf("client.AgentCreate: %w", err)
 		}
 
-		log.Info().Str("agent", agent.Name).Msg("deploy agent")
+		log.Info().Str("agent", agent.Name).Msg("deploying agent")
 
 		err = a.provider.DeployAgent(ctx, agent)
 		if err != nil {
@@ -89,8 +87,7 @@ func (a *Autoscaler) createAgents(ctx context.Context, amount int) error {
 	return nil
 }
 
-// nolint:revive
-func (a *Autoscaler) drainAgents(ctx context.Context, amount int) error {
+func (a *Autoscaler) drainAgents(_ context.Context, amount int) error {
 	now := time.Now()
 
 	for i := 0; i < amount; i++ {
@@ -112,7 +109,7 @@ func (a *Autoscaler) drainAgents(ctx context.Context, amount int) error {
 	return nil
 }
 
-func (a *Autoscaler) AgentIdle(agent *woodpecker.Agent) (bool, error) {
+func (a *Autoscaler) isAgentIdle(agent *woodpecker.Agent) (bool, error) {
 	tasks, err := a.client.AgentTasksList(agent.ID)
 	if err != nil {
 		return false, fmt.Errorf("client.AgentTasksList: %w", err)
@@ -124,16 +121,16 @@ func (a *Autoscaler) AgentIdle(agent *woodpecker.Agent) (bool, error) {
 func (a *Autoscaler) removeDrainedAgents(ctx context.Context) error {
 	for _, agent := range a.agents {
 		if agent.NoSchedule {
-			isIdle, err := a.AgentIdle(agent)
+			isIdle, err := a.isAgentIdle(agent)
 			if err != nil {
 				return err
 			}
 			if !isIdle {
-				log.Info().Str("agent", agent.Name).Msg("agent is processing workload")
+				log.Info().Str("agent", agent.Name).Msg("agent is still processing workload")
 				continue
 			}
 
-			log.Info().Str("agent", agent.Name).Msgf("remove agent")
+			log.Info().Str("agent", agent.Name).Msgf("removing agent")
 
 			err = a.provider.RemoveAgent(ctx, agent)
 			if err != nil {
@@ -152,7 +149,7 @@ func (a *Autoscaler) removeDrainedAgents(ctx context.Context) error {
 	return nil
 }
 
-func (a *Autoscaler) removeDetachedAgents(ctx context.Context) error {
+func (a *Autoscaler) cleanupAgents(ctx context.Context) error {
 	registeredAgents := a.getPoolAgents(false)
 	deployedAgentNames, err := a.provider.ListDeployedAgentNames(ctx)
 	if err != nil {
@@ -223,46 +220,44 @@ func (a *Autoscaler) calcAgents(ctx context.Context) (float64, error) {
 	return reqPoolAgents, nil
 }
 
-func (a *Autoscaler) Reconcile(ctx context.Context) error {
+func (a *Autoscaler) Reconcile(ctx context.Context) {
 	if err := a.loadAgents(ctx); err != nil {
 		log.Error().Err(err).Msg("load agents failed")
-		return nil
+		return
 	}
 
 	reqPoolAgents, err := a.calcAgents(ctx)
 	if err != nil {
-		log.Error().Err(err).Msg("calculate agents failed")
-		return nil
+		log.Error().Err(err).Msg("calculating agents failed")
+		return
 	}
 
 	if reqPoolAgents > 0 {
-		log.Debug().Msgf("start %v additional agents", reqPoolAgents)
+		log.Debug().Msgf("starting %f additional agents", reqPoolAgents)
 
 		if err := a.createAgents(ctx, int(reqPoolAgents)); err != nil {
-			log.Error().Err(err).Msgf("create agents failed")
-			return nil
+			log.Error().Err(err).Msg("creating agents failed")
+			return
 		}
 	}
 
 	if reqPoolAgents < 0 {
-		num := int(math.Abs(float64(reqPoolAgents)))
+		num := int(math.Abs(reqPoolAgents))
 
-		log.Debug().Msgf("try to stop %v agents", num)
+		log.Debug().Msgf("trying to stop %d agents", num)
 		if err := a.drainAgents(ctx, num); err != nil {
-			log.Error().Err(err).Msg("remove agents failed")
-			return nil
+			log.Error().Err(err).Msg("draining agents failed")
+			return
 		}
 	}
 
-	if err := a.removeDetachedAgents(ctx); err != nil {
-		log.Error().Err(err).Msg("remove agents failed")
-		return nil
+	if err := a.cleanupAgents(ctx); err != nil {
+		log.Error().Err(err).Msg("cleanup of agents failed")
+		return
 	}
 
 	if err := a.removeDrainedAgents(ctx); err != nil {
-		log.Error().Err(err).Msg("remove agents failed")
-		return nil
+		log.Error().Err(err).Msg("removing drained agents failed")
+		return
 	}
-
-	return nil
 }
