@@ -17,21 +17,19 @@ import (
 // NewClient returns a new client from the CLI context.
 func NewClient(c *cli.Context) (woodpecker.Client, error) {
 	var (
-		skip     = c.Bool("skip-verify")
-		socks    = c.String("socks-proxy")
-		socksoff = c.Bool("socks-proxy-off")
-		token    = c.String("token")
-		server   = c.String("server")
+		skip        = c.Bool("skip-verify")
+		socks       = c.String("socks-proxy")
+		socksoff    = c.Bool("socks-proxy-off")
+		serverToken = c.String("server-token")
+		serverURL   = c.String("server-url")
 	)
-	server = strings.TrimRight(server, "/")
+	serverURL = strings.TrimRight(serverURL, "/")
 
-	// if no server url is provided we can default
-	// to the hosted Woodpecker service.
-	if len(server) == 0 {
-		return nil, fmt.Errorf("Error: you must provide the Woodpecker server address")
+	if len(serverURL) == 0 {
+		return nil, fmt.Errorf("Error: Please provide the Woodpecker server address")
 	}
-	if len(token) == 0 {
-		return nil, fmt.Errorf("Error: you must provide your Woodpecker access token")
+	if len(serverToken) == 0 {
+		return nil, fmt.Errorf("Error: Please provide a Woodpecker access token")
 	}
 
 	// attempt to find system CA certs
@@ -48,7 +46,7 @@ func NewClient(c *cli.Context) (woodpecker.Client, error) {
 	client := config.Client(
 		c.Context,
 		&oauth2.Token{
-			AccessToken: token,
+			AccessToken: serverToken,
 		},
 	)
 
@@ -71,5 +69,5 @@ func NewClient(c *cli.Context) (woodpecker.Client, error) {
 		}
 	}
 
-	return woodpecker.NewClient(server, client), nil
+	return woodpecker.NewClient(serverURL, client), nil
 }
