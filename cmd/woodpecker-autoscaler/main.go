@@ -8,7 +8,6 @@ import (
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"github.com/woodpecker-ci/autoscaler/drivers/hetznercloud"
 	"github.com/woodpecker-ci/autoscaler/engine"
 	"github.com/woodpecker-ci/autoscaler/providers/hetznercloud"
 	"github.com/woodpecker-ci/autoscaler/server"
