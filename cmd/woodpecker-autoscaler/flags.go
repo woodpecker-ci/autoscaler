@@ -6,8 +6,6 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-const optionIntervalDefault = "1m"
-
 var flags = []cli.Flag{
 	&cli.StringFlag{
 		Name:    "log-level",
@@ -16,10 +14,10 @@ var flags = []cli.Flag{
 		EnvVars: []string{"WOODPECKER_LOG_LEVEL"},
 	},
 	&cli.StringFlag{
-		Name:    "interval",
-		Value:   optionIntervalDefault,
-		Usage:   "reconciliation interval",
-		EnvVars: []string{"WOODPECKER_INTERVAL"},
+		Name:    "reconciliation-interval",
+		Value:   "1m",
+		Usage:   "interval at which the autoscaler will reconcile as duration string like 2h45m (https://pkg.go.dev/maze.io/x/duration#ParseDuration)",
+		EnvVars: []string{"WOODPECKER_RECONCILIATION_INTERVAL"},
 	},
 	&cli.StringFlag{
 		Name:  "pool-id",
@@ -37,6 +35,12 @@ var flags = []cli.Flag{
 		Value:   10,
 		Usage:   "maximum amount of agents",
 		EnvVars: []string{"WOODPECKER_MAX_AGENTS"},
+	},
+	&cli.StringFlag{
+		Name:    "agent-allowed-startup-time",
+		Value:   "10m",
+		Usage:   "time an agent is allowed to start before it can be terminated again as duration string like 2h45m (https://pkg.go.dev/maze.io/x/duration#ParseDuration)",
+		EnvVars: []string{"WOODPECKER_AGENT_ALLOWED_STARTUP_TIME"},
 	},
 	&cli.IntFlag{
 		Name:    "workflows-per-agent",
