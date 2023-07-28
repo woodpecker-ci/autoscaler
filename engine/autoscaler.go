@@ -27,8 +27,7 @@ func NewAutoscaler(provider Provider, client woodpecker.Client, config *config.C
 	}
 }
 
-// nolint:revive
-func (a *Autoscaler) getQueueInfo(ctx context.Context) (freeTasks, runningTasks, pendingTasks int, err error) {
+func (a *Autoscaler) getQueueInfo(_ context.Context) (freeTasks, runningTasks, pendingTasks int, err error) {
 	info, err := a.client.QueueInfo()
 	if err != nil {
 		return -1, -1, -1, fmt.Errorf("client.QueueInfo: %w", err)
@@ -37,8 +36,7 @@ func (a *Autoscaler) getQueueInfo(ctx context.Context) (freeTasks, runningTasks,
 	return info.Stats.Workers, info.Stats.Running, info.Stats.Pending + info.Stats.WaitingOnDeps, nil
 }
 
-// nolint:revive
-func (a *Autoscaler) loadAgents(ctx context.Context) error {
+func (a *Autoscaler) loadAgents(_ context.Context) error {
 	a.agents = []*woodpecker.Agent{}
 
 	agents, err := a.client.AgentList()
@@ -89,8 +87,7 @@ func (a *Autoscaler) createAgents(ctx context.Context, amount int) error {
 	return nil
 }
 
-// nolint:revive
-func (a *Autoscaler) drainAgents(ctx context.Context, amount int) error {
+func (a *Autoscaler) drainAgents(_ context.Context, amount int) error {
 	for i := 0; i < amount; i++ {
 		for _, agent := range a.agents {
 			created := time.Unix(agent.Created, 0)
@@ -112,7 +109,7 @@ func (a *Autoscaler) drainAgents(ctx context.Context, amount int) error {
 	return nil
 }
 
-func (a *Autoscaler) AgentIdle(agent *woodpecker.Agent) (bool, error) {
+func (a *Autoscaler) isAgentIdle(agent *woodpecker.Agent) (bool, error) {
 	tasks, err := a.client.AgentTasksList(agent.ID)
 	if err != nil {
 		return false, fmt.Errorf("client.AgentTasksList: %w", err)
@@ -124,7 +121,7 @@ func (a *Autoscaler) AgentIdle(agent *woodpecker.Agent) (bool, error) {
 func (a *Autoscaler) removeDrainedAgents(ctx context.Context) error {
 	for _, agent := range a.agents {
 		if agent.NoSchedule {
-			isIdle, err := a.AgentIdle(agent)
+			isIdle, err := a.isAgentIdle(agent)
 			if err != nil {
 				return err
 			}
@@ -152,7 +149,7 @@ func (a *Autoscaler) removeDrainedAgents(ctx context.Context) error {
 	return nil
 }
 
-func (a *Autoscaler) removeDetachedAgents(ctx context.Context) error {
+func (a *Autoscaler) cleanupAgents(ctx context.Context) error {
 	registeredAgents := a.getPoolAgents(false)
 	deployedAgentNames, err := a.provider.ListDeployedAgentNames(ctx)
 	if err != nil {
@@ -225,43 +222,37 @@ func (a *Autoscaler) calcAgents(ctx context.Context) (float64, error) {
 
 func (a *Autoscaler) Reconcile(ctx context.Context) error {
 	if err := a.loadAgents(ctx); err != nil {
-		log.Error().Err(err).Msg("load agents failed")
-		return nil
+		return fmt.Errorf("loading agents failed: %w", err)
 	}
 
 	reqPoolAgents, err := a.calcAgents(ctx)
 	if err != nil {
-		log.Error().Err(err).Msg("calculate agents failed")
-		return nil
+		return fmt.Errorf("calculating agents failed: %w", err)
 	}
 
 	if reqPoolAgents > 0 {
-		log.Debug().Msgf("start %v additional agents", reqPoolAgents)
+		log.Debug().Msgf("starting %f additional agents", reqPoolAgents)
 
 		if err := a.createAgents(ctx, int(reqPoolAgents)); err != nil {
-			log.Error().Err(err).Msgf("create agents failed")
-			return nil
+			return fmt.Errorf("creating agents failed: %w", err)
 		}
 	}
 
 	if reqPoolAgents < 0 {
-		num := int(math.Abs(float64(reqPoolAgents)))
+		num := int(math.Abs(reqPoolAgents))
 
-		log.Debug().Msgf("try to stop %v agents", num)
+		log.Debug().Msgf("trying to stop %d agents", num)
 		if err := a.drainAgents(ctx, num); err != nil {
-			log.Error().Err(err).Msg("remove agents failed")
-			return nil
+			return fmt.Errorf("draining agents failed: %w", err)
 		}
 	}
 
-	if err := a.removeDetachedAgents(ctx); err != nil {
-		log.Error().Err(err).Msg("remove agents failed")
-		return nil
+	if err := a.cleanupAgents(ctx); err != nil {
+		return fmt.Errorf("cleanup of agents failed: %w", err)
 	}
 
 	if err := a.removeDrainedAgents(ctx); err != nil {
-		log.Error().Err(err).Msg("remove agents failed")
-		return nil
+		return fmt.Errorf("removing drained agents failed: %w", err)
 	}
 
 	return nil

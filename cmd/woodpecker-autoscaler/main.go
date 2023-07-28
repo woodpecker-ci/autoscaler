@@ -8,7 +8,7 @@ import (
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"github.com/woodpecker-ci/autoscaler/drivers/hetznercloud"
+	"github.com/woodpecker-ci/autoscaler/providers/hetznercloud"
 	"github.com/woodpecker-ci/autoscaler/server"
 
 	_ "github.com/joho/godotenv/autoload"
@@ -22,13 +22,15 @@ func setupProvider(ctx *cli.Context, config *config.Config) (engine.Provider, er
 	switch driver := ctx.String("provider"); driver {
 	case "hetznercloud":
 		return hetznercloud.New(ctx, config, driver)
+	case "":
+		return nil, fmt.Errorf("Please select a provider")
 	}
 
 	return nil, fmt.Errorf("unknown provider: %s", ctx.String("provider"))
 }
 
 func run(ctx *cli.Context) error {
-	log.Log().Msgf("Start autoscaler LogLevel = %s", zerolog.GlobalLevel().String())
+	log.Log().Msgf("Starting autoscaler with log-level=%s", zerolog.GlobalLevel().String())
 
 	client, err := server.NewClient(ctx)
 	if err != nil {
@@ -62,18 +64,18 @@ func run(ctx *cli.Context) error {
 
 	autoscaler := engine.NewAutoscaler(provider, client, config)
 
-	interval, err := time.ParseDuration(ctx.String("interval"))
+	reconciliationInterval, err := time.ParseDuration(ctx.String("reconciliation-interval"))
 	if err != nil {
-		log.Error().Err(err).Msgf("cant parse reconciliation interval, use default: %v", optionIntervalDefault)
-		interval, _ = time.ParseDuration(optionIntervalDefault)
+		return fmt.Errorf("can't parse reconciliation interval %v", ctx.String("reconciliation-interval"))
 	}
 
 	for {
 		select {
 		case <-ctx.Done():
 			return nil
-		case <-time.After(interval):
+		case <-time.After(reconciliationInterval):
 			if err := autoscaler.Reconcile(ctx.Context); err != nil {
+				log.Error().Err(err).Msg("draining agents failed")
 				return err
 			}
 		}

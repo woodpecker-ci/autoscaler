@@ -6,7 +6,6 @@
     "vendor",
     "fixtures",
     "LICENSE",
-    "drivers/hetznercloud/driver.go",
     "_test.go",
     "Makefile"
   ]
