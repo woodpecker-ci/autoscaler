@@ -74,7 +74,7 @@ func (a *Autoscaler) createAgents(ctx context.Context, amount int) error {
 			return fmt.Errorf("client.AgentCreate: %w", err)
 		}
 
-		log.Info().Str("agent", agent.Name).Msg("deploy agent")
+		log.Info().Str("agent", agent.Name).Msg("deploying agent")
 
 		err = a.provider.DeployAgent(ctx, agent)
 		if err != nil {
@@ -89,13 +89,13 @@ func (a *Autoscaler) createAgents(ctx context.Context, amount int) error {
 
 func (a *Autoscaler) drainAgents(_ context.Context, amount int) error {
 	for i := 0; i < amount; i++ {
+		now := time.Now()
 		for _, agent := range a.agents {
-			created := time.Unix(agent.Created, 0)
-			duration, _ := time.ParseDuration("10m")
-			minAge := created.Add(duration)
+			agentCreate := time.Unix(agent.Created, 0)
+			minAgentAgentAlive, _ := time.ParseDuration("10m")
 
-			if !agent.NoSchedule && minAge.Unix() < time.Now().Unix() {
-				log.Info().Str("agent", agent.Name).Msg("drain agent")
+			if !agent.NoSchedule && agentCreate.Add(minAgentAgentAlive).Before(now) {
+				log.Info().Str("agent", agent.Name).Msg("draining agent")
 				agent.NoSchedule = true
 				_, err := a.client.AgentUpdate(agent)
 				if err != nil {
@@ -126,11 +126,11 @@ func (a *Autoscaler) removeDrainedAgents(ctx context.Context) error {
 				return err
 			}
 			if !isIdle {
-				log.Info().Str("agent", agent.Name).Msg("agent is processing workload")
+				log.Info().Str("agent", agent.Name).Msg("agent is still processing workload")
 				continue
 			}
 
-			log.Info().Str("agent", agent.Name).Msgf("remove agent")
+			log.Info().Str("agent", agent.Name).Msgf("removing agent")
 
 			err = a.provider.RemoveAgent(ctx, agent)
 			if err != nil {
