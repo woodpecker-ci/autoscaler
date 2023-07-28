@@ -4,7 +4,7 @@
 
 ### ❤️ Thanks to all contributors! ❤️
 
-@xoxys, @anbraten
+@anbraten, @xoxys
 
 ### ✨ Features
 
@@ -18,6 +18,7 @@
 
 ### 📈 Enhancement
 
+- Renamings and failing on parsing errors [[#9](https://github.com/woodpecker-ci/autoscaler/pull/9)]
 - Add release helper [[#7](https://github.com/woodpecker-ci/autoscaler/pull/7)]
 - Add hetznercloud network, firewall and ssh-key options [[#4](https://github.com/woodpecker-ci/autoscaler/pull/4)]
 
