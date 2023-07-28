@@ -91,13 +91,13 @@ func (a *Autoscaler) createAgents(ctx context.Context, amount int) error {
 
 // nolint:revive
 func (a *Autoscaler) drainAgents(ctx context.Context, amount int) error {
+	now := time.Now()
+
 	for i := 0; i < amount; i++ {
 		for _, agent := range a.agents {
-			created := time.Unix(agent.Created, 0)
-			duration, _ := time.ParseDuration("10m")
-			minAge := created.Add(duration)
+			agentStartupExpectedUntil := time.Unix(agent.Created, 0).Add(a.config.AgentAllowedStartupTime)
 
-			if !agent.NoSchedule && minAge.Unix() < time.Now().Unix() {
+			if !agent.NoSchedule && agentStartupExpectedUntil.Before(now) {
 				log.Info().Str("agent", agent.Name).Msg("drain agent")
 				agent.NoSchedule = true
 				_, err := a.client.AgentUpdate(agent)
