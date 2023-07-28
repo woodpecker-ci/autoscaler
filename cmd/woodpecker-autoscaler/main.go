@@ -8,6 +8,8 @@ import (
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"github.com/woodpecker-ci/autoscaler/drivers/hetznercloud"
+	"github.com/woodpecker-ci/autoscaler/engine"
 	"github.com/woodpecker-ci/autoscaler/providers/hetznercloud"
 	"github.com/woodpecker-ci/autoscaler/server"
 
@@ -15,7 +17,6 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/woodpecker-ci/autoscaler/config"
-	"github.com/woodpecker-ci/autoscaler/engine"
 )
 
 func setupProvider(ctx *cli.Context, config *config.Config) (engine.Provider, error) {
@@ -64,9 +65,14 @@ func run(ctx *cli.Context) error {
 
 	autoscaler := engine.NewAutoscaler(provider, client, config)
 
+	config.AgentAllowedStartupTime, err = time.ParseDuration(ctx.String("agent-allowed-startup-time"))
+	if err != nil {
+		return fmt.Errorf("can't parse agent-allowed-startup-time: %w", err)
+	}
+
 	reconciliationInterval, err := time.ParseDuration(ctx.String("reconciliation-interval"))
 	if err != nil {
-		return fmt.Errorf("can't parse reconciliation interval %v", ctx.String("reconciliation-interval"))
+		return fmt.Errorf("can't parse reconciliation-interval: %w", err)
 	}
 
 	for {

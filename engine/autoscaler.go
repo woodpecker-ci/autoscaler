@@ -88,14 +88,14 @@ func (a *Autoscaler) createAgents(ctx context.Context, amount int) error {
 }
 
 func (a *Autoscaler) drainAgents(_ context.Context, amount int) error {
-	for i := 0; i < amount; i++ {
-		now := time.Now()
-		for _, agent := range a.agents {
-			agentCreate := time.Unix(agent.Created, 0)
-			minAgentAgentAlive, _ := time.ParseDuration("10m")
+	now := time.Now()
 
-			if !agent.NoSchedule && agentCreate.Add(minAgentAgentAlive).Before(now) {
-				log.Info().Str("agent", agent.Name).Msg("draining agent")
+	for i := 0; i < amount; i++ {
+		for _, agent := range a.agents {
+			agentStartupExpectedUntil := time.Unix(agent.Created, 0).Add(a.config.AgentAllowedStartupTime)
+
+			if !agent.NoSchedule && agentStartupExpectedUntil.Before(now) {
+				log.Info().Str("agent", agent.Name).Msg("drain agent")
 				agent.NoSchedule = true
 				_, err := a.client.AgentUpdate(agent)
 				if err != nil {
