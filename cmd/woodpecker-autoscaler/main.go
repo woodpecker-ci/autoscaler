@@ -79,10 +79,7 @@ func run(ctx *cli.Context) error {
 		case <-ctx.Done():
 			return nil
 		case <-time.After(reconciliationInterval):
-			if err := autoscaler.Reconcile(ctx.Context); err != nil {
-				log.Error().Err(err).Msg("draining agents failed")
-				return err
-			}
+			autoscaler.Reconcile(ctx.Context)
 		}
 	}
 }

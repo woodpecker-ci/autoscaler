@@ -220,21 +220,24 @@ func (a *Autoscaler) calcAgents(ctx context.Context) (float64, error) {
 	return reqPoolAgents, nil
 }
 
-func (a *Autoscaler) Reconcile(ctx context.Context) error {
+func (a *Autoscaler) Reconcile(ctx context.Context) {
 	if err := a.loadAgents(ctx); err != nil {
-		return fmt.Errorf("loading agents failed: %w", err)
+		log.Error().Err(err).Msg("load agents failed")
+		return
 	}
 
 	reqPoolAgents, err := a.calcAgents(ctx)
 	if err != nil {
-		return fmt.Errorf("calculating agents failed: %w", err)
+		log.Error().Err(err).Msg("calculating agents failed")
+		return
 	}
 
 	if reqPoolAgents > 0 {
 		log.Debug().Msgf("starting %f additional agents", reqPoolAgents)
 
 		if err := a.createAgents(ctx, int(reqPoolAgents)); err != nil {
-			return fmt.Errorf("creating agents failed: %w", err)
+			log.Error().Err(err).Msg("creating agents failed")
+			return
 		}
 	}
 
@@ -243,17 +246,18 @@ func (a *Autoscaler) Reconcile(ctx context.Context) error {
 
 		log.Debug().Msgf("trying to stop %d agents", num)
 		if err := a.drainAgents(ctx, num); err != nil {
-			return fmt.Errorf("draining agents failed: %w", err)
+			log.Error().Err(err).Msg("draining agents failed")
+			return
 		}
 	}
 
 	if err := a.cleanupAgents(ctx); err != nil {
-		return fmt.Errorf("cleanup of agents failed: %w", err)
+		log.Error().Err(err).Msg("cleanup of agents failed")
+		return
 	}
 
 	if err := a.removeDrainedAgents(ctx); err != nil {
-		return fmt.Errorf("removing drained agents failed: %w", err)
+		log.Error().Err(err).Msg("removing drained agents failed")
+		return
 	}
-
-	return nil
 }
