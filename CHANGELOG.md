@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.1.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.1.1) - 2023-08-16
+
+### ❤️ Thanks to all contributors! ❤️
+
+@6543
+
+### Misc
+
+- don't require amd64 CPU architecture [[#10](https://github.com/woodpecker-ci/autoscaler/pull/10)]
+
 ## [0.1.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.1.0) - 2023-07-28
 
 ### ❤️ Thanks to all contributors! ❤️
