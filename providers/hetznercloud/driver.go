@@ -41,7 +41,7 @@ system_info:
 apt:
   sources:
     docker.list:
-      source: deb [arch=amd64] https://download.docker.com/linux/ubuntu $RELEASE stable
+      source: deb https://download.docker.com/linux/ubuntu $RELEASE stable
       keyid: 0EBFCD88
 
 packages:
