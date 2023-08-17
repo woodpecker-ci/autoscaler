@@ -1,12 +1,20 @@
 package engine
 
-import "strings"
+import (
+	"strings"
+
+	"github.com/rs/zerolog/log"
+)
 
 func SliceToMap(list []string, del string) map[string]string {
 	m := make(map[string]string)
 	for _, e := range list {
 		parts := strings.Split(e, del)
-		m[strings.TrimSpace(parts[0])] = strings.TrimSpace(parts[1])
+		if len(parts) == 2 {
+			m[strings.TrimSpace(parts[0])] = strings.TrimSpace(parts[1])
+		} else {
+			log.Debug().Msgf("could not split '%s' into key value pair with '=' delimiter", e)
+		}
 	}
 
 	return m
