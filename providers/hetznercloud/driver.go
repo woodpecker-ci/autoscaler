@@ -7,7 +7,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/hetznercloud/hcloud-go/hcloud"
+	"github.com/hetznercloud/hcloud-go/v2/hcloud"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/exp/maps"
 
