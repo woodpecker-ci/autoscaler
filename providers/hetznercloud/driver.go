@@ -157,7 +157,7 @@ func (d *Driver) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error
 
 	image, _, err := d.client.Image.GetByNameAndArchitecture(ctx, d.Image, serverType.Architecture)
 	if err != nil {
-		return fmt.Errorf("%s: GetByName: %w", d.Image, err)
+		return fmt.Errorf("%s: ImageGetByNameAndArchitecture: %w", d.Image, err)
 	}
 	if image == nil {
 		return fmt.Errorf("%s: %w: %s", d.Name, ErrImageNotFound, d.Image)
