@@ -127,7 +127,10 @@ func New(c *cli.Context, config *config.Config, name string) (engine.Provider, e
 
 	d.UserData = userdata
 
-	labels := engine.SliceToMap(c.StringSlice("hetznercloud-labels"), "=")
+	labels, err := engine.SliceToMap(c.StringSlice("hetznercloud-labels"), "=")
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", d.Name, err)
+	}
 	for _, key := range maps.Keys(labels) {
 		if strings.HasPrefix(key, d.LabelPrefix) {
 			return nil, fmt.Errorf("%s: %w: %s", d.Name, ErrIllegalLablePrefix, d.LabelPrefix)

@@ -1,23 +1,22 @@
 package engine
 
 import (
+	"fmt"
 	"strings"
-
-	"github.com/rs/zerolog/log"
 )
 
-func SliceToMap(list []string, del string) map[string]string {
+func SliceToMap(list []string, del string) (map[string]string, error) {
 	m := make(map[string]string)
 	for _, e := range list {
 		parts := strings.Split(e, del)
 		if len(parts) == 2 {
 			m[strings.TrimSpace(parts[0])] = strings.TrimSpace(parts[1])
 		} else {
-			log.Debug().Msgf("could not split '%s' into key value pair with '=' delimiter", e)
+			return nil, fmt.Errorf("could not split '%s' into key value pair with '=' delimiter", e)
 		}
 	}
 
-	return m
+	return m, nil
 }
 
 func MergeMaps(m1, m2 map[string]string) map[string]string {
