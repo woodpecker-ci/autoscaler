@@ -100,6 +100,11 @@ func main() {
 				zerolog.SetGlobalLevel(lvl)
 			}
 
+			// if debug or trace also log the caller
+			if zerolog.GlobalLevel() <= zerolog.DebugLevel {
+				log.Logger = log.With().Caller().Logger()
+			}
+
 			return nil
 		},
 		Action: run,

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/hetznercloud/hcloud-go/hcloud"
+	"github.com/hetznercloud/hcloud-go/v2/hcloud"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/exp/maps"
 
@@ -127,7 +127,10 @@ func New(c *cli.Context, config *config.Config, name string) (engine.Provider, e
 
 	d.UserData = userdata
 
-	labels := engine.SliceToMap(c.StringSlice("hetznercloud-labels"), "=")
+	labels, err := engine.SliceToMap(c.StringSlice("hetznercloud-labels"), "=")
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", d.Name, err)
+	}
 	for _, key := range maps.Keys(labels) {
 		if strings.HasPrefix(key, d.LabelPrefix) {
 			return nil, fmt.Errorf("%s: %w: %s", d.Name, ErrIllegalLablePrefix, d.LabelPrefix)
@@ -144,12 +147,17 @@ func (d *Driver) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error
 
 	userdataString, err := engine.RenderUserDataTemplate(d.Config, agent, d.UserData)
 	if err != nil {
-		return fmt.Errorf("%s: %w", d.Name, err)
+		return fmt.Errorf("%s: RenderUserDataTemplate: %w", d.Name, err)
 	}
 
-	image, _, err := d.client.Image.GetByName(ctx, d.Image)
+	serverType, _, err := d.client.ServerType.GetByName(ctx, d.ServerType)
 	if err != nil {
-		return fmt.Errorf("%s: %w", d.Image, err)
+		return fmt.Errorf("%s: ServerTypeGetByName: %w", d.Name, err)
+	}
+
+	image, _, err := d.client.Image.GetByNameAndArchitecture(ctx, d.Image, serverType.Architecture)
+	if err != nil {
+		return fmt.Errorf("%s: ImageGetByNameAndArchitecture: %w", d.Image, err)
 	}
 	if image == nil {
 		return fmt.Errorf("%s: %w: %s", d.Name, ErrImageNotFound, d.Image)
@@ -159,7 +167,7 @@ func (d *Driver) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error
 	for _, item := range d.SSHKeys {
 		key, _, err := d.client.SSHKey.GetByName(ctx, item)
 		if err != nil {
-			return fmt.Errorf("%s: %w", d.Image, err)
+			return fmt.Errorf("%s: SSHKeyGetByName: %w", d.Image, err)
 		}
 		if key == nil {
 			return fmt.Errorf("%s: %w: %s", d.Name, ErrSSHKeyNotFound, item)
@@ -171,7 +179,7 @@ func (d *Driver) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error
 	for _, item := range d.Networks {
 		network, _, err := d.client.Network.GetByName(ctx, item)
 		if err != nil {
-			return fmt.Errorf("%s: %w", d.Image, err)
+			return fmt.Errorf("%s: NetworkGetByName: %w", d.Image, err)
 		}
 		if network == nil {
 			return fmt.Errorf("%s: %w: %s", d.Name, ErrNetworkNotFound, item)
@@ -183,7 +191,7 @@ func (d *Driver) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error
 	for _, item := range d.Firewalls {
 		fw, _, err := d.client.Firewall.GetByName(ctx, item)
 		if err != nil {
-			return fmt.Errorf("%s: %w", d.Image, err)
+			return fmt.Errorf("%s: FirewallGetByName: %w", d.Image, err)
 		}
 		if fw == nil {
 			return fmt.Errorf("%s: %w: %s", d.Name, ErrFirewallNotFound, item)
@@ -198,20 +206,18 @@ func (d *Driver) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error
 		Location: &hcloud.Location{
 			Name: d.Location,
 		},
-		ServerType: &hcloud.ServerType{
-			Name: d.ServerType,
-		},
-		SSHKeys:   sshKeys,
-		Networks:  networks,
-		Firewalls: firewalls,
-		Labels:    labels,
+		ServerType: serverType,
+		SSHKeys:    sshKeys,
+		Networks:   networks,
+		Firewalls:  firewalls,
+		Labels:     labels,
 		PublicNet: &hcloud.ServerCreatePublicNet{
 			EnableIPv4: d.EnableIPv4,
 			EnableIPv6: d.EnableIPv6,
 		},
 	})
 	if err != nil {
-		return fmt.Errorf("%s: %w", d.Name, err)
+		return fmt.Errorf("%s: ServerCreate: %w", d.Name, err)
 	}
 
 	return nil
