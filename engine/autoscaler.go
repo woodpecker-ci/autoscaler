@@ -33,7 +33,7 @@ func (a *Autoscaler) getQueueInfo(_ context.Context) (freeTasks, runningTasks, p
 		return -1, -1, -1, fmt.Errorf("client.QueueInfo: %w", err)
 	}
 
-	return info.Stats.Workers, info.Stats.Running, info.Stats.Pending + info.Stats.WaitingOnDeps, nil
+	return info.Stats.Workers, info.Stats.Running, info.Stats.Pending, nil
 }
 
 func (a *Autoscaler) loadAgents(_ context.Context) error {
