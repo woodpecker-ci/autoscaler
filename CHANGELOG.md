@@ -1,18 +1,19 @@
 # Changelog
 
-## [0.2.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.2.0) - 2023-08-18
+## [0.2.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.2.0) - 2023-08-22
 
 ### ❤️ Thanks to all contributors! ❤️
 
-@6543
+@xoxys, @6543
+
+### 📈 Enhancement
+
+- Ignore WaitingOnDeps for agent calculation [[#14](https://github.com/woodpecker-ci/autoscaler/pull/14)]
+- don't require amd64 CPU architecture [[#10](https://github.com/woodpecker-ci/autoscaler/pull/10)]
 
 ### 🐛 Bug Fixes
 
 - Update hetznercloud driver [[#12](https://github.com/woodpecker-ci/autoscaler/pull/12)]
-
-### 📈 Enhancement
-
-- don't require amd64 CPU architecture [[#10](https://github.com/woodpecker-ci/autoscaler/pull/10)]
 
 ## [0.1.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.1.1) - 2023-08-16
 
