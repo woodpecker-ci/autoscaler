@@ -70,8 +70,8 @@ type Driver struct {
 	InstanceType  string
 	Image         string
 	Config        *config.Config
-	SSH_Key       string
-	Root_pass     string
+	SSHKey        string
+	RootPass      string
 	StackscriptID int
 	PrivateIP     bool
 	UserData      *template.Template
@@ -87,8 +87,8 @@ func New(c *cli.Context, config *config.Config, name string) (engine.Provider, e
 		Region:        c.String("linode-region"),
 		InstanceType:  c.String("linode-instance-type"),
 		Image:         c.String("linode-image"),
-		SSH_Key:       c.String("linode-ssh-key"),
-		Root_pass:     c.String("linode-root-pass"),
+		SSHKey:        c.String("linode-ssh-key"),
+		RootPass:      c.String("linode-root-pass"),
 		StackscriptID: c.Int("linode-stackscript-id"),
 		LabelPrefix:   "wp.autoscaler/",
 		Config:        config,
@@ -118,14 +118,13 @@ func New(c *cli.Context, config *config.Config, name string) (engine.Provider, e
 }
 
 func (d *Driver) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
-
 	userdataString, err := engine.RenderUserDataTemplate(d.Config, agent, d.UserData)
 	if err != nil {
 		return fmt.Errorf("%s: RenderUserDataTemplate: %w", d.Name, err)
 	}
 
-	userdata_map := make(map[string]string)
-	userdata_map["userdata"] = b64.StdEncoding.EncodeToString([]byte(userdataString))
+	userdataMap := make(map[string]string)
+	userdataMap["userdata"] = b64.StdEncoding.EncodeToString([]byte(userdataString))
 
 	_, err = d.Client.CreateInstance(ctx, linodego.InstanceCreateOptions{
 		Region:          d.Region,
@@ -133,9 +132,9 @@ func (d *Driver) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error
 		Label:           agent.Name,
 		Image:           d.Image,
 		StackScriptID:   int(d.StackscriptID),
-		StackScriptData: userdata_map,
-		AuthorizedKeys:  []string{d.SSH_Key},
-		RootPass:        d.Root_pass,
+		StackScriptData: userdataMap,
+		AuthorizedKeys:  []string{d.SSHKey},
+		RootPass:        d.RootPass,
 		Tags:            d.Tags,
 	})
 
@@ -147,7 +146,6 @@ func (d *Driver) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error
 }
 
 func (d *Driver) getAgent(ctx context.Context, agent *woodpecker.Agent) (*linodego.Instance, error) {
-
 	f := linodego.Filter{}
 	f.AddField(linodego.Eq, "label", agent.Name)
 	fStr, err := f.MarshalJSON()
@@ -205,7 +203,6 @@ func (d *Driver) ListDeployedAgentNames(ctx context.Context) ([]string, error) {
 }
 
 func (d *Driver) setupKeypair(ctx context.Context) error {
-
 	res, err := d.Client.ListSSHKeys(ctx, nil)
 	if err != nil {
 		return err
@@ -223,7 +220,7 @@ func (d *Driver) setupKeypair(ctx context.Context) error {
 		if !ok {
 			continue
 		}
-		d.SSH_Key = fingerprint
+		d.SSHKey = fingerprint
 
 		return nil
 	}
@@ -232,7 +229,7 @@ func (d *Driver) setupKeypair(ctx context.Context) error {
 	// one keypair already created we will select the first
 	// in the list.
 	if len(res) > 0 {
-		d.SSH_Key = res[0].SSHKey
+		d.SSHKey = res[0].SSHKey
 		return nil
 	}
 	// "No matching keys"
