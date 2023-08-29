@@ -10,6 +10,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/woodpecker-ci/autoscaler/engine"
 	"github.com/woodpecker-ci/autoscaler/providers/hetznercloud"
+	"github.com/woodpecker-ci/autoscaler/providers/linode"
 	"github.com/woodpecker-ci/autoscaler/server"
 
 	_ "github.com/joho/godotenv/autoload"
@@ -22,6 +23,8 @@ func setupProvider(ctx *cli.Context, config *config.Config) (engine.Provider, er
 	switch driver := ctx.String("provider"); driver {
 	case "hetznercloud":
 		return hetznercloud.New(ctx, config, driver)
+	case "linode":
+		return linode.New(ctx, config, driver)
 	case "":
 		return nil, fmt.Errorf("Please select a provider")
 	}
@@ -112,6 +115,8 @@ func main() {
 
 	// Register hetznercloud flags
 	app.Flags = append(app.Flags, hetznercloud.DriverFlags...)
+	// Register linode flags
+	app.Flags = append(app.Flags, linode.DriverFlags...)
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal().Err(err).Msg("")
