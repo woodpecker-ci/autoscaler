@@ -52,14 +52,14 @@ cat > /root/docker-compose.yml <<'EOS'
 version: '3'
 services:
   woodpecker-agent:
-	image: {{ .Image }}
-	restart: always
-	volumes:
-	  - /var/run/docker.sock:/var/run/docker.sock
-	environment:
-	  {{- range $key, $value := .Environment }}
-		- {{ $key }}={{ $value }}
-	  {{- end }}
+    image: {{ .Image }}
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      {{- range $key, $value := .Environment }}
+        - {{ $key }}={{ $value }}
+      {{- end }}
 EOS
 
 cd /root && docker compose up -d`
