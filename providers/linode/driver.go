@@ -238,7 +238,6 @@ func (d *Driver) setupKeypair(ctx context.Context) error {
 }
 
 func newClient(apiKey string) *linodego.Client {
-
 	tokenSource := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: apiKey})
 
 	oauth2Client := &http.Client{
