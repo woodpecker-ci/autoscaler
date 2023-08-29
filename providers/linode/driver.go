@@ -26,6 +26,7 @@ var (
 	ErrFirewallNotFound   = errors.New("firewall not found")
 )
 
+// editorconfig-checker-disable
 var optionUserDataDefault = `
 #!/bin/bash
 
@@ -63,6 +64,7 @@ EOS
 
 cd /root && docker compose up -d`
 
+// editorconfig-checker-enable
 type Driver struct {
 	Region        string
 	Token         string
