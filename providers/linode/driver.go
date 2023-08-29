@@ -190,7 +190,6 @@ func (d *Driver) ListDeployedAgentNames(ctx context.Context) ([]string, error) {
 	}
 	opts := linodego.NewListOptions(0, string(fStr))
 	servers, err := d.Client.ListInstances(ctx, opts)
-
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", d.Name, err)
 	}
