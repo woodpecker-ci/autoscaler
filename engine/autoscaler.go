@@ -8,8 +8,9 @@ import (
 	"time"
 
 	"github.com/rs/zerolog/log"
-	"github.com/woodpecker-ci/autoscaler/config"
 	"github.com/woodpecker-ci/woodpecker/woodpecker-go/woodpecker"
+
+	"github.com/woodpecker-ci/autoscaler/config"
 )
 
 type Autoscaler struct {

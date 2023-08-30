@@ -6,22 +6,21 @@ import (
 	"strings"
 	"time"
 
+	_ "github.com/joho/godotenv/autoload"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"github.com/woodpecker-ci/autoscaler/engine"
-	"github.com/woodpecker-ci/autoscaler/providers/hetznercloud"
-	"github.com/woodpecker-ci/autoscaler/server"
-
-	_ "github.com/joho/godotenv/autoload"
 	"github.com/urfave/cli/v2"
 
 	"github.com/woodpecker-ci/autoscaler/config"
+	"github.com/woodpecker-ci/autoscaler/engine"
+	"github.com/woodpecker-ci/autoscaler/providers/hetznercloud"
+	"github.com/woodpecker-ci/autoscaler/server"
 )
 
 func setupProvider(ctx *cli.Context, config *config.Config) (engine.Provider, error) {
-	switch driver := ctx.String("provider"); driver {
+	switch ctx.String("provider") {
 	case "hetznercloud":
-		return hetznercloud.New(ctx, config, driver)
+		return hetznercloud.New(ctx, config)
 	case "":
 		return nil, fmt.Errorf("Please select a provider")
 	}
