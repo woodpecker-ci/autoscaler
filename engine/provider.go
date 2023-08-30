@@ -6,8 +6,9 @@ import (
 	"fmt"
 	"text/template"
 
-	"github.com/woodpecker-ci/autoscaler/config"
 	"github.com/woodpecker-ci/woodpecker/woodpecker-go/woodpecker"
+
+	"github.com/woodpecker-ci/autoscaler/config"
 )
 
 type Provider interface {
