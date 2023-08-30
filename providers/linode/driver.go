@@ -66,41 +66,38 @@ cd /root && docker compose up -d`
 
 // editorconfig-checker-enable
 type Driver struct {
-	Region        string
-	Token         string
-	Name          string
-	InstanceType  string
-	Image         string
-	Config        *config.Config
-	SSHKey        string
-	RootPass      string
-	StackscriptID int
-	PrivateIP     bool
-	UserData      *template.Template
-	Tags          []string
-	LabelPrefix   string
-	Client        *linodego.Client
+	region        string
+	name          string
+	instanceType  string
+	image         string
+	config        *config.Config
+	sshKey        string
+	rootPass      string
+	stackscriptID int
+	privateIP     bool
+	userData      *template.Template
+	tags          []string
+	labelPrefix   string
+	client        *linodego.Client
 }
 
-func New(c *cli.Context, config *config.Config, name string) (engine.Provider, error) {
+func New(c *cli.Context, config *config.Config) (engine.Provider, error) {
 	d := &Driver{
-		Name:          name,
-		Token:         c.String("linode-api-token"),
-		Region:        c.String("linode-region"),
-		InstanceType:  c.String("linode-instance-type"),
-		Image:         c.String("linode-image"),
-		SSHKey:        c.String("linode-ssh-key"),
-		RootPass:      c.String("linode-root-pass"),
-		StackscriptID: c.Int("linode-stackscript-id"),
-		LabelPrefix:   "wp.autoscaler/",
-		Config:        config,
+		name:          "linode",
+		region:        c.String("linode-region"),
+		instanceType:  c.String("linode-instance-type"),
+		image:         c.String("linode-image"),
+		sshKey:        c.String("linode-ssh-key"),
+		rootPass:      c.String("linode-root-pass"),
+		stackscriptID: c.Int("linode-stackscript-id"),
+		config:        config,
 	}
 
-	d.Client = newClient(d.Token)
+	d.client = newClient(c.String("linode-api-token"))
 	ctx := context.Background()
 	err := d.setupKeypair(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("%s: setupKeypair: %w", d.Name, err)
+		return nil, fmt.Errorf("%s: setupKeypair: %w", d.name, err)
 	}
 
 	if userdata := c.String("linode-user-data"); userdata != "" {
@@ -109,39 +106,39 @@ func New(c *cli.Context, config *config.Config, name string) (engine.Provider, e
 
 	userdata, err := template.New("user-data").Parse(optionUserDataDefault)
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", d.Name, err)
+		return nil, fmt.Errorf("%s: %w", d.name, err)
 	}
 
-	d.UserData = userdata
+	d.userData = userdata
 
-	d.Tags = c.StringSlice("linode-tags")
+	d.tags = c.StringSlice("linode-tags")
 
 	return d, nil
 }
 
 func (d *Driver) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
-	userdataString, err := engine.RenderUserDataTemplate(d.Config, agent, d.UserData)
+	userdataString, err := engine.RenderUserDataTemplate(d.config, agent, d.userData)
 	if err != nil {
-		return fmt.Errorf("%s: RenderUserDataTemplate: %w", d.Name, err)
+		return fmt.Errorf("%s: RenderUserDataTemplate: %w", d.name, err)
 	}
 
 	userdataMap := make(map[string]string)
 	userdataMap["userdata"] = b64.StdEncoding.EncodeToString([]byte(userdataString))
 
-	_, err = d.Client.CreateInstance(ctx, linodego.InstanceCreateOptions{
-		Region:          d.Region,
-		Type:            d.InstanceType,
+	_, err = d.client.CreateInstance(ctx, linodego.InstanceCreateOptions{
+		Region:          d.region,
+		Type:            d.instanceType,
 		Label:           agent.Name,
-		Image:           d.Image,
-		StackScriptID:   int(d.StackscriptID),
+		Image:           d.image,
+		StackScriptID:   int(d.stackscriptID),
 		StackScriptData: userdataMap,
-		AuthorizedKeys:  []string{d.SSHKey},
-		RootPass:        d.RootPass,
-		Tags:            d.Tags,
+		AuthorizedKeys:  []string{d.sshKey},
+		RootPass:        d.rootPass,
+		Tags:            d.tags,
 	})
 
 	if err != nil {
-		return fmt.Errorf("%s: ServerCreate: %w", d.Name, err)
+		return fmt.Errorf("%s: ServerCreate: %w", d.name, err)
 	}
 
 	return nil
@@ -152,12 +149,12 @@ func (d *Driver) getAgent(ctx context.Context, agent *woodpecker.Agent) (*linode
 	f.AddField(linodego.Eq, "label", agent.Name)
 	fStr, err := f.MarshalJSON()
 	if err != nil {
-		return nil, fmt.Errorf("%s: getAgent: %w", d.Name, err)
+		return nil, fmt.Errorf("%s: getAgent: %w", d.name, err)
 	}
 	opts := linodego.NewListOptions(0, string(fStr))
-	server, err := d.Client.ListInstances(ctx, opts)
+	server, err := d.client.ListInstances(ctx, opts)
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", d.Name, err)
+		return nil, fmt.Errorf("%s: ListInstances %w", d.name, err)
 	}
 
 	return &server[0], nil
@@ -166,16 +163,16 @@ func (d *Driver) getAgent(ctx context.Context, agent *woodpecker.Agent) (*linode
 func (d *Driver) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) error {
 	server, err := d.getAgent(ctx, agent)
 	if err != nil {
-		return fmt.Errorf("%s: %w", d.Name, err)
+		return fmt.Errorf("%s: getAgent %w", d.name, err)
 	}
 
 	if server == nil {
 		return nil
 	}
 
-	err = d.Client.DeleteInstance(ctx, server.ID)
+	err = d.client.DeleteInstance(ctx, server.ID)
 	if err != nil {
-		return fmt.Errorf("%s: %w", d.Name, err)
+		return fmt.Errorf("%s: %w", d.name, err)
 	}
 
 	return nil
@@ -191,9 +188,9 @@ func (d *Driver) ListDeployedAgentNames(ctx context.Context) ([]string, error) {
 		log.Fatal(err)
 	}
 	opts := linodego.NewListOptions(0, string(fStr))
-	servers, err := d.Client.ListInstances(ctx, opts)
+	servers, err := d.client.ListInstances(ctx, opts)
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", d.Name, err)
+		return nil, fmt.Errorf("%s: %w", d.name, err)
 	}
 
 	for _, server := range servers {
@@ -204,7 +201,7 @@ func (d *Driver) ListDeployedAgentNames(ctx context.Context) ([]string, error) {
 }
 
 func (d *Driver) setupKeypair(ctx context.Context) error {
-	res, err := d.Client.ListSSHKeys(ctx, nil)
+	res, err := d.client.ListSSHKeys(ctx, nil)
 	if err != nil {
 		return err
 	}
@@ -221,7 +218,7 @@ func (d *Driver) setupKeypair(ctx context.Context) error {
 		if !ok {
 			continue
 		}
-		d.SSHKey = fingerprint
+		d.sshKey = fingerprint
 
 		return nil
 	}
@@ -230,7 +227,7 @@ func (d *Driver) setupKeypair(ctx context.Context) error {
 	// one keypair already created we will select the first
 	// in the list.
 	if len(res) > 0 {
-		d.SSHKey = res[0].SSHKey
+		d.sshKey = res[0].SSHKey
 		return nil
 	}
 	// "No matching keys"
