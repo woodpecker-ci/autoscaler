@@ -25,7 +25,7 @@ var (
 )
 
 // editorconfig-checker-disable
-var optionUserDataDefault = `
+var stackscriptUserDataDefault = `
 #!/bin/bash
 
 # Install Pre-requisites
@@ -90,22 +90,26 @@ func New(c *cli.Context, config *config.Config) (engine.Provider, error) {
 	}
 
 	d.client = newClient(c.String("linode-api-token"))
+
 	ctx := context.Background()
 	err := d.setupKeypair(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("%s: setupKeypair: %w", d.name, err)
 	}
 
-	if userdata := c.String("linode-user-data"); userdata != "" {
-		optionUserDataDefault = userdata
+	userDataStr := engine.CloudInitUserDataUbuntuDefault
+	// TODO: remove once linode user-data feature is out of beta
+	if d.stackscriptID != -1 {
+		userDataStr = stackscriptUserDataDefault
 	}
-
-	userdata, err := template.New("user-data").Parse(optionUserDataDefault)
+	if _userDataStr := c.String("linode-user-data"); _userDataStr != "" {
+		userDataStr = _userDataStr
+	}
+	userDataTmpl, err := template.New("user-data").Parse(userDataStr)
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", d.name, err)
+		return nil, fmt.Errorf("%s: template.New.Parse %w", d.name, err)
 	}
-
-	d.userData = userdata
+	d.userData = userDataTmpl
 
 	d.tags = c.StringSlice("linode-tags")
 
@@ -117,20 +121,32 @@ func (d *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 	if err != nil {
 		return fmt.Errorf("%s: RenderUserDataTemplate: %w", d.name, err)
 	}
+	userData := b64.StdEncoding.EncodeToString([]byte(userdataString))
 
 	userdataMap := make(map[string]string)
-	userdataMap["userdata"] = b64.StdEncoding.EncodeToString([]byte(userdataString))
+
+	var metadata *linodego.InstanceMetadataOptions
+
+	// TODO: remove once linode user-data is out of beta
+	if d.stackscriptID == -1 {
+		metadata = &linodego.InstanceMetadataOptions{
+			UserData: userData,
+		}
+	} else {
+		userdataMap["userdata"] = userData
+	}
 
 	_, err = d.client.CreateInstance(ctx, linodego.InstanceCreateOptions{
 		Region:          d.region,
 		Type:            d.instanceType,
 		Label:           agent.Name,
 		Image:           d.image,
-		StackScriptID:   int(d.stackscriptID),
+		StackScriptID:   d.stackscriptID,
 		StackScriptData: userdataMap,
 		AuthorizedKeys:  []string{d.sshKey},
 		RootPass:        d.rootPass,
 		Tags:            d.tags,
+		Metadata:        metadata,
 	})
 
 	if err != nil {
@@ -168,7 +184,7 @@ func (d *Provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) err
 
 	err = d.client.DeleteInstance(ctx, server.ID)
 	if err != nil {
-		return fmt.Errorf("%s: %w", d.name, err)
+		return fmt.Errorf("%s: DeleteInstance %w", d.name, err)
 	}
 
 	return nil
@@ -186,7 +202,7 @@ func (d *Provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 	opts := linodego.NewListOptions(0, string(fStr))
 	servers, err := d.client.ListInstances(ctx, opts)
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", d.name, err)
+		return nil, fmt.Errorf("%s: ListInstances %w", d.name, err)
 	}
 
 	for _, server := range servers {

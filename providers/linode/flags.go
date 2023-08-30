@@ -34,7 +34,7 @@ var DriverFlags = []cli.Flag{
 	&cli.IntFlag{
 		Name:     "linode-stackscript-id",
 		Value:    1227924,
-		Usage:    "Linode Stackscript ID",
+		Usage:    "Linode Stackscript ID (set to -1 to use the beta user-data feature instead)",
 		EnvVars:  []string{"WOODPECKER_LINODE_STACKSCRIPT_ID"},
 		Category: category,
 	},
