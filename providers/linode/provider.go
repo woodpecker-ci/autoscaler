@@ -22,8 +22,6 @@ var (
 	ErrIllegalLablePrefix = errors.New("illegal label prefix")
 	ErrImageNotFound      = errors.New("image not found")
 	ErrSSHKeyNotFound     = errors.New("SSH key not found")
-	ErrNetworkNotFound    = errors.New("network not found")
-	ErrFirewallNotFound   = errors.New("firewall not found")
 )
 
 // editorconfig-checker-disable
@@ -65,7 +63,7 @@ EOS
 cd /root && docker compose up -d`
 
 // editorconfig-checker-enable
-type Driver struct {
+type Provider struct {
 	region        string
 	name          string
 	instanceType  string
@@ -74,15 +72,13 @@ type Driver struct {
 	sshKey        string
 	rootPass      string
 	stackscriptID int
-	privateIP     bool
 	userData      *template.Template
 	tags          []string
-	labelPrefix   string
 	client        *linodego.Client
 }
 
 func New(c *cli.Context, config *config.Config) (engine.Provider, error) {
-	d := &Driver{
+	d := &Provider{
 		name:          "linode",
 		region:        c.String("linode-region"),
 		instanceType:  c.String("linode-instance-type"),
@@ -116,7 +112,7 @@ func New(c *cli.Context, config *config.Config) (engine.Provider, error) {
 	return d, nil
 }
 
-func (d *Driver) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
+func (d *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
 	userdataString, err := engine.RenderUserDataTemplate(d.config, agent, d.userData)
 	if err != nil {
 		return fmt.Errorf("%s: RenderUserDataTemplate: %w", d.name, err)
@@ -144,7 +140,7 @@ func (d *Driver) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error
 	return nil
 }
 
-func (d *Driver) getAgent(ctx context.Context, agent *woodpecker.Agent) (*linodego.Instance, error) {
+func (d *Provider) getAgent(ctx context.Context, agent *woodpecker.Agent) (*linodego.Instance, error) {
 	f := linodego.Filter{}
 	f.AddField(linodego.Eq, "label", agent.Name)
 	fStr, err := f.MarshalJSON()
@@ -160,7 +156,7 @@ func (d *Driver) getAgent(ctx context.Context, agent *woodpecker.Agent) (*linode
 	return &server[0], nil
 }
 
-func (d *Driver) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) error {
+func (d *Provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) error {
 	server, err := d.getAgent(ctx, agent)
 	if err != nil {
 		return fmt.Errorf("%s: getAgent %w", d.name, err)
@@ -178,7 +174,7 @@ func (d *Driver) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) error
 	return nil
 }
 
-func (d *Driver) ListDeployedAgentNames(ctx context.Context) ([]string, error) {
+func (d *Provider) ListDeployedAgentNames(ctx context.Context) ([]string, error) {
 	var names []string
 
 	f := linodego.Filter{}
@@ -200,7 +196,7 @@ func (d *Driver) ListDeployedAgentNames(ctx context.Context) ([]string, error) {
 	return names, nil
 }
 
-func (d *Driver) setupKeypair(ctx context.Context) error {
+func (d *Provider) setupKeypair(ctx context.Context) error {
 	res, err := d.client.ListSSHKeys(ctx, nil)
 	if err != nil {
 		return err
