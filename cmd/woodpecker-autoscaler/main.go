@@ -13,6 +13,7 @@ import (
 
 	"github.com/woodpecker-ci/autoscaler/config"
 	"github.com/woodpecker-ci/autoscaler/engine"
+	"github.com/woodpecker-ci/autoscaler/providers/digitalocean"
 	"github.com/woodpecker-ci/autoscaler/providers/hetznercloud"
 	"github.com/woodpecker-ci/autoscaler/server"
 )
@@ -21,6 +22,8 @@ func setupProvider(ctx *cli.Context, config *config.Config) (engine.Provider, er
 	switch ctx.String("provider") {
 	case "hetznercloud":
 		return hetznercloud.New(ctx, config)
+	case "digitalocean":
+		return digitalocean.New(ctx, config)
 	case "":
 		return nil, fmt.Errorf("Please select a provider")
 	}

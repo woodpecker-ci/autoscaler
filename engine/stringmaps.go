@@ -19,6 +19,14 @@ func SliceToMap(list []string, del string) (map[string]string, error) {
 	return m, nil
 }
 
+func MapToSlice(m map[string]string, del string) []string {
+	var list []string
+	for k, v := range m {
+		list = append(list, fmt.Sprintf("%s%s%s", k, del, v))
+	}
+	return list
+}
+
 func MergeMaps(m1, m2 map[string]string) map[string]string {
 	merged := make(map[string]string)
 	for k, v := range m1 {
