@@ -24,7 +24,7 @@ var (
 	ErrFirewallNotFound   = errors.New("firewall not found")
 )
 
-type Driver struct {
+type Provider struct {
 	name       string
 	serverType string
 	userData   *template.Template
@@ -41,7 +41,7 @@ type Driver struct {
 }
 
 func New(c *cli.Context, config *config.Config) (engine.Provider, error) {
-	d := &Driver{
+	d := &Provider{
 		name:       "hetznercloud",
 		location:   c.String("hetznercloud-location"),
 		serverType: c.String("hetznercloud-server-type"),
@@ -85,7 +85,7 @@ func New(c *cli.Context, config *config.Config) (engine.Provider, error) {
 	return d, nil
 }
 
-func (d *Driver) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
+func (d *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
 	userdataString, err := engine.RenderUserDataTemplate(d.config, agent, d.userData)
 	if err != nil {
 		return fmt.Errorf("%s: RenderUserDataTemplate: %w", d.name, err)
@@ -164,7 +164,7 @@ func (d *Driver) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error
 	return nil
 }
 
-func (d *Driver) getAgent(ctx context.Context, agent *woodpecker.Agent) (*hcloud.Server, error) {
+func (d *Provider) getAgent(ctx context.Context, agent *woodpecker.Agent) (*hcloud.Server, error) {
 	server, _, err := d.client.Server.GetByName(ctx, agent.Name)
 	if err != nil {
 		return nil, fmt.Errorf("%s: Server.GetByName %w", d.name, err)
@@ -173,7 +173,7 @@ func (d *Driver) getAgent(ctx context.Context, agent *woodpecker.Agent) (*hcloud
 	return server, nil
 }
 
-func (d *Driver) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) error {
+func (d *Provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) error {
 	server, err := d.getAgent(ctx, agent)
 	if err != nil {
 		return fmt.Errorf("%s: getAgent %w", d.name, err)
@@ -191,7 +191,7 @@ func (d *Driver) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) error
 	return nil
 }
 
-func (d *Driver) ListDeployedAgentNames(ctx context.Context) ([]string, error) {
+func (d *Provider) ListDeployedAgentNames(ctx context.Context) ([]string, error) {
 	var names []string
 
 	servers, err := d.client.Server.AllWithOpts(ctx,
