@@ -1,10 +1,14 @@
 # Changelog
 
-## [0.2.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.2.0) - 2023-08-30
+## [0.2.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.2.0) - 2023-09-03
 
 ### ❤️ Thanks to all contributors! ❤️
 
-@xoxys, @6543
+@maltejur, @xoxys, @6543
+
+### 📚 Documentation
+
+- Document `WOODPECKER_PROVIDER` [[#19](https://github.com/woodpecker-ci/autoscaler/pull/19)]
 
 ### 📈 Enhancement
 
