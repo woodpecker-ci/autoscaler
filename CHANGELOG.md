@@ -1,10 +1,10 @@
 # Changelog
 
-## [0.2.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.2.0) - 2023-09-03
+## [0.2.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.2.0) - 2023-10-05
 
 ### ❤️ Thanks to all contributors! ❤️
 
-@maltejur, @xoxys, @6543
+@renovate[bot], @pat-s, @maltejur, @xoxys, @6543
 
 ### 📚 Documentation
 
@@ -18,6 +18,12 @@
 ### 🐛 Bug Fixes
 
 - Update hetznercloud driver [[#12](https://github.com/woodpecker-ci/autoscaler/pull/12)]
+
+### Misc
+
+- Update module github.com/urfave/cli/v2 to v2.25.7 [[#22](https://github.com/woodpecker-ci/autoscaler/pull/22)]
+- Update golang.org/x/exp digest to 9212866 [[#21](https://github.com/woodpecker-ci/autoscaler/pull/21)]
+- Add renovate [[#20](https://github.com/woodpecker-ci/autoscaler/pull/20)]
 
 ## [0.1.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.1.0) - 2023-07-28
 
