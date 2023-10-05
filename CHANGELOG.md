@@ -21,6 +21,7 @@
 
 ### Misc
 
+- Update golang Docker tag [[#26](https://github.com/woodpecker-ci/autoscaler/pull/26)]
 - Update module github.com/urfave/cli/v2 to v2.25.7 [[#22](https://github.com/woodpecker-ci/autoscaler/pull/22)]
 - Update golang.org/x/exp digest to 9212866 [[#21](https://github.com/woodpecker-ci/autoscaler/pull/21)]
 - Add renovate [[#20](https://github.com/woodpecker-ci/autoscaler/pull/20)]
