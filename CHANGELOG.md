@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.2.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.2.0) - 2023-10-05
+## [0.2.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.2.0) - 2023-10-06
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -21,6 +21,7 @@
 
 ### Misc
 
+- Update module github.com/rs/zerolog to v1.31.0 [[#28](https://github.com/woodpecker-ci/autoscaler/pull/28)]
 - Update golang Docker tag [[#26](https://github.com/woodpecker-ci/autoscaler/pull/26)]
 - Update module github.com/urfave/cli/v2 to v2.25.7 [[#22](https://github.com/woodpecker-ci/autoscaler/pull/22)]
 - Update golang.org/x/exp digest to 9212866 [[#21](https://github.com/woodpecker-ci/autoscaler/pull/21)]
