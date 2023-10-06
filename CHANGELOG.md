@@ -21,6 +21,9 @@
 
 ### Misc
 
+- Update module golang.org/x/oauth2 to v0.13.0 [[#32](https://github.com/woodpecker-ci/autoscaler/pull/32)]
+- Update module github.com/hetznercloud/hcloud-go/v2 to v2.3.0 [[#27](https://github.com/woodpecker-ci/autoscaler/pull/27)]
+- Update golang Docker tag to v1.21.2 [[#30](https://github.com/woodpecker-ci/autoscaler/pull/30)]
 - Update golang.org/x/exp digest to 7918f67 [[#29](https://github.com/woodpecker-ci/autoscaler/pull/29)]
 - Update module golang.org/x/net to v0.16.0 [[#31](https://github.com/woodpecker-ci/autoscaler/pull/31)]
 - Update module github.com/rs/zerolog to v1.31.0 [[#28](https://github.com/woodpecker-ci/autoscaler/pull/28)]
