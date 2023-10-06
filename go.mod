@@ -11,7 +11,7 @@ require (
 	github.com/woodpecker-ci/woodpecker v0.15.1-0.20230514144654-1f9d94356439
 	golang.org/x/exp v0.0.0-20231006140011-7918f672742d
 	golang.org/x/net v0.16.0
-	golang.org/x/oauth2 v0.8.0
+	golang.org/x/oauth2 v0.13.0
 )
 
 require (
