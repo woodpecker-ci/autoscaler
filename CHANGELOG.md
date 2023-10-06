@@ -21,6 +21,7 @@
 
 ### Misc
 
+- Update Node.js to v20 [[#33](https://github.com/woodpecker-ci/autoscaler/pull/33)]
 - Update module golang.org/x/oauth2 to v0.13.0 [[#32](https://github.com/woodpecker-ci/autoscaler/pull/32)]
 - Update module github.com/hetznercloud/hcloud-go/v2 to v2.3.0 [[#27](https://github.com/woodpecker-ci/autoscaler/pull/27)]
 - Update golang Docker tag to v1.21.2 [[#30](https://github.com/woodpecker-ci/autoscaler/pull/30)]
