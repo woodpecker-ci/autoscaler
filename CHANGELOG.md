@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.2.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.2.0) - 2023-10-06
+## [0.2.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.2.0) - 2023-10-10
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -21,6 +21,7 @@
 
 ### Misc
 
+- Update mstruebing/editorconfig-checker Docker tag to v2.7.2 [[#35](https://github.com/woodpecker-ci/autoscaler/pull/35)]
 - Update module github.com/woodpecker-ci/woodpecker to v1 [[#34](https://github.com/woodpecker-ci/autoscaler/pull/34)]
 - Update Node.js to v20 [[#33](https://github.com/woodpecker-ci/autoscaler/pull/33)]
 - Update module golang.org/x/oauth2 to v0.13.0 [[#32](https://github.com/woodpecker-ci/autoscaler/pull/32)]
