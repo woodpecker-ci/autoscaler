@@ -21,6 +21,7 @@
 
 ### Misc
 
+- Update golang Docker tag to v1.21.3 [[#37](https://github.com/woodpecker-ci/autoscaler/pull/37)]
 - Update module golang.org/x/net to v0.17.0 [[#36](https://github.com/woodpecker-ci/autoscaler/pull/36)]
 - Update mstruebing/editorconfig-checker Docker tag to v2.7.2 [[#35](https://github.com/woodpecker-ci/autoscaler/pull/35)]
 - Update module github.com/woodpecker-ci/woodpecker to v1 [[#34](https://github.com/woodpecker-ci/autoscaler/pull/34)]
