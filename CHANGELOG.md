@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.2.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.2.0) - 2023-10-12
+## [0.2.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.2.0) - 2023-10-15
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -21,6 +21,7 @@
 
 ### Misc
 
+- Update module github.com/woodpecker-ci/woodpecker to v1.0.3 [[#39](https://github.com/woodpecker-ci/autoscaler/pull/39)]
 - Update module github.com/hetznercloud/hcloud-go/v2 to v2.4.0 [[#38](https://github.com/woodpecker-ci/autoscaler/pull/38)]
 - Update golang Docker tag to v1.21.3 [[#37](https://github.com/woodpecker-ci/autoscaler/pull/37)]
 - Update module golang.org/x/net to v0.17.0 [[#36](https://github.com/woodpecker-ci/autoscaler/pull/36)]
