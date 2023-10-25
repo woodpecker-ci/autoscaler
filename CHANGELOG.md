@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.2.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.2.0) - 2023-10-20
+## [0.2.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.2.0) - 2023-10-25
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -21,6 +21,7 @@
 
 ### Misc
 
+- Update woodpeckerci/plugin-docker-buildx Docker tag to v2.2.0 [[#41](https://github.com/woodpecker-ci/autoscaler/pull/41)]
 - Update Node.js to v21 [[#40](https://github.com/woodpecker-ci/autoscaler/pull/40)]
 - Update module github.com/woodpecker-ci/woodpecker to v1.0.3 [[#39](https://github.com/woodpecker-ci/autoscaler/pull/39)]
 - Update module github.com/hetznercloud/hcloud-go/v2 to v2.4.0 [[#38](https://github.com/woodpecker-ci/autoscaler/pull/38)]
