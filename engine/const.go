@@ -3,9 +3,10 @@ package engine
 import "fmt"
 
 var (
-	LabelPrefix                    = "wp.autoscaler/"
-	LabelPool                      = fmt.Sprintf("%spool", LabelPrefix)
-	LabelImage                     = fmt.Sprintf("%simage", LabelPrefix)
+	LabelPrefix = "wp.autoscaler/"
+	LabelPool   = fmt.Sprintf("%spool", LabelPrefix)
+	LabelImage  = fmt.Sprintf("%simage", LabelPrefix)
+	// editorconfig-checker-disable
 	CloudInitUserDataUbuntuDefault = `
 #cloud-config
 
@@ -50,5 +51,5 @@ runcmd:
   - sh -xc "cd /root; docker compose up -d"
 
 final_message: "The system is finally up, after $UPTIME seconds"
-` // editorconfig-checker-disable-line
+` // editorconfig-checker-enable
 )
