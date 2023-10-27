@@ -4,7 +4,7 @@
 
 ### ❤️ Thanks to all contributors! ❤️
 
-@xoxys, @renovate[bot], @pat-s, @maltejur, @6543
+@pat-s, @xoxys, @renovate[bot], @maltejur, @6543
 
 ### 📚 Documentation
 
@@ -21,6 +21,7 @@
 
 ### Misc
 
+- renovate: use org config [[#43](https://github.com/woodpecker-ci/autoscaler/pull/43)]
 - Fix indentation in cloudconfig multiline string [[#42](https://github.com/woodpecker-ci/autoscaler/pull/42)]
 - Update woodpeckerci/plugin-docker-buildx Docker tag to v2.2.0 [[#41](https://github.com/woodpecker-ci/autoscaler/pull/41)]
 - Update Node.js to v21 [[#40](https://github.com/woodpecker-ci/autoscaler/pull/40)]
