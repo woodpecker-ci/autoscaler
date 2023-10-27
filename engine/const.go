@@ -42,7 +42,6 @@ write_files:
         volumes:
           - /var/run/docker.sock:/var/run/docker.sock
         environment:
-
           {{- range $key, $value := .Environment }}
           - {{ $key }}={{ $value }}
           {{- end }}
@@ -51,5 +50,5 @@ runcmd:
   - sh -xc "cd /root; docker compose up -d"
 
 final_message: "The system is finally up, after $UPTIME seconds"
-`
+` // editorconfig-checker-disable-line
 )
