@@ -5,7 +5,7 @@ when:
 
 steps:
   dryrun:
-    image: woodpeckerci/plugin-docker-buildx:2.2.0
+    image: woodpeckerci/plugin-docker-buildx:2.2.0@sha256:6e95efac78f04d45c4177c07489bc01cb6dc5ae6b39f723edd42d5d695b6f2be
     settings:
       dockerfile: Containerfile
       dry_run: true
@@ -16,7 +16,7 @@ steps:
       event: pull_request
 
   publish-next:
-    image: woodpeckerci/plugin-docker-buildx:2.2.0
+    image: woodpeckerci/plugin-docker-buildx:2.2.0@sha256:6e95efac78f04d45c4177c07489bc01cb6dc5ae6b39f723edd42d5d695b6f2be
     settings:
       dockerfile: Containerfile
       repo: woodpeckerci/autoscaler
@@ -28,7 +28,7 @@ steps:
       event: push
 
   publish-tag:
-    image: woodpeckerci/plugin-docker-buildx:2.2.0
+    image: woodpeckerci/plugin-docker-buildx:2.2.0@sha256:6e95efac78f04d45c4177c07489bc01cb6dc5ae6b39f723edd42d5d695b6f2be
     settings:
       dockerfile: Containerfile
       repo: woodpeckerci/autoscaler
