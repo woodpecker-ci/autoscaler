@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.2.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.2.0) - 2023-11-04
+## [0.2.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.2.0) - 2023-11-06
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -21,6 +21,7 @@
 
 ### Misc
 
+- fix(deps): update module github.com/woodpecker-ci/woodpecker to v1.0.4 [[#47](https://github.com/woodpecker-ci/autoscaler/pull/47)]
 - chore(deps): update woodpeckerci/plugin-ready-release-go docker tag to v0.7.0 [[#45](https://github.com/woodpecker-ci/autoscaler/pull/45)]
 - renovate: use org config [[#43](https://github.com/woodpecker-ci/autoscaler/pull/43)]
 - Fix indentation in cloudconfig multiline string [[#42](https://github.com/woodpecker-ci/autoscaler/pull/42)]
