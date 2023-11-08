@@ -6,9 +6,9 @@ import (
 
 	"github.com/franela/goblin"
 	"github.com/rs/zerolog"
-	"github.com/woodpecker-ci/woodpecker/woodpecker-go/woodpecker"
+	"go.woodpecker-ci.org/woodpecker/woodpecker-go/woodpecker"
 
-	"github.com/woodpecker-ci/autoscaler/config"
+	"go.woodpecker-ci.org/autoscaler/config"
 )
 
 type MockClient struct {
