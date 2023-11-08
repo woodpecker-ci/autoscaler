@@ -1,10 +1,10 @@
 # Changelog
 
-## [0.2.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.2.0) - 2023-11-06
+## [0.2.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.2.0) - 2023-11-08
 
 ### ❤️ Thanks to all contributors! ❤️
 
-@renovate[bot], @pat-s, @xoxys, @maltejur, @6543
+@6543, @renovate[bot], @pat-s, @xoxys, @maltejur
 
 ### 📚 Documentation
 
@@ -21,6 +21,7 @@
 
 ### Misc
 
+- Go vanity urls for autoscaler [[#48](https://github.com/woodpecker-ci/autoscaler/pull/48)]
 - fix(deps): update module github.com/woodpecker-ci/woodpecker to v1.0.4 [[#47](https://github.com/woodpecker-ci/autoscaler/pull/47)]
 - chore(deps): update woodpeckerci/plugin-ready-release-go docker tag to v0.7.0 [[#45](https://github.com/woodpecker-ci/autoscaler/pull/45)]
 - renovate: use org config [[#43](https://github.com/woodpecker-ci/autoscaler/pull/43)]
