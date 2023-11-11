@@ -7,6 +7,7 @@ require (
 	github.com/hetznercloud/hcloud-go/v2 v2.4.0
 	github.com/joho/godotenv v1.5.1
 	github.com/rs/zerolog v1.31.0
+	github.com/scaleway/scaleway-sdk-go v1.0.0-beta.21
 	github.com/urfave/cli/v2 v2.25.7
 	go.woodpecker-ci.org/woodpecker v0.15.1-0.20231107132208-52163b9a3e53
 	golang.org/x/exp v0.0.0-20231006140011-7918f672742d
@@ -27,10 +28,10 @@ require (
 	github.com/prometheus/common v0.44.0 // indirect
 	github.com/prometheus/procfs v0.11.1 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
-	github.com/scaleway/scaleway-sdk-go v1.0.0-beta.21 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
 	golang.org/x/sys v0.13.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 )

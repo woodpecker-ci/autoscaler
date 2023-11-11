@@ -1,7 +1,6 @@
 package v1
 
 import (
-	"bytes"
 	"errors"
 	"github.com/scaleway/scaleway-sdk-go/scw"
 	"github.com/urfave/cli/v2"
@@ -15,13 +14,23 @@ const envPrefix = "WOODPECKER_SCW"
 
 var ProviderFlags = []cli.Flag{
 	&cli.StringFlag{
-		Name:    flagPrefix + "-api-token",
-		Usage:   "Scaleway IAM API Token",
-		EnvVars: []string{envPrefix + "_API_TOKEN"},
+		Name:    flagPrefix + "-access-key",
+		Usage:   "Scaleway IAM API Token Access Key",
+		EnvVars: []string{envPrefix + "_ACCESS_KEY"},
 		// NB(raskyld): We should recommend the usage of file-system to users
 		// Most container runtimes support mounting secrets into the fs
 		// natively.
-		FilePath: os.Getenv(envPrefix + "_API_TOKEN_FILE"),
+		FilePath: os.Getenv(envPrefix + "_ACCESS_KEY_FILE"),
+		Category: category,
+	},
+	&cli.StringFlag{
+		Name:    flagPrefix + "-secret-ket",
+		Usage:   "Scaleway IAM API Token Secret Key",
+		EnvVars: []string{envPrefix + "_SECRET_KEY"},
+		// NB(raskyld): We should recommend the usage of file-system to users
+		// Most container runtimes support mounting secrets into the fs
+		// natively.
+		FilePath: os.Getenv(envPrefix + "_SECRET_KEY_FILE"),
 		Category: category,
 	},
 	&cli.StringFlag{
@@ -91,13 +100,23 @@ func FromCLI(c *cli.Context, engineConfig *config.Config) (*Config, error) {
 		return nil, errors.New("you must specify in which project resources should be spawned")
 	}
 
+	if !c.IsSet(flagPrefix + "-secret-key") {
+		return nil, errors.New("you must specify a secret key")
+	}
+
+	if !c.IsSet(flagPrefix + "-access-key") {
+		return nil, errors.New("you must specify an access key")
+	}
+
 	zone := scw.Zone(c.String(flagPrefix + "-zone"))
 	if !zone.Exists() {
 		return nil, errors.New(zone.String() + " is not a valid zone")
 	}
 
 	cfg := &Config{
-		ApiToken: bytes.NewBufferString(c.String(flagPrefix + "-api-token")),
+		SecretKey:        c.String(flagPrefix + "-secret-key"),
+		AccessKey:        c.String(flagPrefix + "-access-key"),
+		DefaultProjectID: c.String(flagPrefix + "-project"),
 	}
 
 	cfg.InstancePool = map[string]InstancePool{
