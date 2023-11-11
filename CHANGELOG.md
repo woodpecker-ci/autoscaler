@@ -21,6 +21,7 @@
 
 ### Misc
 
+- fix(deps): update module go.woodpecker-ci.org/woodpecker to v1 [[#54](https://github.com/woodpecker-ci/autoscaler/pull/54)]
 - chore(deps): update woodpeckerci/plugin-ready-release-go docker tag to v1 [[#53](https://github.com/woodpecker-ci/autoscaler/pull/53)]
 - Go vanity urls for autoscaler [[#48](https://github.com/woodpecker-ci/autoscaler/pull/48)]
 - fix(deps): update module github.com/woodpecker-ci/woodpecker to v1.0.4 [[#47](https://github.com/woodpecker-ci/autoscaler/pull/47)]
