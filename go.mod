@@ -8,10 +8,10 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/rs/zerolog v1.31.0
 	github.com/urfave/cli/v2 v2.25.7
-	go.woodpecker-ci.org/woodpecker v0.15.1-0.20231107132208-52163b9a3e53
+	go.woodpecker-ci.org/woodpecker v0.15.11
 	golang.org/x/exp v0.0.0-20231006140011-7918f672742d
-	golang.org/x/net v0.17.0
-	golang.org/x/oauth2 v0.13.0
+	golang.org/x/net v0.18.0
+	golang.org/x/oauth2 v0.14.0
 )
 
 require (
