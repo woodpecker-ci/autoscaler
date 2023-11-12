@@ -38,7 +38,7 @@ func New(scwCfg Config, engineCfg *config.Config) (engine.Provider, error) {
 func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
 	_, err := p.getInstance(ctx, agent.Name)
 	if err != nil {
-		var doesNotExists InstanceDoesNotExists
+		var doesNotExists *InstanceDoesNotExists
 		if !errors.As(err, &doesNotExists) {
 			return err
 		}
@@ -183,6 +183,7 @@ func (p *Provider) createInstance(ctx context.Context, agent *woodpecker.Agent) 
 		Image:             pool.Image,
 		Volumes: map[string]*instance.VolumeServerTemplate{
 			"0": {
+				Name:       scw.StringPtr(agent.Name),
 				Boot:       scw.BoolPtr(true),
 				Size:       scw.SizePtr(pool.Storage),
 				VolumeType: instance.VolumeVolumeTypeBSSD,
@@ -239,6 +240,11 @@ func (p *Provider) setCloudInit(ctx context.Context, agent *woodpecker.Agent, in
 }
 
 func (p *Provider) deleteInstance(ctx context.Context, inst *instance.Server) error {
+	err := p.haltInstance(ctx, inst)
+	if err != nil {
+		return err
+	}
+
 	api := instance.NewAPI(p.client)
 
 	ops := backoff.Operation(func() error {
@@ -263,4 +269,18 @@ func (p *Provider) bootInstance(ctx context.Context, inst *instance.Server) (*in
 	})
 
 	return backoff.RetryWithData(ops, backoff.WithContext(p.scwCfg.ClientRetry, ctx))
+}
+
+func (p *Provider) haltInstance(ctx context.Context, inst *instance.Server) error {
+	api := instance.NewAPI(p.client)
+
+	ops := backoff.Operation(func() error {
+		return api.ServerActionAndWait(&instance.ServerActionAndWaitRequest{
+			Zone:     inst.Zone,
+			ServerID: inst.ID,
+			Action:   instance.ServerActionPoweroff,
+		})
+	})
+
+	return backoff.Retry(ops, backoff.WithContext(p.scwCfg.ClientRetry, ctx))
 }

@@ -28,7 +28,7 @@ func (i InstanceAlreadyExistsError) LogValue() slog.Value {
 }
 
 func (i InstanceDoesNotExists) Error() string {
-	return "instance does not exists"
+	return "instance does not exist"
 }
 
 func (i InstanceDoesNotExists) LogValue() slog.Value {
