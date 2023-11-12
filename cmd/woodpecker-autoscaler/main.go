@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	scwv1 "go.woodpecker-ci.org/autoscaler/providers/scaleway/v1"
+
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -31,8 +33,15 @@ func setupProvider(ctx *cli.Context, config *config.Config) (engine.Provider, er
 	// 	return linode.New(ctx, config)
 	case "vultr":
 		return vultr.New(ctx, config)
+	case "scaleway":
+		scwCfg, err := scwv1.FromCLI(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		return scwv1.New(scwCfg, config)
 	case "":
-		return nil, fmt.Errorf("please select a provider")
+		return nil, fmt.Errorf("Please select a provider")
 	}
 
 	return nil, fmt.Errorf("unknown provider: %s", ctx.String("provider"))
@@ -139,6 +148,8 @@ func main() {
 	app.Flags = append(app.Flags, aws.DriverFlags...)
 	// Register vultr flags
 	app.Flags = append(app.Flags, vultr.DriverFlags...)
+	// app.Flags = append(app.Flags, linode.DriverFlags...)
+	app.Flags = append(app.Flags, scwv1.ProviderFlags...)
 
 	if err := app.Run(os.Args); err != nil {
 		log.Error().Err(err).Msg("got error while try to run autoscaler")
