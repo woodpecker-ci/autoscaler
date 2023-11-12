@@ -1,9 +1,10 @@
 package v1
 
 import (
+	"log/slog"
+
 	"github.com/scaleway/scaleway-sdk-go/api/instance/v1"
 	"github.com/scaleway/scaleway-sdk-go/scw"
-	"log/slog"
 )
 
 type InstanceAlreadyExistsError struct {
