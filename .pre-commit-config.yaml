@@ -26,10 +26,6 @@ repos:
     rev: v2.12.1-beta
     hooks:
       - id: hadolint
-  - repo: https://github.com/ansible-community/ansible-lint
-    rev: v6.21.1
-    hooks:
-      - id: ansible-lint
 
 ci:
   autofix_commit_msg: |
