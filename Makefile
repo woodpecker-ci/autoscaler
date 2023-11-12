@@ -37,6 +37,7 @@ else
 
 ##@ General
 
+.PHONY: all
 all: help
 
 # The help target prints out all targets with their descriptions organized
@@ -87,6 +88,7 @@ lint: install-tools ## Lint code
 test-autoscaler: ## Test autoscaler code
 	go test -race -cover -coverprofile autoscaler-coverage.out -timeout 30s ${GO_PACKAGES}
 
+.PHONY: test
 test: test-autoscaler ## Run all tests
 
 ##@ Build
