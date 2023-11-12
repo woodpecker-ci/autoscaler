@@ -4,15 +4,16 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"math/rand"
+	"text/template"
+	"time"
+
 	"github.com/cenkalti/backoff/v4"
 	"github.com/scaleway/scaleway-sdk-go/api/instance/v1"
 	"github.com/scaleway/scaleway-sdk-go/scw"
 	"go.woodpecker-ci.org/autoscaler/config"
 	"go.woodpecker-ci.org/autoscaler/engine"
 	"go.woodpecker-ci.org/woodpecker/woodpecker-go/woodpecker"
-	"math/rand"
-	"text/template"
-	"time"
 )
 
 type Provider struct {
@@ -35,7 +36,7 @@ func New(scwCfg Config, engineCfg *config.Config) (engine.Provider, error) {
 }
 
 func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
-	inst, err := p.getInstance(ctx, agent.Name)
+	_, err := p.getInstance(ctx, agent.Name)
 	if err != nil {
 		var doesNotExists InstanceDoesNotExists
 		if !errors.As(err, &doesNotExists) {
@@ -43,7 +44,7 @@ func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 		}
 	}
 
-	inst, err = p.createInstance(ctx, agent)
+	inst, err := p.createInstance(ctx, agent)
 	if err != nil {
 		return err
 	}

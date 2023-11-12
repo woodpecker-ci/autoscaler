@@ -2,12 +2,12 @@ package v1
 
 import (
 	"errors"
+	"os"
+	"time"
+
 	"github.com/cenkalti/backoff/v4"
 	"github.com/scaleway/scaleway-sdk-go/scw"
 	"github.com/urfave/cli/v2"
-	"go.woodpecker-ci.org/autoscaler/config"
-	"os"
-	"time"
 )
 
 const (
@@ -39,6 +39,7 @@ var ProviderFlags = []cli.Flag{
 		FilePath: os.Getenv(envPrefix + "_SECRET_KEY_FILE"),
 		Category: category,
 	},
+	// TODO(raskyld): implement multi-AZ
 	&cli.StringFlag{
 		Name:        flagPrefix + "-zone",
 		Usage:       "Scaleway Zone where to spawn instances",
@@ -107,33 +108,33 @@ var ProviderFlags = []cli.Flag{
 	},
 }
 
-func FromCLI(c *cli.Context, engineConfig *config.Config) (*Config, error) {
+func FromCLI(c *cli.Context) (Config, error) {
 	if !c.IsSet(flagPrefix + "-instance-type") {
-		return nil, errors.New("you must specify an instance type")
+		return Config{}, errors.New("you must specify an instance type")
 	}
 
 	if !c.IsSet(flagPrefix + "-tags") {
-		return nil, errors.New("you must specify tags to apply to your resources")
+		return Config{}, errors.New("you must specify tags to apply to your resources")
 	}
 
 	if !c.IsSet(flagPrefix + "-project") {
-		return nil, errors.New("you must specify in which project resources should be spawned")
+		return Config{}, errors.New("you must specify in which project resources should be spawned")
 	}
 
 	if !c.IsSet(flagPrefix + "-secret-key") {
-		return nil, errors.New("you must specify a secret key")
+		return Config{}, errors.New("you must specify a secret key")
 	}
 
 	if !c.IsSet(flagPrefix + "-access-key") {
-		return nil, errors.New("you must specify an access key")
+		return Config{}, errors.New("you must specify an access key")
 	}
 
 	zone := scw.Zone(c.String(flagPrefix + "-zone"))
 	if !zone.Exists() {
-		return nil, errors.New(zone.String() + " is not a valid zone")
+		return Config{}, errors.New(zone.String() + " is not a valid zone")
 	}
 
-	cfg := &Config{
+	cfg := Config{
 		SecretKey:        c.String(flagPrefix + "-secret-key"),
 		AccessKey:        c.String(flagPrefix + "-access-key"),
 		DefaultProjectID: c.String(flagPrefix + "-project"),
@@ -141,9 +142,8 @@ func FromCLI(c *cli.Context, engineConfig *config.Config) (*Config, error) {
 
 	maxRetries := c.Int(flagPrefix + "-client-max-retries")
 	expoBase, err := time.ParseDuration(c.String(flagPrefix + "-client-retry-exponential-base"))
-
 	if err != nil {
-		return nil, err
+		return Config{}, err
 	}
 
 	if maxRetries == 0 {

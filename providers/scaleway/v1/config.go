@@ -2,17 +2,17 @@ package v1
 
 import (
 	"errors"
+
 	"github.com/cenkalti/backoff/v4"
 	"github.com/scaleway/scaleway-sdk-go/api/instance/v1"
 	"github.com/scaleway/scaleway-sdk-go/scw"
 )
 
 // Config is the Scaleway Provider specific configuration
-// NB(raskyld): In the future, I think each provider should be able to
-// unmarshal from a config file JSON stream passed by the engine.
-// The engine should also provide utilities, for example, a pre-defined
-// type that allows the providers to either read hard-coded values
-// or retrieve them from the filesystem, e.g. for secrets.
+//
+// This is decoupled from the CLI interface for future-proofing reasons.
+// Please, see ProviderFlags for information on how to configure the provider from the
+// CLI or environment variables.
 type Config struct {
 	// ApiToken of Scaleway IAM
 	//
@@ -35,10 +35,10 @@ type Locality struct {
 	Region *scw.Region `json:"region,omitempty"`
 }
 
-// InstancePool is a small helper to handle a pool of instances
+// InstancePool is used as a template to spawn your instances
 type InstancePool struct {
 	// Locality where your instances should live
-	// The InstancePool scheduler will try to spread your
+	// The Provider will try to spread your
 	// instances evenly among Locality.Zones if possible
 	Locality Locality `json:"locality"`
 	// ProjectID where resources should be applied
