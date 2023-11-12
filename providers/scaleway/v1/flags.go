@@ -30,7 +30,7 @@ var ProviderFlags = []cli.Flag{
 		Category: category,
 	},
 	&cli.StringFlag{
-		Name:    flagPrefix + "-secret-ket",
+		Name:    flagPrefix + "-secret-key",
 		Usage:   "Scaleway IAM API Token Secret Key",
 		EnvVars: []string{envPrefix + "_SECRET_KEY"},
 		// NB(raskyld): We should recommend the usage of file-system to users
