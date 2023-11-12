@@ -2,6 +2,7 @@ package v1
 
 import (
 	"errors"
+	"github.com/cenkalti/backoff/v4"
 	"github.com/scaleway/scaleway-sdk-go/api/instance/v1"
 	"github.com/scaleway/scaleway-sdk-go/scw"
 )
@@ -17,9 +18,10 @@ type Config struct {
 	//
 	// Creating a standalone IAM Applications is recommended to segregate
 	// permissions.
-	SecretKey        string                  `json:"secret_key"`
-	AccessKey        string                  `json:"access_key"`
-	DefaultProjectID string                  `json:"default_project_id"`
+	SecretKey        string `json:"secret_key"`
+	AccessKey        string `json:"access_key"`
+	DefaultProjectID string `json:"default_project_id"`
+	ClientRetry      backoff.BackOff
 	InstancePool     map[string]InstancePool `json:"instance_pool"`
 }
 

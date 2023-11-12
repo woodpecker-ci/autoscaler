@@ -2,15 +2,21 @@ package v1
 
 import (
 	"errors"
+	"github.com/cenkalti/backoff/v4"
 	"github.com/scaleway/scaleway-sdk-go/scw"
 	"github.com/urfave/cli/v2"
 	"go.woodpecker-ci.org/autoscaler/config"
 	"os"
+	"time"
 )
 
-const category = "Scaleway"
-const flagPrefix = "scw"
-const envPrefix = "WOODPECKER_SCW"
+const (
+	DefaultPool = "default"
+
+	category   = "Scaleway"
+	flagPrefix = "scw"
+	envPrefix  = "WOODPECKER_SCW"
+)
 
 var ProviderFlags = []cli.Flag{
 	&cli.StringFlag{
@@ -85,6 +91,20 @@ var ProviderFlags = []cli.Flag{
 		Category:    category,
 		DefaultText: "20000000000",
 	},
+	&cli.IntFlag{
+		Name:        flagPrefix + "-client-max-retries",
+		Usage:       "How much times should we retry requests (< 0: infinite, 0: no retry)",
+		EnvVars:     []string{envPrefix + "_CLIENT_MAX_RETRIES"},
+		Category:    category,
+		DefaultText: "5",
+	},
+	&cli.StringFlag{
+		Name:        flagPrefix + "-client-retry-exponential-base",
+		Usage:       "Exponential base duration for the retry mechanisms",
+		EnvVars:     []string{envPrefix + "_CLIENT_RETRY_EXPONENTIAL_BASE"},
+		Category:    category,
+		DefaultText: "2s",
+	},
 }
 
 func FromCLI(c *cli.Context, engineConfig *config.Config) (*Config, error) {
@@ -119,8 +139,27 @@ func FromCLI(c *cli.Context, engineConfig *config.Config) (*Config, error) {
 		DefaultProjectID: c.String(flagPrefix + "-project"),
 	}
 
+	maxRetries := c.Int(flagPrefix + "-client-max-retries")
+	expoBase, err := time.ParseDuration(c.String(flagPrefix + "-client-retry-exponential-base"))
+
+	if err != nil {
+		return nil, err
+	}
+
+	if maxRetries == 0 {
+		cfg.ClientRetry = &backoff.StopBackOff{}
+	} else {
+		bo := backoff.NewExponentialBackOff()
+		bo.InitialInterval = expoBase
+		cfg.ClientRetry = bo
+	}
+
+	if maxRetries > 0 {
+		cfg.ClientRetry = backoff.WithMaxRetries(cfg.ClientRetry, uint64(maxRetries))
+	}
+
 	cfg.InstancePool = map[string]InstancePool{
-		"default": {
+		DefaultPool: {
 			Locality: Locality{
 				Zones: []scw.Zone{zone},
 			},
