@@ -1,11 +1,9 @@
-package v1
+package scaleway
 
 import (
 	"errors"
 	"os"
-	"time"
 
-	"github.com/cenkalti/backoff/v4"
 	"github.com/scaleway/scaleway-sdk-go/scw"
 	"github.com/urfave/cli/v2"
 )
@@ -87,24 +85,10 @@ var ProviderFlags = []cli.Flag{
 	},
 	&cli.Uint64Flag{
 		Name:     flagPrefix + "-storage-size",
-		Usage:    "How much storage to provision for your agents in bytes",
+		Usage:    "How much storage to provision for your agents in GB",
 		EnvVars:  []string{envPrefix + "_STORAGE_SIZE"},
 		Category: category,
-		Value:    25000000000,
-	},
-	&cli.IntFlag{
-		Name:     flagPrefix + "-client-max-retries",
-		Usage:    "How much times should we retry requests (< 0: infinite, 0: no retry)",
-		EnvVars:  []string{envPrefix + "_CLIENT_MAX_RETRIES"},
-		Category: category,
-		Value:    5,
-	},
-	&cli.DurationFlag{
-		Name:     flagPrefix + "-client-retry-exponential-base",
-		Usage:    "Exponential base duration for the retry mechanisms",
-		EnvVars:  []string{envPrefix + "_CLIENT_RETRY_EXPONENTIAL_BASE"},
-		Category: category,
-		Value:    2 * time.Second,
+		Value:    25,
 	},
 }
 
@@ -140,24 +124,6 @@ func FromCLI(c *cli.Context) (Config, error) {
 		DefaultProjectID: c.String(flagPrefix + "-project"),
 	}
 
-	maxRetries := c.Int(flagPrefix + "-client-max-retries")
-	expoBase, err := time.ParseDuration(c.String(flagPrefix + "-client-retry-exponential-base"))
-	if err != nil {
-		return Config{}, err
-	}
-
-	if maxRetries == 0 {
-		cfg.ClientRetry = &backoff.StopBackOff{}
-	} else {
-		bo := backoff.NewExponentialBackOff()
-		bo.InitialInterval = expoBase
-		cfg.ClientRetry = bo
-	}
-
-	if maxRetries > 0 {
-		cfg.ClientRetry = backoff.WithMaxRetries(cfg.ClientRetry, uint64(maxRetries))
-	}
-
 	cfg.InstancePool = map[string]InstancePool{
 		DefaultPool: {
 			Locality: Locality{
@@ -171,7 +137,7 @@ func FromCLI(c *cli.Context) (Config, error) {
 			CommercialType:    c.String(flagPrefix + "-instance-type"),
 			Image:             c.String(flagPrefix + "-image"),
 			EnableIPv6:        c.Bool(flagPrefix + "-enable-ipv6"),
-			Storage:           scw.Size(c.Uint64(flagPrefix + "-storage-size")),
+			Storage:           scw.Size(c.Uint64(flagPrefix+"-storage-size") * 1e9),
 		},
 	}
 
