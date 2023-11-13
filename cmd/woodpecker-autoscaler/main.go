@@ -86,6 +86,9 @@ func run(ctx *cli.Context) error {
 		return fmt.Errorf("can't parse reconciliation-interval: %w", err)
 	}
 
+	// Run a reconcile loop at start-up to avoid waiting 1m or more
+	autoscaler.Reconcile(ctx.Context)
+
 	for {
 		select {
 		case <-ctx.Done():

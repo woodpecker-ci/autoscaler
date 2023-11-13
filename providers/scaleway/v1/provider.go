@@ -183,11 +183,9 @@ func (p *Provider) createInstance(ctx context.Context, agent *woodpecker.Agent) 
 		Image:             pool.Image,
 		Volumes: map[string]*instance.VolumeServerTemplate{
 			"0": {
-				Name:       scw.StringPtr(agent.Name),
 				Boot:       scw.BoolPtr(true),
 				Size:       scw.SizePtr(pool.Storage),
 				VolumeType: instance.VolumeVolumeTypeBSSD,
-				Project:    pool.ProjectID,
 			},
 		},
 		EnableIPv6: pool.EnableIPv6,
