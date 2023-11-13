@@ -1,4 +1,4 @@
-package v1
+package scaleway
 
 import (
 	"bytes"
@@ -8,7 +8,6 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/cenkalti/backoff/v4"
 	"github.com/scaleway/scaleway-sdk-go/api/instance/v1"
 	"github.com/scaleway/scaleway-sdk-go/scw"
 	"go.woodpecker-ci.org/autoscaler/config"
@@ -104,11 +103,7 @@ func (p *Provider) getInstance(ctx context.Context, name string) (*instance.Serv
 			Tags:    pool.Tags,
 		}
 
-		ops := backoff.OperationWithData[*instance.ListServersResponse](func() (*instance.ListServersResponse, error) {
-			return api.ListServers(&req, scw.WithContext(ctx))
-		})
-
-		resp, err := backoff.RetryWithData(ops, backoff.WithContext(p.scwCfg.ClientRetry, ctx))
+		resp, err := api.ListServers(&req, scw.WithContext(ctx))
 		if err != nil {
 			return nil, err
 		}
@@ -144,11 +139,7 @@ func (p *Provider) getAllInstances(ctx context.Context) ([]*instance.Server, err
 			Tags:    pool.Tags,
 		}
 
-		ops := backoff.OperationWithData[*instance.ListServersResponse](func() (*instance.ListServersResponse, error) {
-			return api.ListServers(&req, scw.WithContext(ctx))
-		})
-
-		resp, err := backoff.RetryWithData(ops, backoff.WithContext(p.scwCfg.ClientRetry, ctx))
+		resp, err := api.ListServers(&req, scw.WithContext(ctx))
 		if err != nil {
 			return nil, err
 		}
@@ -193,11 +184,7 @@ func (p *Provider) createInstance(ctx context.Context, agent *woodpecker.Agent) 
 		Tags:       pool.Tags,
 	}
 
-	ops := backoff.OperationWithData[*instance.CreateServerResponse](func() (*instance.CreateServerResponse, error) {
-		return api.CreateServer(&req, scw.WithContext(ctx))
-	})
-
-	res, err := backoff.RetryWithData(ops, backoff.WithContext(p.scwCfg.ClientRetry, ctx))
+	res, err := api.CreateServer(&req, scw.WithContext(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -225,11 +212,7 @@ func (p *Provider) setCloudInit(ctx context.Context, agent *woodpecker.Agent, in
 		Content:  bytes.NewBufferString(ud),
 	}
 
-	ops := backoff.Operation(func() error {
-		return api.SetServerUserData(&req, scw.WithContext(ctx))
-	})
-
-	err = backoff.Retry(ops, backoff.WithContext(p.scwCfg.ClientRetry, ctx))
+	err = api.SetServerUserData(&req, scw.WithContext(ctx))
 	if err != nil {
 		return err
 	}
@@ -245,40 +228,28 @@ func (p *Provider) deleteInstance(ctx context.Context, inst *instance.Server) er
 
 	api := instance.NewAPI(p.client)
 
-	ops := backoff.Operation(func() error {
-		return api.DeleteServer(&instance.DeleteServerRequest{
-			Zone:     inst.Zone,
-			ServerID: inst.ID,
-		})
-	})
-
-	return backoff.Retry(ops, backoff.WithContext(p.scwCfg.ClientRetry, ctx))
+	return api.DeleteServer(&instance.DeleteServerRequest{
+		Zone:     inst.Zone,
+		ServerID: inst.ID,
+	}, scw.WithContext(ctx))
 }
 
 func (p *Provider) bootInstance(ctx context.Context, inst *instance.Server) (*instance.ServerActionResponse, error) {
 	api := instance.NewAPI(p.client)
 
-	ops := backoff.OperationWithData[*instance.ServerActionResponse](func() (*instance.ServerActionResponse, error) {
-		return api.ServerAction(&instance.ServerActionRequest{
-			Zone:     inst.Zone,
-			ServerID: inst.ID,
-			Action:   instance.ServerActionPoweron,
-		})
-	})
-
-	return backoff.RetryWithData(ops, backoff.WithContext(p.scwCfg.ClientRetry, ctx))
+	return api.ServerAction(&instance.ServerActionRequest{
+		Zone:     inst.Zone,
+		ServerID: inst.ID,
+		Action:   instance.ServerActionPoweron,
+	}, scw.WithContext(ctx))
 }
 
 func (p *Provider) haltInstance(ctx context.Context, inst *instance.Server) error {
 	api := instance.NewAPI(p.client)
 
-	ops := backoff.Operation(func() error {
-		return api.ServerActionAndWait(&instance.ServerActionAndWaitRequest{
-			Zone:     inst.Zone,
-			ServerID: inst.ID,
-			Action:   instance.ServerActionPoweroff,
-		})
-	})
-
-	return backoff.Retry(ops, backoff.WithContext(p.scwCfg.ClientRetry, ctx))
+	return api.ServerActionAndWait(&instance.ServerActionAndWaitRequest{
+		Zone:     inst.Zone,
+		ServerID: inst.ID,
+		Action:   instance.ServerActionPoweroff,
+	}, scw.WithContext(ctx))
 }

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	scwv1 "go.woodpecker-ci.org/autoscaler/providers/scaleway/v1"
+	"go.woodpecker-ci.org/autoscaler/providers/scaleway"
 
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/rs/zerolog"
@@ -24,12 +24,12 @@ func setupProvider(ctx *cli.Context, config *config.Config) (engine.Provider, er
 	case "hetznercloud":
 		return hetznercloud.New(ctx, config)
 	case "scaleway":
-		scwCfg, err := scwv1.FromCLI(ctx)
+		scwCfg, err := scaleway.FromCLI(ctx)
 		if err != nil {
 			return nil, err
 		}
 
-		return scwv1.New(scwCfg, config)
+		return scaleway.New(scwCfg, config)
 	case "":
 		return nil, fmt.Errorf("Please select a provider")
 	}
@@ -123,7 +123,7 @@ func main() {
 
 	// Register hetznercloud flags
 	app.Flags = append(app.Flags, hetznercloud.DriverFlags...)
-	app.Flags = append(app.Flags, scwv1.ProviderFlags...)
+	app.Flags = append(app.Flags, scaleway.ProviderFlags...)
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal().Err(err).Msg("")
