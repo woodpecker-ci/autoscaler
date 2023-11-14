@@ -21,6 +21,7 @@
 
 ### Misc
 
+- chore(deps): update golang docker tag to v1.21.4 [[#59](https://github.com/woodpecker-ci/autoscaler/pull/59)]
 - fix(deps): update golang.org/x/exp digest to 9a3e603 [[#58](https://github.com/woodpecker-ci/autoscaler/pull/58)]
 - Add linters and `pre-commit` [[#57](https://github.com/woodpecker-ci/autoscaler/pull/57)]
 - fix(deps): update module go.woodpecker-ci.org/woodpecker to v1 [[#54](https://github.com/woodpecker-ci/autoscaler/pull/54)]
