@@ -1,10 +1,10 @@
 # Changelog
 
-## [0.2.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.2.0) - 2023-11-12
+## [0.2.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.2.0) - 2023-11-14
 
 ### ❤️ Thanks to all contributors! ❤️
 
-@pat-s, @renovate[bot], @6543, @xoxys, @maltejur
+@renovate[bot], @pat-s, @6543, @xoxys, @maltejur
 
 ### 📚 Documentation
 
@@ -21,6 +21,7 @@
 
 ### Misc
 
+- fix(deps): update golang.org/x/exp digest to 9a3e603 [[#58](https://github.com/woodpecker-ci/autoscaler/pull/58)]
 - Add linters and `pre-commit` [[#57](https://github.com/woodpecker-ci/autoscaler/pull/57)]
 - fix(deps): update module go.woodpecker-ci.org/woodpecker to v1 [[#54](https://github.com/woodpecker-ci/autoscaler/pull/54)]
 - chore(deps): update woodpeckerci/plugin-ready-release-go docker tag to v1 [[#53](https://github.com/woodpecker-ci/autoscaler/pull/53)]
