@@ -10,8 +10,8 @@ require (
 	github.com/urfave/cli/v2 v2.25.7
 	go.woodpecker-ci.org/woodpecker v1.0.5
 	golang.org/x/exp v0.0.0-20231110203233-9a3e6036ecaa
-	golang.org/x/net v0.17.0
-	golang.org/x/oauth2 v0.13.0
+	golang.org/x/net v0.18.0
+	golang.org/x/oauth2 v0.14.0
 )
 
 require (
