@@ -3,10 +3,12 @@ module go.woodpecker-ci.org/autoscaler
 go 1.21
 
 require (
+	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/franela/goblin v0.0.0-20211003143422-0a4f594942bf
 	github.com/hetznercloud/hcloud-go/v2 v2.4.0
 	github.com/joho/godotenv v1.5.1
 	github.com/rs/zerolog v1.31.0
+	github.com/scaleway/scaleway-sdk-go v1.0.0-beta.21
 	github.com/urfave/cli/v2 v2.25.7
 	go.woodpecker-ci.org/woodpecker v1.0.5
 	golang.org/x/exp v0.0.0-20231110203233-9a3e6036ecaa
@@ -32,4 +34,5 @@ require (
 	golang.org/x/text v0.14.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
