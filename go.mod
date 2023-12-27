@@ -7,7 +7,7 @@ require (
 	github.com/hetznercloud/hcloud-go/v2 v2.5.1
 	github.com/joho/godotenv v1.5.1
 	github.com/rs/zerolog v1.31.0
-	github.com/urfave/cli/v2 v2.26.0
+	github.com/urfave/cli/v2 v2.27.0
 	go.woodpecker-ci.org/woodpecker v1.0.5
 	golang.org/x/exp v0.0.0-20231219180239-dc181d75b848
 	golang.org/x/net v0.19.0
