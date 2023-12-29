@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.2.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.2.0) - 2023-12-25
+## [0.2.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.2.0) - 2023-12-29
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -21,6 +21,7 @@
 
 ### Misc
 
+- fix(deps): update module github.com/urfave/cli/v2 to v2.27.0 [[#74](https://github.com/woodpecker-ci/autoscaler/pull/74)]
 - fix(deps): update golang.org/x/exp digest to dc181d7 [[#71](https://github.com/woodpecker-ci/autoscaler/pull/71)]
 - fix(deps): update golang.org/x/exp digest to aacd6d4 [[#69](https://github.com/woodpecker-ci/autoscaler/pull/69)]
 - fix(deps): update module github.com/hetznercloud/hcloud-go/v2 to v2.5.1 [[#68](https://github.com/woodpecker-ci/autoscaler/pull/68)]
