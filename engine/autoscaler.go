@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/rs/zerolog/log"
-	"go.woodpecker-ci.org/woodpecker/woodpecker-go/woodpecker"
+	"go.woodpecker-ci.org/woodpecker/v2/woodpecker-go/woodpecker"
 
 	"go.woodpecker-ci.org/autoscaler/config"
 )
