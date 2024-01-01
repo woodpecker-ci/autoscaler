@@ -4,7 +4,7 @@
 
 ### ❤️ Thanks to all contributors! ❤️
 
-@renovate[bot], @pat-s, @6543, @xoxys, @maltejur
+@pre-commit-ci[bot], @renovate[bot], @pat-s, @6543, @xoxys, @maltejur
 
 ### 📚 Documentation
 
@@ -21,6 +21,7 @@
 
 ### Misc
 
+- [pre-commit.ci] pre-commit autoupdate [[#77](https://github.com/woodpecker-ci/autoscaler/pull/77)]
 - fix(deps): update golang.org/x/exp digest to 02704c9 [[#76](https://github.com/woodpecker-ci/autoscaler/pull/76)]
 - fix(deps): update module go.woodpecker-ci.org/woodpecker to v2 [[#75](https://github.com/woodpecker-ci/autoscaler/pull/75)]
 - fix(deps): update module github.com/urfave/cli/v2 to v2.27.0 [[#74](https://github.com/woodpecker-ci/autoscaler/pull/74)]
