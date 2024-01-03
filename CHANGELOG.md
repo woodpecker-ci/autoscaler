@@ -1,10 +1,10 @@
 # Changelog
 
-## [0.2.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.2.0) - 2024-01-01
+## [0.2.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.2.0) - 2024-01-03
 
 ### ❤️ Thanks to all contributors! ❤️
 
-@pre-commit-ci[bot], @renovate[bot], @pat-s, @6543, @xoxys, @maltejur
+@renovate[bot], @pre-commit-ci[bot], @pat-s, @6543, @xoxys, @maltejur
 
 ### 📚 Documentation
 
@@ -21,6 +21,7 @@
 
 ### Misc
 
+- fix(deps): update module github.com/urfave/cli/v2 to v2.27.1 [[#78](https://github.com/woodpecker-ci/autoscaler/pull/78)]
 - [pre-commit.ci] pre-commit autoupdate [[#77](https://github.com/woodpecker-ci/autoscaler/pull/77)]
 - fix(deps): update golang.org/x/exp digest to 02704c9 [[#76](https://github.com/woodpecker-ci/autoscaler/pull/76)]
 - fix(deps): update module go.woodpecker-ci.org/woodpecker to v2 [[#75](https://github.com/woodpecker-ci/autoscaler/pull/75)]
