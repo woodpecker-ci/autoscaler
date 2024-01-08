@@ -21,6 +21,7 @@
 
 ### Misc
 
+- chore(deps): update woodpeckerci/plugin-docker-buildx docker tag to v2.3.0 [[#80](https://github.com/woodpecker-ci/autoscaler/pull/80)]
 - fix(deps): update golang.org/x/exp digest to be819d1 [[#79](https://github.com/woodpecker-ci/autoscaler/pull/79)]
 - fix(deps): update module github.com/urfave/cli/v2 to v2.27.1 [[#78](https://github.com/woodpecker-ci/autoscaler/pull/78)]
 - [pre-commit.ci] pre-commit autoupdate [[#77](https://github.com/woodpecker-ci/autoscaler/pull/77)]
