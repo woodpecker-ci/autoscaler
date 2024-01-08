@@ -5,7 +5,7 @@ when:
 
 steps:
   dryrun:
-    image: woodpeckerci/plugin-docker-buildx:2.2.1
+    image: woodpeckerci/plugin-docker-buildx:2.3.0
     settings:
       dockerfile: Dockerfile
       dry_run: true
@@ -16,7 +16,7 @@ steps:
       event: pull_request
 
   publish-next:
-    image: woodpeckerci/plugin-docker-buildx:2.2.1
+    image: woodpeckerci/plugin-docker-buildx:2.3.0
     settings:
       dockerfile: Dockerfile
       repo: woodpeckerci/autoscaler
@@ -28,7 +28,7 @@ steps:
       event: push
 
   publish-tag:
-    image: woodpeckerci/plugin-docker-buildx:2.2.1
+    image: woodpeckerci/plugin-docker-buildx:2.3.0
     settings:
       dockerfile: Dockerfile
       repo: woodpeckerci/autoscaler
