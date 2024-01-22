@@ -21,6 +21,7 @@
 
 ### Misc
 
+- chore(deps): update woodpeckerci/plugin-docker-buildx docker tag to v3 [[#85](https://github.com/woodpecker-ci/autoscaler/pull/85)]
 - fix(deps): update golang.org/x/exp digest to 1b97071 [[#86](https://github.com/woodpecker-ci/autoscaler/pull/86)]
 - Use cleartext username [[#84](https://github.com/woodpecker-ci/autoscaler/pull/84)]
 - chore(deps): update golang docker tag to v1.21.6 [[#83](https://github.com/woodpecker-ci/autoscaler/pull/83)]
