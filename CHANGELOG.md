@@ -1,10 +1,10 @@
 # Changelog
 
-## [0.2.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.2.0) - 2024-01-20
+## [0.2.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.2.0) - 2024-01-22
 
 ### ❤️ Thanks to all contributors! ❤️
 
-@qwerty287, @renovate[bot], @pre-commit-ci[bot], @pat-s, @6543, @xoxys, @maltejur
+@renovate[bot], @qwerty287, @pre-commit-ci[bot], @pat-s, @6543, @xoxys, @maltejur
 
 ### 📚 Documentation
 
@@ -21,6 +21,7 @@
 
 ### Misc
 
+- fix(deps): update golang.org/x/exp digest to 1b97071 [[#86](https://github.com/woodpecker-ci/autoscaler/pull/86)]
 - Use cleartext username [[#84](https://github.com/woodpecker-ci/autoscaler/pull/84)]
 - chore(deps): update golang docker tag to v1.21.6 [[#83](https://github.com/woodpecker-ci/autoscaler/pull/83)]
 - fix(deps): update golang.org/x/exp digest to db7319d [[#82](https://github.com/woodpecker-ci/autoscaler/pull/82)]
