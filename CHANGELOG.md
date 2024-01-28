@@ -1,10 +1,14 @@
 # Changelog
 
-## [0.2.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.2.0) - 2024-01-24
+## [0.2.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.2.0) - 2024-01-28
 
 ### ❤️ Thanks to all contributors! ❤️
 
-@renovate[bot], @qwerty287, @pre-commit-ci[bot], @pat-s, @6543, @xoxys, @maltejur
+@guisea, @renovate[bot], @qwerty287, @pre-commit-ci[bot], @pat-s, @6543, @xoxys, @maltejur
+
+### ✨ Features
+
+- Add linode provider [[#15](https://github.com/woodpecker-ci/autoscaler/pull/15)]
 
 ### 📚 Documentation
 
