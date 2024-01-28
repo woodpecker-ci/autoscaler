@@ -4,7 +4,7 @@ when:
     branch: ${CI_REPO_DEFAULT_BRANCH}
 
 variables:
-  - &golang_image "golang:1.20.2"
+  - &golang_image "golang:1.21.6"
   - &when
     - path: &when_path # related config files
         - ".woodpecker/test.yml"
@@ -29,7 +29,7 @@ steps:
     when: *when
 
   lint-editorconfig:
-    image: mstruebing/editorconfig-checker
+    image: mstruebing/editorconfig-checker:2.7.2
     group: test
 
   test:

@@ -29,6 +29,7 @@ services:
       - WOODEPCKER_GRPC_ADDR=https://grpc.your-woodpecker-server.tld # the grpc address of your woodpecker server, publicly accessible from the agents
       - WOODEPCKER_GRPC_SECURE=true
       - WOODPECKER_AGENT_ENV= # optional environment variables to pass to the agents
+      - WOODPECKER_PROVIDER=hetznercloud # set the provider, you can find all the available ones down below
       - WOODPECKER_HETZNERCLOUD_API_TOKEN=${WOODPECKER_HETZNERCLOUD_API_TOKEN} # your api token for the Hetzner cloud
 ```
 

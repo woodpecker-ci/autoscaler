@@ -9,7 +9,7 @@ import (
 
 	"github.com/rs/zerolog/log"
 	"github.com/urfave/cli/v2"
-	"github.com/woodpecker-ci/woodpecker/woodpecker-go/woodpecker"
+	"go.woodpecker-ci.org/woodpecker/v2/woodpecker-go/woodpecker"
 	"golang.org/x/net/proxy"
 	"golang.org/x/oauth2"
 )

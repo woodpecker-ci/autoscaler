@@ -37,6 +37,7 @@ else
 
 ##@ General
 
+.PHONY: all
 all: help
 
 # The help target prints out all targets with their descriptions organized
@@ -82,16 +83,17 @@ lint: install-tools ## Lint code
 	@echo "Running golangci-lint"
 	golangci-lint run --timeout 10m
 	@echo "Running zerolog linter"
-	lint github.com/woodpecker-ci/autoscaler/cmd/woodpecker-autoscaler
+	lint go.woodpecker-ci.org/autoscaler/cmd/woodpecker-autoscaler
 
 test-autoscaler: ## Test autoscaler code
 	go test -race -cover -coverprofile autoscaler-coverage.out -timeout 30s ${GO_PACKAGES}
 
+.PHONY: test
 test: test-autoscaler ## Run all tests
 
 ##@ Build
 
 build:
-	CGO_ENABLED=${CGO_ENABLED} GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -ldflags '${LDFLAGS}' -o dist/woodpecker-autoscaler github.com/woodpecker-ci/autoscaler/cmd/woodpecker-autoscaler
+	CGO_ENABLED=${CGO_ENABLED} GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -ldflags '${LDFLAGS}' -o dist/woodpecker-autoscaler go.woodpecker-ci.org/autoscaler/cmd/woodpecker-autoscaler
 
 endif

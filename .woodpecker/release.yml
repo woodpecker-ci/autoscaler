@@ -5,9 +5,9 @@ when:
 
 steps:
   dryrun:
-    image: woodpeckerci/plugin-docker-buildx
+    image: woodpeckerci/plugin-docker-buildx:3.0.0
     settings:
-      dockerfile: Containerfile
+      dockerfile: Dockerfile
       dry_run: true
       repo: woodpeckerci/autoscaler
       platforms: linux/arm/v7,linux/arm64/v8,linux/amd64,linux/ppc64le
@@ -16,24 +16,26 @@ steps:
       event: pull_request
 
   publish-next:
-    image: woodpeckerci/plugin-docker-buildx
+    image: woodpeckerci/plugin-docker-buildx:3.0.0
     settings:
-      dockerfile: Containerfile
+      dockerfile: Dockerfile
       repo: woodpeckerci/autoscaler
       platforms: linux/arm/v7,linux/arm64,linux/amd64,linux/ppc64le
       tag: next
-    secrets: [docker_username, docker_password]
+      username: woodpeckerbot
+    secrets: [docker_password]
     when:
       branch: ${CI_REPO_DEFAULT_BRANCH}
       event: push
 
   publish-tag:
-    image: woodpeckerci/plugin-docker-buildx
+    image: woodpeckerci/plugin-docker-buildx:3.0.0
     settings:
-      dockerfile: Containerfile
+      dockerfile: Dockerfile
       repo: woodpeckerci/autoscaler
       platforms: linux/arm/v7,linux/arm64/v8,linux/amd64,linux/ppc64le
       tag: [latest, "${CI_COMMIT_TAG}"]
-    secrets: [docker_username, docker_password]
+      username: woodpeckerbot
+    secrets: [docker_password]
     when:
       event: tag

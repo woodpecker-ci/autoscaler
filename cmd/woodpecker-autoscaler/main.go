@@ -11,11 +11,11 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/urfave/cli/v2"
 
-	"github.com/woodpecker-ci/autoscaler/config"
-	"github.com/woodpecker-ci/autoscaler/engine"
-	"github.com/woodpecker-ci/autoscaler/providers/hetznercloud"
-	"github.com/woodpecker-ci/autoscaler/providers/linode"
-	"github.com/woodpecker-ci/autoscaler/server"
+	"go.woodpecker-ci.org/autoscaler/config"
+	"go.woodpecker-ci.org/autoscaler/engine"
+	"go.woodpecker-ci.org/autoscaler/providers/hetznercloud"
+	"go.woodpecker-ci.org/autoscaler/providers/linode"
+	"go.woodpecker-ci.org/autoscaler/server"
 )
 
 func setupProvider(ctx *cli.Context, config *config.Config) (engine.Provider, error) {
