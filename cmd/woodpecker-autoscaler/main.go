@@ -14,6 +14,7 @@ import (
 	"go.woodpecker-ci.org/autoscaler/config"
 	"go.woodpecker-ci.org/autoscaler/engine"
 	"go.woodpecker-ci.org/autoscaler/providers/hetznercloud"
+	"go.woodpecker-ci.org/autoscaler/providers/linode"
 	"go.woodpecker-ci.org/autoscaler/server"
 )
 
@@ -21,6 +22,8 @@ func setupProvider(ctx *cli.Context, config *config.Config) (engine.Provider, er
 	switch ctx.String("provider") {
 	case "hetznercloud":
 		return hetznercloud.New(ctx, config)
+	case "linode":
+		return linode.New(ctx, config)
 	case "":
 		return nil, fmt.Errorf("Please select a provider")
 	}
@@ -111,6 +114,8 @@ func main() {
 
 	// Register hetznercloud flags
 	app.Flags = append(app.Flags, hetznercloud.DriverFlags...)
+	// Register linode flags
+	app.Flags = append(app.Flags, linode.DriverFlags...)
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal().Err(err).Msg("")
