@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 	"text/template"
 	"time"
@@ -13,8 +14,6 @@ import (
 	"github.com/vultr/govultr/v3"
 	"golang.org/x/exp/maps"
 	"golang.org/x/oauth2"
-
-	"os"
 
 	"go.woodpecker-ci.org/autoscaler/config"
 	"go.woodpecker-ci.org/autoscaler/engine"
@@ -186,7 +185,6 @@ func (p *Provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 
 	servers, _, _, err := p.client.Instance.List(ctx,
 		listOptions)
-
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", p.name, err)
 	}
@@ -200,7 +198,6 @@ func (p *Provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 
 func (p *Provider) setupKeypair(ctx context.Context) error {
 	res, _, _, err := p.client.SSHKey.List(ctx, nil)
-
 	if err != nil {
 		return err
 	}
