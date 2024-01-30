@@ -15,6 +15,7 @@ import (
 	"go.woodpecker-ci.org/autoscaler/engine"
 	"go.woodpecker-ci.org/autoscaler/providers/aws"
 	"go.woodpecker-ci.org/autoscaler/providers/hetznercloud"
+	"go.woodpecker-ci.org/autoscaler/providers/vultr"
 	"go.woodpecker-ci.org/autoscaler/server"
 )
 
@@ -28,6 +29,8 @@ func setupProvider(ctx *cli.Context, config *config.Config) (engine.Provider, er
 	// Enable it again when the issue is fixed.
 	// case "linode":
 	// 	return linode.New(ctx, config)
+	case "vultr":
+		return vultr.New(ctx, config)
 	case "":
 		return nil, fmt.Errorf("please select a provider")
 	}
@@ -134,6 +137,9 @@ func main() {
 
 	// Register aws flags
 	app.Flags = append(app.Flags, aws.DriverFlags...)
+	// app.Flags = append(app.Flags, linode.DriverFlags...)
+	// Register vultr flags
+	app.Flags = append(app.Flags, vultr.DriverFlags...)
 
 	if err := app.Run(os.Args); err != nil {
 		log.Error().Err(err).Msg("got error while try to run autoscaler")
