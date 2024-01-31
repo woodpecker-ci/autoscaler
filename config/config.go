@@ -12,7 +12,7 @@ type Config struct {
 	GRPCAddress             string
 	GRPCSecure              bool
 	AgentAllowedStartupTime time.Duration
-	QueueFilter             string
+	LabelsFilter            string
 
 	APIToken string
 	APIUrl   string
