@@ -64,21 +64,23 @@ func (a *Autoscaler) getQueueInfo(_ context.Context) (freeTasks, runningTasks, p
 		return 0, 0, 0, fmt.Errorf("Error from QueueInfo: %s", err.Error())
 	}
 
-	if a.config.QueueFilter == "" {
+	if a.config.LabelsFilter == "" {
 		return queueInfo.Stats.WorkerCount, queueInfo.Stats.RunningCount, queueInfo.Stats.PendingCount, nil
 	}
 
-	queueFilterKey, queueFilterValue, ok := strings.Cut(a.config.QueueFilter, "=")
+	labelFilterKey, labelFilterValue, ok := strings.Cut(a.config.LabelsFilter, "=")
 	if !ok {
-		return 0, 0, 0, fmt.Errorf("Invalid queue filter: %s", a.config.QueueFilter)
+		return 0, 0, 0, fmt.Errorf("Invalid labels filter: %s", a.config.LabelsFilter)
 	}
 
 	running := 0
 	if queueInfo.Stats.RunningCount > 0 {
-		for _, runningJobs := range queueInfo.Running {
-			val, exists := runningJobs.Labels[queueFilterKey]
-			if exists && val == queueFilterValue {
-				running++
+		if queueInfo.Running != nil {
+			for _, runningJobs := range queueInfo.Running {
+				val, exists := runningJobs.Labels[labelFilterKey]
+				if exists && val == labelFilterValue {
+					running++
+				}
 			}
 		}
 	}
@@ -87,8 +89,8 @@ func (a *Autoscaler) getQueueInfo(_ context.Context) (freeTasks, runningTasks, p
 	if queueInfo.Stats.PendingCount > 0 {
 		if queueInfo.Pending != nil {
 			for _, pendingJobs := range queueInfo.Pending {
-				val, exists := pendingJobs.Labels[queueFilterKey]
-				if exists && val == queueFilterValue {
+				val, exists := pendingJobs.Labels[labelFilterKey]
+				if exists && val == labelFilterValue {
 					pending++
 				}
 			}
