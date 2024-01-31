@@ -91,9 +91,9 @@ var flags = []cli.Flag{
 		EnvVars: []string{"WOODPECKER_AGENT_ENV"},
 	},
 	&cli.StringFlag{
-		Name:    "filter-tasks-labels",
+		Name:    "filter-labels",
 		Value:   "",
-		Usage:   "filter for specific tasks by labels",
-		EnvVars: []string{"WOODPECKER_HETZNERCLOUD_TOKEN"},
+		Usage:   "filter for specific tasks using labels",
+		EnvVars: []string{"WOODPECKER_FILTER_LABELS"},
 	},
 }
