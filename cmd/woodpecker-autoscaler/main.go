@@ -58,7 +58,7 @@ func run(ctx *cli.Context) error {
 		GRPCSecure:        ctx.Bool("grpc-secure"),
 		Image:             ctx.String("agent-image"),
 		Environment:       agentEnvironment,
-		QueueFilter:       ctx.String("queue-filter"),
+		QueueFilter:       ctx.String("filter-labels"),
 		APIToken:          ctx.String("server-token"),
 		APIUrl:            ctx.String("server-url"),
 	}
