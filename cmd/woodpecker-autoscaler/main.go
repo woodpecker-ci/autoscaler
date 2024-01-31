@@ -57,6 +57,9 @@ func run(ctx *cli.Context) error {
 		GRPCSecure:        ctx.Bool("grpc-secure"),
 		Image:             ctx.String("agent-image"),
 		Environment:       agentEnvironment,
+		QueueFilter:       ctx.String("queue-filter"),
+		APIToken:          ctx.String("server-token"),
+		APIUrl:            ctx.String("server-url"),
 	}
 
 	provider, err := setupProvider(ctx, config)
