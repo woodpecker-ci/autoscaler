@@ -89,13 +89,9 @@ func (a *Autoscaler) createAgents(ctx context.Context, amount int) error {
 }
 
 func (a *Autoscaler) drainAgents(_ context.Context, amount int) error {
-	now := time.Now()
-
 	for i := 0; i < amount; i++ {
 		for _, agent := range a.agents {
-			agentStartupExpectedUntil := time.Unix(agent.Created, 0).Add(a.config.AgentAllowedStartupTime)
-
-			if !agent.NoSchedule && (agent.LastContact != 0 || agentStartupExpectedUntil.Before(now)) {
+			if !agent.NoSchedule && agent.LastContact != 0 {
 				log.Info().Str("agent", agent.Name).Msg("drain agent")
 				agent.NoSchedule = true
 				_, err := a.client.AgentUpdate(agent)
@@ -193,7 +189,24 @@ func (a *Autoscaler) cleanupAgents(ctx context.Context) error {
 		}
 	}
 
-	// TODO: remove stale agents
+	// remove agents that haven't contacted the server for a long time or are stuck in the provisioning phase
+	now := time.Now()
+	for _, agent := range a.agents {
+		if agent.NoSchedule {
+			continue
+		}
+
+		agentLastContact := time.Unix(agent.LastContact, 0)
+		agentCreatedAt := time.Unix(agent.Created, 0)
+
+		if agentLastContact.Before(now.Add(-a.config.AgentInactivityTimeout)) ||
+			agentCreatedAt.Before(now.Add(-a.config.AgentAllowedStartupTime)) {
+			log.Info().Str("agent", agent.Name).Str("reason", "stale").Msg("remove agent")
+			if err = a.client.AgentDelete(agent.ID); err != nil {
+				return fmt.Errorf("client.AgentDelete: %w", err)
+			}
+		}
+	}
 
 	return nil
 }

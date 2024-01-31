@@ -43,6 +43,12 @@ var flags = []cli.Flag{
 		Usage:   "time an agent is allowed to start before it can be terminated again as duration string like 2h45m (https://pkg.go.dev/maze.io/x/duration#ParseDuration)",
 		EnvVars: []string{"WOODPECKER_AGENT_ALLOWED_STARTUP_TIME"},
 	},
+	&cli.StringFlag{
+		Name:    "agent-inactivity-timeout",
+		Value:   "10m",
+		Usage:   "time an agent is allowed to be inactive before it can be terminated as duration string like 2h45m (https://pkg.go.dev/maze.io/x/duration#ParseDuration)",
+		EnvVars: []string{"WOODPECKER_AGENT_INACTIVITY_TIMEOUT"},
+	},
 	&cli.IntFlag{
 		Name:    "workflows-per-agent",
 		Value:   2,
