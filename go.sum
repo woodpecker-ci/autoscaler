@@ -58,6 +58,8 @@ github.com/xrash/smetrics v0.0.0-20231213231151-1d8dd44e695e/go.mod h1:N3UwUGtsr
 github.com/yuin/goldmark v1.4.13/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5taEt/CY=
 go.woodpecker-ci.org/woodpecker/v2 v2.2.2 h1:astMXuGPmOiwvcvhA6qVSlHL/oXk4e1PeMbYEMT5eIg=
 go.woodpecker-ci.org/woodpecker/v2 v2.2.2/go.mod h1:vuwkxuGI4giScqwD7TEvrOnfq+tHFGmVlCma+uXbdQI=
+go.woodpecker-ci.org/woodpecker/v2 v2.3.0 h1:UKgqTp5lGtIsfDVsWxT3LQ/qxkBAWury7LxlhTZYnl8=
+go.woodpecker-ci.org/woodpecker/v2 v2.3.0/go.mod h1:2Q4ARcK/AQZ71p3PoOSaNswKPnMGiNhhRtItlzAnjnA=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
 golang.org/x/crypto v0.0.0-20210921155107-089bfa567519/go.mod h1:GvvjBRRGRdwPK5ydBHafDWAxML/pGHZbMvKqRZ5+Abc=
 golang.org/x/crypto v0.14.0/go.mod h1:MVFd36DqK4CsrnJYDkBA3VC4m2GkXAM0PvzMCn4JQf4=
