@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.2.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.2.0) - 2024-02-02
+## [0.2.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.2.0) - 2024-02-05
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -25,6 +25,7 @@
 
 ### Misc
 
+- chore(deps): update woodpeckerci/plugin-docker-buildx docker tag to v3.0.1 [[#96](https://github.com/woodpecker-ci/autoscaler/pull/96)]
 - fix(deps): update module go.woodpecker-ci.org/woodpecker/v2 to v2.3.0 [[#95](https://github.com/woodpecker-ci/autoscaler/pull/95)]
 - chore(deps): update woodpeckerci/plugin-ready-release-go docker tag to v1.1.0 [[#89](https://github.com/woodpecker-ci/autoscaler/pull/89)]
 - fix(deps): update module go.woodpecker-ci.org/woodpecker/v2 to v2.2.2 [[#87](https://github.com/woodpecker-ci/autoscaler/pull/87)]
