@@ -25,6 +25,7 @@
 
 ### Misc
 
+- [pre-commit.ci] pre-commit autoupdate [[#97](https://github.com/woodpecker-ci/autoscaler/pull/97)]
 - chore(deps): update woodpeckerci/plugin-docker-buildx docker tag to v3.0.1 [[#96](https://github.com/woodpecker-ci/autoscaler/pull/96)]
 - fix(deps): update module go.woodpecker-ci.org/woodpecker/v2 to v2.3.0 [[#95](https://github.com/woodpecker-ci/autoscaler/pull/95)]
 - chore(deps): update woodpeckerci/plugin-ready-release-go docker tag to v1.1.0 [[#89](https://github.com/woodpecker-ci/autoscaler/pull/89)]
