@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.2.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.2.0) - 2024-02-05
+## [0.2.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.2.0) - 2024-02-07
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -25,6 +25,7 @@
 
 ### Misc
 
+- fix(deps): update module github.com/rs/zerolog to v1.32.0 [[#98](https://github.com/woodpecker-ci/autoscaler/pull/98)]
 - [pre-commit.ci] pre-commit autoupdate [[#97](https://github.com/woodpecker-ci/autoscaler/pull/97)]
 - chore(deps): update woodpeckerci/plugin-docker-buildx docker tag to v3.0.1 [[#96](https://github.com/woodpecker-ci/autoscaler/pull/96)]
 - fix(deps): update module go.woodpecker-ci.org/woodpecker/v2 to v2.3.0 [[#95](https://github.com/woodpecker-ci/autoscaler/pull/95)]
