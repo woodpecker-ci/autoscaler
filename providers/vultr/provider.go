@@ -48,7 +48,6 @@ func New(c *cli.Context, config *config.Config) (engine.Provider, error) {
 		enableIPv6: c.Bool("vultr-public-ipv6-enable"),
 		config:     config,
 	}
-	fmt.Fprintf(os.Stdout, "API Token is: %s", c.String("vultr-api-token"))
 	oauthConfig := &oauth2.Config{}
 	ctx := context.Background()
 	ts := oauthConfig.TokenSource(ctx, &oauth2.Token{AccessToken: c.String("vultr-api-token")})
