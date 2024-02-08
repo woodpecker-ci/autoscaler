@@ -227,7 +227,6 @@ func (p *Provider) setupKeypair(ctx context.Context) error {
 		p.sshKeys = append(p.sshKeys, res[0].ID)
 		return nil
 	}
-	// "No matching keys"
 
 	return errors.New("no matching keys")
 }
