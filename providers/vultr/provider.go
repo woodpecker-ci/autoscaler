@@ -103,7 +103,9 @@ func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 			break
 		}
 	}
-
+if image == -1 {
+  return fmt.Errorf("%s: DeployAgent: no image found for %s", p.name, p.image)
+}
 	tags := make([]string, 0)
 	for key, item := range p.labels {
 		tags = append(tags, fmt.Sprintf("%s=%s", key, item))
