@@ -25,6 +25,7 @@
 
 ### Misc
 
+- chore(deps): update golang docker tag [[#101](https://github.com/woodpecker-ci/autoscaler/pull/101)]
 - fix(deps): update golang.org/x/exp digest to 2c58cdc [[#100](https://github.com/woodpecker-ci/autoscaler/pull/100)]
 - fix(deps): update golang deps non-major [[#99](https://github.com/woodpecker-ci/autoscaler/pull/99)]
 - fix(deps): update module github.com/rs/zerolog to v1.32.0 [[#98](https://github.com/woodpecker-ci/autoscaler/pull/98)]
