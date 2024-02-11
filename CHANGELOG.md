@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.2.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.2.0) - 2024-02-10
+## [0.2.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.2.0) - 2024-02-11
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -25,6 +25,7 @@
 
 ### Misc
 
+- fix(deps): update golang.org/x/exp digest to 2c58cdc [[#100](https://github.com/woodpecker-ci/autoscaler/pull/100)]
 - fix(deps): update golang deps non-major [[#99](https://github.com/woodpecker-ci/autoscaler/pull/99)]
 - fix(deps): update module github.com/rs/zerolog to v1.32.0 [[#98](https://github.com/woodpecker-ci/autoscaler/pull/98)]
 - [pre-commit.ci] pre-commit autoupdate [[#97](https://github.com/woodpecker-ci/autoscaler/pull/97)]
