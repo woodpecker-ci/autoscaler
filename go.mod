@@ -6,11 +6,11 @@ require (
 	github.com/franela/goblin v0.0.0-20211003143422-0a4f594942bf
 	github.com/hetznercloud/hcloud-go/v2 v2.6.0
 	github.com/joho/godotenv v1.5.1
-	github.com/linode/linodego v1.28.0
+	github.com/linode/linodego v1.29.0
 	github.com/rs/zerolog v1.32.0
 	github.com/urfave/cli/v2 v2.27.1
 	go.woodpecker-ci.org/woodpecker/v2 v2.3.0
-	golang.org/x/exp v0.0.0-20240205201215-2c58cdc269a3
+	golang.org/x/exp v0.0.0-20240222234643-814bf88cf225
 	golang.org/x/net v0.21.0
 	golang.org/x/oauth2 v0.17.0
 )
