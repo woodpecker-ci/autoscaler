@@ -25,6 +25,7 @@
 
 ### Misc
 
+- Enable more linters and cleanup code [[#114](https://github.com/woodpecker-ci/autoscaler/pull/114)]
 - chore(deps): update woodpeckerci/plugin-docker-buildx docker tag to v3.2.0 [[#113](https://github.com/woodpecker-ci/autoscaler/pull/113)]
 - fix(deps): update golang.org/x/exp digest to c7f7c64 [[#112](https://github.com/woodpecker-ci/autoscaler/pull/112)]
 - fix(deps): update module github.com/linode/linodego to v1.30.0 [[#111](https://github.com/woodpecker-ci/autoscaler/pull/111)]
