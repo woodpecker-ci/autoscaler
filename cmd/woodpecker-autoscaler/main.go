@@ -25,7 +25,7 @@ func setupProvider(ctx *cli.Context, config *config.Config) (engine.Provider, er
 	case "linode":
 		return linode.New(ctx, config)
 	case "":
-		return nil, fmt.Errorf("Please select a provider")
+		return nil, fmt.Errorf("please select a provider")
 	}
 
 	return nil, fmt.Errorf("unknown provider: %s", ctx.String("provider"))
@@ -41,11 +41,11 @@ func run(ctx *cli.Context) error {
 
 	agentEnvironment := make(map[string]string)
 	for _, env := range ctx.StringSlice("agent-env") {
-		parts := strings.Split(env, "=")
-		if len(parts) != 2 {
+		before, after, _ := strings.Cut(env, "=")
+		if before == "" || after == "" {
 			return fmt.Errorf("invalid agent environment variable: %s", env)
 		}
-		agentEnvironment[parts[0]] = parts[1]
+		agentEnvironment[before] = after
 	}
 
 	config := &config.Config{
