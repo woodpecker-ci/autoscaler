@@ -6,9 +6,8 @@ import (
 	"fmt"
 	"text/template"
 
-	"go.woodpecker-ci.org/woodpecker/v2/woodpecker-go/woodpecker"
-
 	"go.woodpecker-ci.org/autoscaler/config"
+	"go.woodpecker-ci.org/woodpecker/v2/woodpecker-go/woodpecker"
 )
 
 type Provider interface {
@@ -17,6 +16,8 @@ type Provider interface {
 	ListDeployedAgentNames(context.Context) ([]string, error)
 }
 
+// RenderUserDataTemplate renders the user data template for an Agent
+// using the provided configuration.
 func RenderUserDataTemplate(config *config.Config, agent *woodpecker.Agent, tmpl *template.Template) (string, error) {
 	params := struct {
 		Image       string
