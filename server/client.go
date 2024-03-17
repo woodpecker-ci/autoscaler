@@ -9,9 +9,10 @@ import (
 
 	"github.com/rs/zerolog/log"
 	"github.com/urfave/cli/v2"
-	"go.woodpecker-ci.org/woodpecker/v2/woodpecker-go/woodpecker"
 	"golang.org/x/net/proxy"
 	"golang.org/x/oauth2"
+
+	"go.woodpecker-ci.org/woodpecker/v2/woodpecker-go/woodpecker"
 )
 
 // NewClient returns a new client from the CLI context.
@@ -26,10 +27,10 @@ func NewClient(c *cli.Context) (woodpecker.Client, error) {
 	serverURL = strings.TrimRight(serverURL, "/")
 
 	if len(serverURL) == 0 {
-		return nil, fmt.Errorf("Error: Please provide the Woodpecker server address")
+		return nil, fmt.Errorf("please provide the woodpecker server address")
 	}
 	if len(serverToken) == 0 {
-		return nil, fmt.Errorf("Error: Please provide a Woodpecker access token")
+		return nil, fmt.Errorf("please provide a woodpecker access token")
 	}
 
 	// attempt to find system CA certs
