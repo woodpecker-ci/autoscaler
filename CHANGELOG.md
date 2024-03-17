@@ -25,6 +25,7 @@
 
 ### Misc
 
+- Temp disable linode provider [[#115](https://github.com/woodpecker-ci/autoscaler/pull/115)]
 - Enable more linters and cleanup code [[#114](https://github.com/woodpecker-ci/autoscaler/pull/114)]
 - chore(deps): update woodpeckerci/plugin-docker-buildx docker tag to v3.2.0 [[#113](https://github.com/woodpecker-ci/autoscaler/pull/113)]
 - fix(deps): update golang.org/x/exp digest to c7f7c64 [[#112](https://github.com/woodpecker-ci/autoscaler/pull/112)]
