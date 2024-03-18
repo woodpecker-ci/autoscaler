@@ -47,7 +47,7 @@ var flags = []cli.Flag{
 	&cli.StringFlag{
 		Name:    "agent-inactivity-timeout",
 		Value:   "10m",
-		Usage:   "time an agent is allowed to be inactive before it can be terminated as duration string like 2h45m (https://pkg.go.dev/maze.io/x/duration#ParseDuration)",
+		Usage:   "time an agent is allowed to be inactive before it can be terminated as duration string like 2h45m (https://pkg.go.dev/time#ParseDuration)",
 		EnvVars: []string{"WOODPECKER_AGENT_INACTIVITY_TIMEOUT"},
 	},
 	&cli.IntFlag{
