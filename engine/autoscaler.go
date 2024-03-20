@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/rs/zerolog/log"
-	"go.woodpecker-ci.org/woodpecker/v2/woodpecker-go/woodpecker"
 
 	"go.woodpecker-ci.org/autoscaler/config"
+	"go.woodpecker-ci.org/woodpecker/v2/woodpecker-go/woodpecker"
 )
 
 type Autoscaler struct {
@@ -20,6 +20,9 @@ type Autoscaler struct {
 	provider Provider
 }
 
+// NewAutoscaler creates a new Autoscaler instance.
+// It takes in a Provider, Client and Config, and returns a configured
+// Autoscaler struct.
 func NewAutoscaler(provider Provider, client woodpecker.Client, config *config.Config) Autoscaler {
 	return Autoscaler{
 		provider: provider,
@@ -58,9 +61,11 @@ func (a *Autoscaler) getPoolAgents(excludeDrained bool) []*woodpecker.Agent {
 }
 
 func (a *Autoscaler) createAgents(ctx context.Context, amount int) error {
+	suffixLength := 4
+
 	for i := 0; i < amount; i++ {
 		agent, err := a.client.AgentCreate(&woodpecker.Agent{
-			Name: fmt.Sprintf("pool-%s-agent-%s", a.config.PoolID, RandomString(4)),
+			Name: fmt.Sprintf("pool-%s-agent-%s", a.config.PoolID, RandomString(suffixLength)),
 		})
 		if err != nil {
 			return fmt.Errorf("client.AgentCreate: %w", err)
@@ -212,6 +217,8 @@ func (a *Autoscaler) calcAgents(ctx context.Context) (float64, error) {
 	return reqPoolAgents, nil
 }
 
+// Reconcile periodically checks the status of the agent pool and adjusts it to match
+// the desired capacity based on the current queue state.
 func (a *Autoscaler) Reconcile(ctx context.Context) {
 	if err := a.loadAgents(ctx); err != nil {
 		log.Error().Err(err).Msg("load agents failed")

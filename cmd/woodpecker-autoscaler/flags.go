@@ -6,6 +6,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
+//nolint:gomnd
 var flags = []cli.Flag{
 	&cli.StringFlag{
 		Name:    "log-level",
@@ -16,7 +17,7 @@ var flags = []cli.Flag{
 	&cli.StringFlag{
 		Name:    "reconciliation-interval",
 		Value:   "1m",
-		Usage:   "interval at which the autoscaler will reconcile as duration string like 2h45m (https://pkg.go.dev/maze.io/x/duration#ParseDuration)",
+		Usage:   "interval at which the autoscaler will reconcile as duration string like 2h45m (https://pkg.go.dev/time#ParseDuration)",
 		EnvVars: []string{"WOODPECKER_RECONCILIATION_INTERVAL"},
 	},
 	&cli.StringFlag{
@@ -40,7 +41,7 @@ var flags = []cli.Flag{
 	&cli.StringFlag{
 		Name:    "agent-allowed-startup-time",
 		Value:   "10m",
-		Usage:   "time an agent is allowed to start before it can be terminated again as duration string like 2h45m (https://pkg.go.dev/maze.io/x/duration#ParseDuration)",
+		Usage:   "time an agent is allowed to start before it can be terminated again as duration string like 2h45m (https://pkg.go.dev/time#ParseDuration)",
 		EnvVars: []string{"WOODPECKER_AGENT_ALLOWED_STARTUP_TIME"},
 	},
 	&cli.IntFlag{

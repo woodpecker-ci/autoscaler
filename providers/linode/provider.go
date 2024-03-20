@@ -5,7 +5,6 @@ import (
 	b64 "encoding/base64"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"text/template"
 
@@ -148,7 +147,6 @@ func (d *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 		Tags:            d.tags,
 		Metadata:        metadata,
 	})
-
 	if err != nil {
 		return fmt.Errorf("%s: ServerCreate: %w", d.name, err)
 	}
@@ -197,7 +195,7 @@ func (d *Provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 	f.AddField(linodego.Contains, "label", "agent")
 	fStr, err := f.MarshalJSON()
 	if err != nil {
-		log.Fatal(err)
+		return names, err
 	}
 	opts := linodego.NewListOptions(0, string(fStr))
 	servers, err := d.client.ListInstances(ctx, opts)
