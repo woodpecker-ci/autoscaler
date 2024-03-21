@@ -169,10 +169,10 @@ func (p *Provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) err
 
 func (p *Provider) ListDeployedAgentNames(ctx context.Context) ([]string, error) {
 	var names []string
-
+	var pageOpts int = 200
 	listOptions := &govultr.ListOptions{
 		Tag:     engine.LabelPool + "=" + p.config.PoolID,
-		PerPage: 200,
+		PerPage: pageOpts,
 	}
 
 	// Allow time for records to show up in the API
