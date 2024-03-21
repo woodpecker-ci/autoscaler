@@ -14,6 +14,7 @@ import (
 	"go.woodpecker-ci.org/autoscaler/config"
 	"go.woodpecker-ci.org/autoscaler/engine"
 	"go.woodpecker-ci.org/autoscaler/providers/hetznercloud"
+	"go.woodpecker-ci.org/autoscaler/providers/vultr"
 	"go.woodpecker-ci.org/autoscaler/server"
 )
 
@@ -25,6 +26,8 @@ func setupProvider(ctx *cli.Context, config *config.Config) (engine.Provider, er
 	// Enable it again when the issue is fixed.
 	// case "linode":
 	// 	return linode.New(ctx, config)
+	case "vultr":
+		return vultr.New(ctx, config)
 	case "":
 		return nil, fmt.Errorf("please select a provider")
 	}
@@ -119,6 +122,8 @@ func main() {
 	// TODO: Temp disabled due to the security issue https://github.com/woodpecker-ci/autoscaler/issues/91
 	// Enable it again when the issue is fixed.
 	// app.Flags = append(app.Flags, linode.DriverFlags...)
+	// Register vultr flags
+	app.Flags = append(app.Flags, vultr.DriverFlags...)
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal().Err(err).Msg("")
