@@ -171,7 +171,7 @@ func (p *Provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 	var names []string
 
 	listOptions := &govultr.ListOptions{
-		Tag:     engine.LabelPool + "=" + string(p.config.PoolID),
+		Tag:     engine.LabelPool + "=" + p.config.PoolID,
 		PerPage: 200,
 	}
 
