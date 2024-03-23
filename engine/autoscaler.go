@@ -31,15 +31,6 @@ func NewAutoscaler(provider Provider, client woodpecker.Client, config *config.C
 	}
 }
 
-func (a *Autoscaler) getQueueInfo(_ context.Context) (freeTasks, runningTasks, pendingTasks int, err error) {
-	info, err := a.client.QueueInfo()
-	if err != nil {
-		return -1, -1, -1, fmt.Errorf("client.QueueInfo: %w", err)
-	}
-
-	return info.Stats.Workers, info.Stats.Running, info.Stats.Pending, nil
-}
-
 func (a *Autoscaler) loadAgents(_ context.Context) error {
 	a.agents = []*woodpecker.Agent{}
 
