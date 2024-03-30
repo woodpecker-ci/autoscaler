@@ -19,8 +19,8 @@ github.com/golang/protobuf v1.5.4/go.mod h1:lnTiLA8Wa4RWRcIUkrtSVa5nRhsEGBg48fD6
 github.com/google/go-cmp v0.5.5/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/gNBxE=
 github.com/google/go-cmp v0.6.0 h1:ofyhxvXcZhMsU5ulbFiLKl/XBFqE1GSq7atu8tAmTRI=
 github.com/google/go-cmp v0.6.0/go.mod h1:17dUlkBOakJ0+DkrSSNjCkIjxS6bF9zb3elmeNGIjoY=
-github.com/hetznercloud/hcloud-go/v2 v2.6.0 h1:RJOA2hHZ7rD1pScA4O1NF6qhkHyUdbbxjHgFNot8928=
-github.com/hetznercloud/hcloud-go/v2 v2.6.0/go.mod h1:4J1cSE57+g0WS93IiHLV7ubTHItcp+awzeBp5bM9mfA=
+github.com/hetznercloud/hcloud-go/v2 v2.7.0 h1:I+KpXC+Q2MIlOQYeQt3f02vhePPzboqmfAGhJRaF9c4=
+github.com/hetznercloud/hcloud-go/v2 v2.7.0/go.mod h1:wkQHjFTzGBesBWaTSQ3BZCHd/st9J4X4JDuPokpjJlM=
 github.com/jarcoal/httpmock v1.3.1 h1:iUx3whfZWVf3jT01hQTO/Eo5sAYtB2/rqaUuOtpInww=
 github.com/jarcoal/httpmock v1.3.1/go.mod h1:3yb8rc4BI7TCBhFY8ng0gjuLKJNquuDNiPaZjnENuYg=
 github.com/joho/godotenv v1.5.1 h1:7eLL/+HRGLY0ldzfGMeQkb7vMd0as4CfYvUVzLqw0N0=
