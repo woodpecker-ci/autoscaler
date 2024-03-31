@@ -8,6 +8,7 @@
 
 ### Misc
 
+- fix(deps): update golang.org/x/exp digest to a685a6e [[#122](https://github.com/woodpecker-ci/autoscaler/pull/122)]
 - chore(deps): update pre-commit hook golangci/golangci-lint to v1.57.2 [[#123](https://github.com/woodpecker-ci/autoscaler/pull/123)]
 - fix(deps): update module github.com/hetznercloud/hcloud-go/v2 to v2.7.0 [[#121](https://github.com/woodpecker-ci/autoscaler/pull/121)]
 - chore(deps): update pre-commit non-major [[#120](https://github.com/woodpecker-ci/autoscaler/pull/120)]
