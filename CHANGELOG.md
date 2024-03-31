@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.2.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.2.1) - 2024-03-30
+## [0.2.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.2.1) - 2024-03-31
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -8,6 +8,7 @@
 
 ### Misc
 
+- chore(deps): update pre-commit hook golangci/golangci-lint to v1.57.2 [[#123](https://github.com/woodpecker-ci/autoscaler/pull/123)]
 - fix(deps): update module github.com/hetznercloud/hcloud-go/v2 to v2.7.0 [[#121](https://github.com/woodpecker-ci/autoscaler/pull/121)]
 - chore(deps): update pre-commit non-major [[#120](https://github.com/woodpecker-ci/autoscaler/pull/120)]
 - fix(deps): update golang.org/x/exp digest to a85f2c6 [[#119](https://github.com/woodpecker-ci/autoscaler/pull/119)]
