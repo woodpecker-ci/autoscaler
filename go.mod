@@ -17,7 +17,6 @@ require (
 	github.com/stretchr/testify v1.10.0
 	github.com/urfave/cli/v2 v2.27.5
 	github.com/vultr/govultr/v3 v3.6.1
-	go.woodpecker-ci.org/woodpecker v1.0.5
 	go.woodpecker-ci.org/woodpecker/v2 v2.8.3
 	golang.org/x/exp v0.0.0-20250106191152-7588d65b2ba8
 	golang.org/x/net v0.34.0
