@@ -32,7 +32,7 @@ func (i InstanceDoesNotExists) Error() string {
 }
 
 func (i InstanceDoesNotExists) LogValue() slog.Value {
-	zones := make([]string, len(i.Zones))
+	zones := make([]string, 0, len(i.Zones))
 	for _, zone := range i.Zones {
 		zones = append(zones, zone.String())
 	}

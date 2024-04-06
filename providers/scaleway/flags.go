@@ -9,7 +9,8 @@ import (
 )
 
 const (
-	DefaultPool = "default"
+	DefaultPool           = "default"
+	DefaultAgentStorageGB = 25
 
 	category   = "Scaleway"
 	flagPrefix = "scw"
@@ -88,7 +89,7 @@ var ProviderFlags = []cli.Flag{
 		Usage:    "How much storage to provision for your agents in GB",
 		EnvVars:  []string{envPrefix + "_STORAGE_SIZE"},
 		Category: category,
-		Value:    25,
+		Value:    DefaultAgentStorageGB,
 	},
 }
 
@@ -137,7 +138,8 @@ func FromCLI(c *cli.Context) (Config, error) {
 			CommercialType:    c.String(flagPrefix + "-instance-type"),
 			Image:             c.String(flagPrefix + "-image"),
 			EnableIPv6:        c.Bool(flagPrefix + "-enable-ipv6"),
-			Storage:           scw.Size(c.Uint64(flagPrefix+"-storage-size") * 1e9),
+			//nolint:gomnd
+			Storage: scw.Size(c.Uint64(flagPrefix+"-storage-size") * 1e9),
 		},
 	}
 
