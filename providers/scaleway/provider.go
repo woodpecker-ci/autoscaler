@@ -10,6 +10,7 @@ import (
 
 	"github.com/scaleway/scaleway-sdk-go/api/instance/v1"
 	"github.com/scaleway/scaleway-sdk-go/scw"
+
 	"go.woodpecker-ci.org/autoscaler/config"
 	"go.woodpecker-ci.org/autoscaler/engine"
 	"go.woodpecker-ci.org/woodpecker/v2/woodpecker-go/woodpecker"

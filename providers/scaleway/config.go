@@ -77,7 +77,7 @@ func (l Locality) ResolveZones() ([]scw.Zone, error) {
 	}
 
 	zones := l.Zones
-	if zones == nil || len(zones) <= 0 {
+	if len(zones) == 0 {
 		return nil, errors.New("you need to specify a valid locality")
 	}
 

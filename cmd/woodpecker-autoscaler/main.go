@@ -6,8 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"go.woodpecker-ci.org/autoscaler/providers/scaleway"
-
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -17,6 +15,7 @@ import (
 	"go.woodpecker-ci.org/autoscaler/engine"
 	"go.woodpecker-ci.org/autoscaler/providers/aws"
 	"go.woodpecker-ci.org/autoscaler/providers/hetznercloud"
+	"go.woodpecker-ci.org/autoscaler/providers/scaleway"
 	"go.woodpecker-ci.org/autoscaler/providers/vultr"
 	"go.woodpecker-ci.org/autoscaler/server"
 )
@@ -41,7 +40,7 @@ func setupProvider(ctx *cli.Context, config *config.Config) (engine.Provider, er
 
 		return scaleway.New(scwCfg, config)
 	case "":
-		return nil, fmt.Errorf("Please select a provider")
+		return nil, fmt.Errorf("please select a provider")
 	}
 
 	return nil, fmt.Errorf("unknown provider: %s", ctx.String("provider"))
