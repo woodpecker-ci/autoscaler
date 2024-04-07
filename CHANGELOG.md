@@ -8,6 +8,7 @@
 
 ### Misc
 
+- chore(deps): update golang docker tag to v1.22.2 [[#127](https://github.com/woodpecker-ci/autoscaler/pull/127)]
 - fix(deps): update golang.org/x/exp digest to c0f41cb [[#126](https://github.com/woodpecker-ci/autoscaler/pull/126)]
 - fix(deps): update golang deps non-major [[#125](https://github.com/woodpecker-ci/autoscaler/pull/125)]
 - chore(deps): update woodpeckerci/plugin-docker-buildx docker tag to v3.2.1 [[#124](https://github.com/woodpecker-ci/autoscaler/pull/124)]
