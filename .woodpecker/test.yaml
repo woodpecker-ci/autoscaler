@@ -4,7 +4,7 @@ when:
     branch: ${CI_REPO_DEFAULT_BRANCH}
 
 variables:
-  - &golang_image "golang:1.22.1"
+  - &golang_image "golang:1.22.2"
   - &when
     - path: &when_path # related config files
         - ".woodpecker/test.yml"
