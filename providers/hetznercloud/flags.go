@@ -8,7 +8,7 @@ import (
 
 const category = "Hetzner Cloud"
 
-var DriverFlags = []cli.Flag{
+var ProviderFlags = []cli.Flag{
 	&cli.StringFlag{
 		Name:     "hetznercloud-api-token",
 		Usage:    "hetzner cloud api token",
