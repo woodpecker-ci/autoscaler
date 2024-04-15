@@ -21,7 +21,7 @@
 
 ### 🐛 Bug Fixes
 
-- Update hetznercloud driver [[#12](https://github.com/woodpecker-ci/autoscaler/pull/12)]
+- Update hetznercloud provider [[#12](https://github.com/woodpecker-ci/autoscaler/pull/12)]
 
 ### Misc
 
