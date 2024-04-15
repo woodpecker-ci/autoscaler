@@ -114,11 +114,11 @@ func main() {
 	}
 
 	// Register hetznercloud flags
-	app.Flags = append(app.Flags, hetznercloud.DriverFlags...)
+	app.Flags = append(app.Flags, hetznercloud.ProviderFlags...)
 	// Register linode flags
 	// TODO: Temp disabled due to the security issue https://github.com/woodpecker-ci/autoscaler/issues/91
 	// Enable it again when the issue is fixed.
-	// app.Flags = append(app.Flags, linode.DriverFlags...)
+	// app.Flags = append(app.Flags, linode.ProviderFlags...)
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal().Err(err).Msg("")
