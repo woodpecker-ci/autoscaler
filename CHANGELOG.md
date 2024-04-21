@@ -1,13 +1,10 @@
 # Changelog
 
-## [0.2.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.2.1) - 2024-04-18
-
-### ❤️ Thanks to all contributors! ❤️
-
-
+## [0.2.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.2.1) - 2024-04-21
 
 ### Misc
 
+- chore(deps): update woodpeckerci/plugin-ready-release-go docker tag to v1.1.1 [[#131](https://github.com/woodpecker-ci/autoscaler/pull/131)]
 - fix(deps): update golang.org/x/exp digest to fe59bbe [[#130](https://github.com/woodpecker-ci/autoscaler/pull/130)]
 - chore(deps): update pre-commit hook pre-commit/pre-commit-hooks to v4.6.0 [[#128](https://github.com/woodpecker-ci/autoscaler/pull/128)]
 - chore(deps): update golang docker tag to v1.22.2 [[#127](https://github.com/woodpecker-ci/autoscaler/pull/127)]
