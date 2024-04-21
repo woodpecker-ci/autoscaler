@@ -4,7 +4,7 @@ go 1.21
 
 require (
 	github.com/franela/goblin v0.0.0-20211003143422-0a4f594942bf
-	github.com/hetznercloud/hcloud-go/v2 v2.7.0
+	github.com/hetznercloud/hcloud-go/v2 v2.7.2
 	github.com/joho/godotenv v1.5.1
 	github.com/linode/linodego v1.32.0
 	github.com/rs/zerolog v1.32.0
