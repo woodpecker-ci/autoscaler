@@ -4,6 +4,7 @@
 
 ### Misc
 
+- fix(deps): update module github.com/hetznercloud/hcloud-go/v2 to v2.7.2 [[#132](https://github.com/woodpecker-ci/autoscaler/pull/132)]
 - chore(deps): update woodpeckerci/plugin-ready-release-go docker tag to v1.1.1 [[#131](https://github.com/woodpecker-ci/autoscaler/pull/131)]
 - fix(deps): update golang.org/x/exp digest to fe59bbe [[#130](https://github.com/woodpecker-ci/autoscaler/pull/130)]
 - chore(deps): update pre-commit hook pre-commit/pre-commit-hooks to v4.6.0 [[#128](https://github.com/woodpecker-ci/autoscaler/pull/128)]
