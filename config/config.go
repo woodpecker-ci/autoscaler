@@ -13,7 +13,4 @@ type Config struct {
 	GRPCSecure              bool
 	AgentAllowedStartupTime time.Duration
 	LabelsFilter            string
-
-	APIToken string
-	APIUrl   string
 }

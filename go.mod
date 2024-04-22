@@ -16,6 +16,11 @@ require (
 	golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842
 	golang.org/x/net v0.26.0
 	golang.org/x/oauth2 v0.21.0
+	github.com/urfave/cli/v2 v2.27.1
+	go.woodpecker-ci.org/woodpecker/v2 v2.4.2-0.20240422085457-e51f804ad6b8
+	golang.org/x/exp v0.0.0-20240416160154-fe59bbe5cc7f
+	golang.org/x/net v0.24.0
+	golang.org/x/oauth2 v0.20.0
 )
 
 require (
