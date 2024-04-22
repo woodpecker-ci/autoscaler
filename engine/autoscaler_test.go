@@ -133,7 +133,7 @@ func Test_getQueueInfo(t *testing.T) {
 					pending: 2,
 				},
 				config: &config.Config{
-					LabelsFilter: "arch=amd64",
+					FilterLabels: "arch=amd64",
 				},
 			}
 
@@ -148,7 +148,7 @@ func Test_getQueueInfo(t *testing.T) {
 					pending: 2,
 				},
 				config: &config.Config{
-					LabelsFilter: "arch=arm64",
+					FilterLabels: "arch=arm64",
 				},
 			}
 

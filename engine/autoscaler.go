@@ -201,13 +201,13 @@ func (a *Autoscaler) getQueueInfo(_ context.Context) (freeTasks, runningTasks, p
 		return 0, 0, 0, fmt.Errorf("error from QueueInfo: %s", err.Error())
 	}
 
-	if a.config.LabelsFilter == "" {
+	if a.config.FilterLabels == "" {
 		return queueInfo.Stats.Workers, queueInfo.Stats.Running, queueInfo.Stats.Pending, nil
 	}
 
-	labelFilterKey, labelFilterValue, ok := strings.Cut(a.config.LabelsFilter, "=")
+	labelFilterKey, labelFilterValue, ok := strings.Cut(a.config.FilterLabels, "=")
 	if !ok {
-		return 0, 0, 0, fmt.Errorf("invalid labels filter: %s", a.config.LabelsFilter)
+		return 0, 0, 0, fmt.Errorf("invalid labels filter: %s", a.config.FilterLabels)
 	}
 
 	running := coundTasksByLabel(queueInfo.Running, labelFilterKey, labelFilterValue)
