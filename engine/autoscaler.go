@@ -210,29 +210,8 @@ func (a *Autoscaler) getQueueInfo(_ context.Context) (freeTasks, runningTasks, p
 		return 0, 0, 0, fmt.Errorf("invalid labels filter: %s", a.config.LabelsFilter)
 	}
 
-	running := 0
-	if queueInfo.Stats.Running > 0 {
-		if queueInfo.Running != nil {
-			for _, runningJobs := range queueInfo.Running {
-				val, exists := runningJobs.Labels[labelFilterKey]
-				if exists && val == labelFilterValue {
-					running++
-				}
-			}
-		}
-	}
-
-	pending := 0
-	if queueInfo.Stats.Pending > 0 {
-		if queueInfo.Pending != nil {
-			for _, pendingJobs := range queueInfo.Pending {
-				val, exists := pendingJobs.Labels[labelFilterKey]
-				if exists && val == labelFilterValue {
-					pending++
-				}
-			}
-		}
-	}
+	running := coundTasksByLabel(queueInfo.Running, labelFilterKey, labelFilterValue)
+	pending := coundTasksByLabel(queueInfo.Pending, labelFilterKey, labelFilterValue)
 
 	return queueInfo.Stats.Workers, running, pending, nil
 }
