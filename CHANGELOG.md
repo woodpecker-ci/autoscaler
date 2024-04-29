@@ -1,9 +1,10 @@
 # Changelog
 
-## [0.2.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.2.1) - 2024-04-25
+## [0.2.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.2.1) - 2024-04-29
 
 ### Misc
 
+- fix(deps): update module github.com/urfave/cli/v2 to v2.27.2 [[#136](https://github.com/woodpecker-ci/autoscaler/pull/136)]
 - fix(deps): update module github.com/linode/linodego to v1.33.0 [[#135](https://github.com/woodpecker-ci/autoscaler/pull/135)]
 - fix(deps): update module github.com/hetznercloud/hcloud-go/v2 to v2.7.2 [[#132](https://github.com/woodpecker-ci/autoscaler/pull/132)]
 - chore(deps): update woodpeckerci/plugin-ready-release-go docker tag to v1.1.1 [[#131](https://github.com/woodpecker-ci/autoscaler/pull/131)]
