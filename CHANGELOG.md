@@ -4,6 +4,7 @@
 
 ### Misc
 
+- chore(deps): update pre-commit non-major [[#139](https://github.com/woodpecker-ci/autoscaler/pull/139)]
 - fix(deps): update module golang.org/x/oauth2 to v0.20.0 [[#140](https://github.com/woodpecker-ci/autoscaler/pull/140)]
 - fix(deps): update module github.com/urfave/cli/v2 to v2.27.2 [[#136](https://github.com/woodpecker-ci/autoscaler/pull/136)]
 - fix(deps): update module github.com/linode/linodego to v1.33.0 [[#135](https://github.com/woodpecker-ci/autoscaler/pull/135)]
