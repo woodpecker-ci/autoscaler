@@ -1,9 +1,10 @@
 # Changelog
 
-## [0.2.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.2.1) - 2024-04-29
+## [0.2.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.2.1) - 2024-05-06
 
 ### Misc
 
+- fix(deps): update module golang.org/x/oauth2 to v0.20.0 [[#140](https://github.com/woodpecker-ci/autoscaler/pull/140)]
 - fix(deps): update module github.com/urfave/cli/v2 to v2.27.2 [[#136](https://github.com/woodpecker-ci/autoscaler/pull/136)]
 - fix(deps): update module github.com/linode/linodego to v1.33.0 [[#135](https://github.com/woodpecker-ci/autoscaler/pull/135)]
 - fix(deps): update module github.com/hetznercloud/hcloud-go/v2 to v2.7.2 [[#132](https://github.com/woodpecker-ci/autoscaler/pull/132)]
