@@ -4,6 +4,7 @@
 
 ### Misc
 
+- chore(deps): update golang docker tag to v1.22.3 [[#144](https://github.com/woodpecker-ci/autoscaler/pull/144)]
 - chore(deps): update pre-commit hook golangci/golangci-lint to v1.58.1 [[#145](https://github.com/woodpecker-ci/autoscaler/pull/145)]
 - chore(deps): update pre-commit non-major [[#139](https://github.com/woodpecker-ci/autoscaler/pull/139)]
 - fix(deps): update module golang.org/x/oauth2 to v0.20.0 [[#140](https://github.com/woodpecker-ci/autoscaler/pull/140)]
