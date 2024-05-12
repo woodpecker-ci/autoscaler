@@ -4,6 +4,7 @@
 
 ### Misc
 
+- fix(deps): update golang deps non-major [[#142](https://github.com/woodpecker-ci/autoscaler/pull/142)]
 - chore(deps): update golang docker tag to v1.22.3 [[#144](https://github.com/woodpecker-ci/autoscaler/pull/144)]
 - chore(deps): update pre-commit hook golangci/golangci-lint to v1.58.1 [[#145](https://github.com/woodpecker-ci/autoscaler/pull/145)]
 - chore(deps): update pre-commit non-major [[#139](https://github.com/woodpecker-ci/autoscaler/pull/139)]
