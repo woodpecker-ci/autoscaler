@@ -4,15 +4,15 @@ go 1.21
 
 require (
 	github.com/franela/goblin v0.0.0-20211003143422-0a4f594942bf
-	github.com/hetznercloud/hcloud-go/v2 v2.7.2
+	github.com/hetznercloud/hcloud-go/v2 v2.8.0
 	github.com/joho/godotenv v1.5.1
-	github.com/linode/linodego v1.33.0
+	github.com/linode/linodego v1.33.1
 	github.com/rs/zerolog v1.32.0
 	github.com/stretchr/testify v1.9.0
 	github.com/urfave/cli/v2 v2.27.2
 	go.woodpecker-ci.org/woodpecker/v2 v2.4.1
-	golang.org/x/exp v0.0.0-20240416160154-fe59bbe5cc7f
-	golang.org/x/net v0.24.0
+	golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842
+	golang.org/x/net v0.25.0
 	golang.org/x/oauth2 v0.20.0
 )
 
@@ -31,8 +31,8 @@ require (
 	github.com/prometheus/procfs v0.12.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/xrash/smetrics v0.0.0-20240312152122-5f08fbb34913 // indirect
-	golang.org/x/sys v0.19.0 // indirect
-	golang.org/x/text v0.14.0 // indirect
+	golang.org/x/sys v0.20.0 // indirect
+	golang.org/x/text v0.15.0 // indirect
 	google.golang.org/protobuf v1.33.0 // indirect
 	gopkg.in/ini.v1 v1.66.6 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
