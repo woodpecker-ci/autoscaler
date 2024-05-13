@@ -1,7 +1,7 @@
 when:
   - event: pull_request
   - event: push
-    branch: ${CI_REPO_DEFAULT_BRANCH}
+    branch: renovate/*
 
 variables:
   - &golang_image 'golang:1.22'
@@ -23,17 +23,19 @@ variables:
 steps:
   lint:
     image: *golang_image
-    group: test
+    depends_on: []
     commands:
       - make lint
     when: *when
 
   lint-editorconfig:
+    depends_on: []
     image: mstruebing/editorconfig-checker:2.7.2
     group: test
 
   test:
     image: *golang_image
+    depends_on: []
     group: test
     commands:
       - make test
