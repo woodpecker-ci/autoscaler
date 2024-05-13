@@ -1,5 +1,5 @@
 when:
-  - event: [ pull_request, tag ]
+  - event: [pull_request, tag]
   - event: push
     branch:
       - ${CI_REPO_DEFAULT_BRANCH}
