@@ -1,7 +1,7 @@
 when:
   - event: [ pull_request, tag ]
   - event: push
-    branch: 
+    branch:
       - ${CI_REPO_DEFAULT_BRANCH}
       - renovate/*
 
@@ -17,7 +17,7 @@ steps:
     when:
       - event: pull_request
       - event: push
-        branch: 
+        branch:
           - renovate/*
 
   publish-next:
