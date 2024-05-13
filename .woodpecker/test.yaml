@@ -4,16 +4,16 @@ when:
     branch: ${CI_REPO_DEFAULT_BRANCH}
 
 variables:
-  - &golang_image "golang:1.22.3"
+  - &golang_image 'golang:1.22'
   - &when
     - path: &when_path # related config files
-        - ".woodpecker/test.yml"
-        - ".golangci.yml"
+        - '.woodpecker/test.yml'
+        - '.golangci.yml'
         # go source code
-        - "**/*.go"
-        - "go.*"
+        - '**/*.go'
+        - 'go.*'
         # schema changes
-        - "pipeline/schema/**"
+        - 'pipeline/schema/**'
       branch:
         exclude: ${CI_REPO_DEFAULT_BRANCH}
       event: push
