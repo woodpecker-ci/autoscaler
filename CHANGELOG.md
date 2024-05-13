@@ -2,8 +2,13 @@
 
 ## [0.2.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.2.1) - 2024-05-13
 
+### ❤️ Thanks to all contributors! ❤️
+
+@qwerty287
+
 ### Misc
 
+- Fix deprecations and run on renovate branches [[#147](https://github.com/woodpecker-ci/autoscaler/pull/147)]
 - chore(deps): update mstruebing/editorconfig-checker docker tag to v3 [[#138](https://github.com/woodpecker-ci/autoscaler/pull/138)]
 - chore(deps): update woodpeckerci/plugin-docker-buildx docker tag to v4 [[#143](https://github.com/woodpecker-ci/autoscaler/pull/143)]
 - fix(deps): update golang deps non-major [[#142](https://github.com/woodpecker-ci/autoscaler/pull/142)]
