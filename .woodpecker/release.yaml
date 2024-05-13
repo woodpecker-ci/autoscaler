@@ -1,7 +1,9 @@
 when:
-  - event: pull_request
+  - event: [ pull_request, tag ]
   - event: push
-    branch: ${CI_REPO_DEFAULT_BRANCH}
+    branch: 
+      - ${CI_REPO_DEFAULT_BRANCH}
+      - renovate/*
 
 steps:
   dryrun:
@@ -13,7 +15,10 @@ steps:
       platforms: linux/arm/v7,linux/arm64/v8,linux/amd64,linux/ppc64le
       tag: test
     when:
-      event: pull_request
+      - event: pull_request
+      - event: push
+        branch: 
+          - renovate/*
 
   publish-next:
     image: woodpeckerci/plugin-docker-buildx:4.0.0
