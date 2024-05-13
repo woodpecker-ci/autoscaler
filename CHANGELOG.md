@@ -4,6 +4,7 @@
 
 ### Misc
 
+- chore(deps): update mstruebing/editorconfig-checker docker tag to v3 [[#138](https://github.com/woodpecker-ci/autoscaler/pull/138)]
 - chore(deps): update woodpeckerci/plugin-docker-buildx docker tag to v4 [[#143](https://github.com/woodpecker-ci/autoscaler/pull/143)]
 - fix(deps): update golang deps non-major [[#142](https://github.com/woodpecker-ci/autoscaler/pull/142)]
 - chore(deps): update golang docker tag to v1.22.3 [[#144](https://github.com/woodpecker-ci/autoscaler/pull/144)]
