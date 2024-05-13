@@ -31,12 +31,10 @@ steps:
   lint-editorconfig:
     depends_on: []
     image: mstruebing/editorconfig-checker:2.7.2
-    group: test
 
   test:
     image: *golang_image
     depends_on: []
-    group: test
     commands:
       - make test
     when: *when
