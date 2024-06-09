@@ -8,6 +8,7 @@
 
 ### Misc
 
+- fix(deps): update golang deps non-major [[#150](https://github.com/woodpecker-ci/autoscaler/pull/150)]
 - [pre-commit.ci] pre-commit autoupdate [[#149](https://github.com/woodpecker-ci/autoscaler/pull/149)]
 - Fix deprecations and run on renovate branches [[#147](https://github.com/woodpecker-ci/autoscaler/pull/147)]
 - chore(deps): update mstruebing/editorconfig-checker docker tag to v3 [[#138](https://github.com/woodpecker-ci/autoscaler/pull/138)]
