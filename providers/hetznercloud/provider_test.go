@@ -53,23 +53,23 @@ func TestDeployAgent(t *testing.T) {
 		},
 	}
 
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 			mockClient := mocks.NewMockClient(t)
-			tc.setupMocks(mockClient)
+			tt.setupMocks(mockClient)
 
 			provider := &Provider{
 				client:   mockClient,
 				config:   &config.Config{},
-				userData: template.Must(template.New("").Parse(tc.userdata)),
-				sshKeys:  tc.sshkeys,
+				userData: template.Must(template.New("").Parse(tt.userdata)),
+				sshKeys:  tt.sshkeys,
 			}
 
 			agent := &woodpecker.Agent{}
 			err := provider.DeployAgent(context.Background(), agent)
-			if tc.expectedError != "" {
+			if tt.expectedError != "" {
 				assert.Error(t, err)
-				assert.Contains(t, err.Error(), tc.expectedError)
+				assert.Contains(t, err.Error(), tt.expectedError)
 			} else {
 				assert.NoError(t, err)
 			}

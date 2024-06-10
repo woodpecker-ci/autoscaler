@@ -37,17 +37,17 @@ func TestSliceToMap(t *testing.T) {
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			actual, err := SliceToMap(tc.input, tc.del)
-			if tc.wantErr != nil {
+	for _, tt := range testCases {
+		t.Run(tt.name, func(t *testing.T) {
+			actual, err := SliceToMap(tt.input, tt.del)
+			if tt.wantErr != nil {
 				assert.Error(t, err)
 
 				return
 			}
 
 			assert.NoError(t, err)
-			assert.Equal(t, tc.want, actual)
+			assert.Equal(t, tt.want, actual)
 		})
 	}
 }
@@ -85,10 +85,10 @@ func TestMergeMaps(t *testing.T) {
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			merged := MergeMaps(tc.m1, tc.m2)
-			assert.Equal(t, tc.want, merged)
+	for _, tt := range testCases {
+		t.Run(tt.name, func(t *testing.T) {
+			merged := MergeMaps(tt.m1, tt.m2)
+			assert.Equal(t, tt.want, merged)
 		})
 	}
 }
