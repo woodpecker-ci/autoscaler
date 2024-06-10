@@ -27,10 +27,25 @@ func (m MockClient) QueueInfo() (*woodpecker.Info, error) {
 	info.Stats.Pending = m.pending
 	info.Stats.WaitingOnDeps = m.waitingOnDeps
 
+	info.Pending = []woodpecker.Task{
+		{
+			Labels: map[string]string{
+				"arch": "amd64",
+			},
+		},
+	}
+	info.Running = []woodpecker.Task{
+		{
+			Labels: map[string]string{
+				"arch": "amd64",
+			},
+		},
+	}
+
 	return info, nil
 }
 
-func TestCalcAgents(t *testing.T) {
+func Test_calcAgents(t *testing.T) {
 	zerolog.SetGlobalLevel(zerolog.ErrorLevel)
 	g := goblin.Goblin(t)
 
@@ -97,6 +112,57 @@ func TestCalcAgents(t *testing.T) {
 
 			value, _ := autoscaler.calcAgents(context.TODO())
 			g.Assert(value).Equal(float64(0))
+		})
+	})
+}
+
+func Test_getQueueInfo(t *testing.T) {
+	zerolog.SetGlobalLevel(zerolog.ErrorLevel)
+	g := goblin.Goblin(t)
+
+	g.Describe("Queue Info", func() {
+		g.It("Should not filter", func() {
+			autoscaler := Autoscaler{
+				client: &MockClient{
+					pending: 2,
+				},
+				config: &config.Config{},
+			}
+
+			free, running, pending, _ := autoscaler.getQueueInfo(context.TODO())
+			g.Assert(free).Equal(0)
+			g.Assert(running).Equal(0)
+			g.Assert(pending).Equal(2)
+		})
+		g.It("Should filter one by label", func() {
+			autoscaler := Autoscaler{
+				client: &MockClient{
+					pending: 2,
+				},
+				config: &config.Config{
+					FilterLabels: "arch=amd64",
+				},
+			}
+
+			free, running, pending, _ := autoscaler.getQueueInfo(context.TODO())
+			g.Assert(free).Equal(0)
+			g.Assert(running).Equal(1)
+			g.Assert(pending).Equal(1)
+		})
+		g.It("Should filter all by label", func() {
+			autoscaler := Autoscaler{
+				client: &MockClient{
+					pending: 2,
+				},
+				config: &config.Config{
+					FilterLabels: "arch=arm64",
+				},
+			}
+
+			free, running, pending, _ := autoscaler.getQueueInfo(context.TODO())
+			g.Assert(free).Equal(0)
+			g.Assert(running).Equal(0)
+			g.Assert(pending).Equal(0)
 		})
 	})
 }
