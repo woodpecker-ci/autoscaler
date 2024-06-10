@@ -1,10 +1,14 @@
 # Changelog
 
-## [0.2.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.2.1) - 2024-06-09
+## [0.3.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.3.0) - 2024-06-10
 
 ### ❤️ Thanks to all contributors! ❤️
 
-@qwerty287
+@qwerty287, @xoxys
+
+### ✨ Features
+
+- Allow to filter for specific tasks [[#134](https://github.com/woodpecker-ci/autoscaler/pull/134)]
 
 ### Misc
 
