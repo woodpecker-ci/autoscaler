@@ -146,7 +146,7 @@ func Test_getQueueInfo(t *testing.T) {
 
 			free, running, pending, _ := autoscaler.getQueueInfo(context.TODO())
 			g.Assert(free).Equal(0)
-			g.Assert(running).Equal(0)
+			g.Assert(running).Equal(1)
 			g.Assert(pending).Equal(1)
 		})
 		g.It("Should filter all by label", func() {

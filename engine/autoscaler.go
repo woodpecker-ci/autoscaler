@@ -210,8 +210,8 @@ func (a *Autoscaler) getQueueInfo(_ context.Context) (freeTasks, runningTasks, p
 		return 0, 0, 0, fmt.Errorf("invalid labels filter: %s", a.config.FilterLabels)
 	}
 
-	running := coundTasksByLabel(queueInfo.Running, labelFilterKey, labelFilterValue)
-	pending := coundTasksByLabel(queueInfo.Pending, labelFilterKey, labelFilterValue)
+	running := countTasksByLabel(queueInfo.Running, labelFilterKey, labelFilterValue)
+	pending := countTasksByLabel(queueInfo.Pending, labelFilterKey, labelFilterValue)
 
 	return queueInfo.Stats.Workers, running, pending, nil
 }
