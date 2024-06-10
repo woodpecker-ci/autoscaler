@@ -5,25 +5,12 @@ import (
 )
 
 type Client interface {
-	// Action() ActionClient
-	// Datacenter() DatacenterClient
 	Firewall() FirewallClient
-	// FloatingIP() FloatingIPClient
 	Image() ImageClient
-	// Location() LocationClient
 	Network() NetworkClient
 	Server() ServerClient
 	ServerType() ServerTypeClient
 	SSHKey() SSHKeyClient
-	// Volume() VolumeClient
-	// Certificate() CertificateClient
-	// LoadBalancer() LoadBalancerClient
-	// LoadBalancerType() LoadBalancerTypeClient
-	// ISO() ISOClient
-	// PlacementGroup() PlacementGroupClient
-	// RDNS() RDNSClient
-	// PrimaryIP() PrimaryIPClient
-	// WithOpts(...hcloud.ClientOption)
 }
 
 type client struct {
