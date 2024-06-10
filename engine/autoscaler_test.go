@@ -34,6 +34,13 @@ func (m MockClient) QueueInfo() (*woodpecker.Info, error) {
 			},
 		},
 	}
+	info.Running = []woodpecker.Task{
+		{
+			Labels: map[string]string{
+				"arch": "amd64",
+			},
+		},
+	}
 
 	return info, nil
 }
