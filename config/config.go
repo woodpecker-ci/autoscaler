@@ -12,4 +12,5 @@ type Config struct {
 	GRPCAddress             string
 	GRPCSecure              bool
 	AgentAllowedStartupTime time.Duration
+	FilterLabels            string
 }

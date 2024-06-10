@@ -57,6 +57,7 @@ func run(ctx *cli.Context) error {
 		GRPCAddress:       ctx.String("grpc-addr"),
 		GRPCSecure:        ctx.Bool("grpc-secure"),
 		Image:             ctx.String("agent-image"),
+		FilterLabels:      ctx.String("filter-labels"),
 		Environment:       agentEnvironment,
 	}
 

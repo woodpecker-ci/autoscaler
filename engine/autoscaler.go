@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/rs/zerolog/log"
@@ -29,15 +30,6 @@ func NewAutoscaler(provider Provider, client woodpecker.Client, config *config.C
 		client:   client,
 		config:   config,
 	}
-}
-
-func (a *Autoscaler) getQueueInfo(_ context.Context) (freeTasks, runningTasks, pendingTasks int, err error) {
-	info, err := a.client.QueueInfo()
-	if err != nil {
-		return -1, -1, -1, fmt.Errorf("client.QueueInfo: %w", err)
-	}
-
-	return info.Stats.Workers, info.Stats.Running, info.Stats.Pending, nil
 }
 
 func (a *Autoscaler) loadAgents(_ context.Context) error {
@@ -201,6 +193,27 @@ func (a *Autoscaler) cleanupAgents(ctx context.Context) error {
 	// TODO: remove stale agents
 
 	return nil
+}
+
+func (a *Autoscaler) getQueueInfo(_ context.Context) (freeTasks, runningTasks, pendingTasks int, err error) {
+	queueInfo, err := a.client.QueueInfo()
+	if err != nil {
+		return 0, 0, 0, fmt.Errorf("error from QueueInfo: %s", err.Error())
+	}
+
+	if a.config.FilterLabels == "" {
+		return queueInfo.Stats.Workers, queueInfo.Stats.Running, queueInfo.Stats.Pending, nil
+	}
+
+	labelFilterKey, labelFilterValue, ok := strings.Cut(a.config.FilterLabels, "=")
+	if !ok {
+		return 0, 0, 0, fmt.Errorf("invalid labels filter: %s", a.config.FilterLabels)
+	}
+
+	running := countTasksByLabel(queueInfo.Running, labelFilterKey, labelFilterValue)
+	pending := countTasksByLabel(queueInfo.Pending, labelFilterKey, labelFilterValue)
+
+	return queueInfo.Stats.Workers, running, pending, nil
 }
 
 func (a *Autoscaler) calcAgents(ctx context.Context) (float64, error) {
