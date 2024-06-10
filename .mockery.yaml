@@ -1,5 +1,5 @@
 ---
-all: True
+all: true
 dir: 'providers/hetznercloud/{{.PackageName}}/mocks'
 outpkg: 'mocks'
 packages:
