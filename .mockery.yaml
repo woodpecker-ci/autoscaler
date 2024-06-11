@@ -1,6 +1,8 @@
 ---
 all: true
-dir: 'providers/hetznercloud/{{.PackageName}}/mocks'
+disable-version-string: true
 outpkg: 'mocks'
 packages:
   go.woodpecker-ci.org/autoscaler/providers/hetznercloud/hcapi:
+    config:
+      dir: 'providers/hetznercloud/{{.PackageName}}/mocks'
