@@ -26,6 +26,7 @@ apt:
     docker.list:
       source: deb https://download.docker.com/linux/ubuntu $RELEASE stable
       keyid: 0EBFCD88
+      keyserver: keys.openpgp.org
 
 packages:
   - docker-ce
