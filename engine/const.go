@@ -24,8 +24,9 @@ system_info:
 apt:
   sources:
     docker.list:
-      source: deb https://download.docker.com/linux/ubuntu $RELEASE stable
-      keyid: 0EBFCD88
+      keyid: 9DC858229FC7DD38854AE2D88D81803C0EBFCD88
+      keyserver: https://download.docker.com/linux/ubuntu/gpg
+      source: deb [signed-by=$KEY_FILE] https://download.docker.com/linux/ubuntu $RELEASE stable
 
 packages:
   - docker-ce
