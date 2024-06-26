@@ -75,6 +75,9 @@ install-tools: ## Install development tools
 	hash gofumpt > /dev/null 2>&1; if [ $$? -ne 0 ]; then \
 		go install mvdan.cc/gofumpt@latest; \
 	fi ; \
+	hash mockery > /dev/null 2>&1; if [ $$? -ne 0 ]; then \
+		go install github.com/vektra/mockery/v2@latest; \
+	fi ; \
 
 ##@ Test
 
@@ -90,6 +93,10 @@ test-autoscaler: ## Test autoscaler code
 
 .PHONY: test
 test: test-autoscaler ## Run all tests
+
+.PHONY: generate
+generate:
+	mockery
 
 ##@ Build
 
