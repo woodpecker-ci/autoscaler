@@ -8,8 +8,8 @@ import (
 
 const category = "Linode"
 
-var DriverFlags = []cli.Flag{
-	// linode
+//nolint:gomnd
+var ProviderFlags = []cli.Flag{
 	&cli.StringFlag{
 		Name:     "linode-api-token",
 		Usage:    "Linode api token",
