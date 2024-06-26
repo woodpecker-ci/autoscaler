@@ -72,6 +72,11 @@ func run(ctx *cli.Context) error {
 		return fmt.Errorf("can't parse agent-allowed-startup-time: %w", err)
 	}
 
+	config.AgentInactivityTimeout, err = time.ParseDuration(ctx.String("agent-inactivity-timeout"))
+	if err != nil {
+		return fmt.Errorf("can't parse agent-inactivity-timeout: %w", err)
+	}
+
 	reconciliationInterval, err := time.ParseDuration(ctx.String("reconciliation-interval"))
 	if err != nil {
 		return fmt.Errorf("can't parse reconciliation-interval: %w", err)

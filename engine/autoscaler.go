@@ -122,30 +122,33 @@ func (a *Autoscaler) isAgentIdle(agent *woodpecker.Agent) (bool, error) {
 
 func (a *Autoscaler) removeDrainedAgents(ctx context.Context) error {
 	for _, agent := range a.agents {
-		if agent.NoSchedule {
-			isIdle, err := a.isAgentIdle(agent)
-			if err != nil {
-				return err
-			}
-			if !isIdle {
-				log.Info().Str("agent", agent.Name).Msg("agent is still processing workload")
-				continue
-			}
-
-			log.Info().Str("agent", agent.Name).Msgf("removing agent")
-
-			err = a.provider.RemoveAgent(ctx, agent)
-			if err != nil {
-				return err
-			}
-
-			err = a.client.AgentDelete(agent.ID)
-			if err != nil {
-				return fmt.Errorf("client.AgentDelete: %w", err)
-			}
-
-			a.agents = append(a.agents[:0], a.agents[1:]...)
+		// only remove disabled agents
+		if !agent.NoSchedule {
+			continue
 		}
+
+		isIdle, err := a.isAgentIdle(agent)
+		if err != nil {
+			return err
+		}
+		if !isIdle {
+			log.Info().Str("agent", agent.Name).Msg("agent is still processing workload")
+			continue
+		}
+
+		log.Info().Str("agent", agent.Name).Msgf("removing agent")
+
+		err = a.provider.RemoveAgent(ctx, agent)
+		if err != nil {
+			return err
+		}
+
+		err = a.client.AgentDelete(agent.ID)
+		if err != nil {
+			return fmt.Errorf("client.AgentDelete: %w", err)
+		}
+
+		a.agents = append(a.agents[:0], a.agents[1:]...)
 	}
 
 	return nil
@@ -195,7 +198,6 @@ func (a *Autoscaler) cleanupAgents(ctx context.Context) error {
 	}
 
 	// remove agents that haven't contacted the server for a long time or are stuck in the provisioning phase
-	now := time.Now()
 	for _, agent := range a.agents {
 		if agent.NoSchedule {
 			continue
@@ -204,8 +206,8 @@ func (a *Autoscaler) cleanupAgents(ctx context.Context) error {
 		agentLastContact := time.Unix(agent.LastContact, 0)
 		agentCreatedAt := time.Unix(agent.Created, 0)
 
-		if agentLastContact.Before(now.Add(-a.config.AgentInactivityTimeout)) ||
-			agentCreatedAt.Before(now.Add(-a.config.AgentAllowedStartupTime)) {
+		if time.Since(agentLastContact) > a.config.AgentInactivityTimeout ||
+			time.Since(agentCreatedAt) > a.config.AgentAllowedStartupTime {
 			log.Info().Str("agent", agent.Name).Str("reason", "stale").Msg("remove agent")
 			if err = a.client.AgentDelete(agent.ID); err != nil {
 				return fmt.Errorf("client.AgentDelete: %w", err)
