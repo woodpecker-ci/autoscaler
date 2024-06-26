@@ -232,7 +232,7 @@ func (a *Autoscaler) cleanupAgents(ctx context.Context) error {
 		}
 	}
 
-	// remove agents that haven't contacted the server for a long time or are stuck in the provisioning phase
+	// remove agents that haven't contacted the server for a long time
 	for _, agent := range a.getPoolAgents(false) {
 		// agent hasn't even contacted the server so we don't need to check for inactivity
 		if agent.LastContact == 0 {
