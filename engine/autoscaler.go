@@ -195,11 +195,12 @@ func (a *Autoscaler) cleanupAgents(ctx context.Context) error {
 			continue
 		}
 
-		agentLastContact := time.Unix(agent.LastContact, 0)
-		agentCreatedAt := time.Unix(agent.Created, 0)
+		exceededStartupTime := time.Since(time.Unix(agent.Created, 0)) > a.config.AgentAllowedStartupTime
 
-		if time.Since(agentLastContact) > a.config.AgentInactivityTimeout ||
-			time.Since(agentCreatedAt) > a.config.AgentAllowedStartupTime {
+		// TODO: use the time the agent has done some work instead of the last contact in the future
+		exceededInactivityTime := agent.LastContact != 0 && time.Since(time.Unix(agent.LastContact, 0)) > a.config.AgentInactivityTimeout
+
+		if exceededStartupTime || exceededInactivityTime {
 			log.Info().Str("agent", agent.Name).Str("reason", "stale").Msg("remove agent")
 			if err = a.client.AgentDelete(agent.ID); err != nil {
 				return fmt.Errorf("client.AgentDelete: %w", err)
