@@ -1,10 +1,10 @@
 # Changelog
 
-## [0.3.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.3.0) - 2024-06-21
+## [0.3.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.3.0) - 2024-06-27
 
 ### ❤️ Thanks to all contributors! ❤️
 
-@qwerty287, @xoxys
+@anbraten, @qwerty287, @xoxys
 
 ### ✨ Features
 
@@ -12,6 +12,7 @@
 
 ### Misc
 
+- Improve error handling [[#155](https://github.com/woodpecker-ci/autoscaler/pull/155)]
 - Use docker gpg key from download.docker.com [[#154](https://github.com/woodpecker-ci/autoscaler/pull/154)]
 - Return error on unknown server types [[#151](https://github.com/woodpecker-ci/autoscaler/pull/151)]
 - fix(deps): update golang deps non-major [[#150](https://github.com/woodpecker-ci/autoscaler/pull/150)]
