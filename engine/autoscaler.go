@@ -76,7 +76,7 @@ func (a *Autoscaler) createAgents(ctx context.Context, amount int) error {
 
 		err = a.provider.DeployAgent(ctx, agent)
 		if err != nil {
-			return err
+			return fmt.Errorf("provider.DeployAgent: %w", err)
 		}
 
 		a.agents = append(a.agents, agent)
@@ -176,7 +176,7 @@ func (a *Autoscaler) cleanupAgents(ctx context.Context) error {
 		if !found {
 			log.Info().Str("agent", agentName).Str("reason", "not found on woodpecker").Msg("remove agent")
 			if err := a.provider.RemoveAgent(ctx, &woodpecker.Agent{Name: agentName}); err != nil {
-				return err
+				return fmt.Errorf("provider.RemoveAgent: %w", err)
 			}
 
 			// remove agent from providerAgentNames
@@ -296,24 +296,22 @@ func (a *Autoscaler) calcAgents(ctx context.Context) (float64, error) {
 
 // Reconcile periodically checks the status of the agent pool and adjusts it to match
 // the desired capacity based on the current queue state.
-func (a *Autoscaler) Reconcile(ctx context.Context) {
+func (a *Autoscaler) Reconcile(ctx context.Context) error {
 	if err := a.loadAgents(ctx); err != nil {
-		log.Error().Err(err).Msg("load agents failed")
-		return
+		return fmt.Errorf("loading agents failed: %w", err)
 	}
 
 	reqPoolAgents, err := a.calcAgents(ctx)
 	if err != nil {
-		log.Error().Err(err).Msg("calculating agents failed")
-		return
+		return fmt.Errorf("calculating agents failed: %w", err)
 	}
 
 	if reqPoolAgents > 0 {
-		log.Debug().Msgf("starting %f additional agents", reqPoolAgents)
+		num := int(math.Abs(reqPoolAgents))
+		log.Debug().Msgf("starting %d additional agents", num)
 
-		if err := a.createAgents(ctx, int(reqPoolAgents)); err != nil {
-			log.Error().Err(err).Msg("creating agents failed")
-			return
+		if err := a.createAgents(ctx, num); err != nil {
+			return fmt.Errorf("creating agents failed: %w", err)
 		}
 	}
 
@@ -322,18 +320,17 @@ func (a *Autoscaler) Reconcile(ctx context.Context) {
 
 		log.Debug().Msgf("trying to stop %d agents", num)
 		if err := a.drainAgents(ctx, num); err != nil {
-			log.Error().Err(err).Msg("draining agents failed")
-			return
+			return fmt.Errorf("draining agents failed: %w", err)
 		}
 	}
 
 	if err := a.cleanupAgents(ctx); err != nil {
-		log.Error().Err(err).Msg("cleanup of agents failed")
-		return
+		return fmt.Errorf("cleanup of agents failed: %w", err)
 	}
 
 	if err := a.removeDrainedAgents(ctx); err != nil {
-		log.Error().Err(err).Msg("removing drained agents failed")
-		return
+		return fmt.Errorf("removing drained agents failed: %w", err)
 	}
+
+	return nil
 }
