@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.3.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.3.0) - 2024-06-27
+## [0.3.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.3.0) - 2024-06-28
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -9,6 +9,10 @@
 ### ✨ Features
 
 - Allow to filter for specific tasks [[#134](https://github.com/woodpecker-ci/autoscaler/pull/134)]
+
+### 🐛 Bug Fixes
+
+- Allow to remove an agent as soon as it connected once, but has no more tasks left [[#92](https://github.com/woodpecker-ci/autoscaler/pull/92)]
 
 ### Misc
 
