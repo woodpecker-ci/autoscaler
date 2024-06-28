@@ -39,10 +39,10 @@ var flags = []cli.Flag{
 		EnvVars: []string{"WOODPECKER_MAX_AGENTS"},
 	},
 	&cli.StringFlag{
-		Name:    "agent-allowed-startup-time",
+		Name:    "agent-inactivity-timeout",
 		Value:   "10m",
-		Usage:   "time an agent is allowed to start before it can be terminated again as duration string like 2h45m (https://pkg.go.dev/time#ParseDuration)",
-		EnvVars: []string{"WOODPECKER_AGENT_ALLOWED_STARTUP_TIME"},
+		Usage:   "time an agent is allowed to be inactive before it can be terminated as duration string like 2h45m (https://pkg.go.dev/time#ParseDuration)",
+		EnvVars: []string{"WOODPECKER_AGENT_INACTIVITY_TIMEOUT", "WOODPECKER_AGENT_ALLOWED_STARTUP_TIME"},
 	},
 	&cli.IntFlag{
 		Name:    "workflows-per-agent",

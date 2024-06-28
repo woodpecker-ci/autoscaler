@@ -86,13 +86,9 @@ func (a *Autoscaler) createAgents(ctx context.Context, amount int) error {
 }
 
 func (a *Autoscaler) drainAgents(_ context.Context, amount int) error {
-	now := time.Now()
-
 	for i := 0; i < amount; i++ {
 		for _, agent := range a.agents {
-			agentStartupExpectedUntil := time.Unix(agent.Created, 0).Add(a.config.AgentAllowedStartupTime)
-
-			if !agent.NoSchedule && agentStartupExpectedUntil.Before(now) {
+			if !agent.NoSchedule && agent.LastContact != 0 {
 				log.Info().Str("agent", agent.Name).Msg("drain agent")
 				agent.NoSchedule = true
 				_, err := a.client.AgentUpdate(agent)
@@ -116,31 +112,44 @@ func (a *Autoscaler) isAgentIdle(agent *woodpecker.Agent) (bool, error) {
 	return len(tasks) == 0, nil
 }
 
+func (a *Autoscaler) removeAgent(ctx context.Context, agent *woodpecker.Agent, reason string) error {
+	isIdle, err := a.isAgentIdle(agent)
+	if err != nil {
+		return err
+	}
+	if !isIdle {
+		log.Info().Str("agent", agent.Name).Msg("agent is still processing workload")
+		return nil
+	}
+
+	log.Info().Str("agent", agent.Name).Str("reason", reason).Msgf("removing agent")
+
+	err = a.provider.RemoveAgent(ctx, agent)
+	if err != nil {
+		return err
+	}
+
+	err = a.client.AgentDelete(agent.ID)
+	if err != nil {
+		return fmt.Errorf("client.AgentDelete: %w", err)
+	}
+
+	filteredAgents := make([]*woodpecker.Agent, 0)
+	for _, a := range a.agents {
+		if a.ID != agent.ID {
+			filteredAgents = append(filteredAgents, a)
+		}
+	}
+	a.agents = filteredAgents
+
+	return nil
+}
+
 func (a *Autoscaler) removeDrainedAgents(ctx context.Context) error {
-	for _, agent := range a.agents {
-		if agent.NoSchedule {
-			isIdle, err := a.isAgentIdle(agent)
-			if err != nil {
-				return err
-			}
-			if !isIdle {
-				log.Info().Str("agent", agent.Name).Msg("agent is still processing workload")
-				continue
-			}
-
-			log.Info().Str("agent", agent.Name).Msgf("removing agent")
-
-			err = a.provider.RemoveAgent(ctx, agent)
-			if err != nil {
-				return err
-			}
-
-			err = a.client.AgentDelete(agent.ID)
-			if err != nil {
-				return fmt.Errorf("client.AgentDelete: %w", err)
-			}
-
-			a.agents = append(a.agents[:0], a.agents[1:]...)
+	for _, agent := range a.getPoolAgents(true) {
+		err := a.removeAgent(ctx, agent, "was drained")
+		if err != nil {
+			return err
 		}
 	}
 
@@ -148,16 +157,16 @@ func (a *Autoscaler) removeDrainedAgents(ctx context.Context) error {
 }
 
 func (a *Autoscaler) cleanupAgents(ctx context.Context) error {
-	registeredAgents := a.getPoolAgents(false)
-	deployedAgentNames, err := a.provider.ListDeployedAgentNames(ctx)
+	woodpeckerAgents := a.getPoolAgents(false)
+	providerAgentNames, err := a.provider.ListDeployedAgentNames(ctx)
 	if err != nil {
 		return err
 	}
 
-	// remove agents which are not in the agent list anymore
-	for _, agentName := range deployedAgentNames {
+	// remove agents which are not in the woodpecker agent list anymore
+	for _, agentName := range providerAgentNames {
 		found := false
-		for _, agent := range registeredAgents {
+		for _, agent := range woodpeckerAgents {
 			if agent.Name == agentName {
 				found = true
 				break
@@ -169,13 +178,22 @@ func (a *Autoscaler) cleanupAgents(ctx context.Context) error {
 			if err := a.provider.RemoveAgent(ctx, &woodpecker.Agent{Name: agentName}); err != nil {
 				return fmt.Errorf("provider.RemoveAgent: %w", err)
 			}
+
+			// remove agent from providerAgentNames
+			_providerAgentNames := make([]string, 0)
+			for _, a := range providerAgentNames {
+				if a != agentName {
+					_providerAgentNames = append(_providerAgentNames, a)
+				}
+			}
+			providerAgentNames = _providerAgentNames
 		}
 	}
 
 	// remove agents which do not exist on the provider anymore
-	for _, agent := range registeredAgents {
+	for _, agent := range woodpeckerAgents {
 		found := false
-		for _, agentName := range deployedAgentNames {
+		for _, agentName := range providerAgentNames {
 			if agent.Name == agentName {
 				found = true
 				break
@@ -187,10 +205,38 @@ func (a *Autoscaler) cleanupAgents(ctx context.Context) error {
 			if err = a.client.AgentDelete(agent.ID); err != nil {
 				return fmt.Errorf("client.AgentDelete: %w", err)
 			}
+
+			// remove agent from woodpeckerAgents
+			_woodpeckerAgents := make([]*woodpecker.Agent, 0)
+			for _, a := range a.agents {
+				if a.Name != agent.Name {
+					woodpeckerAgents = append(woodpeckerAgents, a)
+				}
+			}
+			a.agents = _woodpeckerAgents
 		}
 	}
 
-	// TODO: remove stale agents
+	// remove agents that haven't contacted the server for a while (including agents that never contacted the server)
+	for _, agent := range a.getPoolAgents(false) {
+		if agent.NoSchedule {
+			continue
+		}
+
+		lastContact := agent.LastContact
+
+		// if agent has never contacted the server, use the creation time
+		if lastContact == 0 {
+			lastContact = agent.Created
+		}
+
+		if time.Since(time.Unix(lastContact, 0)) > a.config.AgentInactivityTimeout {
+			err := a.removeAgent(ctx, agent, "hasn't connected to the server for a while")
+			if err != nil {
+				return err
+			}
+		}
+	}
 
 	return nil
 }
