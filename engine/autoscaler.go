@@ -217,30 +217,21 @@ func (a *Autoscaler) cleanupAgents(ctx context.Context) error {
 		}
 	}
 
-	// remove agents that are stuck in the provisioning phase
+	// remove agents that haven't contacted the server for a while (including agents that never contacted the server)
 	for _, agent := range a.getPoolAgents(false) {
-		// we don't need to remove agents that are already marked as NoSchedule
 		if agent.NoSchedule {
 			continue
 		}
 
-		if time.Since(time.Unix(agent.Created, 0)) > a.config.AgentAllowedStartupTime {
-			err := a.removeAgent(ctx, agent, "never connected in time")
-			if err != nil {
-				return err
-			}
-		}
-	}
+		lastContact := agent.LastContact
 
-	// remove agents that haven't contacted the server for a long time
-	for _, agent := range a.getPoolAgents(false) {
-		// agent hasn't even contacted the server so we don't need to check for inactivity
-		if agent.LastContact == 0 {
-			continue
+		// if agent has never contacted the server, use the creation time
+		if lastContact == 0 {
+			lastContact = agent.Created
 		}
 
-		if time.Since(time.Unix(agent.LastContact, 0)) > a.config.AgentInactivityTimeout {
-			err := a.removeAgent(ctx, agent, "hasn't been seen for a while")
+		if time.Since(time.Unix(lastContact, 0)) > a.config.AgentInactivityTimeout {
+			err := a.removeAgent(ctx, agent, "hasn't connected to the server for a while")
 			if err != nil {
 				return err
 			}
