@@ -83,7 +83,10 @@ func run(ctx *cli.Context) error {
 		case <-ctx.Done():
 			return nil
 		case <-time.After(reconciliationInterval):
-			autoscaler.Reconcile(ctx.Context)
+			err := autoscaler.Reconcile(ctx.Context)
+			if err != nil {
+				log.Error().Err(err).Msg("Reconciliation failed")
+			}
 		}
 	}
 }
