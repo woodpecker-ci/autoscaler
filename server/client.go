@@ -15,8 +15,12 @@ import (
 	"go.woodpecker-ci.org/woodpecker/v2/woodpecker-go/woodpecker"
 )
 
+type Client interface {
+	woodpecker.Client
+}
+
 // NewClient returns a new client from the CLI context.
-func NewClient(c *cli.Context) (woodpecker.Client, error) {
+func NewClient(c *cli.Context) (Client, error) {
 	var (
 		skip        = c.Bool("skip-verify")
 		socks       = c.String("socks-proxy")
