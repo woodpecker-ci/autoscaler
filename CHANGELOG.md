@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.3.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.3.0) - 2024-06-28
+## [0.3.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.3.0) - 2024-06-30
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -12,6 +12,7 @@
 
 ### 🐛 Bug Fixes
 
+- Fix drain agents [[#156](https://github.com/woodpecker-ci/autoscaler/pull/156)]
 - Allow to remove an agent as soon as it connected once, but has no more tasks left [[#92](https://github.com/woodpecker-ci/autoscaler/pull/92)]
 
 ### Misc
