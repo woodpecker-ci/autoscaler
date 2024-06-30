@@ -11,11 +11,12 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"go.woodpecker-ci.org/autoscaler/config"
+	"go.woodpecker-ci.org/autoscaler/server"
 	"go.woodpecker-ci.org/woodpecker/v2/woodpecker-go/woodpecker"
 )
 
 type Autoscaler struct {
-	client   woodpecker.Client
+	client   server.Client
 	agents   []*woodpecker.Agent
 	config   *config.Config
 	provider Provider
@@ -24,7 +25,7 @@ type Autoscaler struct {
 // NewAutoscaler creates a new Autoscaler instance.
 // It takes in a Provider, Client and Config, and returns a configured
 // Autoscaler struct.
-func NewAutoscaler(provider Provider, client woodpecker.Client, config *config.Config) Autoscaler {
+func NewAutoscaler(provider Provider, client server.Client, config *config.Config) Autoscaler {
 	return Autoscaler{
 		provider: provider,
 		client:   client,
@@ -50,10 +51,10 @@ func (a *Autoscaler) loadAgents(_ context.Context) error {
 	return nil
 }
 
-func (a *Autoscaler) getPoolAgents(excludeDrained bool) []*woodpecker.Agent {
+func (a *Autoscaler) getPoolAgents(excludeNoSchedule bool) []*woodpecker.Agent {
 	agents := make([]*woodpecker.Agent, 0)
 	for _, agent := range a.agents {
-		if excludeDrained && agent.NoSchedule {
+		if excludeNoSchedule && agent.NoSchedule {
 			continue
 		}
 		agents = append(agents, agent)
@@ -146,7 +147,11 @@ func (a *Autoscaler) removeAgent(ctx context.Context, agent *woodpecker.Agent, r
 }
 
 func (a *Autoscaler) removeDrainedAgents(ctx context.Context) error {
-	for _, agent := range a.getPoolAgents(true) {
+	for _, agent := range a.getPoolAgents(false) {
+		if !agent.NoSchedule {
+			continue
+		}
+
 		err := a.removeAgent(ctx, agent, "was drained")
 		if err != nil {
 			return err
@@ -156,7 +161,7 @@ func (a *Autoscaler) removeDrainedAgents(ctx context.Context) error {
 	return nil
 }
 
-func (a *Autoscaler) cleanupAgents(ctx context.Context) error {
+func (a *Autoscaler) cleanupDanglingAgents(ctx context.Context) error {
 	woodpeckerAgents := a.getPoolAgents(false)
 	providerAgentNames, err := a.provider.ListDeployedAgentNames(ctx)
 	if err != nil {
@@ -217,6 +222,10 @@ func (a *Autoscaler) cleanupAgents(ctx context.Context) error {
 		}
 	}
 
+	return nil
+}
+
+func (a *Autoscaler) cleanupStaleAgents(ctx context.Context) error {
 	// remove agents that haven't contacted the server for a while (including agents that never contacted the server)
 	for _, agent := range a.getPoolAgents(false) {
 		if agent.NoSchedule {
@@ -315,10 +324,17 @@ func (a *Autoscaler) Reconcile(ctx context.Context) error {
 		}
 	}
 
-	if err := a.cleanupAgents(ctx); err != nil {
-		return fmt.Errorf("cleanup of agents failed: %w", err)
+	// cleanup agents that are only present at the provider or woodpecker
+	if err := a.cleanupDanglingAgents(ctx); err != nil {
+		return fmt.Errorf("cleaning up dangling agents failed: %w", err)
 	}
 
+	// cleanup agents that haven't contacted the server for a while
+	if err := a.cleanupStaleAgents(ctx); err != nil {
+		return fmt.Errorf("cleaning up stale agents failed: %w", err)
+	}
+
+	// remove agents that are drained
 	if err := a.removeDrainedAgents(ctx); err != nil {
 		return fmt.Errorf("removing drained agents failed: %w", err)
 	}
