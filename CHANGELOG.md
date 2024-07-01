@@ -17,6 +17,7 @@
 
 ### Misc
 
+- fix(deps): update golang deps non-major [[#159](https://github.com/woodpecker-ci/autoscaler/pull/159)]
 - fix(deps): update golang.org/x/exp digest to 7f521ea [[#158](https://github.com/woodpecker-ci/autoscaler/pull/158)]
 - Improve error handling [[#155](https://github.com/woodpecker-ci/autoscaler/pull/155)]
 - Use docker gpg key from download.docker.com [[#154](https://github.com/woodpecker-ci/autoscaler/pull/154)]
