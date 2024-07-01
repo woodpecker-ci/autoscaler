@@ -6,13 +6,13 @@ toolchain go1.22.4
 
 require (
 	github.com/franela/goblin v0.0.0-20211003143422-0a4f594942bf
-	github.com/hetznercloud/hcloud-go/v2 v2.9.0
+	github.com/hetznercloud/hcloud-go/v2 v2.10.2
 	github.com/joho/godotenv v1.5.1
-	github.com/linode/linodego v1.35.0
+	github.com/linode/linodego v1.36.0
 	github.com/rs/zerolog v1.33.0
 	github.com/stretchr/testify v1.9.0
 	github.com/urfave/cli/v2 v2.27.2
-	go.woodpecker-ci.org/woodpecker/v2 v2.5.0
+	go.woodpecker-ci.org/woodpecker/v2 v2.6.0
 	golang.org/x/exp v0.0.0-20240613232115-7f521ea00fb8
 	golang.org/x/net v0.26.0
 	golang.org/x/oauth2 v0.21.0
