@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.3.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.3.0) - 2024-06-30
+## [0.3.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.3.0) - 2024-07-01
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -17,6 +17,7 @@
 
 ### Misc
 
+- fix(deps): update golang.org/x/exp digest to 7f521ea [[#158](https://github.com/woodpecker-ci/autoscaler/pull/158)]
 - Improve error handling [[#155](https://github.com/woodpecker-ci/autoscaler/pull/155)]
 - Use docker gpg key from download.docker.com [[#154](https://github.com/woodpecker-ci/autoscaler/pull/154)]
 - Return error on unknown server types [[#151](https://github.com/woodpecker-ci/autoscaler/pull/151)]
