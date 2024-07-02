@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.3.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.3.0) - 2024-07-01
+## [0.3.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.3.0) - 2024-07-02
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -17,6 +17,7 @@
 
 ### Misc
 
+- fix(deps): update module github.com/linode/linodego to v1.36.1 [[#161](https://github.com/woodpecker-ci/autoscaler/pull/161)]
 - fix(deps): update golang deps non-major [[#159](https://github.com/woodpecker-ci/autoscaler/pull/159)]
 - fix(deps): update golang.org/x/exp digest to 7f521ea [[#158](https://github.com/woodpecker-ci/autoscaler/pull/158)]
 - Improve error handling [[#155](https://github.com/woodpecker-ci/autoscaler/pull/155)]
