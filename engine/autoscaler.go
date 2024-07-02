@@ -65,7 +65,25 @@ func (a *Autoscaler) getPoolAgents(excludeNoSchedule bool) []*woodpecker.Agent {
 func (a *Autoscaler) createAgents(ctx context.Context, amount int) error {
 	suffixLength := 4
 
+	reactivatedAgents := 0
+
+	// try to re-activate agents that are in no-schedule state
 	for i := 0; i < amount; i++ {
+		for _, agent := range a.agents {
+			if agent.NoSchedule {
+				log.Info().Str("agent", agent.Name).Msg("reactivate agent")
+				agent.NoSchedule = false
+				_, err := a.client.AgentUpdate(agent)
+				if err != nil {
+					return fmt.Errorf("client.AgentUpdate: %w", err)
+				}
+				reactivatedAgents++
+			}
+		}
+	}
+
+	// create new agents
+	for i := 0; i < amount-reactivatedAgents; i++ {
 		agent, err := a.client.AgentCreate(&woodpecker.Agent{
 			Name: fmt.Sprintf("pool-%s-agent-%s", a.config.PoolID, RandomString(suffixLength)),
 		})
