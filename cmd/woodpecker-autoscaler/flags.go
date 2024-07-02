@@ -44,6 +44,12 @@ var flags = []cli.Flag{
 		Usage:   "time an agent is allowed to be inactive before it can be terminated as duration string like 2h45m (https://pkg.go.dev/time#ParseDuration)",
 		EnvVars: []string{"WOODPECKER_AGENT_INACTIVITY_TIMEOUT", "WOODPECKER_AGENT_ALLOWED_STARTUP_TIME"},
 	},
+	&cli.StringFlag{
+		Name:    "agent-idle-timeout",
+		Value:   "10m",
+		Usage:   "time an agent is allowed to be idle before it can be terminated as duration string like 2h45m (https://pkg.go.dev/time#ParseDuration)",
+		EnvVars: []string{"WOODPECKER_AGENT_IDLE_TIMEOUT"},
+	},
 	&cli.IntFlag{
 		Name:    "workflows-per-agent",
 		Value:   2,
