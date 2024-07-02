@@ -8,7 +8,7 @@ require (
 	github.com/franela/goblin v0.0.0-20211003143422-0a4f594942bf
 	github.com/hetznercloud/hcloud-go/v2 v2.10.2
 	github.com/joho/godotenv v1.5.1
-	github.com/linode/linodego v1.36.0
+	github.com/linode/linodego v1.36.1
 	github.com/rs/zerolog v1.33.0
 	github.com/stretchr/testify v1.9.0
 	github.com/urfave/cli/v2 v2.27.2
