@@ -189,7 +189,6 @@ func Test_getPoolAgents(t *testing.T) {
 }
 
 func Test_cleanupDanglingAgents(t *testing.T) {
-
 	t.Run("should remove agent that is only present on woodpecker (not provider)", func(t *testing.T) {
 		ctx := context.Background()
 		client := mocks_server.NewMockClient(t)
@@ -232,7 +231,6 @@ func Test_cleanupDanglingAgents(t *testing.T) {
 }
 
 func Test_cleanupStaleAgents(t *testing.T) {
-
 	t.Run("should remove agent that never connected (last contact = 0) in over 15 minutes", func(t *testing.T) {
 		ctx := context.Background()
 		client := mocks_server.NewMockClient(t)
