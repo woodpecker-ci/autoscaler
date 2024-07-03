@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/franela/goblin"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -52,123 +51,118 @@ func (m MockClient) QueueInfo() (*woodpecker.Info, error) {
 
 func Test_calcAgents(t *testing.T) {
 	zerolog.SetGlobalLevel(zerolog.ErrorLevel)
-	g := goblin.Goblin(t)
 
-	g.Describe("Agent creation", func() {
-		g.It("Should create new agent (MinAgents)", func() {
-			autoscaler := Autoscaler{client: &MockClient{
-				pending: 0,
-			}, config: &config.Config{
-				WorkflowsPerAgent: 1,
-				MaxAgents:         2,
-				MinAgents:         1,
-			}}
+	t.Run("should create new agent (MinAgents)", func(t *testing.T) {
+		autoscaler := Autoscaler{client: &MockClient{
+			pending: 0,
+		}, config: &config.Config{
+			WorkflowsPerAgent: 1,
+			MaxAgents:         2,
+			MinAgents:         1,
+		}}
 
-			value, _ := autoscaler.calcAgents(context.TODO())
-			g.Assert(value).Equal(float64(1))
-		})
+		value, _ := autoscaler.calcAgents(context.TODO())
+		assert.Equal(t, float64(1), value)
+	})
 
-		g.It("Should create single agent", func() {
-			autoscaler := Autoscaler{client: &MockClient{
-				pending: 2,
-			}, config: &config.Config{
-				WorkflowsPerAgent: 5,
-				MaxAgents:         3,
-			}}
+	t.Run("should create single agent", func(t *testing.T) {
+		autoscaler := Autoscaler{client: &MockClient{
+			pending: 2,
+		}, config: &config.Config{
+			WorkflowsPerAgent: 5,
+			MaxAgents:         3,
+		}}
 
-			value, _ := autoscaler.calcAgents(context.TODO())
-			g.Assert(value).Equal(float64(1))
-		})
+		value, _ := autoscaler.calcAgents(context.TODO())
+		assert.Equal(t, float64(1), value)
+	})
 
-		g.It("Should create multiple agents", func() {
-			autoscaler := Autoscaler{client: &MockClient{
-				pending: 6,
-			}, config: &config.Config{
-				WorkflowsPerAgent: 5,
-				MaxAgents:         3,
-			}}
+	t.Run("should create multiple agents", func(t *testing.T) {
+		autoscaler := Autoscaler{client: &MockClient{
+			pending: 6,
+		}, config: &config.Config{
+			WorkflowsPerAgent: 5,
+			MaxAgents:         3,
+		}}
 
-			value, _ := autoscaler.calcAgents(context.TODO())
-			g.Assert(value).Equal(float64(2))
-		})
+		value, _ := autoscaler.calcAgents(context.TODO())
+		assert.Equal(t, float64(2), value)
+	})
 
-		g.It("Should create new agent (MaxAgents)", func() {
-			autoscaler := Autoscaler{client: &MockClient{
-				pending: 2,
-			}, config: &config.Config{
-				WorkflowsPerAgent: 1,
-				MaxAgents:         2,
-			}, agents: []*woodpecker.Agent{
-				{Name: "pool-1-agent-1234"},
-			}}
+	t.Run("should create new agent (MaxAgents)", func(t *testing.T) {
+		autoscaler := Autoscaler{client: &MockClient{
+			pending: 2,
+		}, config: &config.Config{
+			WorkflowsPerAgent: 1,
+			MaxAgents:         2,
+		}, agents: []*woodpecker.Agent{
+			{Name: "pool-1-agent-1234"},
+		}}
 
-			value, _ := autoscaler.calcAgents(context.TODO())
-			g.Assert(value).Equal(float64(1))
-		})
+		value, _ := autoscaler.calcAgents(context.TODO())
+		assert.Equal(t, float64(1), value)
+	})
 
-		g.It("Should not create new agent (availableAgents)", func() {
-			autoscaler := Autoscaler{client: &MockClient{
-				workers: 2,
-				pending: 2,
-			}, config: &config.Config{
-				WorkflowsPerAgent: 1,
-				MaxAgents:         2,
-			}}
+	t.Run("should not create new agent (availableAgents)", func(t *testing.T) {
+		autoscaler := Autoscaler{client: &MockClient{
+			workers: 2,
+			pending: 2,
+		}, config: &config.Config{
+			WorkflowsPerAgent: 1,
+			MaxAgents:         2,
+		}}
 
-			value, _ := autoscaler.calcAgents(context.TODO())
-			g.Assert(value).Equal(float64(0))
-		})
+		value, _ := autoscaler.calcAgents(context.TODO())
+		assert.Equal(t, float64(0), value)
 	})
 }
 
 func Test_getQueueInfo(t *testing.T) {
 	zerolog.SetGlobalLevel(zerolog.ErrorLevel)
-	g := goblin.Goblin(t)
+	t.Run("should not filter", func(t *testing.T) {
+		autoscaler := Autoscaler{
+			client: &MockClient{
+				pending: 2,
+			},
+			config: &config.Config{},
+		}
 
-	g.Describe("Queue Info", func() {
-		g.It("Should not filter", func() {
-			autoscaler := Autoscaler{
-				client: &MockClient{
-					pending: 2,
-				},
-				config: &config.Config{},
-			}
+		free, running, pending, _ := autoscaler.getQueueInfo(context.TODO())
+		assert.Equal(t, 0, free)
+		assert.Equal(t, 0, running)
+		assert.Equal(t, 2, pending)
+	})
 
-			free, running, pending, _ := autoscaler.getQueueInfo(context.TODO())
-			g.Assert(free).Equal(0)
-			g.Assert(running).Equal(0)
-			g.Assert(pending).Equal(2)
-		})
-		g.It("Should filter one by label", func() {
-			autoscaler := Autoscaler{
-				client: &MockClient{
-					pending: 2,
-				},
-				config: &config.Config{
-					FilterLabels: "arch=amd64",
-				},
-			}
+	t.Run("should filter one by label", func(t *testing.T) {
+		autoscaler := Autoscaler{
+			client: &MockClient{
+				pending: 2,
+			},
+			config: &config.Config{
+				FilterLabels: "arch=amd64",
+			},
+		}
 
-			free, running, pending, _ := autoscaler.getQueueInfo(context.TODO())
-			g.Assert(free).Equal(0)
-			g.Assert(running).Equal(1)
-			g.Assert(pending).Equal(1)
-		})
-		g.It("Should filter all by label", func() {
-			autoscaler := Autoscaler{
-				client: &MockClient{
-					pending: 2,
-				},
-				config: &config.Config{
-					FilterLabels: "arch=arm64",
-				},
-			}
+		free, running, pending, _ := autoscaler.getQueueInfo(context.TODO())
+		assert.Equal(t, 0, free)
+		assert.Equal(t, 1, running)
+		assert.Equal(t, 1, pending)
+	})
 
-			free, running, pending, _ := autoscaler.getQueueInfo(context.TODO())
-			g.Assert(free).Equal(0)
-			g.Assert(running).Equal(0)
-			g.Assert(pending).Equal(0)
-		})
+	t.Run("should filter all by label", func(t *testing.T) {
+		autoscaler := Autoscaler{
+			client: &MockClient{
+				pending: 2,
+			},
+			config: &config.Config{
+				FilterLabels: "arch=arm64",
+			},
+		}
+
+		free, running, pending, _ := autoscaler.getQueueInfo(context.TODO())
+		assert.Equal(t, 0, free)
+		assert.Equal(t, 0, running)
+		assert.Equal(t, 0, pending)
 	})
 }
 
@@ -188,8 +182,58 @@ func Test_getPoolAgents(t *testing.T) {
 	assert.Equal(t, 2, len(agents))
 }
 
-func Test_cleanupDanglingAgents(t *testing.T) {
+func Test_createAgents(t *testing.T) {
+	zerolog.SetGlobalLevel(zerolog.ErrorLevel)
 
+	t.Run("should create a new agent", func(t *testing.T) {
+		ctx := context.Background()
+		client := mocks_server.NewMockClient(t)
+		provider := mocks_engine.NewMockProvider(t)
+		autoscaler := Autoscaler{
+			client:   client,
+			provider: provider,
+			config: &config.Config{
+				PoolID: "1",
+			},
+		}
+
+		client.On("AgentCreate", mock.Anything).Return(&woodpecker.Agent{Name: "pool-1-agent-1"}, nil)
+		provider.On("DeployAgent", ctx, mock.Anything).Return(nil)
+
+		err := autoscaler.createAgents(ctx, 1)
+		assert.NoError(t, err)
+	})
+
+	t.Run("should reuse an no-schedule agent first before creating a new one", func(t *testing.T) {
+		ctx := context.Background()
+		client := mocks_server.NewMockClient(t)
+		provider := mocks_engine.NewMockProvider(t)
+		autoscaler := Autoscaler{
+			client:   client,
+			provider: provider,
+			agents: []*woodpecker.Agent{
+				{
+					ID:         1,
+					NoSchedule: true,
+				},
+			},
+			config: &config.Config{
+				PoolID: "1",
+			},
+		}
+
+		client.On("AgentUpdate", mock.MatchedBy(func(agent *woodpecker.Agent) bool {
+			return agent.ID == 1 && agent.NoSchedule == false
+		})).Return(nil, nil)
+		client.On("AgentCreate", mock.Anything).Return(&woodpecker.Agent{Name: "pool-1-agent-1"}, nil)
+		provider.On("DeployAgent", ctx, mock.Anything).Return(nil)
+
+		err := autoscaler.createAgents(ctx, 2)
+		assert.NoError(t, err)
+	})
+}
+
+func Test_cleanupDanglingAgents(t *testing.T) {
 	t.Run("should remove agent that is only present on woodpecker (not provider)", func(t *testing.T) {
 		ctx := context.Background()
 		client := mocks_server.NewMockClient(t)
@@ -232,7 +276,6 @@ func Test_cleanupDanglingAgents(t *testing.T) {
 }
 
 func Test_cleanupStaleAgents(t *testing.T) {
-
 	t.Run("should remove agent that never connected (last contact = 0) in over 15 minutes", func(t *testing.T) {
 		ctx := context.Background()
 		client := mocks_server.NewMockClient(t)
