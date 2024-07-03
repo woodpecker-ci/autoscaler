@@ -189,7 +189,6 @@ func Test_getPoolAgents(t *testing.T) {
 }
 
 func Test_cleanupDanglingAgents(t *testing.T) {
-
 	t.Run("should remove agent that is only present on woodpecker (not provider)", func(t *testing.T) {
 		ctx := context.Background()
 		client := mocks_server.NewMockClient(t)
@@ -232,7 +231,6 @@ func Test_cleanupDanglingAgents(t *testing.T) {
 }
 
 func Test_cleanupStaleAgents(t *testing.T) {
-
 	t.Run("should remove agent that never connected (last contact = 0) in over 15 minutes", func(t *testing.T) {
 		ctx := context.Background()
 		client := mocks_server.NewMockClient(t)
@@ -310,6 +308,72 @@ func Test_cleanupStaleAgents(t *testing.T) {
 	})
 }
 
+func Test_isAgentIdle(t *testing.T) {
+	t.Run("should return false if agent has tasks", func(t *testing.T) {
+		client := mocks_server.NewMockClient(t)
+		autoscaler := Autoscaler{
+			client: client,
+			config: &config.Config{
+				AgentIdleTimeout: time.Minute * 15,
+			},
+		}
+
+		client.On("AgentTasksList", int64(1)).Return([]*woodpecker.Task{
+			{ID: "1"},
+		}, nil)
+
+		idle, err := autoscaler.isAgentIdle(&woodpecker.Agent{
+			ID:         1,
+			Name:       "pool-1-agent-1",
+			NoSchedule: false,
+		})
+		assert.NoError(t, err)
+		assert.False(t, idle)
+	})
+
+	t.Run("should return false if agent has done work recently", func(t *testing.T) {
+		client := mocks_server.NewMockClient(t)
+		autoscaler := Autoscaler{
+			client: client,
+			config: &config.Config{
+				AgentIdleTimeout: time.Minute * 15,
+			},
+		}
+
+		client.On("AgentTasksList", int64(1)).Return(nil, nil)
+
+		idle, err := autoscaler.isAgentIdle(&woodpecker.Agent{
+			ID:         1,
+			Name:       "pool-1-agent-1",
+			NoSchedule: false,
+			LastWork:   time.Now().Add(-time.Minute * 10).Unix(),
+		})
+		assert.NoError(t, err)
+		assert.False(t, idle)
+	})
+
+	t.Run("should return true if agent is idle", func(t *testing.T) {
+		client := mocks_server.NewMockClient(t)
+		autoscaler := Autoscaler{
+			client: client,
+			config: &config.Config{
+				AgentIdleTimeout: time.Minute * 15,
+			},
+		}
+
+		client.On("AgentTasksList", int64(1)).Return(nil, nil) // no tasks
+
+		idle, err := autoscaler.isAgentIdle(&woodpecker.Agent{
+			ID:         1,
+			Name:       "pool-1-agent-1",
+			NoSchedule: false,
+			LastWork:   time.Now().Add(-time.Minute * 20).Unix(), // last work 20 minutes ago
+		})
+		assert.NoError(t, err)
+		assert.True(t, idle)
+	})
+}
+
 func Test_removeDrainedAgents(t *testing.T) {
 	t.Run("should remove agent", func(t *testing.T) {
 		ctx := context.Background()
@@ -323,6 +387,9 @@ func Test_removeDrainedAgents(t *testing.T) {
 			},
 			provider: provider,
 			client:   client,
+			config: &config.Config{
+				AgentIdleTimeout: time.Minute * 15,
+			},
 		}
 
 		client.On("AgentTasksList", int64(2)).Return(nil, nil)
