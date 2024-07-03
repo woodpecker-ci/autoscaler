@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.3.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.3.0) - 2024-07-02
+## [0.3.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.3.0) - 2024-07-03
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -8,6 +8,7 @@
 
 ### ✨ Features
 
+- Add agent idle timeout [[#162](https://github.com/woodpecker-ci/autoscaler/pull/162)]
 - Allow to filter for specific tasks [[#134](https://github.com/woodpecker-ci/autoscaler/pull/134)]
 
 ### 🐛 Bug Fixes
