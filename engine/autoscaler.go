@@ -128,7 +128,17 @@ func (a *Autoscaler) isAgentIdle(agent *woodpecker.Agent) (bool, error) {
 		return false, fmt.Errorf("client.AgentTasksList: %w", err)
 	}
 
-	return len(tasks) == 0, nil
+	// agent still has tasks => not idle
+	if len(tasks) > 0 {
+		return false, nil
+	}
+
+	// agent has done work recently => not idle
+	if time.Since(time.Unix(agent.LastWork, 0)) < a.config.AgentIdleTimeout {
+		return false, nil
+	}
+
+	return true, nil
 }
 
 func (a *Autoscaler) removeAgent(ctx context.Context, agent *woodpecker.Agent, reason string) error {
