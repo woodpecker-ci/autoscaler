@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.3.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.3.0) - 2024-07-03
+## [0.3.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.3.0) - 2024-07-06
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -14,16 +14,20 @@
 ### 🐛 Bug Fixes
 
 - Fix drain agents [[#156](https://github.com/woodpecker-ci/autoscaler/pull/156)]
+- Return error on unknown server types [[#151](https://github.com/woodpecker-ci/autoscaler/pull/151)]
+
+### 📈 Enhancement
+
 - Allow to remove an agent as soon as it connected once, but has no more tasks left [[#92](https://github.com/woodpecker-ci/autoscaler/pull/92)]
+- Improve error handling [[#155](https://github.com/woodpecker-ci/autoscaler/pull/155)]
+- Use docker gpg key from download.docker.com [[#154](https://github.com/woodpecker-ci/autoscaler/pull/154)]
 
 ### Misc
 
+- [pre-commit.ci] pre-commit autoupdate [[#160](https://github.com/woodpecker-ci/autoscaler/pull/160)]
 - fix(deps): update module github.com/linode/linodego to v1.36.1 [[#161](https://github.com/woodpecker-ci/autoscaler/pull/161)]
 - fix(deps): update golang deps non-major [[#159](https://github.com/woodpecker-ci/autoscaler/pull/159)]
 - fix(deps): update golang.org/x/exp digest to 7f521ea [[#158](https://github.com/woodpecker-ci/autoscaler/pull/158)]
-- Improve error handling [[#155](https://github.com/woodpecker-ci/autoscaler/pull/155)]
-- Use docker gpg key from download.docker.com [[#154](https://github.com/woodpecker-ci/autoscaler/pull/154)]
-- Return error on unknown server types [[#151](https://github.com/woodpecker-ci/autoscaler/pull/151)]
 - fix(deps): update golang deps non-major [[#150](https://github.com/woodpecker-ci/autoscaler/pull/150)]
 - [pre-commit.ci] pre-commit autoupdate [[#149](https://github.com/woodpecker-ci/autoscaler/pull/149)]
 - Fix deprecations and run on renovate branches [[#147](https://github.com/woodpecker-ci/autoscaler/pull/147)]
