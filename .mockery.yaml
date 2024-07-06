@@ -5,10 +5,10 @@ dir: '{{.InterfaceDir}}/mocks'
 packages:
   go.woodpecker-ci.org/autoscaler/providers/hetznercloud/hcapi:
     config:
-      recursive: True
+      recursive: true
   go.woodpecker-ci.org/autoscaler/engine:
     config:
-      recursive: True
+      recursive: true
   go.woodpecker-ci.org/autoscaler/server:
     config:
-      recursive: True
+      recursive: true
