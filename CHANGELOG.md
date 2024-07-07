@@ -24,6 +24,7 @@
 
 ### Misc
 
+- chore(deps): update golang deps non-major [[#170](https://github.com/woodpecker-ci/autoscaler/pull/170)]
 - fix(deps): update go.woodpecker-ci.org/woodpecker/v2 digest to 987c201 [[#169](https://github.com/woodpecker-ci/autoscaler/pull/169)]
 - [pre-commit.ci] pre-commit autoupdate [[#160](https://github.com/woodpecker-ci/autoscaler/pull/160)]
 - fix(deps): update module github.com/linode/linodego to v1.36.1 [[#161](https://github.com/woodpecker-ci/autoscaler/pull/161)]
