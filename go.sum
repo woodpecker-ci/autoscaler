@@ -59,10 +59,8 @@ github.com/urfave/cli/v2 v2.27.2/go.mod h1:g0+79LmHHATl7DAcHO99smiR/T7uGLw84w8Y4
 github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1 h1:gEOO8jv9F4OT7lGCjxCBTO/36wtF6j2nSip77qHd4x4=
 github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1/go.mod h1:Ohn+xnUBiLI6FVj/9LpzZWtj1/D6lUovWYBkxHVV3aM=
 github.com/yuin/goldmark v1.4.13/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5taEt/CY=
-go.woodpecker-ci.org/woodpecker/v2 v2.6.0 h1:GnfiYLLkKdrmvCmLrs+JQyw8iJv8ts6ux0lou37CdP4=
-go.woodpecker-ci.org/woodpecker/v2 v2.6.0/go.mod h1:5ncjE/WmU7BkcDfDPE7tajf4+zH0KELxLqpVgT94w6c=
-go.woodpecker-ci.org/woodpecker/v2 v2.6.1-0.20240702091207-e5f3e67bf282 h1:hBmt1mCmkTBLZpZCv+jlcnvmcESUCKiIl8dLZbZXEu4=
-go.woodpecker-ci.org/woodpecker/v2 v2.6.1-0.20240702091207-e5f3e67bf282/go.mod h1:VZ3FHAZY4PcLGJCpsF3ojTGvuCUut5O1LVvBg+HTpUA=
+go.woodpecker-ci.org/woodpecker/v2 v2.6.1-0.20240705205750-987c201c0db1 h1:HGcORgJEq0riqhYZorx4ANu8OtXbcFrjmoZGGTw0lms=
+go.woodpecker-ci.org/woodpecker/v2 v2.6.1-0.20240705205750-987c201c0db1/go.mod h1:VZ3FHAZY4PcLGJCpsF3ojTGvuCUut5O1LVvBg+HTpUA=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
 golang.org/x/crypto v0.0.0-20210921155107-089bfa567519/go.mod h1:GvvjBRRGRdwPK5ydBHafDWAxML/pGHZbMvKqRZ5+Abc=
 golang.org/x/crypto v0.19.0/go.mod h1:Iy9bg/ha4yyC70EfRS8jz+B6ybOBKMaSxLj6P6oBDfU=
