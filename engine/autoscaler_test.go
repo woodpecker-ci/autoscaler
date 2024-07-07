@@ -419,6 +419,82 @@ func Test_isAgentIdle(t *testing.T) {
 	})
 }
 
+func Test_drainAgents(t *testing.T) {
+	t.Run("should drain agents and skip no-schedule ones", func(t *testing.T) {
+		ctx := context.Background()
+		client := mocks_server.NewMockClient(t)
+		provider := mocks_engine.NewMockProvider(t)
+		autoscaler := Autoscaler{
+			agents: []*woodpecker.Agent{
+				{ID: 1, Name: "pool-1-agent-1", NoSchedule: false, LastContact: time.Now().Add(-time.Minute * 2).Unix()},
+				{ID: 2, Name: "pool-1-agent-2", NoSchedule: true, LastContact: time.Now().Add(-time.Minute * 2).Unix()},
+				{ID: 3, Name: "pool-1-agent-3", NoSchedule: true, LastContact: time.Now().Add(-time.Minute * 2).Unix()},
+				{ID: 4, Name: "pool-1-agent-4", NoSchedule: false, LastContact: time.Now().Add(-time.Minute * 2).Unix()},
+			},
+			provider: provider,
+			client:   client,
+			config: &config.Config{
+				AgentIdleTimeout: time.Minute * 15,
+			},
+		}
+
+		client.On("AgentUpdate", mock.MatchedBy(func(agent *woodpecker.Agent) bool {
+			return (agent.ID == 1 || agent.ID == 4) && agent.NoSchedule == true
+		})).Return(nil, nil)
+
+		err := autoscaler.drainAgents(ctx, 2)
+		assert.NoError(t, err)
+		assert.True(t, autoscaler.agents[0].NoSchedule)
+		assert.True(t, autoscaler.agents[3].NoSchedule)
+	})
+
+	t.Run("should not remove an agent that never connected", func(t *testing.T) {
+		ctx := context.Background()
+		client := mocks_server.NewMockClient(t)
+		provider := mocks_engine.NewMockProvider(t)
+		autoscaler := Autoscaler{
+			agents: []*woodpecker.Agent{
+				{ID: 1, Name: "pool-1-agent-1", NoSchedule: false, LastContact: 0},
+			},
+			provider: provider,
+			client:   client,
+			config: &config.Config{
+				AgentIdleTimeout: time.Minute * 15,
+			},
+		}
+
+		err := autoscaler.drainAgents(ctx, 1)
+		assert.NoError(t, err)
+		assert.False(t, autoscaler.agents[0].NoSchedule)
+	})
+
+	t.Run("should not remove an agent that has recently done some work", func(t *testing.T) {
+		ctx := context.Background()
+		client := mocks_server.NewMockClient(t)
+		provider := mocks_engine.NewMockProvider(t)
+		autoscaler := Autoscaler{
+			agents: []*woodpecker.Agent{
+				{
+					ID:          1,
+					Name:        "pool-1-agent-1",
+					NoSchedule:  false,
+					LastContact: time.Now().Add(-time.Minute * 2).Unix(), // last contact 2 minutes ago
+					LastWork:    time.Now().Add(-time.Minute * 5).Unix(), // last work 5 minutes ago
+				},
+			},
+			provider: provider,
+			client:   client,
+			config: &config.Config{
+				AgentIdleTimeout: time.Minute * 15,
+			},
+		}
+
+		err := autoscaler.drainAgents(ctx, 1)
+		assert.NoError(t, err)
+		assert.False(t, autoscaler.agents[0].NoSchedule)
+	})
+}
+
 func Test_removeDrainedAgents(t *testing.T) {
 	t.Run("should remove agent", func(t *testing.T) {
 		ctx := context.Background()
