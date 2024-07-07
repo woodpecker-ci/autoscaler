@@ -8,6 +8,7 @@
 
 ### ✨ Features
 
+- Reactivate agents and prevent draining recently active agents  [[#163](https://github.com/woodpecker-ci/autoscaler/pull/163)]
 - Add agent idle timeout [[#162](https://github.com/woodpecker-ci/autoscaler/pull/162)]
 - Allow to filter for specific tasks [[#134](https://github.com/woodpecker-ci/autoscaler/pull/134)]
 
