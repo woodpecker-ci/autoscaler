@@ -65,7 +65,25 @@ func (a *Autoscaler) getPoolAgents(excludeNoSchedule bool) []*woodpecker.Agent {
 func (a *Autoscaler) createAgents(ctx context.Context, amount int) error {
 	suffixLength := 4
 
+	reactivatedAgents := 0
+
+	// try to re-activate agents that are in no-schedule state
 	for i := 0; i < amount; i++ {
+		for _, agent := range a.agents {
+			if agent.NoSchedule {
+				log.Info().Str("agent", agent.Name).Msg("reactivate agent")
+				agent.NoSchedule = false
+				_, err := a.client.AgentUpdate(agent)
+				if err != nil {
+					return fmt.Errorf("client.AgentUpdate: %w", err)
+				}
+				reactivatedAgents++
+			}
+		}
+	}
+
+	// create new agents
+	for i := 0; i < amount-reactivatedAgents; i++ {
 		agent, err := a.client.AgentCreate(&woodpecker.Agent{
 			Name: fmt.Sprintf("pool-%s-agent-%s", a.config.PoolID, RandomString(suffixLength)),
 		})
@@ -89,15 +107,28 @@ func (a *Autoscaler) createAgents(ctx context.Context, amount int) error {
 func (a *Autoscaler) drainAgents(_ context.Context, amount int) error {
 	for i := 0; i < amount; i++ {
 		for _, agent := range a.agents {
-			if !agent.NoSchedule && agent.LastContact != 0 {
-				log.Info().Str("agent", agent.Name).Msg("drain agent")
-				agent.NoSchedule = true
-				_, err := a.client.AgentUpdate(agent)
-				if err != nil {
-					return fmt.Errorf("client.AgentUpdate: %w", err)
-				}
-				break
+			// agent is already marked for draining
+			if agent.NoSchedule {
+				continue
 			}
+
+			// agent has recently done work => not ready for draining
+			if time.Since(time.Unix(agent.LastWork, 0)) < a.config.AgentIdleTimeout {
+				continue
+			}
+
+			// agent has never contacted the server => not ready for draining
+			if agent.LastContact == 0 {
+				continue
+			}
+
+			log.Info().Str("agent", agent.Name).Msg("drain agent")
+			agent.NoSchedule = true
+			_, err := a.client.AgentUpdate(agent)
+			if err != nil {
+				return fmt.Errorf("client.AgentUpdate: %w", err)
+			}
+			break
 		}
 	}
 
@@ -178,7 +209,7 @@ func (a *Autoscaler) cleanupDanglingAgents(ctx context.Context) error {
 		return err
 	}
 
-	// remove agents which are not in the woodpecker agent list anymore
+	// remove agents that are not in the woodpecker agent list anymore
 	for _, agentName := range providerAgentNames {
 		found := false
 		for _, agent := range woodpeckerAgents {
@@ -205,7 +236,7 @@ func (a *Autoscaler) cleanupDanglingAgents(ctx context.Context) error {
 		}
 	}
 
-	// remove agents which do not exist on the provider anymore
+	// remove agents that do not exist on the provider anymore
 	for _, agent := range woodpeckerAgents {
 		found := false
 		for _, agentName := range providerAgentNames {
