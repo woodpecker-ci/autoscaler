@@ -5,14 +5,13 @@ go 1.22.0
 toolchain go1.22.5
 
 require (
-	github.com/franela/goblin v0.0.0-20211003143422-0a4f594942bf
 	github.com/hetznercloud/hcloud-go/v2 v2.10.2
 	github.com/joho/godotenv v1.5.1
 	github.com/linode/linodego v1.36.1
 	github.com/rs/zerolog v1.33.0
 	github.com/stretchr/testify v1.9.0
 	github.com/urfave/cli/v2 v2.27.2
-	go.woodpecker-ci.org/woodpecker/v2 v2.6.1-0.20240705205750-987c201c0db1
+	go.woodpecker-ci.org/woodpecker/v2 v2.6.1-0.20240707084419-fb371479485e
 	golang.org/x/exp v0.0.0-20240613232115-7f521ea00fb8
 	golang.org/x/net v0.27.0
 	golang.org/x/oauth2 v0.21.0
@@ -36,7 +35,7 @@ require (
 	github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1 // indirect
 	golang.org/x/sys v0.22.0 // indirect
 	golang.org/x/text v0.16.0 // indirect
-	google.golang.org/protobuf v1.34.1 // indirect
+	google.golang.org/protobuf v1.34.2 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
