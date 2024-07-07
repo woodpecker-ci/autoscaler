@@ -2,7 +2,7 @@ module go.woodpecker-ci.org/autoscaler
 
 go 1.22.0
 
-toolchain go1.22.4
+toolchain go1.22.5
 
 require (
 	github.com/hetznercloud/hcloud-go/v2 v2.10.2
