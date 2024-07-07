@@ -11,9 +11,9 @@ require (
 	github.com/rs/zerolog v1.33.0
 	github.com/stretchr/testify v1.9.0
 	github.com/urfave/cli/v2 v2.27.2
-	go.woodpecker-ci.org/woodpecker/v2 v2.6.1-0.20240702091207-e5f3e67bf282
+	go.woodpecker-ci.org/woodpecker/v2 v2.6.1-0.20240707084419-fb371479485e
 	golang.org/x/exp v0.0.0-20240613232115-7f521ea00fb8
-	golang.org/x/net v0.26.0
+	golang.org/x/net v0.27.0
 	golang.org/x/oauth2 v0.21.0
 )
 
@@ -33,9 +33,9 @@ require (
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1 // indirect
-	golang.org/x/sys v0.21.0 // indirect
+	golang.org/x/sys v0.22.0 // indirect
 	golang.org/x/text v0.16.0 // indirect
-	google.golang.org/protobuf v1.34.1 // indirect
+	google.golang.org/protobuf v1.34.2 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

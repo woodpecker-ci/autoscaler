@@ -701,6 +701,283 @@ func (_c *MockClient_Deploy_Call) RunAndReturn(run func(int64, int64, string, ma
 	return _c
 }
 
+// GlobalRegistry provides a mock function with given fields: registry
+func (_m *MockClient) GlobalRegistry(registry string) (*woodpecker.Registry, error) {
+	ret := _m.Called(registry)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GlobalRegistry")
+	}
+
+	var r0 *woodpecker.Registry
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string) (*woodpecker.Registry, error)); ok {
+		return rf(registry)
+	}
+	if rf, ok := ret.Get(0).(func(string) *woodpecker.Registry); ok {
+		r0 = rf(registry)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*woodpecker.Registry)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(registry)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockClient_GlobalRegistry_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GlobalRegistry'
+type MockClient_GlobalRegistry_Call struct {
+	*mock.Call
+}
+
+// GlobalRegistry is a helper method to define mock.On call
+//   - registry string
+func (_e *MockClient_Expecter) GlobalRegistry(registry interface{}) *MockClient_GlobalRegistry_Call {
+	return &MockClient_GlobalRegistry_Call{Call: _e.mock.On("GlobalRegistry", registry)}
+}
+
+func (_c *MockClient_GlobalRegistry_Call) Run(run func(registry string)) *MockClient_GlobalRegistry_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *MockClient_GlobalRegistry_Call) Return(_a0 *woodpecker.Registry, _a1 error) *MockClient_GlobalRegistry_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockClient_GlobalRegistry_Call) RunAndReturn(run func(string) (*woodpecker.Registry, error)) *MockClient_GlobalRegistry_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GlobalRegistryCreate provides a mock function with given fields: registry
+func (_m *MockClient) GlobalRegistryCreate(registry *woodpecker.Registry) (*woodpecker.Registry, error) {
+	ret := _m.Called(registry)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GlobalRegistryCreate")
+	}
+
+	var r0 *woodpecker.Registry
+	var r1 error
+	if rf, ok := ret.Get(0).(func(*woodpecker.Registry) (*woodpecker.Registry, error)); ok {
+		return rf(registry)
+	}
+	if rf, ok := ret.Get(0).(func(*woodpecker.Registry) *woodpecker.Registry); ok {
+		r0 = rf(registry)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*woodpecker.Registry)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(*woodpecker.Registry) error); ok {
+		r1 = rf(registry)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockClient_GlobalRegistryCreate_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GlobalRegistryCreate'
+type MockClient_GlobalRegistryCreate_Call struct {
+	*mock.Call
+}
+
+// GlobalRegistryCreate is a helper method to define mock.On call
+//   - registry *woodpecker.Registry
+func (_e *MockClient_Expecter) GlobalRegistryCreate(registry interface{}) *MockClient_GlobalRegistryCreate_Call {
+	return &MockClient_GlobalRegistryCreate_Call{Call: _e.mock.On("GlobalRegistryCreate", registry)}
+}
+
+func (_c *MockClient_GlobalRegistryCreate_Call) Run(run func(registry *woodpecker.Registry)) *MockClient_GlobalRegistryCreate_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(*woodpecker.Registry))
+	})
+	return _c
+}
+
+func (_c *MockClient_GlobalRegistryCreate_Call) Return(_a0 *woodpecker.Registry, _a1 error) *MockClient_GlobalRegistryCreate_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockClient_GlobalRegistryCreate_Call) RunAndReturn(run func(*woodpecker.Registry) (*woodpecker.Registry, error)) *MockClient_GlobalRegistryCreate_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GlobalRegistryDelete provides a mock function with given fields: registry
+func (_m *MockClient) GlobalRegistryDelete(registry string) error {
+	ret := _m.Called(registry)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GlobalRegistryDelete")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string) error); ok {
+		r0 = rf(registry)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// MockClient_GlobalRegistryDelete_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GlobalRegistryDelete'
+type MockClient_GlobalRegistryDelete_Call struct {
+	*mock.Call
+}
+
+// GlobalRegistryDelete is a helper method to define mock.On call
+//   - registry string
+func (_e *MockClient_Expecter) GlobalRegistryDelete(registry interface{}) *MockClient_GlobalRegistryDelete_Call {
+	return &MockClient_GlobalRegistryDelete_Call{Call: _e.mock.On("GlobalRegistryDelete", registry)}
+}
+
+func (_c *MockClient_GlobalRegistryDelete_Call) Run(run func(registry string)) *MockClient_GlobalRegistryDelete_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *MockClient_GlobalRegistryDelete_Call) Return(_a0 error) *MockClient_GlobalRegistryDelete_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *MockClient_GlobalRegistryDelete_Call) RunAndReturn(run func(string) error) *MockClient_GlobalRegistryDelete_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GlobalRegistryList provides a mock function with given fields:
+func (_m *MockClient) GlobalRegistryList() ([]*woodpecker.Registry, error) {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GlobalRegistryList")
+	}
+
+	var r0 []*woodpecker.Registry
+	var r1 error
+	if rf, ok := ret.Get(0).(func() ([]*woodpecker.Registry, error)); ok {
+		return rf()
+	}
+	if rf, ok := ret.Get(0).(func() []*woodpecker.Registry); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*woodpecker.Registry)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockClient_GlobalRegistryList_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GlobalRegistryList'
+type MockClient_GlobalRegistryList_Call struct {
+	*mock.Call
+}
+
+// GlobalRegistryList is a helper method to define mock.On call
+func (_e *MockClient_Expecter) GlobalRegistryList() *MockClient_GlobalRegistryList_Call {
+	return &MockClient_GlobalRegistryList_Call{Call: _e.mock.On("GlobalRegistryList")}
+}
+
+func (_c *MockClient_GlobalRegistryList_Call) Run(run func()) *MockClient_GlobalRegistryList_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *MockClient_GlobalRegistryList_Call) Return(_a0 []*woodpecker.Registry, _a1 error) *MockClient_GlobalRegistryList_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockClient_GlobalRegistryList_Call) RunAndReturn(run func() ([]*woodpecker.Registry, error)) *MockClient_GlobalRegistryList_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GlobalRegistryUpdate provides a mock function with given fields: registry
+func (_m *MockClient) GlobalRegistryUpdate(registry *woodpecker.Registry) (*woodpecker.Registry, error) {
+	ret := _m.Called(registry)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GlobalRegistryUpdate")
+	}
+
+	var r0 *woodpecker.Registry
+	var r1 error
+	if rf, ok := ret.Get(0).(func(*woodpecker.Registry) (*woodpecker.Registry, error)); ok {
+		return rf(registry)
+	}
+	if rf, ok := ret.Get(0).(func(*woodpecker.Registry) *woodpecker.Registry); ok {
+		r0 = rf(registry)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*woodpecker.Registry)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(*woodpecker.Registry) error); ok {
+		r1 = rf(registry)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockClient_GlobalRegistryUpdate_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GlobalRegistryUpdate'
+type MockClient_GlobalRegistryUpdate_Call struct {
+	*mock.Call
+}
+
+// GlobalRegistryUpdate is a helper method to define mock.On call
+//   - registry *woodpecker.Registry
+func (_e *MockClient_Expecter) GlobalRegistryUpdate(registry interface{}) *MockClient_GlobalRegistryUpdate_Call {
+	return &MockClient_GlobalRegistryUpdate_Call{Call: _e.mock.On("GlobalRegistryUpdate", registry)}
+}
+
+func (_c *MockClient_GlobalRegistryUpdate_Call) Run(run func(registry *woodpecker.Registry)) *MockClient_GlobalRegistryUpdate_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(*woodpecker.Registry))
+	})
+	return _c
+}
+
+func (_c *MockClient_GlobalRegistryUpdate_Call) Return(_a0 *woodpecker.Registry, _a1 error) *MockClient_GlobalRegistryUpdate_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockClient_GlobalRegistryUpdate_Call) RunAndReturn(run func(*woodpecker.Registry) (*woodpecker.Registry, error)) *MockClient_GlobalRegistryUpdate_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GlobalSecret provides a mock function with given fields: secret
 func (_m *MockClient) GlobalSecret(secret string) (*woodpecker.Secret, error) {
 	ret := _m.Called(secret)
@@ -1194,6 +1471,288 @@ func (_c *MockClient_OrgLookup_Call) Return(_a0 *woodpecker.Org, _a1 error) *Moc
 }
 
 func (_c *MockClient_OrgLookup_Call) RunAndReturn(run func(string) (*woodpecker.Org, error)) *MockClient_OrgLookup_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// OrgRegistry provides a mock function with given fields: orgID, registry
+func (_m *MockClient) OrgRegistry(orgID int64, registry string) (*woodpecker.Registry, error) {
+	ret := _m.Called(orgID, registry)
+
+	if len(ret) == 0 {
+		panic("no return value specified for OrgRegistry")
+	}
+
+	var r0 *woodpecker.Registry
+	var r1 error
+	if rf, ok := ret.Get(0).(func(int64, string) (*woodpecker.Registry, error)); ok {
+		return rf(orgID, registry)
+	}
+	if rf, ok := ret.Get(0).(func(int64, string) *woodpecker.Registry); ok {
+		r0 = rf(orgID, registry)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*woodpecker.Registry)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(int64, string) error); ok {
+		r1 = rf(orgID, registry)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockClient_OrgRegistry_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'OrgRegistry'
+type MockClient_OrgRegistry_Call struct {
+	*mock.Call
+}
+
+// OrgRegistry is a helper method to define mock.On call
+//   - orgID int64
+//   - registry string
+func (_e *MockClient_Expecter) OrgRegistry(orgID interface{}, registry interface{}) *MockClient_OrgRegistry_Call {
+	return &MockClient_OrgRegistry_Call{Call: _e.mock.On("OrgRegistry", orgID, registry)}
+}
+
+func (_c *MockClient_OrgRegistry_Call) Run(run func(orgID int64, registry string)) *MockClient_OrgRegistry_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(int64), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *MockClient_OrgRegistry_Call) Return(_a0 *woodpecker.Registry, _a1 error) *MockClient_OrgRegistry_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockClient_OrgRegistry_Call) RunAndReturn(run func(int64, string) (*woodpecker.Registry, error)) *MockClient_OrgRegistry_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// OrgRegistryCreate provides a mock function with given fields: orgID, registry
+func (_m *MockClient) OrgRegistryCreate(orgID int64, registry *woodpecker.Registry) (*woodpecker.Registry, error) {
+	ret := _m.Called(orgID, registry)
+
+	if len(ret) == 0 {
+		panic("no return value specified for OrgRegistryCreate")
+	}
+
+	var r0 *woodpecker.Registry
+	var r1 error
+	if rf, ok := ret.Get(0).(func(int64, *woodpecker.Registry) (*woodpecker.Registry, error)); ok {
+		return rf(orgID, registry)
+	}
+	if rf, ok := ret.Get(0).(func(int64, *woodpecker.Registry) *woodpecker.Registry); ok {
+		r0 = rf(orgID, registry)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*woodpecker.Registry)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(int64, *woodpecker.Registry) error); ok {
+		r1 = rf(orgID, registry)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockClient_OrgRegistryCreate_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'OrgRegistryCreate'
+type MockClient_OrgRegistryCreate_Call struct {
+	*mock.Call
+}
+
+// OrgRegistryCreate is a helper method to define mock.On call
+//   - orgID int64
+//   - registry *woodpecker.Registry
+func (_e *MockClient_Expecter) OrgRegistryCreate(orgID interface{}, registry interface{}) *MockClient_OrgRegistryCreate_Call {
+	return &MockClient_OrgRegistryCreate_Call{Call: _e.mock.On("OrgRegistryCreate", orgID, registry)}
+}
+
+func (_c *MockClient_OrgRegistryCreate_Call) Run(run func(orgID int64, registry *woodpecker.Registry)) *MockClient_OrgRegistryCreate_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(int64), args[1].(*woodpecker.Registry))
+	})
+	return _c
+}
+
+func (_c *MockClient_OrgRegistryCreate_Call) Return(_a0 *woodpecker.Registry, _a1 error) *MockClient_OrgRegistryCreate_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockClient_OrgRegistryCreate_Call) RunAndReturn(run func(int64, *woodpecker.Registry) (*woodpecker.Registry, error)) *MockClient_OrgRegistryCreate_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// OrgRegistryDelete provides a mock function with given fields: orgID, registry
+func (_m *MockClient) OrgRegistryDelete(orgID int64, registry string) error {
+	ret := _m.Called(orgID, registry)
+
+	if len(ret) == 0 {
+		panic("no return value specified for OrgRegistryDelete")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(int64, string) error); ok {
+		r0 = rf(orgID, registry)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// MockClient_OrgRegistryDelete_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'OrgRegistryDelete'
+type MockClient_OrgRegistryDelete_Call struct {
+	*mock.Call
+}
+
+// OrgRegistryDelete is a helper method to define mock.On call
+//   - orgID int64
+//   - registry string
+func (_e *MockClient_Expecter) OrgRegistryDelete(orgID interface{}, registry interface{}) *MockClient_OrgRegistryDelete_Call {
+	return &MockClient_OrgRegistryDelete_Call{Call: _e.mock.On("OrgRegistryDelete", orgID, registry)}
+}
+
+func (_c *MockClient_OrgRegistryDelete_Call) Run(run func(orgID int64, registry string)) *MockClient_OrgRegistryDelete_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(int64), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *MockClient_OrgRegistryDelete_Call) Return(_a0 error) *MockClient_OrgRegistryDelete_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *MockClient_OrgRegistryDelete_Call) RunAndReturn(run func(int64, string) error) *MockClient_OrgRegistryDelete_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// OrgRegistryList provides a mock function with given fields: orgID
+func (_m *MockClient) OrgRegistryList(orgID int64) ([]*woodpecker.Registry, error) {
+	ret := _m.Called(orgID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for OrgRegistryList")
+	}
+
+	var r0 []*woodpecker.Registry
+	var r1 error
+	if rf, ok := ret.Get(0).(func(int64) ([]*woodpecker.Registry, error)); ok {
+		return rf(orgID)
+	}
+	if rf, ok := ret.Get(0).(func(int64) []*woodpecker.Registry); ok {
+		r0 = rf(orgID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*woodpecker.Registry)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(int64) error); ok {
+		r1 = rf(orgID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockClient_OrgRegistryList_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'OrgRegistryList'
+type MockClient_OrgRegistryList_Call struct {
+	*mock.Call
+}
+
+// OrgRegistryList is a helper method to define mock.On call
+//   - orgID int64
+func (_e *MockClient_Expecter) OrgRegistryList(orgID interface{}) *MockClient_OrgRegistryList_Call {
+	return &MockClient_OrgRegistryList_Call{Call: _e.mock.On("OrgRegistryList", orgID)}
+}
+
+func (_c *MockClient_OrgRegistryList_Call) Run(run func(orgID int64)) *MockClient_OrgRegistryList_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(int64))
+	})
+	return _c
+}
+
+func (_c *MockClient_OrgRegistryList_Call) Return(_a0 []*woodpecker.Registry, _a1 error) *MockClient_OrgRegistryList_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockClient_OrgRegistryList_Call) RunAndReturn(run func(int64) ([]*woodpecker.Registry, error)) *MockClient_OrgRegistryList_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// OrgRegistryUpdate provides a mock function with given fields: orgID, registry
+func (_m *MockClient) OrgRegistryUpdate(orgID int64, registry *woodpecker.Registry) (*woodpecker.Registry, error) {
+	ret := _m.Called(orgID, registry)
+
+	if len(ret) == 0 {
+		panic("no return value specified for OrgRegistryUpdate")
+	}
+
+	var r0 *woodpecker.Registry
+	var r1 error
+	if rf, ok := ret.Get(0).(func(int64, *woodpecker.Registry) (*woodpecker.Registry, error)); ok {
+		return rf(orgID, registry)
+	}
+	if rf, ok := ret.Get(0).(func(int64, *woodpecker.Registry) *woodpecker.Registry); ok {
+		r0 = rf(orgID, registry)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*woodpecker.Registry)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(int64, *woodpecker.Registry) error); ok {
+		r1 = rf(orgID, registry)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockClient_OrgRegistryUpdate_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'OrgRegistryUpdate'
+type MockClient_OrgRegistryUpdate_Call struct {
+	*mock.Call
+}
+
+// OrgRegistryUpdate is a helper method to define mock.On call
+//   - orgID int64
+//   - registry *woodpecker.Registry
+func (_e *MockClient_Expecter) OrgRegistryUpdate(orgID interface{}, registry interface{}) *MockClient_OrgRegistryUpdate_Call {
+	return &MockClient_OrgRegistryUpdate_Call{Call: _e.mock.On("OrgRegistryUpdate", orgID, registry)}
+}
+
+func (_c *MockClient_OrgRegistryUpdate_Call) Run(run func(orgID int64, registry *woodpecker.Registry)) *MockClient_OrgRegistryUpdate_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(int64), args[1].(*woodpecker.Registry))
+	})
+	return _c
+}
+
+func (_c *MockClient_OrgRegistryUpdate_Call) Return(_a0 *woodpecker.Registry, _a1 error) *MockClient_OrgRegistryUpdate_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockClient_OrgRegistryUpdate_Call) RunAndReturn(run func(int64, *woodpecker.Registry) (*woodpecker.Registry, error)) *MockClient_OrgRegistryUpdate_Call {
 	_c.Call.Return(run)
 	return _c
 }
