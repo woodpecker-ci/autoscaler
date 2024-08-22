@@ -12,7 +12,7 @@ require (
 	github.com/stretchr/testify v1.9.0
 	github.com/urfave/cli/v2 v2.27.2
 	go.woodpecker-ci.org/woodpecker/v2 v2.6.1-0.20240707084419-fb371479485e
-	golang.org/x/exp v0.0.0-20240613232115-7f521ea00fb8
+	golang.org/x/exp v0.0.0-20240822175202-778ce7bba035
 	golang.org/x/net v0.27.0
 	golang.org/x/oauth2 v0.21.0
 )
