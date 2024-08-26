@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.3.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.3.0) - 2024-07-07
+## [0.3.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.3.0) - 2024-08-26
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -25,6 +25,8 @@
 
 ### Misc
 
+- fix(deps): update golang deps non-major [[#173](https://github.com/woodpecker-ci/autoscaler/pull/173)]
+- fix(deps): update golang.org/x/exp digest to 778ce7b [[#174](https://github.com/woodpecker-ci/autoscaler/pull/174)]
 - chore(deps): update golang deps non-major [[#170](https://github.com/woodpecker-ci/autoscaler/pull/170)]
 - fix(deps): update go.woodpecker-ci.org/woodpecker/v2 digest to 987c201 [[#169](https://github.com/woodpecker-ci/autoscaler/pull/169)]
 - [pre-commit.ci] pre-commit autoupdate [[#160](https://github.com/woodpecker-ci/autoscaler/pull/160)]
