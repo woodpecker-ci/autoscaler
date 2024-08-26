@@ -33,7 +33,8 @@ steps:
       platforms: *platforms
       tag: next
       username: woodpeckerbot
-    secrets: [docker_password]
+      password:
+        from_secret: docker_password
     when:
       branch: ${CI_REPO_DEFAULT_BRANCH}
       event: push
@@ -46,6 +47,7 @@ steps:
       platforms: *platforms
       tag: [latest, '${CI_COMMIT_TAG}']
       username: woodpeckerbot
-    secrets: [docker_password]
+      password:
+        from_secret: docker_password
     when:
       event: tag
