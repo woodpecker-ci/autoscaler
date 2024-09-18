@@ -22,7 +22,7 @@ linters-settings:
       - standard
       - default
       - prefix(go.woodpecker-ci.org)
-  gomnd:
+  mnd:
     ignored-numbers:
       - '0o600'
       - '0o660'
