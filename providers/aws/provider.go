@@ -137,6 +137,12 @@ func (p *Provider) getAgent(ctx context.Context, agent *woodpecker.Agent) (*type
 	if err != nil {
 		return nil, err
 	}
+	if len(instances.Reservations) != 1 {
+		return nil, fmt.Errorf("expected 1 reservation with tag:Name=%s, got %d", agent.Name, len(instances.Reservations))
+	}
+	if len(instances.Reservations[0].Instances) != 1 {
+		return nil, fmt.Errorf("expected 1 instance with tag:Name=%s, got %d", agent.Name, len(instances.Reservations[0].Instances))
+	}
 	return &instances.Reservations[0].Instances[0], nil
 }
 
@@ -152,7 +158,7 @@ func (p *Provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) err
 }
 
 func (p *Provider) ListDeployedAgentNames(ctx context.Context) ([]string, error) {
-	zerolog.Debug().Msgf("List deployed agent name")
+	zerolog.Debug().Msgf("List deployed agent names")
 
 	var names []string
 	instances, err := p.client.DescribeInstances(ctx, &ec2.DescribeInstancesInput{
