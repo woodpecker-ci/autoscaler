@@ -13,12 +13,15 @@ import (
 
 	"go.woodpecker-ci.org/autoscaler/config"
 	"go.woodpecker-ci.org/autoscaler/engine"
+	"go.woodpecker-ci.org/autoscaler/providers/aws"
 	"go.woodpecker-ci.org/autoscaler/providers/hetznercloud"
 	"go.woodpecker-ci.org/autoscaler/server"
 )
 
 func setupProvider(ctx *cli.Context, config *config.Config) (engine.Provider, error) {
 	switch ctx.String("provider") {
+	case "aws":
+		return aws.New(ctx, config)
 	case "hetznercloud":
 		return hetznercloud.New(ctx, config)
 	// TODO: Temp disabled due to the security issue https://github.com/woodpecker-ci/autoscaler/issues/91
@@ -128,6 +131,9 @@ func main() {
 	// TODO: Temp disabled due to the security issue https://github.com/woodpecker-ci/autoscaler/issues/91
 	// Enable it again when the issue is fixed.
 	// app.Flags = append(app.Flags, linode.ProviderFlags...)
+
+	// Register aws flags
+	app.Flags = append(app.Flags, aws.DriverFlags...)
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal().Err(err).Msg("")
