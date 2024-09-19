@@ -9,8 +9,14 @@ variables:
   - &buildx-plugin 'woodpeckerci/plugin-docker-buildx:4.2.0'
   - &repo 'woodpeckerci/autoscaler'
   - &platforms 'linux/arm/v7,linux/arm64/v8,linux/amd64,linux/ppc64le'
+  - &golang_image 'golang:1.23'
 
 steps:
+  vendor:
+    image: *golang_image
+    commands:
+      - go mod vendor
+
   dryrun:
     image: *buildx-plugin
     settings:

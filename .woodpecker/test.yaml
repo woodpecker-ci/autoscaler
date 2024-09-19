@@ -4,7 +4,7 @@ when:
     branch: renovate/*
 
 variables:
-  - &golang_image 'golang:1.22'
+  - &golang_image 'golang:1.23'
   - &when
     - path: &when_path # related config files
         - '.woodpecker/test.yml'
@@ -29,7 +29,7 @@ steps:
     when: *when
 
   lint-editorconfig:
-    image: mstruebing/editorconfig-checker:v3.0.1
+    image: mstruebing/editorconfig-checker:v3.0.3
     depends_on: []
 
   test:

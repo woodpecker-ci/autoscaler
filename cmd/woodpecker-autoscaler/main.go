@@ -136,6 +136,6 @@ func main() {
 	app.Flags = append(app.Flags, aws.DriverFlags...)
 
 	if err := app.Run(os.Args); err != nil {
-		log.Fatal().Err(err).Msg("")
+		log.Error().Err(err).Msg("got error while try to run autoscaler")
 	}
 }
