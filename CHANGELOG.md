@@ -26,6 +26,7 @@
 
 ### Misc
 
+- chore(deps): update mstruebing/editorconfig-checker docker tag to v3.0.3 [[#179](https://github.com/woodpecker-ci/autoscaler/pull/179)]
 - fix(deps): update golang deps non-major [[#173](https://github.com/woodpecker-ci/autoscaler/pull/173)]
 - fix(deps): update golang.org/x/exp digest to 778ce7b [[#174](https://github.com/woodpecker-ci/autoscaler/pull/174)]
 - chore(deps): update golang deps non-major [[#170](https://github.com/woodpecker-ci/autoscaler/pull/170)]
