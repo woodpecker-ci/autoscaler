@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.3.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.3.1) - 2024-09-20
+
+### Misc
+
+- [pre-commit.ci] pre-commit autoupdate [[#176](https://github.com/woodpecker-ci/autoscaler/pull/176)]
+
 ## [0.3.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.3.0) - 2024-09-20
 
 ### ❤️ Thanks to all contributors! ❤️
