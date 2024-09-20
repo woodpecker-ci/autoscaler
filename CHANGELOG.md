@@ -1,5 +1,68 @@
 # Changelog
 
+## [0.3.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.3.0) - 2024-09-20
+
+### ❤️ Thanks to all contributors! ❤️
+
+@anbraten, @hhamalai, @qwerty287, @xoxys
+
+### ✨ Features
+
+- Add AWS provider [[#118](https://github.com/woodpecker-ci/autoscaler/pull/118)]
+- Reactivate agents and prevent draining recently active agents  [[#163](https://github.com/woodpecker-ci/autoscaler/pull/163)]
+- Add agent idle timeout [[#162](https://github.com/woodpecker-ci/autoscaler/pull/162)]
+- Allow to filter for specific tasks [[#134](https://github.com/woodpecker-ci/autoscaler/pull/134)]
+
+### 🐛 Bug Fixes
+
+- Fix drain agents [[#156](https://github.com/woodpecker-ci/autoscaler/pull/156)]
+- Return error on unknown server types [[#151](https://github.com/woodpecker-ci/autoscaler/pull/151)]
+
+### 📈 Enhancement
+
+- Allow to remove an agent as soon as it connected once, but has no more tasks left [[#92](https://github.com/woodpecker-ci/autoscaler/pull/92)]
+- Improve error handling [[#155](https://github.com/woodpecker-ci/autoscaler/pull/155)]
+- Use docker gpg key from download.docker.com [[#154](https://github.com/woodpecker-ci/autoscaler/pull/154)]
+
+### Misc
+
+- fix(deps): update golang.org/x/exp digest to 701f63a [[#178](https://github.com/woodpecker-ci/autoscaler/pull/178)]
+- chore(deps): update mstruebing/editorconfig-checker docker tag to v3.0.3 [[#179](https://github.com/woodpecker-ci/autoscaler/pull/179)]
+- fix(deps): update golang deps non-major [[#173](https://github.com/woodpecker-ci/autoscaler/pull/173)]
+- fix(deps): update golang.org/x/exp digest to 778ce7b [[#174](https://github.com/woodpecker-ci/autoscaler/pull/174)]
+- chore(deps): update golang deps non-major [[#170](https://github.com/woodpecker-ci/autoscaler/pull/170)]
+- fix(deps): update go.woodpecker-ci.org/woodpecker/v2 digest to 987c201 [[#169](https://github.com/woodpecker-ci/autoscaler/pull/169)]
+- [pre-commit.ci] pre-commit autoupdate [[#160](https://github.com/woodpecker-ci/autoscaler/pull/160)]
+- fix(deps): update module github.com/linode/linodego to v1.36.1 [[#161](https://github.com/woodpecker-ci/autoscaler/pull/161)]
+- fix(deps): update golang deps non-major [[#159](https://github.com/woodpecker-ci/autoscaler/pull/159)]
+- fix(deps): update golang.org/x/exp digest to 7f521ea [[#158](https://github.com/woodpecker-ci/autoscaler/pull/158)]
+- fix(deps): update golang deps non-major [[#150](https://github.com/woodpecker-ci/autoscaler/pull/150)]
+- [pre-commit.ci] pre-commit autoupdate [[#149](https://github.com/woodpecker-ci/autoscaler/pull/149)]
+- Fix deprecations and run on renovate branches [[#147](https://github.com/woodpecker-ci/autoscaler/pull/147)]
+- chore(deps): update mstruebing/editorconfig-checker docker tag to v3 [[#138](https://github.com/woodpecker-ci/autoscaler/pull/138)]
+- chore(deps): update woodpeckerci/plugin-docker-buildx docker tag to v4 [[#143](https://github.com/woodpecker-ci/autoscaler/pull/143)]
+- fix(deps): update golang deps non-major [[#142](https://github.com/woodpecker-ci/autoscaler/pull/142)]
+- chore(deps): update golang docker tag to v1.22.3 [[#144](https://github.com/woodpecker-ci/autoscaler/pull/144)]
+- chore(deps): update pre-commit hook golangci/golangci-lint to v1.58.1 [[#145](https://github.com/woodpecker-ci/autoscaler/pull/145)]
+- chore(deps): update pre-commit non-major [[#139](https://github.com/woodpecker-ci/autoscaler/pull/139)]
+- fix(deps): update module golang.org/x/oauth2 to v0.20.0 [[#140](https://github.com/woodpecker-ci/autoscaler/pull/140)]
+- fix(deps): update module github.com/urfave/cli/v2 to v2.27.2 [[#136](https://github.com/woodpecker-ci/autoscaler/pull/136)]
+- fix(deps): update module github.com/linode/linodego to v1.33.0 [[#135](https://github.com/woodpecker-ci/autoscaler/pull/135)]
+- fix(deps): update module github.com/hetznercloud/hcloud-go/v2 to v2.7.2 [[#132](https://github.com/woodpecker-ci/autoscaler/pull/132)]
+- chore(deps): update woodpeckerci/plugin-ready-release-go docker tag to v1.1.1 [[#131](https://github.com/woodpecker-ci/autoscaler/pull/131)]
+- fix(deps): update golang.org/x/exp digest to fe59bbe [[#130](https://github.com/woodpecker-ci/autoscaler/pull/130)]
+- chore(deps): update pre-commit hook pre-commit/pre-commit-hooks to v4.6.0 [[#128](https://github.com/woodpecker-ci/autoscaler/pull/128)]
+- chore(deps): update golang docker tag to v1.22.2 [[#127](https://github.com/woodpecker-ci/autoscaler/pull/127)]
+- fix(deps): update golang.org/x/exp digest to c0f41cb [[#126](https://github.com/woodpecker-ci/autoscaler/pull/126)]
+- fix(deps): update golang deps non-major [[#125](https://github.com/woodpecker-ci/autoscaler/pull/125)]
+- chore(deps): update woodpeckerci/plugin-docker-buildx docker tag to v3.2.1 [[#124](https://github.com/woodpecker-ci/autoscaler/pull/124)]
+- fix(deps): update golang.org/x/exp digest to a685a6e [[#122](https://github.com/woodpecker-ci/autoscaler/pull/122)]
+- chore(deps): update pre-commit hook golangci/golangci-lint to v1.57.2 [[#123](https://github.com/woodpecker-ci/autoscaler/pull/123)]
+- fix(deps): update module github.com/hetznercloud/hcloud-go/v2 to v2.7.0 [[#121](https://github.com/woodpecker-ci/autoscaler/pull/121)]
+- chore(deps): update pre-commit non-major [[#120](https://github.com/woodpecker-ci/autoscaler/pull/120)]
+- fix(deps): update golang.org/x/exp digest to a85f2c6 [[#119](https://github.com/woodpecker-ci/autoscaler/pull/119)]
+- fix(deps): update golang deps non-major [[#116](https://github.com/woodpecker-ci/autoscaler/pull/116)]
+
 ## [0.2.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.2.0) - 2024-03-17
 
 ### ❤️ Thanks to all contributors! ❤️
