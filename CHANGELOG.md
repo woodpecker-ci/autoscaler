@@ -4,6 +4,7 @@
 
 ### Misc
 
+- fix(deps): update golang deps non-major [[#183](https://github.com/woodpecker-ci/autoscaler/pull/183)]
 - chore(deps): update pre-commit non-major [[#184](https://github.com/woodpecker-ci/autoscaler/pull/184)]
 - [pre-commit.ci] pre-commit autoupdate [[#176](https://github.com/woodpecker-ci/autoscaler/pull/176)]
 
