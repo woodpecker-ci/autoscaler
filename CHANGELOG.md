@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.3.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.3.1) - 2024-09-27
+
+### Misc
+
+- chore(deps): update golang docker tag to v1.23 [[#181](https://github.com/woodpecker-ci/autoscaler/pull/181)]
+- chore(deps): update woodpeckerci/plugin-ready-release-go docker tag to v1.2.0 [[#182](https://github.com/woodpecker-ci/autoscaler/pull/182)]
+- fix(deps): update golang deps non-major [[#183](https://github.com/woodpecker-ci/autoscaler/pull/183)]
+- chore(deps): update pre-commit non-major [[#184](https://github.com/woodpecker-ci/autoscaler/pull/184)]
+- [pre-commit.ci] pre-commit autoupdate [[#176](https://github.com/woodpecker-ci/autoscaler/pull/176)]
+
 ## [0.3.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.3.0) - 2024-09-20
 
 ### ❤️ Thanks to all contributors! ❤️
