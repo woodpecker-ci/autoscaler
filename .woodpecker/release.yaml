@@ -6,7 +6,7 @@ when:
       - renovate/*
 
 variables:
-  - &buildx-plugin 'woodpeckerci/plugin-docker-buildx:4.2.0'
+  - &buildx-plugin 'woodpeckerci/plugin-docker-buildx:5.0.0'
   - &repo 'woodpeckerci/autoscaler'
   - &platforms 'linux/arm/v7,linux/arm64/v8,linux/amd64,linux/ppc64le'
   - &golang_image 'golang:1.23'
