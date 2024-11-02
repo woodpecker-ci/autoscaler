@@ -1,13 +1,25 @@
 # Changelog
 
-## [0.3.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.3.1) - 2024-09-27
+## [0.3.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.3.1) - 2024-11-02
 
-### Misc
+### ❤️ Thanks to all contributors! ❤️
 
+@xoxys
+
+### 📦️ Dependency
+
+- fix(deps): update golang.org/x/exp digest to f66d83c [[#188](https://github.com/woodpecker-ci/autoscaler/pull/188)]
+- chore(deps): update pre-commit hook pre-commit/pre-commit-hooks to v5 [[#187](https://github.com/woodpecker-ci/autoscaler/pull/187)]
+- fix(deps): update golang deps non-major [[#186](https://github.com/woodpecker-ci/autoscaler/pull/186)]
+- chore(deps): update woodpeckerci/plugin-ready-release-go docker tag to v2 [[#185](https://github.com/woodpecker-ci/autoscaler/pull/185)]
 - chore(deps): update golang docker tag to v1.23 [[#181](https://github.com/woodpecker-ci/autoscaler/pull/181)]
 - chore(deps): update woodpeckerci/plugin-ready-release-go docker tag to v1.2.0 [[#182](https://github.com/woodpecker-ci/autoscaler/pull/182)]
 - fix(deps): update golang deps non-major [[#183](https://github.com/woodpecker-ci/autoscaler/pull/183)]
 - chore(deps): update pre-commit non-major [[#184](https://github.com/woodpecker-ci/autoscaler/pull/184)]
+
+### Misc
+
+- Bump buildx plugin image for pipeline [[#192](https://github.com/woodpecker-ci/autoscaler/pull/192)]
 - [pre-commit.ci] pre-commit autoupdate [[#176](https://github.com/woodpecker-ci/autoscaler/pull/176)]
 
 ## [0.3.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.3.0) - 2024-09-20
