@@ -91,8 +91,8 @@ github.com/urfave/cli/v2 v2.27.5/go.mod h1:3Sevf16NykTbInEnD0yKkjDAeZDS0A6bzhBH5
 github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1 h1:gEOO8jv9F4OT7lGCjxCBTO/36wtF6j2nSip77qHd4x4=
 github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1/go.mod h1:Ohn+xnUBiLI6FVj/9LpzZWtj1/D6lUovWYBkxHVV3aM=
 github.com/yuin/goldmark v1.4.13/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5taEt/CY=
-go.woodpecker-ci.org/woodpecker/v2 v2.7.1 h1:+0f5mKgpXI5mfSm9Mf5vkpGJrI219vSxBI0F7xBtxz0=
-go.woodpecker-ci.org/woodpecker/v2 v2.7.1/go.mod h1:k3vuysT5Y/7TMvNxSsgATTxt0sff+7SbmvKoJFg/HpE=
+go.woodpecker-ci.org/woodpecker/v2 v2.7.2 h1:TOkw87KPjVL0RtFMRpNhgxcEbP/vt0Skkeua1YeQiac=
+go.woodpecker-ci.org/woodpecker/v2 v2.7.2/go.mod h1:k3vuysT5Y/7TMvNxSsgATTxt0sff+7SbmvKoJFg/HpE=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
 golang.org/x/crypto v0.0.0-20210921155107-089bfa567519/go.mod h1:GvvjBRRGRdwPK5ydBHafDWAxML/pGHZbMvKqRZ5+Abc=
 golang.org/x/crypto v0.19.0/go.mod h1:Iy9bg/ha4yyC70EfRS8jz+B6ybOBKMaSxLj6P6oBDfU=
