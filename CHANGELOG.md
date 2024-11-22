@@ -4,7 +4,7 @@
 
 ### ❤️ Thanks to all contributors! ❤️
 
-@xoxys
+@pat-s, @xoxys
 
 ### 📦️ Dependency
 
@@ -28,6 +28,7 @@
 
 ### Misc
 
+- ci: remove `renovate` branch triggers [[#204](https://github.com/woodpecker-ci/autoscaler/pull/204)]
 - [pre-commit.ci] pre-commit autoupdate [[#195](https://github.com/woodpecker-ci/autoscaler/pull/195)]
 - Bump buildx plugin image for pipeline [[#192](https://github.com/woodpecker-ci/autoscaler/pull/192)]
 - [pre-commit.ci] pre-commit autoupdate [[#176](https://github.com/woodpecker-ci/autoscaler/pull/176)]
