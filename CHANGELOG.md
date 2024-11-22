@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.3.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.3.1) - 2024-11-02
+## [0.3.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.3.1) - 2024-11-22
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -8,6 +8,15 @@
 
 ### 📦️ Dependency
 
+- fix(deps): update golang deps non-major [[#203](https://github.com/woodpecker-ci/autoscaler/pull/203)]
+- fix(deps): update golang deps non-major [[#201](https://github.com/woodpecker-ci/autoscaler/pull/201)]
+- chore(deps): update pre-commit hook golangci/golangci-lint to v1.62.0 [[#200](https://github.com/woodpecker-ci/autoscaler/pull/200)]
+- fix(deps): update golang deps non-major [[#197](https://github.com/woodpecker-ci/autoscaler/pull/197)]
+- chore(deps): update woodpeckerci/plugin-ready-release-go docker tag to v2.1.1 [[#199](https://github.com/woodpecker-ci/autoscaler/pull/199)]
+- fix(deps): update golang.org/x/exp digest to 2d47ceb [[#198](https://github.com/woodpecker-ci/autoscaler/pull/198)]
+- fix(deps): update module go.woodpecker-ci.org/woodpecker/v2 to v2.7.2 [[#196](https://github.com/woodpecker-ci/autoscaler/pull/196)]
+- chore(deps): update node.js to v22 [[#193](https://github.com/woodpecker-ci/autoscaler/pull/193)]
+- fix(deps): update module github.com/hetznercloud/hcloud-go/v2 to v2.15.0 [[#194](https://github.com/woodpecker-ci/autoscaler/pull/194)]
 - fix(deps): update golang.org/x/exp digest to f66d83c [[#188](https://github.com/woodpecker-ci/autoscaler/pull/188)]
 - chore(deps): update pre-commit hook pre-commit/pre-commit-hooks to v5 [[#187](https://github.com/woodpecker-ci/autoscaler/pull/187)]
 - fix(deps): update golang deps non-major [[#186](https://github.com/woodpecker-ci/autoscaler/pull/186)]
@@ -19,6 +28,7 @@
 
 ### Misc
 
+- [pre-commit.ci] pre-commit autoupdate [[#195](https://github.com/woodpecker-ci/autoscaler/pull/195)]
 - Bump buildx plugin image for pipeline [[#192](https://github.com/woodpecker-ci/autoscaler/pull/192)]
 - [pre-commit.ci] pre-commit autoupdate [[#176](https://github.com/woodpecker-ci/autoscaler/pull/176)]
 
