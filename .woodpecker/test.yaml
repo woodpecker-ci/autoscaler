@@ -1,7 +1,5 @@
 when:
   - event: pull_request
-  - event: push
-    branch: renovate/*
 
 variables:
   - &golang_image 'golang:1.23'
