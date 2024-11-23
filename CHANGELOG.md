@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.3.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.3.1) - 2024-11-22
+## [0.3.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.3.1) - 2024-11-23
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -8,6 +8,7 @@
 
 ### 📦️ Dependency
 
+- fix(deps): update module github.com/hetznercloud/hcloud-go/v2 to v2.17.0 [[#205](https://github.com/woodpecker-ci/autoscaler/pull/205)]
 - fix(deps): update golang deps non-major [[#203](https://github.com/woodpecker-ci/autoscaler/pull/203)]
 - fix(deps): update golang deps non-major [[#201](https://github.com/woodpecker-ci/autoscaler/pull/201)]
 - chore(deps): update pre-commit hook golangci/golangci-lint to v1.62.0 [[#200](https://github.com/woodpecker-ci/autoscaler/pull/200)]
