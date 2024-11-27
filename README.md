@@ -39,7 +39,7 @@ The agents will use `WOODEPCKER_GRPC_ADDR` and a token automatically generated b
 
 - [ ] Add support for multiple providers
   - [x] Hetzner Cloud
-  - [ ] Amazon AWS
+  - [x] Amazon AWS
   - [ ] Google Cloud
   - [ ] Azure
   - [ ] Digital Ocean
