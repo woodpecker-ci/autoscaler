@@ -4,7 +4,7 @@
 
 ### ❤️ Thanks to all contributors! ❤️
 
-@pat-s, @xoxys
+@henkka, @pat-s, @xoxys
 
 ### 📦️ Dependency
 
@@ -32,6 +32,7 @@
 
 ### Misc
 
+- docs: add AWS as supported cloud provider [[#209](https://github.com/woodpecker-ci/autoscaler/pull/209)]
 - ci: remove `renovate` branch triggers [[#204](https://github.com/woodpecker-ci/autoscaler/pull/204)]
 - [pre-commit.ci] pre-commit autoupdate [[#195](https://github.com/woodpecker-ci/autoscaler/pull/195)]
 - Bump buildx plugin image for pipeline [[#192](https://github.com/woodpecker-ci/autoscaler/pull/192)]
