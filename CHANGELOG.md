@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.3.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.3.1) - 2024-11-27
+## [0.3.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.3.1) - 2024-11-29
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -8,6 +8,7 @@
 
 ### 📦️ Dependency
 
+- fix(deps): update module go.woodpecker-ci.org/woodpecker/v2 to v2.8.0 [[#210](https://github.com/woodpecker-ci/autoscaler/pull/210)]
 - fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.194.0 [[#208](https://github.com/woodpecker-ci/autoscaler/pull/208)]
 - fix(deps): update module github.com/stretchr/testify to v1.10.0 [[#207](https://github.com/woodpecker-ci/autoscaler/pull/207)]
 - chore(deps): update pre-commit hook igorshubovych/markdownlint-cli to v0.43.0 [[#206](https://github.com/woodpecker-ci/autoscaler/pull/206)]
