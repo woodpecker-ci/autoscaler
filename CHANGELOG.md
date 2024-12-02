@@ -1,5 +1,45 @@
 # Changelog
 
+## [0.3.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.3.1) - 2024-11-30
+
+### ❤️ Thanks to all contributors! ❤️
+
+@henkka, @pat-s, @xoxys
+
+### 📦️ Dependency
+
+- chore(deps): update pre-commit hook golangci/golangci-lint to v1.62.2 [[#211](https://github.com/woodpecker-ci/autoscaler/pull/211)]
+- fix(deps): update module go.woodpecker-ci.org/woodpecker/v2 to v2.8.0 [[#210](https://github.com/woodpecker-ci/autoscaler/pull/210)]
+- fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.194.0 [[#208](https://github.com/woodpecker-ci/autoscaler/pull/208)]
+- fix(deps): update module github.com/stretchr/testify to v1.10.0 [[#207](https://github.com/woodpecker-ci/autoscaler/pull/207)]
+- chore(deps): update pre-commit hook igorshubovych/markdownlint-cli to v0.43.0 [[#206](https://github.com/woodpecker-ci/autoscaler/pull/206)]
+- fix(deps): update module github.com/hetznercloud/hcloud-go/v2 to v2.17.0 [[#205](https://github.com/woodpecker-ci/autoscaler/pull/205)]
+- fix(deps): update golang deps non-major [[#203](https://github.com/woodpecker-ci/autoscaler/pull/203)]
+- fix(deps): update golang deps non-major [[#201](https://github.com/woodpecker-ci/autoscaler/pull/201)]
+- chore(deps): update pre-commit hook golangci/golangci-lint to v1.62.0 [[#200](https://github.com/woodpecker-ci/autoscaler/pull/200)]
+- fix(deps): update golang deps non-major [[#197](https://github.com/woodpecker-ci/autoscaler/pull/197)]
+- chore(deps): update woodpeckerci/plugin-ready-release-go docker tag to v2.1.1 [[#199](https://github.com/woodpecker-ci/autoscaler/pull/199)]
+- fix(deps): update golang.org/x/exp digest to 2d47ceb [[#198](https://github.com/woodpecker-ci/autoscaler/pull/198)]
+- fix(deps): update module go.woodpecker-ci.org/woodpecker/v2 to v2.7.2 [[#196](https://github.com/woodpecker-ci/autoscaler/pull/196)]
+- chore(deps): update node.js to v22 [[#193](https://github.com/woodpecker-ci/autoscaler/pull/193)]
+- fix(deps): update module github.com/hetznercloud/hcloud-go/v2 to v2.15.0 [[#194](https://github.com/woodpecker-ci/autoscaler/pull/194)]
+- fix(deps): update golang.org/x/exp digest to f66d83c [[#188](https://github.com/woodpecker-ci/autoscaler/pull/188)]
+- chore(deps): update pre-commit hook pre-commit/pre-commit-hooks to v5 [[#187](https://github.com/woodpecker-ci/autoscaler/pull/187)]
+- fix(deps): update golang deps non-major [[#186](https://github.com/woodpecker-ci/autoscaler/pull/186)]
+- chore(deps): update woodpeckerci/plugin-ready-release-go docker tag to v2 [[#185](https://github.com/woodpecker-ci/autoscaler/pull/185)]
+- chore(deps): update golang docker tag to v1.23 [[#181](https://github.com/woodpecker-ci/autoscaler/pull/181)]
+- chore(deps): update woodpeckerci/plugin-ready-release-go docker tag to v1.2.0 [[#182](https://github.com/woodpecker-ci/autoscaler/pull/182)]
+- fix(deps): update golang deps non-major [[#183](https://github.com/woodpecker-ci/autoscaler/pull/183)]
+- chore(deps): update pre-commit non-major [[#184](https://github.com/woodpecker-ci/autoscaler/pull/184)]
+
+### Misc
+
+- docs: add AWS as supported cloud provider [[#209](https://github.com/woodpecker-ci/autoscaler/pull/209)]
+- ci: remove `renovate` branch triggers [[#204](https://github.com/woodpecker-ci/autoscaler/pull/204)]
+- [pre-commit.ci] pre-commit autoupdate [[#195](https://github.com/woodpecker-ci/autoscaler/pull/195)]
+- Bump buildx plugin image for pipeline [[#192](https://github.com/woodpecker-ci/autoscaler/pull/192)]
+- [pre-commit.ci] pre-commit autoupdate [[#176](https://github.com/woodpecker-ci/autoscaler/pull/176)]
+
 ## [0.3.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.3.0) - 2024-09-20
 
 ### ❤️ Thanks to all contributors! ❤️
