@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"sync"
 	"text/template"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
@@ -118,11 +119,33 @@ func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 	}
 
 	runInstancesInput.UserData = aws.String(b64.StdEncoding.EncodeToString([]byte(userData)))
-	_, err = p.client.RunInstances(ctx, &runInstancesInput)
+	result, err := p.client.RunInstances(ctx, &runInstancesInput)
 	if err != nil {
 		return fmt.Errorf("%s: Server.Create: %w", p.name, err)
 	}
-	return nil
+
+	// Wait until instance is available. Sometimes it can take a second or two for the tag based
+	// filter to show the instance we just created in AWS
+	zerolog.Debug().Msgf("waiting for instance %s", *result.Instances[0].InstanceId)
+
+	for range 5 {
+		agents, err := p.ListDeployedAgentNames(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to return list for agents")
+		}
+
+		for _, a := range agents {
+			if a == agent.Name {
+				return nil
+			}
+		}
+
+		zerolog.Debug().Msgf("Created agent not found in list yet")
+
+		time.Sleep(1 * time.Second)
+	}
+
+	return fmt.Errorf("instance did not resolve in agent list: %s", *result.Instances[0].InstanceId)
 }
 
 func (p *Provider) getAgent(ctx context.Context, agent *woodpecker.Agent) (*types.Instance, error) {
@@ -151,6 +174,7 @@ func (p *Provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) err
 	if err != nil {
 		return err
 	}
+
 	_, err = p.client.TerminateInstances(ctx, &ec2.TerminateInstancesInput{
 		InstanceIds: []string{*instance.InstanceId},
 	})
