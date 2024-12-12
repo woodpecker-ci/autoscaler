@@ -4,6 +4,7 @@ import (
 	"context"
 	b64 "encoding/base64"
 	"fmt"
+	"strings"
 	"sync"
 	"text/template"
 
@@ -63,6 +64,35 @@ func New(c *cli.Context, config *config.Config) (engine.Provider, error) {
 }
 
 func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
+	// Generate base tags for instance
+	tags := []types.Tag{{
+		Key:   aws.String("Name"),
+		Value: aws.String(agent.Name),
+	}, {
+		Key:   aws.String(engine.LabelPool),
+		Value: aws.String(p.config.PoolID),
+	}}
+
+	// Append user specified tags
+	if len(p.tags) > 0 {
+		for _, tag := range p.tags {
+			parts := strings.Split(tag, "=")
+			var rt types.Tag
+			if len(parts) >= 2 {
+				rt = types.Tag{
+					Key:   aws.String(parts[0]),
+					Value: aws.String(parts[1]),
+				}
+			} else {
+				rt = types.Tag{
+					Key: aws.String(parts[0]),
+				}
+			}
+
+			tags = append(tags, rt)
+		}
+	}
+
 	runInstancesInput := ec2.RunInstancesInput{
 		IamInstanceProfile: &types.IamInstanceProfileSpecification{
 			Arn: aws.String(p.iamInstanceProfileArn),
@@ -80,13 +110,7 @@ func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 		TagSpecifications: []types.TagSpecification{
 			{
 				ResourceType: "instance",
-				Tags: []types.Tag{{
-					Key:   aws.String("Name"),
-					Value: aws.String(agent.Name),
-				}, {
-					Key:   aws.String(engine.LabelPool),
-					Value: aws.String(p.config.PoolID),
-				}},
+				Tags:         tags,
 			},
 		},
 	}
