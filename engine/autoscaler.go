@@ -359,7 +359,7 @@ func (a *Autoscaler) Reconcile(ctx context.Context) error {
 	if reqPoolAgents < 0 {
 		num := int(math.Abs(reqPoolAgents))
 
-		log.Debug().Msgf("trying to stop %d agents", num)
+		log.Debug().Msgf("checking %d agents if ready for draining", num)
 		if err := a.drainAgents(ctx, num); err != nil {
 			return fmt.Errorf("draining agents failed: %w", err)
 		}
