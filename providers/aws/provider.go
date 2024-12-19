@@ -53,7 +53,7 @@ func New(c *cli.Context, config *config.Config) (engine.Provider, error) {
 		useSpotInstances:      c.Bool("aws-use-spot-instances"),
 		sshKeyName:            c.String("aws-ssh-key-name"),
 	}
-	cfg, err := awsconfig.LoadDefaultConfig(context.TODO())
+	cfg, err := awsconfig.LoadDefaultConfig(context.TODO(), awsconfig.WithRegion(d.region))
 	if err != nil {
 		return nil, fmt.Errorf("failed to load configuration, %w", err)
 	}
