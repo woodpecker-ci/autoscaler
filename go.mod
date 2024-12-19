@@ -10,13 +10,13 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ec2 v1.198.0
 	github.com/hetznercloud/hcloud-go/v2 v2.17.1
 	github.com/joho/godotenv v1.5.1
-	github.com/linode/linodego v1.43.0
+	github.com/linode/linodego v1.44.0
 	github.com/rs/zerolog v1.33.0
 	github.com/stretchr/testify v1.10.0
 	github.com/urfave/cli/v2 v2.27.5
 	go.woodpecker-ci.org/woodpecker/v2 v2.8.1
 	golang.org/x/exp v0.0.0-20241215155358-4a5509556b9e
-	golang.org/x/net v0.32.0
+	golang.org/x/net v0.33.0
 	golang.org/x/oauth2 v0.24.0
 )
 
@@ -36,7 +36,8 @@ require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.5 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/go-resty/resty/v2 v2.15.3 // indirect
+	github.com/go-resty/resty/v2 v2.16.2 // indirect
+	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/klauspost/compress v1.17.9 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
