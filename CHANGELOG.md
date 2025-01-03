@@ -4,6 +4,7 @@
 
 ### 📦️ Dependency
 
+- fix(deps): update module go.woodpecker-ci.org/woodpecker/v2 to v2.8.2 [[#236](https://github.com/woodpecker-ci/autoscaler/pull/236)]
 - fix(deps): update golang.org/x/exp digest to 7d7fa50 [[#235](https://github.com/woodpecker-ci/autoscaler/pull/235)]
 - chore(deps): update woodpeckerci/plugin-ready-release-go docker tag to v3.1.1 [[#237](https://github.com/woodpecker-ci/autoscaler/pull/237)]
 - fix(deps): update golang deps non-major [[#234](https://github.com/woodpecker-ci/autoscaler/pull/234)]
