@@ -4,7 +4,7 @@
 
 ### ❤️ Thanks to all contributors! ❤️
 
-@pat-s
+@keslerm, @pat-s
 
 ### 📦️ Dependency
 
@@ -30,6 +30,7 @@
 
 ### Misc
 
+- Make sure to use the AWS Region when specified [[#224](https://github.com/woodpecker-ci/autoscaler/pull/224)]
 - Rename linter [[#240](https://github.com/woodpecker-ci/autoscaler/pull/240)]
 
 ## [0.3.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.3.1) - 2024-11-30
