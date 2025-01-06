@@ -8,7 +8,7 @@ import (
 
 const category = "Linode"
 
-//nolint:gomnd
+//nolint:mnd
 var ProviderFlags = []cli.Flag{
 	&cli.StringFlag{
 		Name:     "linode-api-token",

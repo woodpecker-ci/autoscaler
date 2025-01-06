@@ -64,7 +64,7 @@ linters:
     - contextcheck
     - forcetypeassert
     - gci
-    - gomnd
+    - mnd
 
 run:
   timeout: 5m
