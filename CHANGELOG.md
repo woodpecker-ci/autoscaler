@@ -1,6 +1,10 @@
 # Changelog
 
-## [0.3.2](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.3.2) - 2025-01-05
+## [0.3.2](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.3.2) - 2025-01-06
+
+### ❤️ Thanks to all contributors! ❤️
+
+@pat-s
 
 ### 📦️ Dependency
 
@@ -23,6 +27,10 @@
 - chore(deps): update dependency go to v1.23.4 [[#216](https://github.com/woodpecker-ci/autoscaler/pull/216)]
 - chore(deps): update woodpeckerci/plugin-ready-release-go docker tag to v3 [[#215](https://github.com/woodpecker-ci/autoscaler/pull/215)]
 - fix(deps): update golang deps non-major [[#213](https://github.com/woodpecker-ci/autoscaler/pull/213)]
+
+### Misc
+
+- Rename linter [[#240](https://github.com/woodpecker-ci/autoscaler/pull/240)]
 
 ## [0.3.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.3.1) - 2024-11-30
 
