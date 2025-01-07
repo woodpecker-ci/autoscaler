@@ -10,13 +10,13 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ec2 v1.198.1
 	github.com/hetznercloud/hcloud-go/v2 v2.17.1
 	github.com/joho/godotenv v1.5.1
-	github.com/linode/linodego v1.44.0
+	github.com/linode/linodego v1.44.1
 	github.com/rs/zerolog v1.33.0
 	github.com/stretchr/testify v1.10.0
 	github.com/urfave/cli/v2 v2.27.5
 	go.woodpecker-ci.org/woodpecker/v2 v2.8.2
 	golang.org/x/exp v0.0.0-20250103183323-7d7fa50e5329
-	golang.org/x/net v0.33.0
+	golang.org/x/net v0.34.0
 	golang.org/x/oauth2 v0.25.0
 )
 
@@ -50,7 +50,7 @@ require (
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1 // indirect
-	golang.org/x/sys v0.28.0 // indirect
+	golang.org/x/sys v0.29.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
 	google.golang.org/protobuf v1.35.2 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
