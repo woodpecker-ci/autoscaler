@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.3.2](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.3.2) - 2025-01-09
+## [0.3.2](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.3.2) - 2025-01-10
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -8,6 +8,7 @@
 
 ### 📦️ Dependency
 
+- fix(deps): update golang deps non-major [[#243](https://github.com/woodpecker-ci/autoscaler/pull/243)]
 - fix(deps): update golang deps non-major [[#242](https://github.com/woodpecker-ci/autoscaler/pull/242)]
 - fix(deps): update golang deps non-major [[#241](https://github.com/woodpecker-ci/autoscaler/pull/241)]
 - fix(deps): update module golang.org/x/oauth2 to v0.25.0 [[#239](https://github.com/woodpecker-ci/autoscaler/pull/239)]
