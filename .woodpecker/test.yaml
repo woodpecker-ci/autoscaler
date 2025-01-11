@@ -27,7 +27,7 @@ steps:
     when: *when
 
   lint-editorconfig:
-    image: mstruebing/editorconfig-checker:v3.0.3
+    image: mstruebing/editorconfig-checker:v3.1.2
     depends_on: []
 
   test:
