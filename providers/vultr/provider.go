@@ -9,6 +9,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/rs/zerolog/log"
 	"github.com/urfave/cli/v2"
 	"github.com/vultr/govultr/v3"
 	"golang.org/x/exp/maps"
@@ -110,7 +111,7 @@ func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 		tags = append(tags, fmt.Sprintf("%s=%s", key, item))
 	}
 
-	_, _, err = p.client.Instance.Create(ctx, &govultr.InstanceCreateReq{
+	instance, _, err := p.client.Instance.Create(ctx, &govultr.InstanceCreateReq{
 		Hostname:        agent.Name,
 		UserData:        base64.StdEncoding.EncodeToString([]byte(userdataString)),
 		Plan:            p.plan,
@@ -124,10 +125,28 @@ func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 		EnableIPv6:      &p.enableIPv6,
 	})
 	if err != nil {
-		return fmt.Errorf("%s: ServerCreate: %w", p.name, err)
+		return fmt.Errorf("%s: Server.Create: %w", p.name, err)
 	}
 
-	return nil
+	// TODO: move to provider utils and use backoff?
+	log.Debug().Msgf("waiting for instance %s", instance.ID)
+	for range 5 {
+		agents, err := p.ListDeployedAgentNames(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to return list for agents")
+		}
+
+		for _, a := range agents {
+			if a == agent.Name {
+				return nil
+			}
+		}
+
+		log.Debug().Msgf("created agent not found in list yet")
+		time.Sleep(1 * time.Second)
+	}
+
+	return fmt.Errorf("instance did not resolve in agent list: %s", instance.ID)
 }
 
 func (p *Provider) getAgent(ctx context.Context, agent *woodpecker.Agent) (*govultr.Instance, error) {
@@ -174,14 +193,6 @@ func (p *Provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 		Tag:     engine.LabelPool + "=" + p.config.PoolID,
 		PerPage: pageOpts,
 	}
-
-	// Allow time for records to show up in the API
-	// Otherwise cleanup loop tries to destroy instances before they
-	// are provisioned :(.
-
-	// TODO: Maybe investigate whether the cleanup loop can exclude
-	// newly provisioned instances for a bit?
-	time.Sleep(20 * time.Second)
 
 	servers, _, _, err := p.client.Instance.List(ctx,
 		listOptions)

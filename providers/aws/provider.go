@@ -13,7 +13,7 @@ import (
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
-	zerolog "github.com/rs/zerolog/log"
+	"github.com/rs/zerolog/log"
 	"github.com/urfave/cli/v2"
 
 	"go.woodpecker-ci.org/autoscaler/config"
@@ -149,8 +149,7 @@ func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 
 	// Wait until instance is available. Sometimes it can take a second or two for the tag based
 	// filter to show the instance we just created in AWS
-	zerolog.Debug().Msgf("waiting for instance %s", *result.Instances[0].InstanceId)
-
+	log.Debug().Msgf("waiting for instance %s", *result.Instances[0].InstanceId)
 	for range 5 {
 		agents, err := p.ListDeployedAgentNames(ctx)
 		if err != nil {
@@ -163,8 +162,7 @@ func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 			}
 		}
 
-		zerolog.Debug().Msgf("Created agent not found in list yet")
-
+		log.Debug().Msgf("created agent not found in list yet")
 		time.Sleep(1 * time.Second)
 	}
 
@@ -205,7 +203,7 @@ func (p *Provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) err
 }
 
 func (p *Provider) ListDeployedAgentNames(ctx context.Context) ([]string, error) {
-	zerolog.Debug().Msgf("List deployed agent names")
+	log.Debug().Msgf("List deployed agent names")
 
 	var names []string
 	instances, err := p.client.DescribeInstances(ctx, &ec2.DescribeInstancesInput{
@@ -227,7 +225,7 @@ func (p *Provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 			}
 			for _, tag := range instance.Tags {
 				if *tag.Key == "Name" {
-					zerolog.Debug().Msgf("Found agent %s", *tag.Value)
+					log.Debug().Msgf("Found agent %s", *tag.Value)
 					names = append(names, *tag.Value)
 				}
 			}
