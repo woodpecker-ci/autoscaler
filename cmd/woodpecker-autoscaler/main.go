@@ -39,7 +39,7 @@ func setupProvider(ctx *cli.Context, config *config.Config) (engine.Provider, er
 }
 
 func run(ctx *cli.Context) error {
-	log.Log().Msgf("Starting autoscaler with log-level=%s", zerolog.GlobalLevel().String())
+	log.Log().Msgf("starting autoscaler with log-level=%s", zerolog.GlobalLevel().String())
 
 	client, err := server.NewClient(ctx)
 	if err != nil {
@@ -96,7 +96,7 @@ func run(ctx *cli.Context) error {
 		case <-time.After(reconciliationInterval):
 			err := autoscaler.Reconcile(ctx.Context)
 			if err != nil {
-				log.Error().Err(err).Msg("Reconciliation failed")
+				log.Error().Err(err).Msg("reconciliation failed")
 			}
 		}
 	}
@@ -113,7 +113,7 @@ func main() {
 				logLevelFlag := ctx.String("log-level")
 				lvl, err := zerolog.ParseLevel(logLevelFlag)
 				if err != nil {
-					log.Warn().Msgf("LogLevel = %s is unknown", logLevelFlag)
+					log.Warn().Msgf("log-level = %s is unknown", logLevelFlag)
 				}
 				zerolog.SetGlobalLevel(lvl)
 			}
