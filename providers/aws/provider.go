@@ -74,23 +74,22 @@ func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 	}}
 
 	// Append user specified tags
-	if len(p.tags) > 0 {
-		for _, tag := range p.tags {
-			parts := strings.Split(tag, "=")
-			var rt types.Tag
-			if len(parts) >= 2 {
-				rt = types.Tag{
-					Key:   aws.String(parts[0]),
-					Value: aws.String(parts[1]),
-				}
-			} else {
-				rt = types.Tag{
-					Key: aws.String(parts[0]),
-				}
+	tagKVParts := 2
+	for _, tag := range p.tags {
+		parts := strings.Split(tag, "=")
+		var rt types.Tag
+		if len(parts) >= tagKVParts {
+			rt = types.Tag{
+				Key:   aws.String(parts[0]),
+				Value: aws.String(parts[1]),
 			}
-
-			tags = append(tags, rt)
+		} else {
+			rt = types.Tag{
+				Key: aws.String(parts[0]),
+			}
 		}
+
+		tags = append(tags, rt)
 	}
 
 	runInstancesInput := ec2.RunInstancesInput{
