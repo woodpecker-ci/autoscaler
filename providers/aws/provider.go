@@ -203,7 +203,7 @@ func (p *Provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) err
 }
 
 func (p *Provider) ListDeployedAgentNames(ctx context.Context) ([]string, error) {
-	log.Debug().Msgf("List deployed agent names")
+	log.Debug().Msgf("list deployed agent names")
 
 	var names []string
 	instances, err := p.client.DescribeInstances(ctx, &ec2.DescribeInstancesInput{
@@ -225,7 +225,7 @@ func (p *Provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 			}
 			for _, tag := range instance.Tags {
 				if *tag.Key == "Name" {
-					log.Debug().Msgf("Found agent %s", *tag.Value)
+					log.Debug().Msgf("found agent %s", *tag.Value)
 					names = append(names, *tag.Value)
 				}
 			}
