@@ -7,10 +7,10 @@ toolchain go1.23.4
 require (
 	github.com/aws/aws-sdk-go-v2 v1.32.8
 	github.com/aws/aws-sdk-go-v2/config v1.28.10
-	github.com/aws/aws-sdk-go-v2/service/ec2 v1.198.3
+	github.com/aws/aws-sdk-go-v2/service/ec2 v1.199.0
 	github.com/hetznercloud/hcloud-go/v2 v2.17.1
 	github.com/joho/godotenv v1.5.1
-	github.com/linode/linodego v1.44.1
+	github.com/linode/linodego v1.45.0
 	github.com/rs/zerolog v1.33.0
 	github.com/stretchr/testify v1.10.0
 	github.com/urfave/cli/v2 v2.27.5
