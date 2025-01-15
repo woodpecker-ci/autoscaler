@@ -3,27 +3,9 @@ package scaleway
 import (
 	"errors"
 
-	"github.com/cenkalti/backoff/v4"
 	"github.com/scaleway/scaleway-sdk-go/api/instance/v1"
 	"github.com/scaleway/scaleway-sdk-go/scw"
 )
-
-// Config is the Scaleway Provider specific configuration
-//
-// This is decoupled from the CLI interface for future-proofing reasons.
-// Please, see ProviderFlags for information on how to configure the provider from the
-// CLI or environment variables.
-type Config struct {
-	// ApiToken of Scaleway IAM
-	//
-	// Creating a standalone IAM Applications is recommended to segregate
-	// permissions.
-	SecretKey        string `json:"secret_key"`
-	AccessKey        string `json:"access_key"`
-	DefaultProjectID string `json:"default_project_id"`
-	ClientRetry      backoff.BackOff
-	InstancePool     map[string]InstancePool `json:"instance_pool"`
-}
 
 // Locality defines a geographical area
 //
@@ -31,8 +13,8 @@ type Config struct {
 // Exactly one of Zones or Region SHOULD be set,
 // if both are set, use Region and ignore Zones
 type Locality struct {
-	Zones  []scw.Zone  `json:"zones,omitempty"`
-	Region *scw.Region `json:"region,omitempty"`
+	Zones  []scw.Zone
+	Region *scw.Region
 }
 
 // InstancePool is used as a template to spawn your instances

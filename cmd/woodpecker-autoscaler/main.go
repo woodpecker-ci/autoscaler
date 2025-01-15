@@ -33,12 +33,7 @@ func setupProvider(ctx *cli.Context, config *config.Config) (engine.Provider, er
 	case "vultr":
 		return vultr.New(ctx, config)
 	case "scaleway":
-		scwCfg, err := scaleway.FromCLI(ctx)
-		if err != nil {
-			return nil, err
-		}
-
-		return scaleway.New(scwCfg, config)
+		return scaleway.New(ctx, config)
 	case "":
 		return nil, fmt.Errorf("please select a provider")
 	}
@@ -97,9 +92,6 @@ func run(ctx *cli.Context) error {
 		return fmt.Errorf("can't parse reconciliation-interval: %w", err)
 	}
 
-	// Run a reconcile loop at start-up to avoid waiting 1m or more
-	autoscaler.Reconcile(ctx.Context)
-
 	for {
 		select {
 		case <-ctx.Done():
@@ -141,7 +133,6 @@ func main() {
 
 	// Register hetznercloud flags
 	app.Flags = append(app.Flags, hetznercloud.ProviderFlags...)
-	app.Flags = append(app.Flags, hetznercloud.DriverFlags...)
 	app.Flags = append(app.Flags, scaleway.ProviderFlags...)
 	// Register linode flags
 	// TODO: Temp disabled due to the security issue https://github.com/woodpecker-ci/autoscaler/issues/91

@@ -8,8 +8,11 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/docker/go-units"
+	"github.com/rs/zerolog/log"
 	"github.com/scaleway/scaleway-sdk-go/api/instance/v1"
 	"github.com/scaleway/scaleway-sdk-go/scw"
+	"github.com/urfave/cli/v2"
 
 	"go.woodpecker-ci.org/autoscaler/config"
 	"go.woodpecker-ci.org/autoscaler/engine"
@@ -17,31 +20,73 @@ import (
 )
 
 type Provider struct {
-	scwCfg    Config
-	engineCfg *config.Config
-	client    *scw.Client
+	secretKey        string
+	accessKey        string
+	defaultProjectID string
+	zones            []scw.Zone
+	region           *scw.Region
+	projectID        *string
+	prefix           string
+	tags             []string
+	commercialType   string
+	image            string
+	enableIPv6       bool
+	storage          scw.Size
+	config           *config.Config
+	client           *scw.Client
 }
 
-func New(scwCfg Config, engineCfg *config.Config) (engine.Provider, error) {
-	client, err := scw.NewClient(scw.WithDefaultProjectID(scwCfg.DefaultProjectID), scw.WithAuth(scwCfg.AccessKey, scwCfg.SecretKey))
-	if err != nil {
-		return nil, err
+func New(c *cli.Context, config *config.Config) (engine.Provider, error) {
+	if !c.IsSet("scw-instance-type") {
+		return nil, errors.New("scw-instance-type must be set")
 	}
 
-	return &Provider{
-		scwCfg:    scwCfg,
-		client:    client,
-		engineCfg: engineCfg,
-	}, nil
+	if !c.IsSet("scw-tags") {
+		return nil, errors.New("scw-tags must be set")
+	}
+
+	if !c.IsSet("scw-project") {
+		return nil, errors.New("scw-project must be set")
+	}
+
+	if !c.IsSet("scw-secret-key") {
+		return nil, errors.New("scw-secret-key must be set")
+	}
+
+	if !c.IsSet("scw-access-key") {
+		return nil, errors.New("scw-access-key must be set")
+	}
+
+	d := &Provider{
+		secretKey:        c.String("scw-secret-key"),
+		accessKey:        c.String("scw-access-key"),
+		defaultProjectID: c.String("scw-project"),
+		projectID:        scw.StringPtr(c.String("scw-project")),
+		prefix:           c.String("scw-prefix"),
+		tags:             c.StringSlice("scw-tags"),
+		commercialType:   c.String("scw-instance-type"),
+		image:            c.String("scw-image"),
+		enableIPv6:       c.Bool("scw-enable-ipv6"),
+		storage:          scw.Size(c.Uint64("swc-storage-size") * units.GB),
+		config:           config,
+	}
+
+	zone := scw.Zone(c.String("scw-zone"))
+	if !zone.Exists() {
+		return nil, errors.New(zone.String() + " is not a valid zone")
+	}
+	d.zones = []scw.Zone{zone}
+
+	var err error
+	d.client, err = scw.NewClient(scw.WithDefaultProjectID(d.defaultProjectID), scw.WithAuth(d.accessKey, d.secretKey))
+
+	return d, err
 }
 
 func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
 	_, err := p.getInstance(ctx, agent.Name)
 	if err != nil {
-		var doesNotExists *InstanceDoesNotExists
-		if !errors.As(err, &doesNotExists) {
-			return err
-		}
+		return err
 	}
 
 	inst, err := p.createInstance(ctx, agent)
@@ -83,25 +128,23 @@ func (p *Provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 }
 
 func (p *Provider) getInstance(ctx context.Context, name string) (*instance.Server, error) {
-	pool := p.scwCfg.InstancePool[DefaultPool]
-	zones, err := pool.Locality.ResolveZones()
-	if err != nil {
+	if err := p.resolveZones(); err != nil {
 		return nil, err
 	}
 
 	api := instance.NewAPI(p.client)
-	project := pool.ProjectID
+	project := p.projectID
 
 	if project == nil {
-		project = &p.scwCfg.DefaultProjectID
+		project = &p.defaultProjectID
 	}
 
-	for _, zone := range zones {
+	for _, zone := range p.zones {
 		req := instance.ListServersRequest{
 			Zone:    zone,
 			Project: project,
 			Name:    scw.StringPtr(name),
-			Tags:    pool.Tags,
+			Tags:    p.tags,
 		}
 
 		resp, err := api.ListServers(&req, scw.WithContext(ctx))
@@ -110,34 +153,30 @@ func (p *Provider) getInstance(ctx context.Context, name string) (*instance.Serv
 		}
 
 		if resp.TotalCount > 0 {
-			// TODO(raskyld): add a warning if there are more than 1 found, it means there are orphan resources
+			if resp.TotalCount > 1 {
+				log.Warn().Msg("multiple instances with found with the same name, this may indicate orphaned resources")
+			}
 			return resp.Servers[0], nil
 		}
 	}
 
-	return nil, &InstanceDoesNotExists{
-		InstanceName: name,
-		Project:      *project,
-		Zones:        zones,
-	}
+	return nil, nil
 }
 
 func (p *Provider) getAllInstances(ctx context.Context) ([]*instance.Server, error) {
-	pool := p.scwCfg.InstancePool[DefaultPool]
-	zones, err := pool.Locality.ResolveZones()
-	if err != nil {
+	if err := p.resolveZones(); err != nil {
 		return nil, err
 	}
 
 	api := instance.NewAPI(p.client)
-	instances := make([]*instance.Server, 0, 150)
+	instances := make([]*instance.Server, 0)
 
-	for _, zone := range zones {
+	for _, zone := range p.zones {
 		// TODO(raskyld): handle pagination for cases with more than 50 agents running per region
 		req := instance.ListServersRequest{
 			Zone:    zone,
-			Project: pool.ProjectID,
-			Tags:    pool.Tags,
+			Project: p.projectID,
+			Tags:    p.tags,
 		}
 
 		resp, err := api.ListServers(&req, scw.WithContext(ctx))
@@ -154,16 +193,14 @@ func (p *Provider) getAllInstances(ctx context.Context) ([]*instance.Server, err
 }
 
 func (p *Provider) createInstance(ctx context.Context, agent *woodpecker.Agent) (*instance.Server, error) {
-	pool := p.scwCfg.InstancePool[DefaultPool]
-	zones, err := pool.Locality.ResolveZones()
-	if err != nil {
+	if err := p.resolveZones(); err != nil {
 		return nil, err
 	}
 
 	// TODO(raskyld): Implement a well-balanced zone anti-affinity to spread instance
 	// 								evenly among zones for greater resilience.
 	random := rand.New(rand.NewSource(time.Now().Unix()))
-	zone := zones[random.Intn(len(zones))]
+	zone := p.zones[random.Intn(len(p.zones))]
 
 	api := instance.NewAPI(p.client)
 
@@ -171,18 +208,18 @@ func (p *Provider) createInstance(ctx context.Context, agent *woodpecker.Agent) 
 		Zone:              zone,
 		Name:              agent.Name,
 		DynamicIPRequired: scw.BoolPtr(true),
-		CommercialType:    pool.CommercialType,
-		Image:             pool.Image,
+		CommercialType:    p.commercialType,
+		Image:             p.image,
 		Volumes: map[string]*instance.VolumeServerTemplate{
 			"0": {
 				Boot:       scw.BoolPtr(true),
-				Size:       scw.SizePtr(pool.Storage),
+				Size:       scw.SizePtr(p.storage),
 				VolumeType: instance.VolumeVolumeTypeBSSD,
 			},
 		},
-		EnableIPv6: pool.EnableIPv6,
-		Project:    pool.ProjectID,
-		Tags:       pool.Tags,
+		EnableIPv6: &p.enableIPv6,
+		Project:    p.projectID,
+		Tags:       p.tags,
 	}
 
 	res, err := api.CreateServer(&req, scw.WithContext(ctx))
@@ -199,7 +236,7 @@ func (p *Provider) setCloudInit(ctx context.Context, agent *woodpecker.Agent, in
 		return err
 	}
 
-	ud, err := engine.RenderUserDataTemplate(p.engineCfg, agent, tpl)
+	ud, err := engine.RenderUserDataTemplate(p.config, agent, tpl)
 	if err != nil {
 		return err
 	}
@@ -253,4 +290,28 @@ func (p *Provider) haltInstance(ctx context.Context, inst *instance.Server) erro
 		ServerID: inst.ID,
 		Action:   instance.ServerActionPoweroff,
 	}, scw.WithContext(ctx))
+}
+
+func (p *Provider) resolveZones() error {
+	if p.region != nil {
+		if !p.region.Exists() {
+			return errors.New("you specified an invalid region: " + p.region.String())
+		}
+
+		p.zones = p.region.GetZones()
+
+		return nil
+	}
+
+	if len(p.zones) == 0 {
+		return errors.New("you need to specify a valid locality")
+	}
+
+	for _, zone := range p.zones {
+		if !zone.Exists() {
+			return errors.New("you specified a non-existing zone: " + zone.String())
+		}
+	}
+
+	return nil
 }
