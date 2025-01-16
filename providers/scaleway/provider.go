@@ -37,41 +37,41 @@ type Provider struct {
 }
 
 func New(c *cli.Context, config *config.Config) (engine.Provider, error) {
-	if !c.IsSet("scw-instance-type") {
-		return nil, errors.New("scw-instance-type must be set")
+	if !c.IsSet("scaleway-instance-type") {
+		return nil, errors.New("scaleway-instance-type must be set")
 	}
 
-	if !c.IsSet("scw-tags") {
-		return nil, errors.New("scw-tags must be set")
+	if !c.IsSet("scaleway-tags") {
+		return nil, errors.New("scaleway-tags must be set")
 	}
 
-	if !c.IsSet("scw-project") {
-		return nil, errors.New("scw-project must be set")
+	if !c.IsSet("scaleway-project") {
+		return nil, errors.New("scaleway-project must be set")
 	}
 
-	if !c.IsSet("scw-secret-key") {
-		return nil, errors.New("scw-secret-key must be set")
+	if !c.IsSet("scaleway-secret-key") {
+		return nil, errors.New("scaleway-secret-key must be set")
 	}
 
-	if !c.IsSet("scw-access-key") {
-		return nil, errors.New("scw-access-key must be set")
+	if !c.IsSet("scaleway-access-key") {
+		return nil, errors.New("scaleway-access-key must be set")
 	}
 
 	d := &Provider{
-		secretKey:        c.String("scw-secret-key"),
-		accessKey:        c.String("scw-access-key"),
-		defaultProjectID: c.String("scw-project"),
-		projectID:        scw.StringPtr(c.String("scw-project")),
-		prefix:           c.String("scw-prefix"),
-		tags:             c.StringSlice("scw-tags"),
-		commercialType:   c.String("scw-instance-type"),
-		image:            c.String("scw-image"),
-		enableIPv6:       c.Bool("scw-enable-ipv6"),
+		secretKey:        c.String("scaleway-secret-key"),
+		accessKey:        c.String("scaleway-access-key"),
+		defaultProjectID: c.String("scaleway-project"),
+		projectID:        scw.StringPtr(c.String("scaleway-project")),
+		prefix:           c.String("scaleway-prefix"),
+		tags:             c.StringSlice("scaleway-tags"),
+		commercialType:   c.String("scaleway-instance-type"),
+		image:            c.String("scaleway-image"),
+		enableIPv6:       c.Bool("scaleway-enable-ipv6"),
 		storage:          scw.Size(c.Uint64("swc-storage-size") * units.GB),
 		config:           config,
 	}
 
-	zone := scw.Zone(c.String("scw-zone"))
+	zone := scw.Zone(c.String("scaleway-zone"))
 	if !zone.Exists() {
 		return nil, errors.New(zone.String() + " is not a valid zone")
 	}
