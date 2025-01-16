@@ -180,14 +180,14 @@ func (p *Provider) getAllInstances(ctx context.Context) ([]*instance.Server, err
 	instances := make([]*instance.Server, 0)
 
 	for _, zone := range p.zones {
-		// TODO(raskyld): handle pagination for cases with more than 50 agents running per region
 		req := instance.ListServersRequest{
 			Zone:    zone,
 			Project: p.projectID,
 			Tags:    p.tags,
+			PerPage: scw.Uint32Ptr(100), //nolint:mnd
 		}
 
-		resp, err := api.ListServers(&req, scw.WithContext(ctx))
+		resp, err := api.ListServers(&req, scw.WithContext(ctx), scw.WithAllPages())
 		if err != nil {
 			return nil, err
 		}
