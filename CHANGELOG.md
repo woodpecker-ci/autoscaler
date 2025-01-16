@@ -1,13 +1,20 @@
 # Changelog
 
-## [0.3.2](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.3.2) - 2025-01-13
+## [0.4.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.4.0) - 2025-01-16
 
 ### ❤️ Thanks to all contributors! ❤️
 
-@keslerm, @pat-s
+@keslerm, @pat-s, @xoxys
+
+### 📈 Enhancement
+
+- Wait for AWS instance availablity before returning [[#227](https://github.com/woodpecker-ci/autoscaler/pull/227)]
 
 ### 📦️ Dependency
 
+- fix(deps): update golang deps non-major [[#254](https://github.com/woodpecker-ci/autoscaler/pull/254)]
+- fix(deps): update golang deps non-major [[#253](https://github.com/woodpecker-ci/autoscaler/pull/253)]
+- fix(deps): update golang deps non-major [[#248](https://github.com/woodpecker-ci/autoscaler/pull/248)]
 - fix(deps): update module go.woodpecker-ci.org/woodpecker/v2 to v2.8.3 [[#247](https://github.com/woodpecker-ci/autoscaler/pull/247)]
 - fix(deps): update module github.com/aws/aws-sdk-go-v2/config to v1.28.10 [[#245](https://github.com/woodpecker-ci/autoscaler/pull/245)]
 - fix(deps): update golang.org/x/exp digest to 7588d65 [[#244](https://github.com/woodpecker-ci/autoscaler/pull/244)]
@@ -37,6 +44,8 @@
 
 ### Misc
 
+- Fix deprecated editorconfig filename [[#250](https://github.com/woodpecker-ci/autoscaler/pull/250)]
+- Include tags from AWS config in instance creation [[#223](https://github.com/woodpecker-ci/autoscaler/pull/223)]
 - Make sure to use the AWS Region when specified [[#224](https://github.com/woodpecker-ci/autoscaler/pull/224)]
 - Rename linter [[#240](https://github.com/woodpecker-ci/autoscaler/pull/240)]
 
