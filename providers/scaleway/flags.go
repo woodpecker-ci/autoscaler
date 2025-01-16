@@ -15,9 +15,6 @@ var ProviderFlags = []cli.Flag{
 		Name:    "scw-access-key",
 		Usage:   "Scaleway IAM API Token Access Key",
 		EnvVars: []string{"WOODPECKER_SCW_ACCESS_KEY"},
-		// NB(raskyld): We should recommend the usage of file-system to users
-		// Most container runtimes support mounting secrets into the fs
-		// natively.
 		FilePath: os.Getenv("WOODPECKER_SCW_ACCESS_KEY_FILE"),
 		Category: category,
 	},
@@ -25,23 +22,20 @@ var ProviderFlags = []cli.Flag{
 		Name:    "scw-secret-key",
 		Usage:   "Scaleway IAM API Token Secret Key",
 		EnvVars: []string{"WOODPECKER_SCW_SECRET_KEY"},
-		// NB(raskyld): We should recommend the usage of file-system to users
-		// Most container runtimes support mounting secrets into the fs
-		// natively.
 		FilePath: os.Getenv("WOODPECKER_SCW_SECRET_KEY_FILE"),
 		Category: category,
 	},
 	// TODO(raskyld): implement multi-AZ
 	&cli.StringFlag{
 		Name:     "scw-zone",
-		Usage:    "Scaleway Zone where to spawn instances",
+		Usage:    "Scaleway zone where to spawn instances",
 		EnvVars:  []string{"WOODPECKER_SCW_ZONE"},
 		Category: category,
 		Value:    scw.ZoneFrPar2.String(),
 	},
 	&cli.StringFlag{
 		Name:     "scw-instance-type",
-		Usage:    "Scaleway Instance type to spawn",
+		Usage:    "Scaleway instance type to spawn",
 		EnvVars:  []string{"WOODPECKER_SCW_INSTANCE_TYPE"},
 		Category: category,
 	},
