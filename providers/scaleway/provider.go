@@ -67,7 +67,7 @@ func New(c *cli.Context, config *config.Config) (engine.Provider, error) {
 		commercialType:   c.String("scaleway-instance-type"),
 		image:            c.String("scaleway-image"),
 		enableIPv6:       c.Bool("scaleway-enable-ipv6"),
-		storage:          scw.Size(c.Uint64("swc-storage-size") * units.GB),
+		storage:          scw.Size(c.Uint64("scaleway-storage-size") * units.GB),
 		config:           config,
 	}
 
