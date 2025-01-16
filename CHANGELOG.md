@@ -1,5 +1,54 @@
 # Changelog
 
+## [0.4.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.4.0) - 2025-01-16
+
+### ❤️ Thanks to all contributors! ❤️
+
+@keslerm, @pat-s, @xoxys
+
+### 📈 Enhancement
+
+- Wait for AWS instance availablity before returning [[#227](https://github.com/woodpecker-ci/autoscaler/pull/227)]
+
+### 📦️ Dependency
+
+- fix(deps): update golang deps non-major [[#254](https://github.com/woodpecker-ci/autoscaler/pull/254)]
+- fix(deps): update golang deps non-major [[#253](https://github.com/woodpecker-ci/autoscaler/pull/253)]
+- fix(deps): update golang deps non-major [[#248](https://github.com/woodpecker-ci/autoscaler/pull/248)]
+- fix(deps): update module go.woodpecker-ci.org/woodpecker/v2 to v2.8.3 [[#247](https://github.com/woodpecker-ci/autoscaler/pull/247)]
+- fix(deps): update module github.com/aws/aws-sdk-go-v2/config to v1.28.10 [[#245](https://github.com/woodpecker-ci/autoscaler/pull/245)]
+- fix(deps): update golang.org/x/exp digest to 7588d65 [[#244](https://github.com/woodpecker-ci/autoscaler/pull/244)]
+- chore(deps): update mstruebing/editorconfig-checker docker tag to v3.1.2 [[#246](https://github.com/woodpecker-ci/autoscaler/pull/246)]
+- fix(deps): update golang deps non-major [[#243](https://github.com/woodpecker-ci/autoscaler/pull/243)]
+- fix(deps): update golang deps non-major [[#242](https://github.com/woodpecker-ci/autoscaler/pull/242)]
+- fix(deps): update golang deps non-major [[#241](https://github.com/woodpecker-ci/autoscaler/pull/241)]
+- fix(deps): update module golang.org/x/oauth2 to v0.25.0 [[#239](https://github.com/woodpecker-ci/autoscaler/pull/239)]
+- chore(deps): update pre-commit hook golangci/golangci-lint to v1.63.4 [[#238](https://github.com/woodpecker-ci/autoscaler/pull/238)]
+- fix(deps): update module go.woodpecker-ci.org/woodpecker/v2 to v2.8.2 [[#236](https://github.com/woodpecker-ci/autoscaler/pull/236)]
+- fix(deps): update golang.org/x/exp digest to 7d7fa50 [[#235](https://github.com/woodpecker-ci/autoscaler/pull/235)]
+- chore(deps): update woodpeckerci/plugin-ready-release-go docker tag to v3.1.1 [[#237](https://github.com/woodpecker-ci/autoscaler/pull/237)]
+- fix(deps): update golang deps non-major [[#234](https://github.com/woodpecker-ci/autoscaler/pull/234)]
+- fix(deps): update golang deps non-major [[#233](https://github.com/woodpecker-ci/autoscaler/pull/233)]
+- fix(deps): update module github.com/hetznercloud/hcloud-go/v2 to v2.17.1 [[#232](https://github.com/woodpecker-ci/autoscaler/pull/232)]
+- fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.198.0 [[#231](https://github.com/woodpecker-ci/autoscaler/pull/231)]
+- fix(deps): update golang deps non-major [[#229](https://github.com/woodpecker-ci/autoscaler/pull/229)]
+- fix(deps): update golang.org/x/exp digest to 4a55095 [[#228](https://github.com/woodpecker-ci/autoscaler/pull/228)]
+- fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.196.0 [[#221](https://github.com/woodpecker-ci/autoscaler/pull/221)]
+- chore(deps): update woodpeckerci/plugin-ready-release-go docker tag to v3.1.0 [[#220](https://github.com/woodpecker-ci/autoscaler/pull/220)]
+- chore(deps): update docker.io/woodpeckerci/plugin-docker-buildx docker tag to v5.1.0 [[#219](https://github.com/woodpecker-ci/autoscaler/pull/219)]
+- fix(deps): update golang.org/x/exp digest to 43b7b7c [[#218](https://github.com/woodpecker-ci/autoscaler/pull/218)]
+- fix(deps): update module golang.org/x/net to v0.32.0 [[#217](https://github.com/woodpecker-ci/autoscaler/pull/217)]
+- chore(deps): update dependency go to v1.23.4 [[#216](https://github.com/woodpecker-ci/autoscaler/pull/216)]
+- chore(deps): update woodpeckerci/plugin-ready-release-go docker tag to v3 [[#215](https://github.com/woodpecker-ci/autoscaler/pull/215)]
+- fix(deps): update golang deps non-major [[#213](https://github.com/woodpecker-ci/autoscaler/pull/213)]
+
+### Misc
+
+- Fix deprecated editorconfig filename [[#250](https://github.com/woodpecker-ci/autoscaler/pull/250)]
+- Include tags from AWS config in instance creation [[#223](https://github.com/woodpecker-ci/autoscaler/pull/223)]
+- Make sure to use the AWS Region when specified [[#224](https://github.com/woodpecker-ci/autoscaler/pull/224)]
+- Rename linter [[#240](https://github.com/woodpecker-ci/autoscaler/pull/240)]
+
 ## [0.3.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.3.1) - 2024-11-30
 
 ### ❤️ Thanks to all contributors! ❤️
