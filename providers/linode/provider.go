@@ -148,7 +148,7 @@ func (d *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 		Metadata:        metadata,
 	})
 	if err != nil {
-		return fmt.Errorf("%s: Server.Create: %w", d.name, err)
+		return fmt.Errorf("%s: CreateInstance: %w", d.name, err)
 	}
 
 	return nil

@@ -125,7 +125,7 @@ func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 		EnableIPv6:      &p.enableIPv6,
 	})
 	if err != nil {
-		return fmt.Errorf("%s: Server.Create: %w", p.name, err)
+		return fmt.Errorf("%s: Instance.Create: %w", p.name, err)
 	}
 
 	// TODO: move to provider utils and use backoff?

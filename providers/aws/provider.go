@@ -144,7 +144,7 @@ func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 	runInstancesInput.UserData = aws.String(b64.StdEncoding.EncodeToString([]byte(userData)))
 	result, err := p.client.RunInstances(ctx, &runInstancesInput)
 	if err != nil {
-		return fmt.Errorf("%s: Server.Create: %w", p.name, err)
+		return fmt.Errorf("%s: RunInstances: %w", p.name, err)
 	}
 
 	// Wait until instance is available. Sometimes it can take a second or two for the tag based
