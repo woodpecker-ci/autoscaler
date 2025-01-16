@@ -187,17 +187,29 @@ func (p *Provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) err
 }
 
 func (p *Provider) ListDeployedAgentNames(ctx context.Context) ([]string, error) {
-	var names []string
-	pageOpts := 200
-	listOptions := &govultr.ListOptions{
-		Tag:     engine.LabelPool + "=" + p.config.PoolID,
-		PerPage: pageOpts,
-	}
+	var cursor string
 
-	servers, _, _, err := p.client.Instance.List(ctx,
-		listOptions)
-	if err != nil {
-		return nil, fmt.Errorf("%s: %w", p.name, err)
+	names := make([]string, 0)
+	servers := make([]govultr.Instance, 0)
+
+	for {
+		listOptions := &govultr.ListOptions{
+			Tag:     engine.LabelPool + "=" + p.config.PoolID,
+			PerPage: 200, //nolint:mnd
+			Cursor:  cursor,
+		}
+
+		newServers, meta, _, err := p.client.Instance.List(ctx, listOptions)
+		if err != nil {
+			return nil, fmt.Errorf("%s: %w", p.name, err)
+		}
+
+		servers = append(servers, newServers...)
+
+		if meta == nil || meta.Links == nil || meta.Links.Next == "" {
+			break
+		}
+		cursor = meta.Links.Next
 	}
 
 	for _, server := range servers {
@@ -238,5 +250,5 @@ func (p *Provider) setupKeypair(ctx context.Context) error {
 		return nil
 	}
 
-	return errors.New("no matching keys")
+	return ErrSSHKeyNotFound
 }
