@@ -137,7 +137,6 @@ func main() {
 
 	// Register aws flags
 	app.Flags = append(app.Flags, aws.DriverFlags...)
-	// app.Flags = append(app.Flags, linode.DriverFlags...)
 	// Register vultr flags
 	app.Flags = append(app.Flags, vultr.DriverFlags...)
 

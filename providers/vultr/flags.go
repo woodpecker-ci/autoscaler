@@ -26,7 +26,6 @@ var DriverFlags = []cli.Flag{
 	},
 	&cli.StringFlag{
 		Name:     "vultr-plan",
-		Value:    "",
 		Usage:    "vultr plan",
 		EnvVars:  []string{"WOODPECKER_VULTR_PLAN"},
 		Category: category,
