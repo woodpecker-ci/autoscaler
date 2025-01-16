@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"math/rand"
 	"text/template"
 	"time"
@@ -17,6 +18,13 @@ import (
 	"go.woodpecker-ci.org/autoscaler/config"
 	"go.woodpecker-ci.org/autoscaler/engine"
 	"go.woodpecker-ci.org/woodpecker/v2/woodpecker-go/woodpecker"
+)
+
+var (
+	ErrInvalidZone        = errors.New("invalid zone")
+	ErrInvalidRegion      = errors.New("invalid region")
+	ErrParameterNotSet    = errors.New("required parameter not set")
+	ErrRegionOrZoneNotSet = errors.New("region or zone not set")
 )
 
 type Provider struct {
@@ -38,23 +46,23 @@ type Provider struct {
 
 func New(c *cli.Context, config *config.Config) (engine.Provider, error) {
 	if !c.IsSet("scaleway-instance-type") {
-		return nil, errors.New("scaleway-instance-type must be set")
+		return nil, fmt.Errorf("%w: scaleway-instance-type", ErrParameterNotSet)
 	}
 
 	if !c.IsSet("scaleway-tags") {
-		return nil, errors.New("scaleway-tags must be set")
+		return nil, fmt.Errorf("%w: scaleway-tags", ErrParameterNotSet)
 	}
 
 	if !c.IsSet("scaleway-project") {
-		return nil, errors.New("scaleway-project must be set")
+		return nil, fmt.Errorf("%w: scaleway-project", ErrParameterNotSet)
 	}
 
 	if !c.IsSet("scaleway-secret-key") {
-		return nil, errors.New("scaleway-secret-key must be set")
+		return nil, fmt.Errorf("%w: scaleway-secret-key", ErrParameterNotSet)
 	}
 
 	if !c.IsSet("scaleway-access-key") {
-		return nil, errors.New("scaleway-access-key must be set")
+		return nil, fmt.Errorf("%w: scaleway-access-key", ErrParameterNotSet)
 	}
 
 	d := &Provider{
@@ -73,7 +81,7 @@ func New(c *cli.Context, config *config.Config) (engine.Provider, error) {
 
 	zone := scw.Zone(c.String("scaleway-zone"))
 	if !zone.Exists() {
-		return nil, errors.New(zone.String() + " is not a valid zone")
+		return nil, fmt.Errorf("%w: %s", ErrInvalidZone, zone.String())
 	}
 	d.zones = []scw.Zone{zone}
 
@@ -154,7 +162,7 @@ func (p *Provider) getInstance(ctx context.Context, name string) (*instance.Serv
 
 		if resp.TotalCount > 0 {
 			if resp.TotalCount > 1 {
-				log.Warn().Msg("multiple instances with found with the same name, this may indicate orphaned resources")
+				log.Warn().Msg("found multiple instances with the same name, this may indicate orphaned resources")
 			}
 			return resp.Servers[0], nil
 		}
@@ -295,7 +303,7 @@ func (p *Provider) haltInstance(ctx context.Context, inst *instance.Server) erro
 func (p *Provider) resolveZones() error {
 	if p.region != nil {
 		if !p.region.Exists() {
-			return errors.New("you specified an invalid region: " + p.region.String())
+			return fmt.Errorf("%w: %s", ErrInvalidRegion, p.region.String())
 		}
 
 		p.zones = p.region.GetZones()
@@ -304,12 +312,12 @@ func (p *Provider) resolveZones() error {
 	}
 
 	if len(p.zones) == 0 {
-		return errors.New("you need to specify a valid locality")
+		return ErrRegionOrZoneNotSet
 	}
 
 	for _, zone := range p.zones {
 		if !zone.Exists() {
-			return errors.New("you specified a non-existing zone: " + zone.String())
+			return fmt.Errorf("%w: %s", ErrInvalidZone, zone.String())
 		}
 	}
 

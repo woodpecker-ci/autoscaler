@@ -240,9 +240,8 @@ func (d *Provider) setupKeypair(ctx context.Context) error {
 		d.sshKey = res[0].SSHKey
 		return nil
 	}
-	// "No matching keys"
 
-	return errors.New("no matching keys")
+	return ErrSSHKeyNotFound
 }
 
 func newClient(apiKey string) *linodego.Client {
