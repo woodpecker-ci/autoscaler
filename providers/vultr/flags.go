@@ -8,7 +8,7 @@ import (
 
 const category = "Vultr"
 
-var DriverFlags = []cli.Flag{
+var ProviderFlags = []cli.Flag{
 	// vultr
 	&cli.StringFlag{
 		Name:     "vultr-api-token",
