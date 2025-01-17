@@ -1,6 +1,14 @@
 # Changelog
 
-## [0.4.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.4.1) - 2025-01-17
+## [0.5.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.5.0) - 2025-01-17
+
+### ❤️ Thanks to all contributors! ❤️
+
+@xoxys
+
+### ✨ Features
+
+- Add Vultr provider [[#251](https://github.com/woodpecker-ci/autoscaler/pull/251)]
 
 ### 📦️ Dependency
 
