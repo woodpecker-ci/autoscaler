@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.5.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.5.0) - 2025-01-17
+
+### ❤️ Thanks to all contributors! ❤️
+
+@xoxys
+
+### ✨ Features
+
+- Add Scaleway provider [[#252](https://github.com/woodpecker-ci/autoscaler/pull/252)]
+- Add Vultr provider [[#251](https://github.com/woodpecker-ci/autoscaler/pull/251)]
+
+### 📦️ Dependency
+
+- chore(deps): update dependency go to v1.23.5 [[#255](https://github.com/woodpecker-ci/autoscaler/pull/255)]
+
 ## [0.4.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.4.0) - 2025-01-16
 
 ### ❤️ Thanks to all contributors! ❤️
