@@ -131,17 +131,13 @@ func main() {
 		Action: run,
 	}
 
-	// Register hetznercloud flags
 	app.Flags = append(app.Flags, hetznercloud.ProviderFlags...)
 	app.Flags = append(app.Flags, scaleway.ProviderFlags...)
-	// Register linode flags
 	// TODO: Temp disabled due to the security issue https://github.com/woodpecker-ci/autoscaler/issues/91
 	// Enable it again when the issue is fixed.
 	// app.Flags = append(app.Flags, linode.ProviderFlags...)
 
-	// Register aws flags
 	app.Flags = append(app.Flags, aws.DriverFlags...)
-	// Register vultr flags
 	app.Flags = append(app.Flags, vultr.DriverFlags...)
 	// app.Flags = append(app.Flags, linode.DriverFlags...)
 
