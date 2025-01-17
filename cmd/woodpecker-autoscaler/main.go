@@ -136,10 +136,8 @@ func main() {
 	// TODO: Temp disabled due to the security issue https://github.com/woodpecker-ci/autoscaler/issues/91
 	// Enable it again when the issue is fixed.
 	// app.Flags = append(app.Flags, linode.ProviderFlags...)
-
-	app.Flags = append(app.Flags, aws.DriverFlags...)
-	app.Flags = append(app.Flags, vultr.DriverFlags...)
-	// app.Flags = append(app.Flags, linode.DriverFlags...)
+	app.Flags = append(app.Flags, aws.ProviderFlags...)
+	app.Flags = append(app.Flags, vultr.ProviderFlags...)
 
 	if err := app.Run(os.Args); err != nil {
 		log.Error().Err(err).Msg("got error while try to run autoscaler")
