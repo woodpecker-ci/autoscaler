@@ -43,9 +43,10 @@ The agents will use `WOODEPCKER_GRPC_ADDR` and a token automatically generated b
   - [ ] Google Cloud
   - [ ] Azure
   - [ ] Digital Ocean
-  - [x] Linode (temp disabled until [security issue](https://github.com/woodpecker-ci/autoscaler/issues/91) was addressed)
+  - [x] Linode (temp disabled until the [security issue](https://github.com/woodpecker-ci/autoscaler/issues/91) was addressed)
   - [ ] Oracle Cloud
   - [ ] Equinix Metal
+  - [x] Vultr
 - [ ] Cleanup agents
   - [x] Remove agents which exist on the provider but are not in the server list (they wont be able to connect to the server anyway as their is no agent token for them)
   - [x] Remove agents from server list which do not exist on the provider

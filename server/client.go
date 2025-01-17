@@ -40,7 +40,7 @@ func NewClient(c *cli.Context) (Client, error) {
 	// attempt to find system CA certs
 	certs, err := x509.SystemCertPool()
 	if err != nil {
-		log.Error().Err(err).Msg("CA certs not found")
+		log.Error().Err(err).Msg("ca certs not found")
 	}
 	tlsConfig := &tls.Config{
 		RootCAs:            certs,
