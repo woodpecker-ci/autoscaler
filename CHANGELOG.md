@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.4.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.4.1) - 2025-01-17
+
+### 📦️ Dependency
+
+- chore(deps): update dependency go to v1.23.5 [[#255](https://github.com/woodpecker-ci/autoscaler/pull/255)]
+
 ## [0.4.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.4.0) - 2025-01-16
 
 ### ❤️ Thanks to all contributors! ❤️
