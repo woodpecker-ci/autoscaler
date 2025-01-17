@@ -15,6 +15,7 @@ import (
 	"go.woodpecker-ci.org/autoscaler/engine"
 	"go.woodpecker-ci.org/autoscaler/providers/aws"
 	"go.woodpecker-ci.org/autoscaler/providers/hetznercloud"
+	"go.woodpecker-ci.org/autoscaler/providers/scaleway"
 	"go.woodpecker-ci.org/autoscaler/providers/vultr"
 	"go.woodpecker-ci.org/autoscaler/server"
 )
@@ -31,6 +32,8 @@ func setupProvider(ctx *cli.Context, config *config.Config) (engine.Provider, er
 	// 	return linode.New(ctx, config)
 	case "vultr":
 		return vultr.New(ctx, config)
+	case "scaleway":
+		return scaleway.New(ctx, config)
 	case "":
 		return nil, fmt.Errorf("please select a provider")
 	}
@@ -128,17 +131,13 @@ func main() {
 		Action: run,
 	}
 
-	// Register hetznercloud flags
 	app.Flags = append(app.Flags, hetznercloud.ProviderFlags...)
-	// Register linode flags
+	app.Flags = append(app.Flags, scaleway.ProviderFlags...)
 	// TODO: Temp disabled due to the security issue https://github.com/woodpecker-ci/autoscaler/issues/91
 	// Enable it again when the issue is fixed.
 	// app.Flags = append(app.Flags, linode.ProviderFlags...)
-
-	// Register aws flags
-	app.Flags = append(app.Flags, aws.DriverFlags...)
-	// Register vultr flags
-	app.Flags = append(app.Flags, vultr.DriverFlags...)
+	app.Flags = append(app.Flags, aws.ProviderFlags...)
+	app.Flags = append(app.Flags, vultr.ProviderFlags...)
 
 	if err := app.Run(os.Args); err != nil {
 		log.Error().Err(err).Msg("got error while try to run autoscaler")

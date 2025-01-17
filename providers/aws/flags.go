@@ -4,7 +4,7 @@ import "github.com/urfave/cli/v2"
 
 const Category = "AWS"
 
-var DriverFlags = []cli.Flag{
+var ProviderFlags = []cli.Flag{
 	// aws
 	&cli.StringFlag{
 		Name:     "aws-instance-type",

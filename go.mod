@@ -8,10 +8,12 @@ require (
 	github.com/aws/aws-sdk-go-v2 v1.33.0
 	github.com/aws/aws-sdk-go-v2/config v1.29.0
 	github.com/aws/aws-sdk-go-v2/service/ec2 v1.199.2
+	github.com/docker/go-units v0.5.0
 	github.com/hetznercloud/hcloud-go/v2 v2.17.1
 	github.com/joho/godotenv v1.5.1
 	github.com/linode/linodego v1.46.0
 	github.com/rs/zerolog v1.33.0
+	github.com/scaleway/scaleway-sdk-go v1.0.0-beta.30
 	github.com/stretchr/testify v1.10.0
 	github.com/urfave/cli/v2 v2.27.5
 	github.com/vultr/govultr/v3 v3.6.1
@@ -57,5 +59,6 @@ require (
 	golang.org/x/text v0.21.0 // indirect
 	google.golang.org/protobuf v1.35.2 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

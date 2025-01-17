@@ -47,6 +47,7 @@ The agents will use `WOODEPCKER_GRPC_ADDR` and a token automatically generated b
   - [ ] Oracle Cloud
   - [ ] Equinix Metal
   - [x] Vultr
+  - [x] Scaleway
 - [ ] Cleanup agents
   - [x] Remove agents which exist on the provider but are not in the server list (they wont be able to connect to the server anyway as their is no agent token for them)
   - [x] Remove agents from server list which do not exist on the provider
