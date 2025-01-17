@@ -8,6 +8,7 @@
 
 ### ✨ Features
 
+- Add Scaleway provider [[#252](https://github.com/woodpecker-ci/autoscaler/pull/252)]
 - Add Vultr provider [[#251](https://github.com/woodpecker-ci/autoscaler/pull/251)]
 
 ### 📦️ Dependency
