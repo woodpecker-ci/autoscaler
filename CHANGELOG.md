@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.5.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.5.1) - 2025-01-18
+
+### 📦️ Dependency
+
+- fix(deps): update golang deps non-major [[#257](https://github.com/woodpecker-ci/autoscaler/pull/257)]
+
 ## [0.5.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.5.0) - 2025-01-17
 
 ### ❤️ Thanks to all contributors! ❤️
