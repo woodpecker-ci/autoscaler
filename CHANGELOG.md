@@ -1,6 +1,14 @@
 # Changelog
 
-## [0.5.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.5.1) - 2025-01-18
+## [0.5.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.5.1) - 2025-01-21
+
+### ❤️ Thanks to all contributors! ❤️
+
+@henkka
+
+### 📚 Documentation
+
+- docs: fix typos [[#259](https://github.com/woodpecker-ci/autoscaler/pull/259)]
 
 ### 📦️ Dependency
 
