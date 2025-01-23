@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.5.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.5.1) - 2025-01-21
+## [0.5.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.5.1) - 2025-01-23
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -12,6 +12,7 @@
 
 ### 📦️ Dependency
 
+- fix(deps): update module github.com/hetznercloud/hcloud-go/v2 to v2.18.0 [[#260](https://github.com/woodpecker-ci/autoscaler/pull/260)]
 - fix(deps): update golang deps non-major [[#257](https://github.com/woodpecker-ci/autoscaler/pull/257)]
 
 ## [0.5.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.5.0) - 2025-01-17
