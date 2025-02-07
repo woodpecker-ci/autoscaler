@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.5.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.5.1) - 2025-01-25
+## [0.5.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.5.1) - 2025-02-07
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -12,6 +12,7 @@
 
 ### 📦️ Dependency
 
+- fix(deps): update golang.org/x/exp digest to f9890c6 [[#267](https://github.com/woodpecker-ci/autoscaler/pull/267)]
 - chore(deps): update woodpeckerci/plugin-ready-release-go docker tag to v3.1.3 [[#262](https://github.com/woodpecker-ci/autoscaler/pull/262)]
 - fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.201.0 [[#261](https://github.com/woodpecker-ci/autoscaler/pull/261)]
 - fix(deps): update module github.com/hetznercloud/hcloud-go/v2 to v2.18.0 [[#260](https://github.com/woodpecker-ci/autoscaler/pull/260)]
