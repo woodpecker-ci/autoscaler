@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.5.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.5.1) - 2025-02-07
+## [0.5.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.5.1) - 2025-02-08
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -12,6 +12,7 @@
 
 ### 📦️ Dependency
 
+- chore(deps): update mstruebing/editorconfig-checker docker tag to v3.2.0 [[#269](https://github.com/woodpecker-ci/autoscaler/pull/269)]
 - fix(deps): update golang.org/x/exp digest to f9890c6 [[#267](https://github.com/woodpecker-ci/autoscaler/pull/267)]
 - chore(deps): update woodpeckerci/plugin-ready-release-go docker tag to v3.1.3 [[#262](https://github.com/woodpecker-ci/autoscaler/pull/262)]
 - fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.201.0 [[#261](https://github.com/woodpecker-ci/autoscaler/pull/261)]
