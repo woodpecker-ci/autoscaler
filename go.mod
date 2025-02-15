@@ -1,8 +1,8 @@
 module go.woodpecker-ci.org/autoscaler
 
-go 1.23
+go 1.23.0
 
-toolchain go1.23.5
+toolchain go1.24.0
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.33.0
@@ -18,7 +18,7 @@ require (
 	github.com/urfave/cli/v2 v2.27.5
 	github.com/vultr/govultr/v3 v3.14.1
 	go.woodpecker-ci.org/woodpecker/v2 v2.8.3
-	golang.org/x/exp v0.0.0-20250207012021-f9890c6ad9f3
+	golang.org/x/exp v0.0.0-20250215185904-eff6e970281f
 	golang.org/x/net v0.34.0
 	golang.org/x/oauth2 v0.25.0
 )
