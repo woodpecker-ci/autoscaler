@@ -12,6 +12,8 @@
 
 ### 📦️ Dependency
 
+- fix(deps): update golang.org/x/exp digest to eff6e97 [[#274](https://github.com/woodpecker-ci/autoscaler/pull/274)]
+- fix(deps): update golang.org/x/exp digest to 939b2ce [[#270](https://github.com/woodpecker-ci/autoscaler/pull/270)]
 - chore(deps): update docker.io/golang docker tag to v1.24 [[#272](https://github.com/woodpecker-ci/autoscaler/pull/272)]
 - chore(deps): update pre-commit non-major [[#264](https://github.com/woodpecker-ci/autoscaler/pull/264)]
 - chore(deps): update docker.io/woodpeckerci/plugin-docker-buildx docker tag to v5.2.1 [[#263](https://github.com/woodpecker-ci/autoscaler/pull/263)]
