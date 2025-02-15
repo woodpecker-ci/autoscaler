@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.5.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.5.1) - 2025-02-12
+## [0.5.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.5.1) - 2025-02-15
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -12,6 +12,7 @@
 
 ### 📦️ Dependency
 
+- chore(deps): update docker.io/golang docker tag to v1.24 [[#272](https://github.com/woodpecker-ci/autoscaler/pull/272)]
 - chore(deps): update pre-commit non-major [[#264](https://github.com/woodpecker-ci/autoscaler/pull/264)]
 - chore(deps): update docker.io/woodpeckerci/plugin-docker-buildx docker tag to v5.2.1 [[#263](https://github.com/woodpecker-ci/autoscaler/pull/263)]
 - chore(deps): update mstruebing/editorconfig-checker docker tag to v3.2.0 [[#269](https://github.com/woodpecker-ci/autoscaler/pull/269)]
