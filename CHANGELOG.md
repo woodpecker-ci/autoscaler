@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.5.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.5.1) - 2025-02-15
+## [0.5.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.5.1) - 2025-02-16
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -23,6 +23,10 @@
 - fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.201.0 [[#261](https://github.com/woodpecker-ci/autoscaler/pull/261)]
 - fix(deps): update module github.com/hetznercloud/hcloud-go/v2 to v2.18.0 [[#260](https://github.com/woodpecker-ci/autoscaler/pull/260)]
 - fix(deps): update golang deps non-major [[#257](https://github.com/woodpecker-ci/autoscaler/pull/257)]
+
+### Misc
+
+- [pre-commit.ci] pre-commit autoupdate [[#268](https://github.com/woodpecker-ci/autoscaler/pull/268)]
 
 ## [0.5.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.5.0) - 2025-01-17
 
