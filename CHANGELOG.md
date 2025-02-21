@@ -12,6 +12,7 @@
 
 ### 📦️ Dependency
 
+- chore(deps): update golang docker tag to v1.24 [[#273](https://github.com/woodpecker-ci/autoscaler/pull/273)]
 - chore(deps): update pre-commit hook golangci/golangci-lint to v1.64.5 [[#271](https://github.com/woodpecker-ci/autoscaler/pull/271)]
 - fix(deps): update golang.org/x/exp digest to eff6e97 [[#274](https://github.com/woodpecker-ci/autoscaler/pull/274)]
 - fix(deps): update golang.org/x/exp digest to 939b2ce [[#270](https://github.com/woodpecker-ci/autoscaler/pull/270)]
