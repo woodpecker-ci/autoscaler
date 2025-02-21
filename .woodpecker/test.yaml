@@ -2,7 +2,7 @@ when:
   - event: pull_request
 
 variables:
-  - &golang_image 'golang:1.23'
+  - &golang_image 'golang:1.24'
   - &when
     - path: &when_path # related config files
         - '.woodpecker/test.yml'
