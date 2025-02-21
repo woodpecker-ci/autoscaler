@@ -12,6 +12,7 @@
 
 ### 📦️ Dependency
 
+- fix(deps): update module go.woodpecker-ci.org/woodpecker/v2 to v3 [[#266](https://github.com/woodpecker-ci/autoscaler/pull/266)]
 - fix(deps): update golang deps non-major [[#265](https://github.com/woodpecker-ci/autoscaler/pull/265)]
 - chore(deps): update golang docker tag to v1.24 [[#273](https://github.com/woodpecker-ci/autoscaler/pull/273)]
 - chore(deps): update pre-commit hook golangci/golangci-lint to v1.64.5 [[#271](https://github.com/woodpecker-ci/autoscaler/pull/271)]
