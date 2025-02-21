@@ -27,33 +27,35 @@ var (
 )
 
 type Provider struct {
-	name       string
-	serverType string
-	userData   *template.Template
-	image      string
-	sshKeys    []string
-	labels     map[string]string
-	config     *config.Config
-	location   string
-	networks   []string
-	firewalls  []string
-	enableIPv4 bool
-	enableIPv6 bool
-	client     hcapi.Client
+	name                string
+	serverType          string
+	fallbackServerTypes []string
+	userData            *template.Template
+	image               string
+	sshKeys             []string
+	labels              map[string]string
+	config              *config.Config
+	location            string
+	networks            []string
+	firewalls           []string
+	enableIPv4          bool
+	enableIPv6          bool
+	client              hcapi.Client
 }
 
 func New(c *cli.Context, config *config.Config) (engine.Provider, error) {
 	d := &Provider{
-		name:       "hetznercloud",
-		location:   c.String("hetznercloud-location"),
-		serverType: c.String("hetznercloud-server-type"),
-		image:      c.String("hetznercloud-image"),
-		sshKeys:    c.StringSlice("hetznercloud-ssh-keys"),
-		firewalls:  c.StringSlice("hetznercloud-firewalls"),
-		networks:   c.StringSlice("hetznercloud-networks"),
-		enableIPv4: c.Bool("hetznercloud-public-ipv4-enable"),
-		enableIPv6: c.Bool("hetznercloud-public-ipv6-enable"),
-		config:     config,
+		name:                "hetznercloud",
+		location:            c.String("hetznercloud-location"),
+		serverType:          c.String("hetznercloud-server-type"),
+		fallbackServerTypes: c.StringSlice("hetznercloud-fallback-server-types"),
+		image:               c.String("hetznercloud-image"),
+		sshKeys:             c.StringSlice("hetznercloud-ssh-keys"),
+		firewalls:           c.StringSlice("hetznercloud-firewalls"),
+		networks:            c.StringSlice("hetznercloud-networks"),
+		enableIPv4:          c.Bool("hetznercloud-public-ipv4-enable"),
+		enableIPv6:          c.Bool("hetznercloud-public-ipv6-enable"),
+		config:              config,
 	}
 
 	d.client = hcapi.NewClient(hcloud.WithToken(c.String("hetznercloud-api-token")))
@@ -93,12 +95,9 @@ func (d *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 		return fmt.Errorf("%s: RenderUserDataTemplate: %w", d.name, err)
 	}
 
-	serverType, _, err := d.client.ServerType().GetByName(ctx, d.serverType)
+	serverType, err := d.LookupServerType(ctx, d.serverType)
 	if err != nil {
-		return fmt.Errorf("%s: ServerType.GetByName: %w", d.name, err)
-	}
-	if serverType == nil {
-		return fmt.Errorf("%s: %w: %s", d.name, ErrServerTypeNotFound, d.serverType)
+		return err
 	}
 
 	image, _, err := d.client.Image().GetByNameAndArchitecture(ctx, d.image, serverType.Architecture)
@@ -145,7 +144,7 @@ func (d *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 		firewalls = append(firewalls, &hcloud.ServerCreateFirewall{Firewall: hcloud.Firewall{ID: fw.ID}})
 	}
 
-	_, _, err = d.client.Server().Create(ctx, hcloud.ServerCreateOpts{
+	serverCreateOpts := hcloud.ServerCreateOpts{
 		Name:     agent.Name,
 		UserData: userdataString,
 		Image:    image,
@@ -161,12 +160,46 @@ func (d *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 			EnableIPv4: d.enableIPv4,
 			EnableIPv6: d.enableIPv6,
 		},
-	})
+	}
+
+	_, _, err = d.client.Server().Create(ctx, serverCreateOpts)
 	if err != nil {
+		if hcloud.IsError(err, hcloud.ErrorCodeResourceUnavailable) {
+			// Try each allowed fallback type
+			for _, fallbackType := range d.fallbackServerTypes {
+				serverCreateOpts.ServerType, err = d.LookupServerType(ctx, fallbackType)
+				if err != nil {
+					return err
+				}
+
+				_, _, err = d.client.Server().Create(ctx, serverCreateOpts)
+				if err == nil {
+					return nil
+				}
+
+				// Continue to next fallback type if still unavailable
+				if !hcloud.IsError(err, hcloud.ErrorCodeResourceUnavailable) {
+					return fmt.Errorf("%s: Server.Create: %w", d.name, err)
+				}
+			}
+		}
+
 		return fmt.Errorf("%s: Server.Create: %w", d.name, err)
 	}
 
 	return nil
+}
+
+func (d *Provider) LookupServerType(ctx context.Context, name string) (*hcloud.ServerType, error) {
+	serverType, _, err := d.client.ServerType().GetByName(ctx, name)
+	if err != nil {
+		return nil, fmt.Errorf("%s: ServerType.GetByName: %w", name, err)
+	}
+	if serverType == nil {
+		return nil, fmt.Errorf("%s: %w: %s", d.name, ErrServerTypeNotFound, name)
+	}
+
+	return serverType, nil
 }
 
 func (d *Provider) getAgent(ctx context.Context, agent *woodpecker.Agent) (*hcloud.Server, error) {
