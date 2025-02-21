@@ -1,5 +1,37 @@
 # Changelog
 
+## [0.5.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.5.1) - 2025-02-21
+
+### ❤️ Thanks to all contributors! ❤️
+
+@henkka
+
+### 📚 Documentation
+
+- docs: fix typos [[#259](https://github.com/woodpecker-ci/autoscaler/pull/259)]
+
+### 📦️ Dependency
+
+- fix(deps): update module go.woodpecker-ci.org/woodpecker/v2 to v3 [[#266](https://github.com/woodpecker-ci/autoscaler/pull/266)]
+- fix(deps): update golang deps non-major [[#265](https://github.com/woodpecker-ci/autoscaler/pull/265)]
+- chore(deps): update golang docker tag to v1.24 [[#273](https://github.com/woodpecker-ci/autoscaler/pull/273)]
+- chore(deps): update pre-commit hook golangci/golangci-lint to v1.64.5 [[#271](https://github.com/woodpecker-ci/autoscaler/pull/271)]
+- fix(deps): update golang.org/x/exp digest to eff6e97 [[#274](https://github.com/woodpecker-ci/autoscaler/pull/274)]
+- fix(deps): update golang.org/x/exp digest to 939b2ce [[#270](https://github.com/woodpecker-ci/autoscaler/pull/270)]
+- chore(deps): update docker.io/golang docker tag to v1.24 [[#272](https://github.com/woodpecker-ci/autoscaler/pull/272)]
+- chore(deps): update pre-commit non-major [[#264](https://github.com/woodpecker-ci/autoscaler/pull/264)]
+- chore(deps): update docker.io/woodpeckerci/plugin-docker-buildx docker tag to v5.2.1 [[#263](https://github.com/woodpecker-ci/autoscaler/pull/263)]
+- chore(deps): update mstruebing/editorconfig-checker docker tag to v3.2.0 [[#269](https://github.com/woodpecker-ci/autoscaler/pull/269)]
+- fix(deps): update golang.org/x/exp digest to f9890c6 [[#267](https://github.com/woodpecker-ci/autoscaler/pull/267)]
+- chore(deps): update woodpeckerci/plugin-ready-release-go docker tag to v3.1.3 [[#262](https://github.com/woodpecker-ci/autoscaler/pull/262)]
+- fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.201.0 [[#261](https://github.com/woodpecker-ci/autoscaler/pull/261)]
+- fix(deps): update module github.com/hetznercloud/hcloud-go/v2 to v2.18.0 [[#260](https://github.com/woodpecker-ci/autoscaler/pull/260)]
+- fix(deps): update golang deps non-major [[#257](https://github.com/woodpecker-ci/autoscaler/pull/257)]
+
+### Misc
+
+- [pre-commit.ci] pre-commit autoupdate [[#268](https://github.com/woodpecker-ci/autoscaler/pull/268)]
+
 ## [0.5.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.5.0) - 2025-01-17
 
 ### ❤️ Thanks to all contributors! ❤️
