@@ -217,7 +217,7 @@ func (p *Provider) createInstance(ctx context.Context, agent *woodpecker.Agent) 
 		Name:              agent.Name,
 		DynamicIPRequired: scw.BoolPtr(true),
 		CommercialType:    p.commercialType,
-		Image:             p.image,
+		Image:             scw.StringPtr(p.image),
 		Volumes: map[string]*instance.VolumeServerTemplate{
 			"0": {
 				Boot:       scw.BoolPtr(true),
