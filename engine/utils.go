@@ -1,6 +1,6 @@
 package engine
 
-import "go.woodpecker-ci.org/woodpecker/v2/woodpecker-go/woodpecker"
+import "go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 
 func countTasksByLabel(jobs []woodpecker.Task, labelKey, labelValue string) int {
 	count := 0
