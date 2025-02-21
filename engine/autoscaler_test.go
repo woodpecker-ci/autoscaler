@@ -12,7 +12,7 @@ import (
 	"go.woodpecker-ci.org/autoscaler/config"
 	mocks_engine "go.woodpecker-ci.org/autoscaler/engine/mocks"
 	mocks_server "go.woodpecker-ci.org/autoscaler/server/mocks"
-	"go.woodpecker-ci.org/woodpecker/v2/woodpecker-go/woodpecker"
+	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
 
 type MockClient struct {

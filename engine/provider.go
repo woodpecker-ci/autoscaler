@@ -7,7 +7,7 @@ import (
 	"text/template"
 
 	"go.woodpecker-ci.org/autoscaler/config"
-	"go.woodpecker-ci.org/woodpecker/v2/woodpecker-go/woodpecker"
+	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
 
 type Provider interface {

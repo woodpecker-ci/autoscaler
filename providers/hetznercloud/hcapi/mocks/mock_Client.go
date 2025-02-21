@@ -20,7 +20,7 @@ func (_m *MockClient) EXPECT() *MockClient_Expecter {
 	return &MockClient_Expecter{mock: &_m.Mock}
 }
 
-// Firewall provides a mock function with given fields:
+// Firewall provides a mock function with no fields
 func (_m *MockClient) Firewall() hcapi.FirewallClient {
 	ret := _m.Called()
 
@@ -67,7 +67,7 @@ func (_c *MockClient_Firewall_Call) RunAndReturn(run func() hcapi.FirewallClient
 	return _c
 }
 
-// Image provides a mock function with given fields:
+// Image provides a mock function with no fields
 func (_m *MockClient) Image() hcapi.ImageClient {
 	ret := _m.Called()
 
@@ -114,7 +114,7 @@ func (_c *MockClient_Image_Call) RunAndReturn(run func() hcapi.ImageClient) *Moc
 	return _c
 }
 
-// Network provides a mock function with given fields:
+// Network provides a mock function with no fields
 func (_m *MockClient) Network() hcapi.NetworkClient {
 	ret := _m.Called()
 
@@ -161,7 +161,7 @@ func (_c *MockClient_Network_Call) RunAndReturn(run func() hcapi.NetworkClient) 
 	return _c
 }
 
-// SSHKey provides a mock function with given fields:
+// SSHKey provides a mock function with no fields
 func (_m *MockClient) SSHKey() hcapi.SSHKeyClient {
 	ret := _m.Called()
 
@@ -208,7 +208,7 @@ func (_c *MockClient_SSHKey_Call) RunAndReturn(run func() hcapi.SSHKeyClient) *M
 	return _c
 }
 
-// Server provides a mock function with given fields:
+// Server provides a mock function with no fields
 func (_m *MockClient) Server() hcapi.ServerClient {
 	ret := _m.Called()
 
@@ -255,7 +255,7 @@ func (_c *MockClient_Server_Call) RunAndReturn(run func() hcapi.ServerClient) *M
 	return _c
 }
 
-// ServerType provides a mock function with given fields:
+// ServerType provides a mock function with no fields
 func (_m *MockClient) ServerType() hcapi.ServerTypeClient {
 	ret := _m.Called()
 
