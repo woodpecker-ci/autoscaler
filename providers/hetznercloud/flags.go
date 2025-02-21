@@ -31,6 +31,12 @@ var ProviderFlags = []cli.Flag{
 		Category: category,
 	},
 	&cli.StringSliceFlag{
+		Name:     "hetznercloud-fallback-server-types",
+		Usage:    "hetzner cloud fallback server types",
+		EnvVars:  []string{"WOODPECKER_HETZNERCLOUD_FALLBACK_SERVER_TYPES"},
+		Category: category,
+	},
+	&cli.StringSliceFlag{
 		Name:     "hetznercloud-ssh-keys",
 		Usage:    "names of hetzner cloud ssh keys",
 		EnvVars:  []string{"WOODPECKER_HETZNERCLOUD_SSH_KEYS"},
