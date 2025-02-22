@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.5.2](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.5.2) - 2025-02-22
+
+### 📦️ Dependency
+
+- fix(deps): update golang.org/x/exp digest to aa4b98e [[#276](https://github.com/woodpecker-ci/autoscaler/pull/276)]
+
 ## [0.5.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.5.1) - 2025-02-21
 
 ### ❤️ Thanks to all contributors! ❤️
