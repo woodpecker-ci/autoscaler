@@ -95,19 +95,6 @@ func (d *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 		return fmt.Errorf("%s: RenderUserDataTemplate: %w", d.name, err)
 	}
 
-	serverType, err := d.LookupServerType(ctx, d.serverType)
-	if err != nil {
-		return err
-	}
-
-	image, _, err := d.client.Image().GetByNameAndArchitecture(ctx, d.image, serverType.Architecture)
-	if err != nil {
-		return fmt.Errorf("%s: Image.GetByNameAndArchitecture: %w", d.name, err)
-	}
-	if image == nil {
-		return fmt.Errorf("%s: %w: %s", d.name, ErrImageNotFound, d.image)
-	}
-
 	sshKeys := make([]*hcloud.SSHKey, 0)
 	for _, item := range d.sshKeys {
 		key, _, err := d.client.SSHKey().GetByName(ctx, item)
@@ -147,44 +134,45 @@ func (d *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 	serverCreateOpts := hcloud.ServerCreateOpts{
 		Name:     agent.Name,
 		UserData: userdataString,
-		Image:    image,
 		Location: &hcloud.Location{
 			Name: d.location,
 		},
-		ServerType: serverType,
-		SSHKeys:    sshKeys,
-		Networks:   networks,
-		Firewalls:  firewalls,
-		Labels:     d.labels,
+		SSHKeys:   sshKeys,
+		Networks:  networks,
+		Firewalls: firewalls,
+		Labels:    d.labels,
 		PublicNet: &hcloud.ServerCreatePublicNet{
 			EnableIPv4: d.enableIPv4,
 			EnableIPv6: d.enableIPv6,
 		},
 	}
 
-	_, _, err = d.client.Server().Create(ctx, serverCreateOpts)
-	if err != nil {
-		if hcloud.IsError(err, hcloud.ErrorCodeResourceUnavailable) {
-			// Try each allowed fallback type
-			for _, fallbackType := range d.fallbackServerTypes {
-				serverCreateOpts.ServerType, err = d.LookupServerType(ctx, fallbackType)
-				if err != nil {
-					return err
-				}
-
-				_, _, err = d.client.Server().Create(ctx, serverCreateOpts)
-				if err == nil {
-					return nil
-				}
-
-				// Continue to next fallback type if still unavailable
-				if !hcloud.IsError(err, hcloud.ErrorCodeResourceUnavailable) {
-					return fmt.Errorf("%s: Server.Create: %w", d.name, err)
-				}
-			}
+	for _, fallbackType := range append(d.fallbackServerTypes, d.serverType) {
+		serverType, err := d.LookupServerType(ctx, fallbackType)
+		if err != nil {
+			return err
 		}
 
-		return fmt.Errorf("%s: Server.Create: %w", d.name, err)
+		image, _, err := d.client.Image().GetByNameAndArchitecture(ctx, d.image, serverType.Architecture)
+		if err != nil {
+			return fmt.Errorf("%s: Image.GetByNameAndArchitecture: %w", d.name, err)
+		}
+		if image == nil {
+			return fmt.Errorf("%s: %w: %s", d.name, ErrImageNotFound, d.image)
+		}
+
+		serverCreateOpts.ServerType = serverType
+		serverCreateOpts.Image = image
+
+		_, _, err = d.client.Server().Create(ctx, serverCreateOpts)
+		if err == nil {
+			return nil
+		}
+
+		// Continue to next fallback type if still unavailable
+		if !hcloud.IsError(err, hcloud.ErrorCodeResourceUnavailable) {
+			return fmt.Errorf("%s: Server.Create: %w", d.name, err)
+		}
 	}
 
 	return nil
