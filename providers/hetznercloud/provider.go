@@ -27,35 +27,31 @@ var (
 )
 
 type Provider struct {
-	name                string
-	serverType          string
-	fallbackServerTypes []string
-	userData            *template.Template
-	image               string
-	sshKeys             []string
-	labels              map[string]string
-	config              *config.Config
-	location            string
-	networks            []string
-	firewalls           []string
-	enableIPv4          bool
-	enableIPv6          bool
-	client              hcapi.Client
+	name       string
+	serverType []string
+	userData   *template.Template
+	image      string
+	sshKeys    []string
+	labels     map[string]string
+	config     *config.Config
+	networks   []string
+	firewalls  []string
+	enableIPv4 bool
+	enableIPv6 bool
+	client     hcapi.Client
 }
 
 func New(c *cli.Context, config *config.Config) (engine.Provider, error) {
 	d := &Provider{
-		name:                "hetznercloud",
-		location:            c.String("hetznercloud-location"),
-		serverType:          c.String("hetznercloud-server-type"),
-		fallbackServerTypes: c.StringSlice("hetznercloud-fallback-server-types"),
-		image:               c.String("hetznercloud-image"),
-		sshKeys:             c.StringSlice("hetznercloud-ssh-keys"),
-		firewalls:           c.StringSlice("hetznercloud-firewalls"),
-		networks:            c.StringSlice("hetznercloud-networks"),
-		enableIPv4:          c.Bool("hetznercloud-public-ipv4-enable"),
-		enableIPv6:          c.Bool("hetznercloud-public-ipv6-enable"),
-		config:              config,
+		name:       "hetznercloud",
+		serverType: c.StringSlice("hetznercloud-server-type"),
+		image:      c.String("hetznercloud-image"),
+		sshKeys:    c.StringSlice("hetznercloud-ssh-keys"),
+		firewalls:  c.StringSlice("hetznercloud-firewalls"),
+		networks:   c.StringSlice("hetznercloud-networks"),
+		enableIPv4: c.Bool("hetznercloud-public-ipv4-enable"),
+		enableIPv6: c.Bool("hetznercloud-public-ipv6-enable"),
+		config:     config,
 	}
 
 	d.client = hcapi.NewClient(hcloud.WithToken(c.String("hetznercloud-api-token")))
@@ -132,11 +128,8 @@ func (d *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 	}
 
 	serverCreateOpts := hcloud.ServerCreateOpts{
-		Name:     agent.Name,
-		UserData: userdataString,
-		Location: &hcloud.Location{
-			Name: d.location,
-		},
+		Name:      agent.Name,
+		UserData:  userdataString,
 		SSHKeys:   sshKeys,
 		Networks:  networks,
 		Firewalls: firewalls,
@@ -147,8 +140,10 @@ func (d *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 		},
 	}
 
-	for _, fallbackType := range append(d.fallbackServerTypes, d.serverType) {
-		serverType, err := d.LookupServerType(ctx, fallbackType)
+	for _, raw := range d.serverType {
+		rawType, location, _ := strings.Cut(raw, ":")
+
+		serverType, err := d.LookupServerType(ctx, rawType)
 		if err != nil {
 			return err
 		}
@@ -161,6 +156,7 @@ func (d *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 			return fmt.Errorf("%s: %w: %s", d.name, ErrImageNotFound, d.image)
 		}
 
+		serverCreateOpts.Location = &hcloud.Location{Name: location}
 		serverCreateOpts.ServerType = serverType
 		serverCreateOpts.Image = image
 

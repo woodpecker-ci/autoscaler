@@ -21,6 +21,7 @@ func TestDeployAgent(t *testing.T) {
 		userdata      string
 		sshkeys       []string
 		expectedError string
+		serverType    []string
 	}{
 		{
 			name:          "InvalidUserData",
@@ -40,16 +41,39 @@ func TestDeployAgent(t *testing.T) {
 		{
 			name: "ImageNotFound",
 			setupMocks: func(mockClient *mocks.MockClient) {
-				mockServerType := &hcloud.ServerType{Architecture: "amd64"}
+				mockServerType := &hcloud.ServerType{Name: "cx11", Architecture: "x86"}
 				mockServerTypeClient := mocks.NewMockServerTypeClient(t)
 				mockServerTypeClient.On("GetByName", mock.Anything, mock.Anything).Return(mockServerType, nil, nil)
 				mockClient.On("ServerType").Return(mockServerTypeClient)
 
 				mockImageClient := mocks.NewMockImageClient(t)
-				mockImageClient.On("GetByNameAndArchitecture", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil, nil)
+				mockImageClient.On("GetByNameAndArchitecture", mock.Anything, mock.Anything, hcloud.ArchitectureX86).Return(nil, nil, nil)
 				mockClient.On("Image").Return(mockImageClient)
 			},
 			expectedError: ErrImageNotFound.Error(),
+		},
+		{
+			name: "ServerTypeWithLocation",
+			setupMocks: func(mockClient *mocks.MockClient) {
+				mockServerType := &hcloud.ServerType{Name: "cx11", Architecture: "x86"}
+				mockServerTypeClient := mocks.NewMockServerTypeClient(t)
+				mockServerTypeClient.On("GetByName", mock.Anything, "cx11").Return(mockServerType, nil, nil)
+				mockClient.On("ServerType").Return(mockServerTypeClient)
+
+				mockImage := &hcloud.Image{}
+				mockImageClient := mocks.NewMockImageClient(t)
+				mockImageClient.On("GetByNameAndArchitecture", mock.Anything, mock.Anything, hcloud.ArchitectureX86).Return(mockImage, nil, nil)
+				mockClient.On("Image").Return(mockImageClient)
+
+				mockServerClient := mocks.NewMockServerClient(t)
+				mockServerClient.On("Create", mock.Anything, mock.MatchedBy(func(opts hcloud.ServerCreateOpts) bool {
+					return opts.ServerType == mockServerType &&
+						opts.ServerType.Name == "cx11" &&
+						opts.Location.Name == "nbg1"
+				})).Return(hcloud.ServerCreateResult{Server: &hcloud.Server{}}, &hcloud.Response{}, nil)
+				mockClient.On("Server").Return(mockServerClient)
+			},
+			serverType: []string{"cx11:nbg1"},
 		},
 	}
 
@@ -59,10 +83,15 @@ func TestDeployAgent(t *testing.T) {
 			tt.setupMocks(mockClient)
 
 			provider := &Provider{
-				client:   mockClient,
-				config:   &config.Config{},
-				userData: template.Must(template.New("").Parse(tt.userdata)),
-				sshKeys:  tt.sshkeys,
+				client:     mockClient,
+				config:     &config.Config{},
+				userData:   template.Must(template.New("").Parse(tt.userdata)),
+				sshKeys:    tt.sshkeys,
+				serverType: []string{"cx11"},
+			}
+
+			if tt.serverType != nil {
+				provider.serverType = tt.serverType
 			}
 
 			agent := &woodpecker.Agent{}
