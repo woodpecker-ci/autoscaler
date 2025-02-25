@@ -28,13 +28,12 @@ var (
 
 type Provider struct {
 	name       string
-	serverType string
+	serverType []string
 	userData   *template.Template
 	image      string
 	sshKeys    []string
 	labels     map[string]string
 	config     *config.Config
-	location   string
 	networks   []string
 	firewalls  []string
 	enableIPv4 bool
@@ -45,8 +44,7 @@ type Provider struct {
 func New(c *cli.Context, config *config.Config) (engine.Provider, error) {
 	d := &Provider{
 		name:       "hetznercloud",
-		location:   c.String("hetznercloud-location"),
-		serverType: c.String("hetznercloud-server-type"),
+		serverType: c.StringSlice("hetznercloud-server-type"),
 		image:      c.String("hetznercloud-image"),
 		sshKeys:    c.StringSlice("hetznercloud-ssh-keys"),
 		firewalls:  c.StringSlice("hetznercloud-firewalls"),
@@ -93,22 +91,6 @@ func (d *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 		return fmt.Errorf("%s: RenderUserDataTemplate: %w", d.name, err)
 	}
 
-	serverType, _, err := d.client.ServerType().GetByName(ctx, d.serverType)
-	if err != nil {
-		return fmt.Errorf("%s: ServerType.GetByName: %w", d.name, err)
-	}
-	if serverType == nil {
-		return fmt.Errorf("%s: %w: %s", d.name, ErrServerTypeNotFound, d.serverType)
-	}
-
-	image, _, err := d.client.Image().GetByNameAndArchitecture(ctx, d.image, serverType.Architecture)
-	if err != nil {
-		return fmt.Errorf("%s: Image.GetByNameAndArchitecture: %w", d.name, err)
-	}
-	if image == nil {
-		return fmt.Errorf("%s: %w: %s", d.name, ErrImageNotFound, d.image)
-	}
-
 	sshKeys := make([]*hcloud.SSHKey, 0)
 	for _, item := range d.sshKeys {
 		key, _, err := d.client.SSHKey().GetByName(ctx, item)
@@ -145,28 +127,63 @@ func (d *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 		firewalls = append(firewalls, &hcloud.ServerCreateFirewall{Firewall: hcloud.Firewall{ID: fw.ID}})
 	}
 
-	_, _, err = d.client.Server().Create(ctx, hcloud.ServerCreateOpts{
-		Name:     agent.Name,
-		UserData: userdataString,
-		Image:    image,
-		Location: &hcloud.Location{
-			Name: d.location,
-		},
-		ServerType: serverType,
-		SSHKeys:    sshKeys,
-		Networks:   networks,
-		Firewalls:  firewalls,
-		Labels:     d.labels,
+	serverCreateOpts := hcloud.ServerCreateOpts{
+		Name:      agent.Name,
+		UserData:  userdataString,
+		SSHKeys:   sshKeys,
+		Networks:  networks,
+		Firewalls: firewalls,
+		Labels:    d.labels,
 		PublicNet: &hcloud.ServerCreatePublicNet{
 			EnableIPv4: d.enableIPv4,
 			EnableIPv6: d.enableIPv6,
 		},
-	})
-	if err != nil {
-		return fmt.Errorf("%s: Server.Create: %w", d.name, err)
+	}
+
+	for _, raw := range d.serverType {
+		rawType, location, _ := strings.Cut(raw, ":")
+
+		serverType, err := d.LookupServerType(ctx, rawType)
+		if err != nil {
+			return err
+		}
+
+		image, _, err := d.client.Image().GetByNameAndArchitecture(ctx, d.image, serverType.Architecture)
+		if err != nil {
+			return fmt.Errorf("%s: Image.GetByNameAndArchitecture: %w", d.name, err)
+		}
+		if image == nil {
+			return fmt.Errorf("%s: %w: %s", d.name, ErrImageNotFound, d.image)
+		}
+
+		serverCreateOpts.Location = &hcloud.Location{Name: location}
+		serverCreateOpts.ServerType = serverType
+		serverCreateOpts.Image = image
+
+		_, _, err = d.client.Server().Create(ctx, serverCreateOpts)
+		if err == nil {
+			return nil
+		}
+
+		// Continue to next fallback type if still unavailable
+		if !hcloud.IsError(err, hcloud.ErrorCodeResourceUnavailable) {
+			return fmt.Errorf("%s: Server.Create: %w", d.name, err)
+		}
 	}
 
 	return nil
+}
+
+func (d *Provider) LookupServerType(ctx context.Context, name string) (*hcloud.ServerType, error) {
+	serverType, _, err := d.client.ServerType().GetByName(ctx, name)
+	if err != nil {
+		return nil, fmt.Errorf("%s: ServerType.GetByName: %w", name, err)
+	}
+	if serverType == nil {
+		return nil, fmt.Errorf("%s: %w: %s", d.name, ErrServerTypeNotFound, name)
+	}
+
+	return serverType, nil
 }
 
 func (d *Provider) getAgent(ctx context.Context, agent *woodpecker.Agent) (*hcloud.Server, error) {

@@ -16,16 +16,9 @@ var ProviderFlags = []cli.Flag{
 		FilePath: os.Getenv("WOODPECKER_HETZNERCLOUD_API_TOKEN_FILE"),
 		Category: category,
 	},
-	&cli.StringFlag{
-		Name:     "hetznercloud-location",
-		Value:    "nbg1",
-		Usage:    "hetzner cloud location",
-		EnvVars:  []string{"WOODPECKER_HETZNERCLOUD_LOCATION"},
-		Category: category,
-	},
-	&cli.StringFlag{
+	&cli.StringSliceFlag{
 		Name:     "hetznercloud-server-type",
-		Value:    "cx11",
+		Value:    cli.NewStringSlice("cx11:nbg1"),
 		Usage:    "hetzner cloud server type",
 		EnvVars:  []string{"WOODPECKER_HETZNERCLOUD_SERVER_TYPE"},
 		Category: category,
