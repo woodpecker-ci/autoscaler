@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.2](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.5.2) - 2025-02-25
+
+### 📦️ Dependency
+
+- fix(deps): update module golang.org/x/oauth2 to v0.27.0 [[#279](https://github.com/woodpecker-ci/autoscaler/pull/279)]
+- fix(deps): update golang.org/x/exp digest to aa4b98e [[#276](https://github.com/woodpecker-ci/autoscaler/pull/276)]
+
 ## [0.5.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.5.1) - 2025-02-21
 
 ### ❤️ Thanks to all contributors! ❤️
