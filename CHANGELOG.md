@@ -1,6 +1,14 @@
 # Changelog
 
-## [0.5.2](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.5.2) - 2025-02-27
+## [0.6.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.6.0) - 2025-02-27
+
+### ❤️ Thanks to all contributors! ❤️
+
+@xoxys
+
+### 📈 Enhancement
+
+- Add hcloud server type fallback list [[#275](https://github.com/woodpecker-ci/autoscaler/pull/275)]
 
 ### 📦️ Dependency
 
