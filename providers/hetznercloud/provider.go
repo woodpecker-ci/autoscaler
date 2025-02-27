@@ -8,6 +8,7 @@ import (
 	"text/template"
 
 	"github.com/hetznercloud/hcloud-go/v2/hcloud"
+	"github.com/rs/zerolog/log"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/exp/maps"
 
@@ -29,6 +30,8 @@ var (
 type Provider struct {
 	name       string
 	serverType []string
+	// TODO: Deprecated remove in v1.0
+	location   string
 	userData   *template.Template
 	image      string
 	sshKeys    []string
@@ -45,6 +48,8 @@ func New(c *cli.Context, config *config.Config) (engine.Provider, error) {
 	d := &Provider{
 		name:       "hetznercloud",
 		serverType: c.StringSlice("hetznercloud-server-type"),
+		// TODO: Deprecated remove in v1.0
+		location:   c.String("hetznercloud-location"),
 		image:      c.String("hetznercloud-image"),
 		sshKeys:    c.StringSlice("hetznercloud-ssh-keys"),
 		firewalls:  c.StringSlice("hetznercloud-firewalls"),
@@ -142,6 +147,12 @@ func (d *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 
 	for _, raw := range d.serverType {
 		rawType, location, _ := strings.Cut(raw, ":")
+
+		// TODO: Deprecated remove in v1.0
+		if location == "" {
+			log.Warn().Msg("hetznercloud-location is deprecated, please use hetznercloud-server-type instead")
+			location = d.location
+		}
 
 		serverType, err := d.LookupServerType(ctx, rawType)
 		if err != nil {

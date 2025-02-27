@@ -23,6 +23,14 @@ var ProviderFlags = []cli.Flag{
 		EnvVars:  []string{"WOODPECKER_HETZNERCLOUD_SERVER_TYPE"},
 		Category: category,
 	},
+	// TODO: Deprecated remove in v1.0
+	&cli.StringFlag{
+		Name:     "hetznercloud-location",
+		Value:    "nbg1",
+		Usage:    "hetzner cloud location (deprecated)",
+		EnvVars:  []string{"WOODPECKER_HETZNERCLOUD_LOCATION"},
+		Category: category,
+	},
 	&cli.StringSliceFlag{
 		Name:     "hetznercloud-ssh-keys",
 		Usage:    "names of hetzner cloud ssh keys",
