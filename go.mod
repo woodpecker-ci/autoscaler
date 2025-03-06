@@ -11,16 +11,16 @@ require (
 	github.com/docker/go-units v0.5.0
 	github.com/hetznercloud/hcloud-go/v2 v2.19.1
 	github.com/joho/godotenv v1.5.1
-	github.com/linode/linodego v1.48.0
+	github.com/linode/linodego v1.48.1
 	github.com/rs/zerolog v1.33.0
 	github.com/scaleway/scaleway-sdk-go v1.0.0-beta.32
 	github.com/stretchr/testify v1.10.0
-	github.com/urfave/cli/v2 v2.27.5
+	github.com/urfave/cli/v2 v2.27.6
 	github.com/vultr/govultr/v3 v3.15.0
 	go.woodpecker-ci.org/woodpecker/v3 v3.3.0
 	golang.org/x/exp v0.0.0-20250228200357-dead58393ab7
-	golang.org/x/net v0.36.0
-	golang.org/x/oauth2 v0.27.0
+	golang.org/x/net v0.37.0
+	golang.org/x/oauth2 v0.28.0
 )
 
 require (
@@ -55,8 +55,8 @@ require (
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1 // indirect
-	golang.org/x/sys v0.30.0 // indirect
-	golang.org/x/text v0.22.0 // indirect
+	golang.org/x/sys v0.31.0 // indirect
+	golang.org/x/text v0.23.0 // indirect
 	google.golang.org/protobuf v1.36.5 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
