@@ -4,6 +4,7 @@
 
 ### 📦️ Dependency
 
+- fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.208.0 [[#290](https://github.com/woodpecker-ci/autoscaler/pull/290)]
 - fix(deps): update golang.org/x/exp digest to 054e65f [[#289](https://github.com/woodpecker-ci/autoscaler/pull/289)]
 - fix(deps): update golang deps non-major [[#288](https://github.com/woodpecker-ci/autoscaler/pull/288)]
 - fix(deps): update golang deps non-major [[#287](https://github.com/woodpecker-ci/autoscaler/pull/287)]
