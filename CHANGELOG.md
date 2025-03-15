@@ -1,9 +1,10 @@
 # Changelog
 
-## [0.6.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.6.1) - 2025-03-14
+## [0.6.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.6.1) - 2025-03-15
 
 ### 📦️ Dependency
 
+- chore(deps): update pre-commit non-major [[#294](https://github.com/woodpecker-ci/autoscaler/pull/294)]
 - fix(deps): update golang deps non-major [[#293](https://github.com/woodpecker-ci/autoscaler/pull/293)]
 - fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.209.0 [[#292](https://github.com/woodpecker-ci/autoscaler/pull/292)]
 - fix(deps): update module github.com/vultr/govultr/v3 to v3.16.1 [[#291](https://github.com/woodpecker-ci/autoscaler/pull/291)]
