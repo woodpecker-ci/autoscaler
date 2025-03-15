@@ -4,6 +4,7 @@
 
 ### 📦️ Dependency
 
+- chore(deps): update mstruebing/editorconfig-checker docker tag to v3.2.1 [[#296](https://github.com/woodpecker-ci/autoscaler/pull/296)]
 - chore(deps): update pre-commit hook adrienverge/yamllint to v1.36.1 [[#295](https://github.com/woodpecker-ci/autoscaler/pull/295)]
 - chore(deps): update pre-commit non-major [[#294](https://github.com/woodpecker-ci/autoscaler/pull/294)]
 - fix(deps): update golang deps non-major [[#293](https://github.com/woodpecker-ci/autoscaler/pull/293)]
