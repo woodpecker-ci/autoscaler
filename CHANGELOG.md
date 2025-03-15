@@ -4,6 +4,7 @@
 
 ### 📦️ Dependency
 
+- chore(deps): update pre-commit hook adrienverge/yamllint to v1.36.1 [[#295](https://github.com/woodpecker-ci/autoscaler/pull/295)]
 - chore(deps): update pre-commit non-major [[#294](https://github.com/woodpecker-ci/autoscaler/pull/294)]
 - fix(deps): update golang deps non-major [[#293](https://github.com/woodpecker-ci/autoscaler/pull/293)]
 - fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.209.0 [[#292](https://github.com/woodpecker-ci/autoscaler/pull/292)]
