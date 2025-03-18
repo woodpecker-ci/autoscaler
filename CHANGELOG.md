@@ -1,9 +1,10 @@
 # Changelog
 
-## [0.6.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.6.1) - 2025-03-15
+## [0.6.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.6.1) - 2025-03-18
 
 ### 📦️ Dependency
 
+- fix(deps): update module go.woodpecker-ci.org/woodpecker/v3 to v3.4.0 [[#297](https://github.com/woodpecker-ci/autoscaler/pull/297)]
 - chore(deps): update mstruebing/editorconfig-checker docker tag to v3.2.1 [[#296](https://github.com/woodpecker-ci/autoscaler/pull/296)]
 - chore(deps): update pre-commit hook adrienverge/yamllint to v1.36.1 [[#295](https://github.com/woodpecker-ci/autoscaler/pull/295)]
 - chore(deps): update pre-commit non-major [[#294](https://github.com/woodpecker-ci/autoscaler/pull/294)]
