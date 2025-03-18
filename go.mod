@@ -17,7 +17,7 @@ require (
 	github.com/stretchr/testify v1.10.0
 	github.com/urfave/cli/v2 v2.27.6
 	github.com/vultr/govultr/v3 v3.17.0
-	go.woodpecker-ci.org/woodpecker/v3 v3.3.0
+	go.woodpecker-ci.org/woodpecker/v3 v3.4.0
 	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394
 	golang.org/x/net v0.37.0
 	golang.org/x/oauth2 v0.28.0
@@ -48,7 +48,7 @@ require (
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
-	github.com/prometheus/client_golang v1.21.0 // indirect
+	github.com/prometheus/client_golang v1.21.1 // indirect
 	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/common v0.62.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
