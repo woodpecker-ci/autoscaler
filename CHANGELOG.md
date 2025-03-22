@@ -1,9 +1,10 @@
 # Changelog
 
-## [0.6.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.6.1) - 2025-03-21
+## [0.6.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.6.1) - 2025-03-22
 
 ### 📦️ Dependency
 
+- fix(deps): update module github.com/rs/zerolog to v1.34.0 [[#301](https://github.com/woodpecker-ci/autoscaler/pull/301)]
 - fix(deps): update module github.com/hetznercloud/hcloud-go/v2 to v2.20.1 [[#299](https://github.com/woodpecker-ci/autoscaler/pull/299)]
 - fix(deps): update golang deps non-major [[#298](https://github.com/woodpecker-ci/autoscaler/pull/298)]
 - fix(deps): update module go.woodpecker-ci.org/woodpecker/v3 to v3.4.0 [[#297](https://github.com/woodpecker-ci/autoscaler/pull/297)]
