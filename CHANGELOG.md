@@ -4,6 +4,7 @@
 
 ### 📦️ Dependency
 
+- chore(deps): update pre-commit non-major [[#300](https://github.com/woodpecker-ci/autoscaler/pull/300)]
 - fix(deps): update module github.com/rs/zerolog to v1.34.0 [[#301](https://github.com/woodpecker-ci/autoscaler/pull/301)]
 - fix(deps): update module github.com/hetznercloud/hcloud-go/v2 to v2.20.1 [[#299](https://github.com/woodpecker-ci/autoscaler/pull/299)]
 - fix(deps): update golang deps non-major [[#298](https://github.com/woodpecker-ci/autoscaler/pull/298)]
