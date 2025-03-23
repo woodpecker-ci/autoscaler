@@ -1,9 +1,10 @@
 # Changelog
 
-## [0.6.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.6.1) - 2025-03-22
+## [0.6.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.6.1) - 2025-03-23
 
 ### 📦️ Dependency
 
+- chore(deps): update pre-commit hook adrienverge/yamllint to v1.37.0 [[#303](https://github.com/woodpecker-ci/autoscaler/pull/303)]
 - chore(deps): update pre-commit non-major [[#300](https://github.com/woodpecker-ci/autoscaler/pull/300)]
 - fix(deps): update module github.com/rs/zerolog to v1.34.0 [[#301](https://github.com/woodpecker-ci/autoscaler/pull/301)]
 - fix(deps): update module github.com/hetznercloud/hcloud-go/v2 to v2.20.1 [[#299](https://github.com/woodpecker-ci/autoscaler/pull/299)]
