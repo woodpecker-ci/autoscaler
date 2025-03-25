@@ -4,6 +4,7 @@
 
 ### 📦️ Dependency
 
+- chore(deps): update docker.io/woodpeckerci/plugin-docker-buildx docker tag to v5.2.2 [[#302](https://github.com/woodpecker-ci/autoscaler/pull/302)]
 - fix(deps): update module github.com/aws/aws-sdk-go-v2/config to v1.29.10 [[#304](https://github.com/woodpecker-ci/autoscaler/pull/304)]
 - chore(deps): update pre-commit hook adrienverge/yamllint to v1.37.0 [[#303](https://github.com/woodpecker-ci/autoscaler/pull/303)]
 - chore(deps): update pre-commit non-major [[#300](https://github.com/woodpecker-ci/autoscaler/pull/300)]
