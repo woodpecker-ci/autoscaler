@@ -36,6 +36,7 @@
 
 ### Misc
 
+- Bump golangci-lint to v2 [[#311](https://github.com/woodpecker-ci/autoscaler/pull/311)]
 - Run tests also on makefile changes [[#310](https://github.com/woodpecker-ci/autoscaler/pull/310)]
 - [pre-commit.ci] pre-commit autoupdate [[#285](https://github.com/woodpecker-ci/autoscaler/pull/285)]
 
