@@ -2,6 +2,10 @@
 
 ## [0.6.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.6.1) - 2025-03-31
 
+### ❤️ Thanks to all contributors! ❤️
+
+@xoxys
+
 ### 📦️ Dependency
 
 - fix(deps): update module github.com/vultr/govultr/v3 to v3.18.0 [[#308](https://github.com/woodpecker-ci/autoscaler/pull/308)]
@@ -31,6 +35,7 @@
 
 ### Misc
 
+- Run tests also on makefile changes [[#310](https://github.com/woodpecker-ci/autoscaler/pull/310)]
 - [pre-commit.ci] pre-commit autoupdate [[#285](https://github.com/woodpecker-ci/autoscaler/pull/285)]
 
 ## [0.6.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.6.0) - 2025-02-27
