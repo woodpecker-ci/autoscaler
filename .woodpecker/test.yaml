@@ -12,6 +12,8 @@ variables:
         - 'go.*'
         # schema changes
         - 'pipeline/schema/**'
+        # tools updates
+        - Makefile
       branch:
         exclude: ${CI_REPO_DEFAULT_BRANCH}
       event: push
