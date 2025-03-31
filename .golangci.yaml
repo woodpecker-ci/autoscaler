@@ -1,70 +1,85 @@
-linters-settings:
-  gofmt:
-    simplify: true
-    rewrite-rules:
-      - pattern: interface{}
-        replacement: any
-  misspell:
-    locale: US
-  gofumpt:
-    extra-rules: true
-  forbidigo:
-    forbid:
-      - context\.WithCancel$
-      - ^print.*$
-      - panic
-      - ^log.Fatal().*$
-  gci:
-    custom-order: true
-    sections:
-      - standard
-      - default
-      - prefix(go.woodpecker-ci.org)
-
+version: '2'
 linters:
-  disable-all: true
+  default: none
   enable:
-    - bidichk
-    - errcheck
-    - gofmt
-    - gosimple
-    - govet
-    - ineffassign
-    - misspell
-    - revive
-    - staticcheck
-    - typecheck
-    - unused
-    - gofumpt
-    - errorlint
-    - forbidigo
-    - zerologlint
     - asciicheck
+    - bidichk
     - bodyclose
+    - contextcheck
     - dogsled
     - durationcheck
+    - errcheck
     - errchkjson
+    - errorlint
+    - forbidigo
+    - forcetypeassert
     - gochecknoinits
+    - gocritic
     - goheader
     - gomoddirectives
     - gomodguard
     - goprintffuncname
+    - govet
     - importas
+    - ineffassign
     - makezero
+    - misspell
+    - mnd
+    - nolintlint
+    - revive
     - rowserrcheck
     - sqlclosecheck
-    - tenv
+    - staticcheck
     - unconvert
     - unparam
+    - unused
     - wastedassign
     - whitespace
-    - gocritic
-    - nolintlint
-    - stylecheck
-    - contextcheck
-    - forcetypeassert
+    - zerologlint
+  settings:
+    forbidigo:
+      forbid:
+        - pattern: context\.WithCancel$
+        - pattern: ^print.*$
+        - pattern: panic
+        - pattern: ^log.Fatal().*$
+    misspell:
+      locale: US
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
     - gci
-    - mnd
-
+    - gofmt
+    - gofumpt
+  settings:
+    gci:
+      sections:
+        - standard
+        - default
+        - prefix(go.woodpecker-ci.org)
+      custom-order: true
+    gofmt:
+      simplify: true
+      rewrite-rules:
+        - pattern: interface{}
+          replacement: any
+    gofumpt:
+      extra-rules: true
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
 run:
-  timeout: 5m
+  timeout: 10m
