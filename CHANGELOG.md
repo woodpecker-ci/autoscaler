@@ -1,9 +1,10 @@
 # Changelog
 
-## [0.6.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.6.1) - 2025-03-28
+## [0.6.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.6.1) - 2025-03-31
 
 ### 📦️ Dependency
 
+- fix(deps): update module github.com/vultr/govultr/v3 to v3.18.0 [[#308](https://github.com/woodpecker-ci/autoscaler/pull/308)]
 - fix(deps): update golang deps non-major [[#306](https://github.com/woodpecker-ci/autoscaler/pull/306)]
 - fix(deps): update module github.com/aws/aws-sdk-go-v2/config to v1.29.11 [[#305](https://github.com/woodpecker-ci/autoscaler/pull/305)]
 - chore(deps): update docker.io/woodpeckerci/plugin-docker-buildx docker tag to v5.2.2 [[#302](https://github.com/woodpecker-ci/autoscaler/pull/302)]
