@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.6.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.6.1) - 2025-03-31
+## [0.6.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.6.1) - 2025-04-01
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -8,6 +8,7 @@
 
 ### 📦️ Dependency
 
+- fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.211.0 [[#312](https://github.com/woodpecker-ci/autoscaler/pull/312)]
 - chore(deps): update pre-commit hook golangci/golangci-lint to v2 [[#309](https://github.com/woodpecker-ci/autoscaler/pull/309)]
 - chore(deps): update woodpeckerci/plugin-ready-release-go docker tag to v3.1.4 [[#307](https://github.com/woodpecker-ci/autoscaler/pull/307)]
 - fix(deps): update module github.com/vultr/govultr/v3 to v3.18.0 [[#308](https://github.com/woodpecker-ci/autoscaler/pull/308)]
