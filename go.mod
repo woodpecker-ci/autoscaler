@@ -20,7 +20,7 @@ require (
 	go.woodpecker-ci.org/woodpecker/v3 v3.5.1
 	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394
 	golang.org/x/net v0.38.0
-	golang.org/x/oauth2 v0.28.0
+	golang.org/x/oauth2 v0.29.0
 )
 
 require (
