@@ -8,6 +8,7 @@
 
 ### 📦️ Dependency
 
+- chore(deps): update pre-commit hook golangci/golangci-lint to v2.1.0 [[#323](https://github.com/woodpecker-ci/autoscaler/pull/323)]
 - fix(deps): update golang.org/x/exp digest to 7e4ce0a [[#322](https://github.com/woodpecker-ci/autoscaler/pull/322)]
 - fix(deps): update golang deps non-major [[#321](https://github.com/woodpecker-ci/autoscaler/pull/321)]
 - fix(deps): update module github.com/vultr/govultr/v3 to v3.19.1 [[#320](https://github.com/woodpecker-ci/autoscaler/pull/320)]
