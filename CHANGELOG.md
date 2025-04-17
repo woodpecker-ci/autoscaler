@@ -1,10 +1,14 @@
 # Changelog
 
-## [0.6.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.6.1) - 2025-04-16
+## [0.6.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.6.1) - 2025-04-17
 
 ### ❤️ Thanks to all contributors! ❤️
 
-@xoxys
+@gsaslis, @xoxys
+
+### 📚 Documentation
+
+- Fix link to caddy docs [[#326](https://github.com/woodpecker-ci/autoscaler/pull/326)]
 
 ### 📦️ Dependency
 
