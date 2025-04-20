@@ -4,7 +4,7 @@ import (
 	"os"
 
 	"github.com/scaleway/scaleway-sdk-go/scw"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 const category = "Scaleway"

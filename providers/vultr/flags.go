@@ -3,7 +3,7 @@ package vultr
 import (
 	"os"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 const category = "Vultr"

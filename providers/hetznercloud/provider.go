@@ -9,7 +9,7 @@ import (
 
 	"github.com/hetznercloud/hcloud-go/v2/hcloud"
 	"github.com/rs/zerolog/log"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 	"golang.org/x/exp/maps"
 
 	"go.woodpecker-ci.org/autoscaler/config"

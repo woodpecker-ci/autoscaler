@@ -9,7 +9,7 @@ import (
 	"text/template"
 
 	"github.com/linode/linodego"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 	"golang.org/x/oauth2"
 
 	"go.woodpecker-ci.org/autoscaler/config"

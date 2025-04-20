@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/rs/zerolog/log"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 	"github.com/vultr/govultr/v3"
 	"golang.org/x/exp/maps"
 	"golang.org/x/oauth2"
