@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
@@ -20,7 +21,7 @@ type Client interface {
 }
 
 // NewClient returns a new client from the CLI context.
-func NewClient(c *cli.Context) (Client, error) {
+func NewClient(ctx context.Context, c *cli.Command) (Client, error) {
 	var (
 		skip        = c.Bool("skip-verify")
 		socks       = c.String("socks-proxy")
@@ -49,7 +50,7 @@ func NewClient(c *cli.Context) (Client, error) {
 
 	config := new(oauth2.Config)
 	client := config.Client(
-		c.Context,
+		ctx,
 		&oauth2.Token{
 			AccessToken: serverToken,
 		},

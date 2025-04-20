@@ -44,7 +44,7 @@ type Provider struct {
 	client     hcapi.Client
 }
 
-func New(c *cli.Context, config *config.Config) (engine.Provider, error) {
+func New(_ context.Context, c *cli.Command, config *config.Config) (engine.Provider, error) {
 	d := &Provider{
 		name:       "hetznercloud",
 		serverType: c.StringSlice("hetznercloud-server-type"),

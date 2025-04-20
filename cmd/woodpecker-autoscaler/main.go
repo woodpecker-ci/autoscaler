@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
@@ -20,37 +21,37 @@ import (
 	"go.woodpecker-ci.org/autoscaler/server"
 )
 
-func setupProvider(ctx *cli.Context, config *config.Config) (engine.Provider, error) {
-	switch ctx.String("provider") {
+func setupProvider(ctx context.Context, cmd *cli.Command, config *config.Config) (engine.Provider, error) {
+	switch cmd.String("provider") {
 	case "aws":
-		return aws.New(ctx, config)
+		return aws.New(ctx, cmd, config)
 	case "hetznercloud":
-		return hetznercloud.New(ctx, config)
+		return hetznercloud.New(ctx, cmd, config)
 	// TODO: Temp disabled due to the security issue https://github.com/woodpecker-ci/autoscaler/issues/91
 	// Enable it again when the issue is fixed.
 	// case "linode":
 	// 	return linode.New(ctx, config)
 	case "vultr":
-		return vultr.New(ctx, config)
+		return vultr.New(ctx, cmd, config)
 	case "scaleway":
-		return scaleway.New(ctx, config)
+		return scaleway.New(ctx, cmd, config)
 	case "":
 		return nil, fmt.Errorf("please select a provider")
 	}
 
-	return nil, fmt.Errorf("unknown provider: %s", ctx.String("provider"))
+	return nil, fmt.Errorf("unknown provider: %s", cmd.String("provider"))
 }
 
-func run(ctx *cli.Context) error {
+func run(ctx context.Context, cmd *cli.Command) error {
 	log.Log().Msgf("starting autoscaler with log-level=%s", zerolog.GlobalLevel().String())
 
-	client, err := server.NewClient(ctx)
+	client, err := server.NewClient(ctx, cmd)
 	if err != nil {
 		return err
 	}
 
 	agentEnvironment := make(map[string]string)
-	for _, env := range ctx.StringSlice("agent-env") {
+	for _, env := range cmd.StringSlice("agent-env") {
 		before, after, _ := strings.Cut(env, "=")
 		if before == "" || after == "" {
 			return fmt.Errorf("invalid agent environment variable: %s", env)
@@ -59,35 +60,35 @@ func run(ctx *cli.Context) error {
 	}
 
 	config := &config.Config{
-		MinAgents:         ctx.Int("min-agents"),
-		MaxAgents:         ctx.Int("max-agents"),
-		WorkflowsPerAgent: ctx.Int("workflows-per-agent"),
-		PoolID:            ctx.String("pool-id"),
-		GRPCAddress:       ctx.String("grpc-addr"),
-		GRPCSecure:        ctx.Bool("grpc-secure"),
-		Image:             ctx.String("agent-image"),
-		FilterLabels:      ctx.String("filter-labels"),
+		MinAgents:         cmd.Int("min-agents"),
+		MaxAgents:         cmd.Int("max-agents"),
+		WorkflowsPerAgent: cmd.Int("workflows-per-agent"),
+		PoolID:            cmd.String("pool-id"),
+		GRPCAddress:       cmd.String("grpc-addr"),
+		GRPCSecure:        cmd.Bool("grpc-secure"),
+		Image:             cmd.String("agent-image"),
+		FilterLabels:      cmd.String("filter-labels"),
 		Environment:       agentEnvironment,
 	}
 
-	provider, err := setupProvider(ctx, config)
+	provider, err := setupProvider(ctx, cmd, config)
 	if err != nil {
 		return err
 	}
 
 	autoscaler := engine.NewAutoscaler(provider, client, config)
 
-	config.AgentInactivityTimeout, err = time.ParseDuration(ctx.String("agent-inactivity-timeout"))
+	config.AgentInactivityTimeout, err = time.ParseDuration(cmd.String("agent-inactivity-timeout"))
 	if err != nil {
 		return fmt.Errorf("can't parse agent-inactivity-timeout: %w", err)
 	}
 
-	config.AgentIdleTimeout, err = time.ParseDuration(ctx.String("agent-idle-timeout"))
+	config.AgentIdleTimeout, err = time.ParseDuration(cmd.String("agent-idle-timeout"))
 	if err != nil {
 		return fmt.Errorf("can't parse agent-idle-timeout: %w", err)
 	}
 
-	reconciliationInterval, err := time.ParseDuration(ctx.String("reconciliation-interval"))
+	reconciliationInterval, err := time.ParseDuration(cmd.String("reconciliation-interval"))
 	if err != nil {
 		return fmt.Errorf("can't parse reconciliation-interval: %w", err)
 	}
@@ -97,7 +98,7 @@ func run(ctx *cli.Context) error {
 		case <-ctx.Done():
 			return nil
 		case <-time.After(reconciliationInterval):
-			err := autoscaler.Reconcile(ctx.Context)
+			err := autoscaler.Reconcile(ctx)
 			if err != nil {
 				log.Error().Err(err).Msg("reconciliation failed")
 			}
@@ -106,14 +107,14 @@ func run(ctx *cli.Context) error {
 }
 
 func main() {
-	app := &cli.App{
+	app := &cli.Command{
 		Name:  "autoscaler",
 		Usage: "scale to the moon and back",
 		Flags: flags,
-		Before: func(ctx *cli.Context) error {
+		Before: func(ctx context.Context, cmd *cli.Command) (context.Context, error) {
 			zerolog.SetGlobalLevel(zerolog.InfoLevel)
-			if ctx.IsSet("log-level") {
-				logLevelFlag := ctx.String("log-level")
+			if cmd.IsSet("log-level") {
+				logLevelFlag := cmd.String("log-level")
 				lvl, err := zerolog.ParseLevel(logLevelFlag)
 				if err != nil {
 					log.Warn().Msgf("log-level = %s is unknown", logLevelFlag)
@@ -126,7 +127,7 @@ func main() {
 				log.Logger = log.With().Caller().Logger()
 			}
 
-			return nil
+			return ctx, nil
 		},
 		Action: run,
 	}
@@ -139,7 +140,7 @@ func main() {
 	app.Flags = append(app.Flags, aws.ProviderFlags...)
 	app.Flags = append(app.Flags, vultr.ProviderFlags...)
 
-	if err := app.Run(os.Args); err != nil {
+	if err := app.Run(context.Background(), os.Args); err != nil {
 		log.Error().Err(err).Msg("got error while try to run autoscaler")
 	}
 }

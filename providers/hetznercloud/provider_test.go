@@ -1,7 +1,6 @@
 package hetznercloud
 
 import (
-	"context"
 	"testing"
 	"text/template"
 
@@ -95,7 +94,7 @@ func TestDeployAgent(t *testing.T) {
 			}
 
 			agent := &woodpecker.Agent{}
-			err := provider.DeployAgent(context.Background(), agent)
+			err := provider.DeployAgent(t.Context(), agent)
 			if tt.expectedError != "" {
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), tt.expectedError)

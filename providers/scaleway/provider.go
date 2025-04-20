@@ -44,7 +44,7 @@ type Provider struct {
 	client           *scw.Client
 }
 
-func New(c *cli.Context, config *config.Config) (engine.Provider, error) {
+func New(_ context.Context, c *cli.Command, config *config.Config) (engine.Provider, error) {
 	if !c.IsSet("scaleway-instance-type") {
 		return nil, fmt.Errorf("%w: scaleway-instance-type", ErrParameterNotSet)
 	}

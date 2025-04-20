@@ -38,7 +38,7 @@ type Provider struct {
 	sshKeyName            string
 }
 
-func New(c *cli.Context, config *config.Config) (engine.Provider, error) {
+func New(ctx context.Context, c *cli.Command, config *config.Config) (engine.Provider, error) {
 	if len(c.StringSlice("aws-subnets")) == 0 {
 		return nil, fmt.Errorf("aws-subnets must be set")
 	}
@@ -55,7 +55,7 @@ func New(c *cli.Context, config *config.Config) (engine.Provider, error) {
 		useSpotInstances:      c.Bool("aws-use-spot-instances"),
 		sshKeyName:            c.String("aws-ssh-key-name"),
 	}
-	cfg, err := awsconfig.LoadDefaultConfig(context.TODO(), awsconfig.WithRegion(d.region))
+	cfg, err := awsconfig.LoadDefaultConfig(ctx, awsconfig.WithRegion(d.region))
 	if err != nil {
 		return nil, fmt.Errorf("failed to load configuration, %w", err)
 	}
