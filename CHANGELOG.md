@@ -1,10 +1,14 @@
 # Changelog
 
-## [0.6.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.6.1) - 2025-04-23
+## [1.0.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.0.0) - 2025-04-23
 
 ### ❤️ Thanks to all contributors! ❤️
 
 @gsaslis, @xoxys
+
+### 💥 Breaking changes
+
+- fix(deps): update module github.com/urfave/cli/v2 to v3 [[#317](https://github.com/woodpecker-ci/autoscaler/pull/317)]
 
 ### 📚 Documentation
 
