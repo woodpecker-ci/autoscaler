@@ -13,12 +13,10 @@ var ProviderFlags = []cli.Flag{
 	&cli.StringFlag{
 		Name:  "linode-api-token",
 		Usage: "Linode api token",
-		Sources: cli.ValueSourceChain{
-			Chain: []cli.ValueSource{
-				cli.EnvVar("WOODPECKER_LINODE_API_TOKEN"),
-				cli.File(os.Getenv("WOODPECKER_LINODE_API_TOKEN_FILE")),
-			},
-		},
+		Sources: cli.NewValueSourceChain(
+			cli.EnvVar("WOODPECKER_LINODE_API_TOKEN"),
+			cli.File(os.Getenv("WOODPECKER_LINODE_API_TOKEN_FILE")),
+		),
 		Category: category,
 	},
 	&cli.StringFlag{
@@ -57,12 +55,10 @@ var ProviderFlags = []cli.Flag{
 	&cli.StringFlag{
 		Name:  "linode-user-data",
 		Usage: "Linode userdata template",
-		Sources: cli.ValueSourceChain{
-			Chain: []cli.ValueSource{
-				cli.EnvVar("WOODPECKER_LINODE_USERDATA"),
-				cli.File(os.Getenv("WOODPECKER_LINODE_USERDATA_FILE")),
-			},
-		},
+		Sources: cli.NewValueSourceChain(
+			cli.EnvVar("WOODPECKER_LINODE_USERDATA"),
+			cli.File(os.Getenv("WOODPECKER_LINODE_USERDATA_FILE")),
+		),
 		Category: category,
 	},
 	&cli.StringFlag{

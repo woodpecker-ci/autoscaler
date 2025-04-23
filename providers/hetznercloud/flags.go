@@ -12,12 +12,10 @@ var ProviderFlags = []cli.Flag{
 	&cli.StringFlag{
 		Name:  "hetznercloud-api-token",
 		Usage: "hetzner cloud api token",
-		Sources: cli.ValueSourceChain{
-			Chain: []cli.ValueSource{
-				cli.EnvVar("WOODPECKER_HETZNERCLOUD_API_TOKEN"),
-				cli.File(os.Getenv("WOODPECKER_HETZNERCLOUD_API_TOKEN_FILE")),
-			},
-		},
+		Sources: cli.NewValueSourceChain(
+			cli.EnvVar("WOODPECKER_HETZNERCLOUD_API_TOKEN"),
+			cli.File(os.Getenv("WOODPECKER_HETZNERCLOUD_API_TOKEN_FILE")),
+		),
 		Category: category,
 	},
 	&cli.StringSliceFlag{
@@ -44,12 +42,10 @@ var ProviderFlags = []cli.Flag{
 	&cli.StringFlag{
 		Name:  "hetznercloud-user-data",
 		Usage: "hetzner cloud userdata template",
-		Sources: cli.ValueSourceChain{
-			Chain: []cli.ValueSource{
-				cli.EnvVar("WOODPECKER_HETZNERCLOUD_USERDATA"),
-				cli.File(os.Getenv("WOODPECKER_HETZNERCLOUD_USERDATA_FILE")),
-			},
-		},
+		Sources: cli.NewValueSourceChain(
+			cli.EnvVar("WOODPECKER_HETZNERCLOUD_USERDATA"),
+			cli.File(os.Getenv("WOODPECKER_HETZNERCLOUD_USERDATA_FILE")),
+		),
 		Category: category,
 	},
 	&cli.StringFlag{

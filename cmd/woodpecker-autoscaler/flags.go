@@ -65,12 +65,10 @@ var flags = []cli.Flag{
 	&cli.StringFlag{
 		Name:  "server-token",
 		Usage: "woodpecker api token",
-		Sources: cli.ValueSourceChain{
-			Chain: []cli.ValueSource{
-				cli.EnvVar("WOODPECKER_TOKEN"),
-				cli.File(os.Getenv("WOODPECKER_TOKEN_FILE")),
-			},
-		},
+		Sources: cli.NewValueSourceChain(
+			cli.EnvVar("WOODPECKER_TOKEN"),
+			cli.File(os.Getenv("WOODPECKER_TOKEN_FILE")),
+		),
 	},
 	&cli.StringFlag{
 		Name:    "grpc-addr",

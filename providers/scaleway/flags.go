@@ -14,23 +14,19 @@ var ProviderFlags = []cli.Flag{
 	&cli.StringFlag{
 		Name:  "scaleway-access-key",
 		Usage: "Scaleway IAM API Token Access Key",
-		Sources: cli.ValueSourceChain{
-			Chain: []cli.ValueSource{
-				cli.EnvVar("WOODPECKER_SCALEWAY_ACCESS_KEY"),
-				cli.File(os.Getenv("WOODPECKER_SCALEWAY_ACCESS_KEY_FILE")),
-			},
-		},
+		Sources: cli.NewValueSourceChain(
+			cli.EnvVar("WOODPECKER_SCALEWAY_ACCESS_KEY"),
+			cli.File(os.Getenv("WOODPECKER_SCALEWAY_ACCESS_KEY_FILE")),
+		),
 		Category: category,
 	},
 	&cli.StringFlag{
 		Name:  "scaleway-secret-key",
 		Usage: "Scaleway IAM API Token Secret Key",
-		Sources: cli.ValueSourceChain{
-			Chain: []cli.ValueSource{
-				cli.EnvVar("WOODPECKER_SCALEWAY_SECRET_KEY"),
-				cli.File(os.Getenv("WOODPECKER_SCALEWAY_SECRET_KEY_FILE")),
-			},
-		},
+		Sources: cli.NewValueSourceChain(
+			cli.EnvVar("WOODPECKER_SCALEWAY_SECRET_KEY"),
+			cli.File(os.Getenv("WOODPECKER_SCALEWAY_SECRET_KEY_FILE")),
+		),
 		Category: category,
 	},
 	// TODO(raskyld): implement multi-AZ

@@ -13,12 +13,10 @@ var ProviderFlags = []cli.Flag{
 	&cli.StringFlag{
 		Name:  "vultr-api-token",
 		Usage: "vultr api token",
-		Sources: cli.ValueSourceChain{
-			Chain: []cli.ValueSource{
-				cli.EnvVar("WOODPECKER_VULTR_API_TOKEN"),
-				cli.File(os.Getenv("WOODPECKER_VULTR_API_TOKEN_FILE")),
-			},
-		},
+		Sources: cli.NewValueSourceChain(
+			cli.EnvVar("WOODPECKER_VULTR_API_TOKEN"),
+			cli.File(os.Getenv("WOODPECKER_VULTR_API_TOKEN_FILE")),
+		),
 		Category: category,
 	},
 	&cli.StringFlag{
@@ -43,12 +41,10 @@ var ProviderFlags = []cli.Flag{
 	&cli.StringFlag{
 		Name:  "vultr-user-data",
 		Usage: "vultr userdata template",
-		Sources: cli.ValueSourceChain{
-			Chain: []cli.ValueSource{
-				cli.EnvVar("WOODPECKER_VULTR_USERDATA"),
-				cli.File(os.Getenv("WOODPECKER_VULTR_USERDATA_FILE")),
-			},
-		},
+		Sources: cli.NewValueSourceChain(
+			cli.EnvVar("WOODPECKER_VULTR_USERDATA"),
+			cli.File(os.Getenv("WOODPECKER_VULTR_USERDATA_FILE")),
+		),
 		Category: category,
 	},
 	&cli.StringFlag{
