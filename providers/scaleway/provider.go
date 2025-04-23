@@ -13,7 +13,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/scaleway/scaleway-sdk-go/api/instance/v1"
 	"github.com/scaleway/scaleway-sdk-go/scw"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"go.woodpecker-ci.org/autoscaler/config"
 	"go.woodpecker-ci.org/autoscaler/engine"
@@ -44,7 +44,7 @@ type Provider struct {
 	client           *scw.Client
 }
 
-func New(c *cli.Context, config *config.Config) (engine.Provider, error) {
+func New(_ context.Context, c *cli.Command, config *config.Config) (engine.Provider, error) {
 	if !c.IsSet("scaleway-instance-type") {
 		return nil, fmt.Errorf("%w: scaleway-instance-type", ErrParameterNotSet)
 	}

@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/rs/zerolog/log"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 	"github.com/vultr/govultr/v3"
 	"golang.org/x/exp/maps"
 	"golang.org/x/oauth2"
@@ -39,7 +39,7 @@ type Provider struct {
 	client     *govultr.Client
 }
 
-func New(c *cli.Context, config *config.Config) (engine.Provider, error) {
+func New(ctx context.Context, c *cli.Command, config *config.Config) (engine.Provider, error) {
 	p := &Provider{
 		name:       "vultr",
 		region:     c.String("vultr-region"),
@@ -49,7 +49,6 @@ func New(c *cli.Context, config *config.Config) (engine.Provider, error) {
 		config:     config,
 	}
 	oauthConfig := &oauth2.Config{}
-	ctx := context.Background()
 	ts := oauthConfig.TokenSource(ctx, &oauth2.Token{AccessToken: c.String("vultr-api-token")})
 	p.client = govultr.NewClient(oauth2.NewClient(ctx, ts))
 
