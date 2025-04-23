@@ -1,7 +1,6 @@
 package engine
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -61,7 +60,7 @@ func Test_calcAgents(t *testing.T) {
 			MinAgents:         1,
 		}}
 
-		value, _ := autoscaler.calcAgents(context.TODO())
+		value, _ := autoscaler.calcAgents(t.Context())
 		assert.Equal(t, float64(1), value)
 	})
 
@@ -73,7 +72,7 @@ func Test_calcAgents(t *testing.T) {
 			MaxAgents:         3,
 		}}
 
-		value, _ := autoscaler.calcAgents(context.TODO())
+		value, _ := autoscaler.calcAgents(t.Context())
 		assert.Equal(t, float64(1), value)
 	})
 
@@ -85,7 +84,7 @@ func Test_calcAgents(t *testing.T) {
 			MaxAgents:         3,
 		}}
 
-		value, _ := autoscaler.calcAgents(context.TODO())
+		value, _ := autoscaler.calcAgents(t.Context())
 		assert.Equal(t, float64(2), value)
 	})
 
@@ -99,7 +98,7 @@ func Test_calcAgents(t *testing.T) {
 			{Name: "pool-1-agent-1234"},
 		}}
 
-		value, _ := autoscaler.calcAgents(context.TODO())
+		value, _ := autoscaler.calcAgents(t.Context())
 		assert.Equal(t, float64(1), value)
 	})
 
@@ -112,7 +111,7 @@ func Test_calcAgents(t *testing.T) {
 			MaxAgents:         2,
 		}}
 
-		value, _ := autoscaler.calcAgents(context.TODO())
+		value, _ := autoscaler.calcAgents(t.Context())
 		assert.Equal(t, float64(0), value)
 	})
 }
@@ -127,7 +126,7 @@ func Test_getQueueInfo(t *testing.T) {
 			config: &config.Config{},
 		}
 
-		free, running, pending, _ := autoscaler.getQueueInfo(context.TODO())
+		free, running, pending, _ := autoscaler.getQueueInfo(t.Context())
 		assert.Equal(t, 0, free)
 		assert.Equal(t, 0, running)
 		assert.Equal(t, 2, pending)
@@ -143,7 +142,7 @@ func Test_getQueueInfo(t *testing.T) {
 			},
 		}
 
-		free, running, pending, _ := autoscaler.getQueueInfo(context.TODO())
+		free, running, pending, _ := autoscaler.getQueueInfo(t.Context())
 		assert.Equal(t, 0, free)
 		assert.Equal(t, 1, running)
 		assert.Equal(t, 1, pending)
@@ -159,7 +158,7 @@ func Test_getQueueInfo(t *testing.T) {
 			},
 		}
 
-		free, running, pending, _ := autoscaler.getQueueInfo(context.TODO())
+		free, running, pending, _ := autoscaler.getQueueInfo(t.Context())
 		assert.Equal(t, 0, free)
 		assert.Equal(t, 0, running)
 		assert.Equal(t, 0, pending)
@@ -186,7 +185,7 @@ func Test_createAgents(t *testing.T) {
 	zerolog.SetGlobalLevel(zerolog.ErrorLevel)
 
 	t.Run("should create a new agent", func(t *testing.T) {
-		ctx := context.Background()
+		ctx := t.Context()
 		client := mocks_server.NewMockClient(t)
 		provider := mocks_engine.NewMockProvider(t)
 		autoscaler := Autoscaler{
@@ -205,7 +204,7 @@ func Test_createAgents(t *testing.T) {
 	})
 
 	t.Run("should reuse an no-schedule agent first before creating a new one", func(t *testing.T) {
-		ctx := context.Background()
+		ctx := t.Context()
 		client := mocks_server.NewMockClient(t)
 		provider := mocks_engine.NewMockProvider(t)
 		autoscaler := Autoscaler{
@@ -235,7 +234,7 @@ func Test_createAgents(t *testing.T) {
 
 func Test_cleanupDanglingAgents(t *testing.T) {
 	t.Run("should remove agent that is only present on woodpecker (not provider)", func(t *testing.T) {
-		ctx := context.Background()
+		ctx := t.Context()
 		client := mocks_server.NewMockClient(t)
 		provider := mocks_engine.NewMockProvider(t)
 		autoscaler := Autoscaler{
@@ -254,7 +253,7 @@ func Test_cleanupDanglingAgents(t *testing.T) {
 	})
 
 	t.Run("should remove agent that is only present on provider (not woodpecker)", func(t *testing.T) {
-		ctx := context.Background()
+		ctx := t.Context()
 		client := mocks_server.NewMockClient(t)
 		provider := mocks_engine.NewMockProvider(t)
 		autoscaler := Autoscaler{
@@ -277,7 +276,7 @@ func Test_cleanupDanglingAgents(t *testing.T) {
 
 func Test_cleanupStaleAgents(t *testing.T) {
 	t.Run("should remove agent that never connected (last contact = 0) in over 15 minutes", func(t *testing.T) {
-		ctx := context.Background()
+		ctx := t.Context()
 		client := mocks_server.NewMockClient(t)
 		provider := mocks_engine.NewMockProvider(t)
 		autoscaler := Autoscaler{
@@ -315,7 +314,7 @@ func Test_cleanupStaleAgents(t *testing.T) {
 	})
 
 	t.Run("should remove agent that has lost connection for more than 15 minutes", func(t *testing.T) {
-		ctx := context.Background()
+		ctx := t.Context()
 		client := mocks_server.NewMockClient(t)
 		provider := mocks_engine.NewMockProvider(t)
 		autoscaler := Autoscaler{
@@ -421,7 +420,7 @@ func Test_isAgentIdle(t *testing.T) {
 
 func Test_drainAgents(t *testing.T) {
 	t.Run("should drain agents and skip no-schedule ones", func(t *testing.T) {
-		ctx := context.Background()
+		ctx := t.Context()
 		client := mocks_server.NewMockClient(t)
 		provider := mocks_engine.NewMockProvider(t)
 		autoscaler := Autoscaler{
@@ -449,7 +448,7 @@ func Test_drainAgents(t *testing.T) {
 	})
 
 	t.Run("should not remove an agent that never connected", func(t *testing.T) {
-		ctx := context.Background()
+		ctx := t.Context()
 		client := mocks_server.NewMockClient(t)
 		provider := mocks_engine.NewMockProvider(t)
 		autoscaler := Autoscaler{
@@ -469,7 +468,7 @@ func Test_drainAgents(t *testing.T) {
 	})
 
 	t.Run("should not remove an agent that has recently done some work", func(t *testing.T) {
-		ctx := context.Background()
+		ctx := t.Context()
 		client := mocks_server.NewMockClient(t)
 		provider := mocks_engine.NewMockProvider(t)
 		autoscaler := Autoscaler{
@@ -497,7 +496,7 @@ func Test_drainAgents(t *testing.T) {
 
 func Test_removeDrainedAgents(t *testing.T) {
 	t.Run("should remove agent", func(t *testing.T) {
-		ctx := context.Background()
+		ctx := t.Context()
 		client := mocks_server.NewMockClient(t)
 		provider := mocks_engine.NewMockProvider(t)
 		autoscaler := Autoscaler{
@@ -524,7 +523,7 @@ func Test_removeDrainedAgents(t *testing.T) {
 	})
 
 	t.Run("should not remove agent with tasks", func(t *testing.T) {
-		ctx := context.Background()
+		ctx := t.Context()
 		client := mocks_server.NewMockClient(t)
 		provider := mocks_engine.NewMockProvider(t)
 		autoscaler := Autoscaler{

@@ -9,7 +9,7 @@ import (
 	"text/template"
 
 	"github.com/linode/linodego"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 	"golang.org/x/oauth2"
 
 	"go.woodpecker-ci.org/autoscaler/config"
@@ -76,7 +76,7 @@ type Provider struct {
 	client        *linodego.Client
 }
 
-func New(c *cli.Context, config *config.Config) (engine.Provider, error) {
+func New(ctx context.Context, c *cli.Command, config *config.Config) (engine.Provider, error) {
 	d := &Provider{
 		name:          "linode",
 		region:        c.String("linode-region"),
@@ -90,7 +90,6 @@ func New(c *cli.Context, config *config.Config) (engine.Provider, error) {
 
 	d.client = newClient(c.String("linode-api-token"))
 
-	ctx := context.Background()
 	err := d.setupKeypair(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("%s: setupKeypair: %w", d.name, err)
