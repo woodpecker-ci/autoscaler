@@ -1,5 +1,70 @@
 # Changelog
 
+## [1.0.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.0.0) - 2025-04-24
+
+### ❤️ Thanks to all contributors! ❤️
+
+@gsaslis, @xoxys
+
+### 💥 Breaking changes
+
+- fix(deps): update module github.com/urfave/cli/v2 to v3 [[#317](https://github.com/woodpecker-ci/autoscaler/pull/317)]
+
+### 📚 Documentation
+
+- Fix link to caddy docs [[#326](https://github.com/woodpecker-ci/autoscaler/pull/326)]
+
+### 📦️ Dependency
+
+- fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.212.0 [[#330](https://github.com/woodpecker-ci/autoscaler/pull/330)]
+- chore(deps): update woodpeckerci/plugin-ready-release-go docker tag to v3.2.0 [[#328](https://github.com/woodpecker-ci/autoscaler/pull/328)]
+- chore(deps): update pre-commit hook golangci/golangci-lint to v2.1.2 [[#327](https://github.com/woodpecker-ci/autoscaler/pull/327)]
+- fix(deps): update module go.woodpecker-ci.org/woodpecker/v3 to v3.5.2 [[#325](https://github.com/woodpecker-ci/autoscaler/pull/325)]
+- chore(deps): update pre-commit hook golangci/golangci-lint to v2.1.1 [[#324](https://github.com/woodpecker-ci/autoscaler/pull/324)]
+- chore(deps): update pre-commit hook golangci/golangci-lint to v2.1.0 [[#323](https://github.com/woodpecker-ci/autoscaler/pull/323)]
+- fix(deps): update golang.org/x/exp digest to 7e4ce0a [[#322](https://github.com/woodpecker-ci/autoscaler/pull/322)]
+- fix(deps): update golang deps non-major [[#321](https://github.com/woodpecker-ci/autoscaler/pull/321)]
+- fix(deps): update module github.com/vultr/govultr/v3 to v3.19.1 [[#320](https://github.com/woodpecker-ci/autoscaler/pull/320)]
+- fix(deps): update golang deps non-major [[#319](https://github.com/woodpecker-ci/autoscaler/pull/319)]
+- fix(deps): update module golang.org/x/oauth2 to v0.29.0 [[#318](https://github.com/woodpecker-ci/autoscaler/pull/318)]
+- fix(deps): update golang deps non-major [[#316](https://github.com/woodpecker-ci/autoscaler/pull/316)]
+- fix(deps): update golang deps non-major [[#315](https://github.com/woodpecker-ci/autoscaler/pull/315)]
+- fix(deps): update module go.woodpecker-ci.org/woodpecker/v3 to v3.5.0 [[#314](https://github.com/woodpecker-ci/autoscaler/pull/314)]
+- chore(deps): update dependency go to v1.24.2 [[#313](https://github.com/woodpecker-ci/autoscaler/pull/313)]
+- fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.211.0 [[#312](https://github.com/woodpecker-ci/autoscaler/pull/312)]
+- chore(deps): update pre-commit hook golangci/golangci-lint to v2 [[#309](https://github.com/woodpecker-ci/autoscaler/pull/309)]
+- chore(deps): update woodpeckerci/plugin-ready-release-go docker tag to v3.1.4 [[#307](https://github.com/woodpecker-ci/autoscaler/pull/307)]
+- fix(deps): update module github.com/vultr/govultr/v3 to v3.18.0 [[#308](https://github.com/woodpecker-ci/autoscaler/pull/308)]
+- fix(deps): update golang deps non-major [[#306](https://github.com/woodpecker-ci/autoscaler/pull/306)]
+- fix(deps): update module github.com/aws/aws-sdk-go-v2/config to v1.29.11 [[#305](https://github.com/woodpecker-ci/autoscaler/pull/305)]
+- chore(deps): update docker.io/woodpeckerci/plugin-docker-buildx docker tag to v5.2.2 [[#302](https://github.com/woodpecker-ci/autoscaler/pull/302)]
+- fix(deps): update module github.com/aws/aws-sdk-go-v2/config to v1.29.10 [[#304](https://github.com/woodpecker-ci/autoscaler/pull/304)]
+- chore(deps): update pre-commit hook adrienverge/yamllint to v1.37.0 [[#303](https://github.com/woodpecker-ci/autoscaler/pull/303)]
+- chore(deps): update pre-commit non-major [[#300](https://github.com/woodpecker-ci/autoscaler/pull/300)]
+- fix(deps): update module github.com/rs/zerolog to v1.34.0 [[#301](https://github.com/woodpecker-ci/autoscaler/pull/301)]
+- fix(deps): update module github.com/hetznercloud/hcloud-go/v2 to v2.20.1 [[#299](https://github.com/woodpecker-ci/autoscaler/pull/299)]
+- fix(deps): update golang deps non-major [[#298](https://github.com/woodpecker-ci/autoscaler/pull/298)]
+- fix(deps): update module go.woodpecker-ci.org/woodpecker/v3 to v3.4.0 [[#297](https://github.com/woodpecker-ci/autoscaler/pull/297)]
+- chore(deps): update mstruebing/editorconfig-checker docker tag to v3.2.1 [[#296](https://github.com/woodpecker-ci/autoscaler/pull/296)]
+- chore(deps): update pre-commit hook adrienverge/yamllint to v1.36.1 [[#295](https://github.com/woodpecker-ci/autoscaler/pull/295)]
+- chore(deps): update pre-commit non-major [[#294](https://github.com/woodpecker-ci/autoscaler/pull/294)]
+- fix(deps): update golang deps non-major [[#293](https://github.com/woodpecker-ci/autoscaler/pull/293)]
+- fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.209.0 [[#292](https://github.com/woodpecker-ci/autoscaler/pull/292)]
+- fix(deps): update module github.com/vultr/govultr/v3 to v3.16.1 [[#291](https://github.com/woodpecker-ci/autoscaler/pull/291)]
+- fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.208.0 [[#290](https://github.com/woodpecker-ci/autoscaler/pull/290)]
+- fix(deps): update golang.org/x/exp digest to 054e65f [[#289](https://github.com/woodpecker-ci/autoscaler/pull/289)]
+- fix(deps): update golang deps non-major [[#288](https://github.com/woodpecker-ci/autoscaler/pull/288)]
+- fix(deps): update golang deps non-major [[#287](https://github.com/woodpecker-ci/autoscaler/pull/287)]
+- fix(deps): update golang deps non-major [[#286](https://github.com/woodpecker-ci/autoscaler/pull/286)]
+- fix(deps): update golang.org/x/exp digest to dead583 [[#284](https://github.com/woodpecker-ci/autoscaler/pull/284)]
+- fix(deps): update golang deps non-major [[#282](https://github.com/woodpecker-ci/autoscaler/pull/282)]
+
+### Misc
+
+- Bump golangci-lint to v2 [[#311](https://github.com/woodpecker-ci/autoscaler/pull/311)]
+- Run tests also on makefile changes [[#310](https://github.com/woodpecker-ci/autoscaler/pull/310)]
+- [pre-commit.ci] pre-commit autoupdate [[#285](https://github.com/woodpecker-ci/autoscaler/pull/285)]
+
 ## [0.6.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/0.6.0) - 2025-02-27
 
 ### ❤️ Thanks to all contributors! ❤️
