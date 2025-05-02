@@ -82,4 +82,13 @@ var ProviderFlags = []cli.Flag{
 		Category: category,
 		Value:    25,
 	},
+	&cli.StringFlag{
+		Name:  "scaleway-user-data",
+		Usage: "Scaleway userdata template",
+		Sources: cli.NewValueSourceChain(
+			cli.EnvVar("WOODPECKER_SCALEWAY_USERDATA"),
+			cli.File(os.Getenv("WOODPECKER_SCALEWAY_USERDATA_FILE")),
+		),
+		Category: category,
+	},
 }
