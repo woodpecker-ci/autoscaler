@@ -1,6 +1,10 @@
 package aws
 
-import "github.com/urfave/cli/v3"
+import (
+	"os"
+
+	"github.com/urfave/cli/v3"
+)
 
 const Category = "AWS"
 
@@ -58,6 +62,15 @@ var ProviderFlags = []cli.Flag{
 		Name:     "aws-ssh-key-name",
 		Usage:    "ssh keypair name",
 		Sources:  cli.EnvVars("WOODPECKER_AWS_SSH_KEYNAME"),
+		Category: Category,
+	},
+	&cli.StringFlag{
+		Name:  "aws-user-data",
+		Usage: "aws userdata template",
+		Sources: cli.NewValueSourceChain(
+			cli.EnvVar("WOODPECKER_AWS_USERDATA"),
+			cli.File(os.Getenv("WOODPECKER_AWS_USERDATA_FILE")),
+		),
 		Category: Category,
 	},
 }
