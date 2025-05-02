@@ -28,6 +28,7 @@ var (
 )
 
 type Provider struct {
+	name             string
 	secretKey        string
 	accessKey        string
 	defaultProjectID string
@@ -42,6 +43,7 @@ type Provider struct {
 	storage          scw.Size
 	config           *config.Config
 	client           *scw.Client
+	userData         *template.Template
 }
 
 func New(_ context.Context, c *cli.Command, config *config.Config) (engine.Provider, error) {
@@ -66,6 +68,7 @@ func New(_ context.Context, c *cli.Command, config *config.Config) (engine.Provi
 	}
 
 	d := &Provider{
+		name:             "scaleway",
 		secretKey:        c.String("scaleway-secret-key"),
 		accessKey:        c.String("scaleway-access-key"),
 		defaultProjectID: c.String("scaleway-project"),
@@ -81,12 +84,25 @@ func New(_ context.Context, c *cli.Command, config *config.Config) (engine.Provi
 
 	zone := scw.Zone(c.String("scaleway-zone"))
 	if !zone.Exists() {
-		return nil, fmt.Errorf("%w: %s", ErrInvalidZone, zone.String())
+		return nil, fmt.Errorf("%s: %w: %s", d.name, ErrInvalidZone, zone.String())
 	}
 	d.zones = []scw.Zone{zone}
 
 	var err error
 	d.client, err = scw.NewClient(scw.WithDefaultProjectID(d.defaultProjectID), scw.WithAuth(d.accessKey, d.secretKey))
+	if err != nil {
+		return nil, fmt.Errorf("%s: scw.NewClient %w", d.name, err)
+	}
+
+	userDataStr := engine.CloudInitUserDataUbuntuDefault
+	if _userDataStr := c.String("scaleway-user-data"); _userDataStr != "" {
+		userDataStr = _userDataStr
+	}
+	userDataTmpl, err := template.New("user-data").Parse(userDataStr)
+	if err != nil {
+		return nil, fmt.Errorf("%s: template.New.Parse %w", d.name, err)
+	}
+	d.userData = userDataTmpl
 
 	return d, err
 }
@@ -239,14 +255,9 @@ func (p *Provider) createInstance(ctx context.Context, agent *woodpecker.Agent) 
 }
 
 func (p *Provider) setCloudInit(ctx context.Context, agent *woodpecker.Agent, inst *instance.Server) error {
-	tpl, err := template.New("user-data").Parse(engine.CloudInitUserDataUbuntuDefault)
+	userdataString, err := engine.RenderUserDataTemplate(p.config, agent, p.userData)
 	if err != nil {
-		return err
-	}
-
-	ud, err := engine.RenderUserDataTemplate(p.config, agent, tpl)
-	if err != nil {
-		return err
+		return fmt.Errorf("%s: RenderUserDataTemplate: %w", p.name, err)
 	}
 
 	api := instance.NewAPI(p.client)
@@ -255,7 +266,7 @@ func (p *Provider) setCloudInit(ctx context.Context, agent *woodpecker.Agent, in
 		Zone:     inst.Zone,
 		ServerID: inst.ID,
 		Key:      "cloud-init",
-		Content:  bytes.NewBufferString(ud),
+		Content:  bytes.NewBufferString(userdataString),
 	}
 
 	err = api.SetServerUserData(&req, scw.WithContext(ctx))
@@ -303,7 +314,7 @@ func (p *Provider) haltInstance(ctx context.Context, inst *instance.Server) erro
 func (p *Provider) resolveZones() error {
 	if p.region != nil {
 		if !p.region.Exists() {
-			return fmt.Errorf("%w: %s", ErrInvalidRegion, p.region.String())
+			return fmt.Errorf("%s: %w: %s", p.name, ErrInvalidRegion, p.region.String())
 		}
 
 		p.zones = p.region.GetZones()
@@ -317,7 +328,7 @@ func (p *Provider) resolveZones() error {
 
 	for _, zone := range p.zones {
 		if !zone.Exists() {
-			return fmt.Errorf("%w: %s", ErrInvalidZone, zone.String())
+			return fmt.Errorf("%s: %w: %s", p.name, ErrInvalidZone, zone.String())
 		}
 	}
 
