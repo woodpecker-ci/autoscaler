@@ -62,16 +62,15 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (engine.Pro
 	}
 	p.client = ec2.NewFromConfig(cfg)
 
-	userDataStr := engine.CloudInitUserDataUbuntuDefault
-	if config.UserData != "" {
-		userDataStr = config.UserData
+	// # TODO: Deprecated remove in v2.0
+	if u := c.String("aws-user-data"); u != "" {
+		log.Warn().Msg("aws-user-data is deprecated, please use provider-user-data instead")
+		userDataTmpl, err := template.New("user-data").Parse(u)
+		if err != nil {
+			return nil, fmt.Errorf("%s: template.New.Parse %w", p.name, err)
+		}
+		p.userDataTemplate = userDataTmpl
 	}
-
-	userDataTmpl, err := template.New("user-data").Parse(userDataStr)
-	if err != nil {
-		return nil, fmt.Errorf("%s: template.New.Parse %w", p.name, err)
-	}
-	p.userDataTemplate = userDataTmpl
 
 	return p, nil
 }
