@@ -36,14 +36,14 @@ type Provider struct {
 	lock                  sync.Mutex
 	subnetRR              int
 	sshKeyName            string
-	userData              *template.Template
+	userDataTemplate      *template.Template
 }
 
 func New(ctx context.Context, c *cli.Command, config *config.Config) (engine.Provider, error) {
 	if len(c.StringSlice("aws-subnets")) == 0 {
 		return nil, fmt.Errorf("aws-subnets must be set")
 	}
-	d := &Provider{
+	p := &Provider{
 		name:                  "aws",
 		config:                config,
 		instanceType:          c.String("aws-instance-type"),
@@ -56,28 +56,28 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (engine.Pro
 		useSpotInstances:      c.Bool("aws-use-spot-instances"),
 		sshKeyName:            c.String("aws-ssh-key-name"),
 	}
-	cfg, err := awsconfig.LoadDefaultConfig(ctx, awsconfig.WithRegion(d.region))
+	cfg, err := awsconfig.LoadDefaultConfig(ctx, awsconfig.WithRegion(p.region))
 	if err != nil {
 		return nil, fmt.Errorf("failed to load configuration, %w", err)
 	}
-	d.client = ec2.NewFromConfig(cfg)
+	p.client = ec2.NewFromConfig(cfg)
 
 	userDataStr := engine.CloudInitUserDataUbuntuDefault
-	if _userDataStr := c.String("aws-user-data"); _userDataStr != "" {
-		userDataStr = _userDataStr
+	if config.UserData != "" {
+		userDataStr = config.UserData
 	}
 
 	userDataTmpl, err := template.New("user-data").Parse(userDataStr)
 	if err != nil {
-		return nil, fmt.Errorf("%s: template.New.Parse %w", d.name, err)
+		return nil, fmt.Errorf("%s: template.New.Parse %w", p.name, err)
 	}
-	d.userData = userDataTmpl
+	p.userDataTemplate = userDataTmpl
 
-	return d, nil
+	return p, nil
 }
 
 func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
-	userData, err := engine.RenderUserDataTemplate(p.config, agent, p.userData)
+	userData, err := engine.RenderUserDataTemplate(p.config, agent, p.userDataTemplate)
 	if err != nil {
 		return fmt.Errorf("%s: engine.RenderUserDataTemplate: %w", p.name, err)
 	}

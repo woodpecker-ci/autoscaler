@@ -19,6 +19,20 @@ type Provider interface {
 // RenderUserDataTemplate renders the user data template for an Agent
 // using the provided configuration.
 func RenderUserDataTemplate(config *config.Config, agent *woodpecker.Agent, tmpl *template.Template) (string, error) {
+	var err error
+
+	switch {
+	case tmpl != nil:
+	case config.UserData != "":
+		tmpl, err = template.New("user-data").Parse(config.UserData)
+	default:
+		tmpl, err = template.New("user-data").Parse(CloudInitUserDataUbuntuDefault)
+	}
+
+	if err != nil {
+		return "", fmt.Errorf("template.New.Parse %w", err)
+	}
+
 	params := struct {
 		Image       string
 		Environment map[string]string
