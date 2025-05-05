@@ -36,13 +36,14 @@ type Provider struct {
 	lock                  sync.Mutex
 	subnetRR              int
 	sshKeyName            string
+	userDataTemplate      *template.Template
 }
 
 func New(ctx context.Context, c *cli.Command, config *config.Config) (engine.Provider, error) {
 	if len(c.StringSlice("aws-subnets")) == 0 {
 		return nil, fmt.Errorf("aws-subnets must be set")
 	}
-	d := &Provider{
+	p := &Provider{
 		name:                  "aws",
 		config:                config,
 		instanceType:          c.String("aws-instance-type"),
@@ -55,16 +56,31 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (engine.Pro
 		useSpotInstances:      c.Bool("aws-use-spot-instances"),
 		sshKeyName:            c.String("aws-ssh-key-name"),
 	}
-	cfg, err := awsconfig.LoadDefaultConfig(ctx, awsconfig.WithRegion(d.region))
+	cfg, err := awsconfig.LoadDefaultConfig(ctx, awsconfig.WithRegion(p.region))
 	if err != nil {
 		return nil, fmt.Errorf("failed to load configuration, %w", err)
 	}
-	d.client = ec2.NewFromConfig(cfg)
+	p.client = ec2.NewFromConfig(cfg)
 
-	return d, nil
+	// # TODO: Deprecated remove in v2.0
+	if u := c.String("aws-user-data"); u != "" {
+		log.Warn().Msg("aws-user-data is deprecated, please use provider-user-data instead")
+		userDataTmpl, err := template.New("user-data").Parse(u)
+		if err != nil {
+			return nil, fmt.Errorf("%s: template.New.Parse %w", p.name, err)
+		}
+		p.userDataTemplate = userDataTmpl
+	}
+
+	return p, nil
 }
 
 func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
+	userData, err := engine.RenderUserDataTemplate(p.config, agent, p.userDataTemplate)
+	if err != nil {
+		return fmt.Errorf("%s: engine.RenderUserDataTemplate: %w", p.name, err)
+	}
+
 	// Generate base tags for instance
 	tags := []types.Tag{{
 		Key:   aws.String("Name"),
@@ -129,16 +145,6 @@ func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 
 	if p.sshKeyName != "" {
 		runInstancesInput.KeyName = aws.String(p.sshKeyName)
-	}
-
-	userDataStr := engine.CloudInitUserDataUbuntuDefault
-	userDataTmpl, err := template.New("user-data").Parse(userDataStr)
-	if err != nil {
-		return fmt.Errorf("%s: template.New.Parse %w", p.name, err)
-	}
-	userData, err := engine.RenderUserDataTemplate(p.config, agent, userDataTmpl)
-	if err != nil {
-		return fmt.Errorf("%s: engine.RenderUserDataTemplate: %w", p.name, err)
 	}
 
 	runInstancesInput.UserData = aws.String(b64.StdEncoding.EncodeToString([]byte(userData)))

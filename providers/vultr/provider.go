@@ -27,16 +27,16 @@ var (
 )
 
 type Provider struct {
-	plan       string
-	userData   *template.Template
-	image      string
-	sshKeys    []string
-	labels     map[string]string
-	config     *config.Config
-	region     string
-	enableIPv6 bool
-	name       string
-	client     *govultr.Client
+	plan             string
+	userDataTemplate *template.Template
+	image            string
+	sshKeys          []string
+	labels           map[string]string
+	config           *config.Config
+	region           string
+	enableIPv6       bool
+	name             string
+	client           *govultr.Client
 }
 
 func New(ctx context.Context, c *cli.Command, config *config.Config) (engine.Provider, error) {
@@ -57,15 +57,15 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (engine.Pro
 		return nil, fmt.Errorf("%s: setupKeypair: %w", p.name, err)
 	}
 
-	userDataStr := engine.CloudInitUserDataUbuntuDefault
-	if _userDataStr := c.String("vultr-user-data"); _userDataStr != "" {
-		userDataStr = _userDataStr
+	// # TODO: Deprecated remove in v2.0
+	if u := c.String("vultr-user-data"); u != "" {
+		log.Warn().Msg("vultr-user-data is deprecated, please use provider-user-data instead")
+		userDataTmpl, err := template.New("user-data").Parse(u)
+		if err != nil {
+			return nil, fmt.Errorf("%s: template.New.Parse %w", p.name, err)
+		}
+		p.userDataTemplate = userDataTmpl
 	}
-	userDataTmpl, err := template.New("user-data").Parse(userDataStr)
-	if err != nil {
-		return nil, fmt.Errorf("%s: template.New.Parse %w", p.name, err)
-	}
-	p.userData = userDataTmpl
 
 	defaultLabels := make(map[string]string, 0)
 	defaultLabels[engine.LabelPool] = p.config.PoolID
@@ -86,9 +86,9 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (engine.Pro
 }
 
 func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
-	userdataString, err := engine.RenderUserDataTemplate(p.config, agent, p.userData)
+	userData, err := engine.RenderUserDataTemplate(p.config, agent, p.userDataTemplate)
 	if err != nil {
-		return fmt.Errorf("%s: RenderUserDataTemplate: %w", p.name, err)
+		return fmt.Errorf("%s: engine.RenderUserDataTemplate: %w", p.name, err)
 	}
 
 	image := -1
@@ -112,7 +112,7 @@ func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 
 	instance, _, err := p.client.Instance.Create(ctx, &govultr.InstanceCreateReq{
 		Hostname:        agent.Name,
-		UserData:        base64.StdEncoding.EncodeToString([]byte(userdataString)),
+		UserData:        base64.StdEncoding.EncodeToString([]byte(userData)),
 		Plan:            p.plan,
 		Region:          p.region,
 		Label:           agent.Name,

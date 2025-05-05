@@ -38,8 +38,9 @@ var ProviderFlags = []cli.Flag{
 		Sources:  cli.EnvVars("WOODPECKER_VULTR_SSH_KEYS"),
 		Category: category,
 	},
+	// TODO: Deprecated remove in v2.0
 	&cli.StringFlag{
-		Name:  "vultr-user-data",
+		Name:  "vultr-user-data (deprecated)",
 		Usage: "vultr userdata template",
 		Sources: cli.NewValueSourceChain(
 			cli.EnvVar("WOODPECKER_VULTR_USERDATA"),

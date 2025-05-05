@@ -56,7 +56,7 @@ var ProviderFlags = []cli.Flag{
 	},
 	&cli.StringFlag{
 		Name:     "aws-ssh-key-name",
-		Usage:    "ssh keypair name",
+		Usage:    "SSH keypair name",
 		Sources:  cli.EnvVars("WOODPECKER_AWS_SSH_KEYNAME"),
 		Category: Category,
 	},
