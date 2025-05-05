@@ -12,6 +12,7 @@
 
 ### 📦️ Dependency
 
+- chore(deps): update docker.io/woodpeckerci/plugin-docker-buildx docker tag to v6 [[#340](https://github.com/woodpecker-ci/autoscaler/pull/340)]
 - chore(deps): update pre-commit non-major [[#341](https://github.com/woodpecker-ci/autoscaler/pull/341)]
 - fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.213.0 [[#335](https://github.com/woodpecker-ci/autoscaler/pull/335)]
 - fix(deps): update module github.com/urfave/cli/v3 to v3.3.2 [[#334](https://github.com/woodpecker-ci/autoscaler/pull/334)]
