@@ -1,6 +1,14 @@
 # Changelog
 
-## [1.0.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.0.1) - 2025-05-04
+## [1.1.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.0) - 2025-05-05
+
+### ❤️ Thanks to all contributors! ❤️
+
+@xoxys
+
+### 📈 Enhancement
+
+- Introduce global user-data flag [[#337](https://github.com/woodpecker-ci/autoscaler/pull/337)]
 
 ### 📦️ Dependency
 
