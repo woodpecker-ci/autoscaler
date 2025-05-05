@@ -13,5 +13,6 @@ type Config struct {
 	GRPCSecure             bool
 	AgentInactivityTimeout time.Duration
 	AgentIdleTimeout       time.Duration
+	UserData               string
 	FilterLabels           string
 }

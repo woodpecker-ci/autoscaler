@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
-	"text/template"
 	"time"
 
 	"github.com/docker/go-units"
@@ -65,7 +64,7 @@ func New(_ context.Context, c *cli.Command, config *config.Config) (engine.Provi
 		return nil, fmt.Errorf("%w: scaleway-access-key", ErrParameterNotSet)
 	}
 
-	d := &Provider{
+	p := &Provider{
 		secretKey:        c.String("scaleway-secret-key"),
 		accessKey:        c.String("scaleway-access-key"),
 		defaultProjectID: c.String("scaleway-project"),
@@ -83,12 +82,12 @@ func New(_ context.Context, c *cli.Command, config *config.Config) (engine.Provi
 	if !zone.Exists() {
 		return nil, fmt.Errorf("%w: %s", ErrInvalidZone, zone.String())
 	}
-	d.zones = []scw.Zone{zone}
+	p.zones = []scw.Zone{zone}
 
 	var err error
-	d.client, err = scw.NewClient(scw.WithDefaultProjectID(d.defaultProjectID), scw.WithAuth(d.accessKey, d.secretKey))
+	p.client, err = scw.NewClient(scw.WithDefaultProjectID(p.defaultProjectID), scw.WithAuth(p.accessKey, p.secretKey))
 
-	return d, err
+	return p, err
 }
 
 func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
@@ -239,12 +238,7 @@ func (p *Provider) createInstance(ctx context.Context, agent *woodpecker.Agent) 
 }
 
 func (p *Provider) setCloudInit(ctx context.Context, agent *woodpecker.Agent, inst *instance.Server) error {
-	tpl, err := template.New("user-data").Parse(engine.CloudInitUserDataUbuntuDefault)
-	if err != nil {
-		return err
-	}
-
-	ud, err := engine.RenderUserDataTemplate(p.config, agent, tpl)
+	ud, err := engine.RenderUserDataTemplate(p.config, agent, nil)
 	if err != nil {
 		return err
 	}

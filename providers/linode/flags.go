@@ -52,9 +52,10 @@ var ProviderFlags = []cli.Flag{
 		Sources:  cli.EnvVars("WOODPECKER_LINODE_ROOT_PASS"),
 		Category: category,
 	},
+	// TODO: Deprecated remove in v2.0
 	&cli.StringFlag{
 		Name:  "linode-user-data",
-		Usage: "Linode userdata template",
+		Usage: "Linode userdata template (deprecated)",
 		Sources: cli.NewValueSourceChain(
 			cli.EnvVar("WOODPECKER_LINODE_USERDATA"),
 			cli.File(os.Getenv("WOODPECKER_LINODE_USERDATA_FILE")),

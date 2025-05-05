@@ -82,11 +82,11 @@ func TestDeployAgent(t *testing.T) {
 			tt.setupMocks(mockClient)
 
 			provider := &Provider{
-				client:     mockClient,
-				config:     &config.Config{},
-				userData:   template.Must(template.New("").Parse(tt.userdata)),
-				sshKeys:    tt.sshkeys,
-				serverType: []string{"cx11"},
+				client:           mockClient,
+				config:           &config.Config{},
+				userDataTemplate: template.Must(template.New("").Parse(tt.userdata)),
+				sshKeys:          tt.sshkeys,
+				serverType:       []string{"cx11"},
 			}
 
 			if tt.serverType != nil {

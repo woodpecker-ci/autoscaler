@@ -9,6 +9,7 @@ import (
 	"text/template"
 
 	"github.com/linode/linodego"
+	"github.com/rs/zerolog/log"
 	"github.com/urfave/cli/v3"
 	"golang.org/x/oauth2"
 
@@ -63,21 +64,21 @@ cd /root && docker compose up -d`
 
 // editorconfig-checker-enable
 type Provider struct {
-	region        string
-	name          string
-	instanceType  string
-	image         string
-	config        *config.Config
-	sshKey        string
-	rootPass      string
-	stackscriptID int
-	userData      *template.Template
-	tags          []string
-	client        *linodego.Client
+	region           string
+	name             string
+	instanceType     string
+	image            string
+	config           *config.Config
+	sshKey           string
+	rootPass         string
+	stackscriptID    int
+	userDataTemplate *template.Template
+	tags             []string
+	client           *linodego.Client
 }
 
 func New(ctx context.Context, c *cli.Command, config *config.Config) (engine.Provider, error) {
-	d := &Provider{
+	p := &Provider{
 		name:          "linode",
 		region:        c.String("linode-region"),
 		instanceType:  c.String("linode-instance-type"),
@@ -88,106 +89,111 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (engine.Pro
 		config:        config,
 	}
 
-	d.client = newClient(c.String("linode-api-token"))
+	p.client = newClient(c.String("linode-api-token"))
 
-	err := d.setupKeypair(ctx)
+	err := p.setupKeypair(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("%s: setupKeypair: %w", d.name, err)
+		return nil, fmt.Errorf("%s: setupKeypair: %w", p.name, err)
 	}
 
-	userDataStr := engine.CloudInitUserDataUbuntuDefault
+	var userDataStr string
+
 	// TODO: remove once linode user-data feature is out of beta
-	if d.stackscriptID != -1 {
+	if p.stackscriptID != -1 {
 		userDataStr = stackscriptUserDataDefault
 	}
-	if _userDataStr := c.String("linode-user-data"); _userDataStr != "" {
-		userDataStr = _userDataStr
+	// # TODO: Deprecated remove in v2.0
+	if u := c.String("linode-user-data"); u != "" {
+		log.Warn().Msg("linode-user-data is deprecated, please use provider-user-data instead")
+		userDataStr = u
 	}
-	userDataTmpl, err := template.New("user-data").Parse(userDataStr)
-	if err != nil {
-		return nil, fmt.Errorf("%s: template.New.Parse %w", d.name, err)
+	if userDataStr != "" {
+		userDataTmpl, err := template.New("user-data").Parse(userDataStr)
+		if err != nil {
+			return nil, fmt.Errorf("%s: template.New.Parse %w", p.name, err)
+		}
+		p.userDataTemplate = userDataTmpl
 	}
-	d.userData = userDataTmpl
 
-	d.tags = c.StringSlice("linode-tags")
+	p.tags = c.StringSlice("linode-tags")
 
-	return d, nil
+	return p, nil
 }
 
-func (d *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
-	userdataString, err := engine.RenderUserDataTemplate(d.config, agent, d.userData)
+func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
+	userData, err := engine.RenderUserDataTemplate(p.config, agent, p.userDataTemplate)
 	if err != nil {
-		return fmt.Errorf("%s: RenderUserDataTemplate: %w", d.name, err)
+		return fmt.Errorf("%s: engine.RenderUserDataTemplate: %w", p.name, err)
 	}
-	userData := b64.StdEncoding.EncodeToString([]byte(userdataString))
+	userDataString := b64.StdEncoding.EncodeToString([]byte(userData))
 
 	userdataMap := make(map[string]string)
 
 	var metadata *linodego.InstanceMetadataOptions
 
 	// TODO: remove once linode user-data is out of beta
-	if d.stackscriptID == -1 {
+	if p.stackscriptID == -1 {
 		metadata = &linodego.InstanceMetadataOptions{
-			UserData: userData,
+			UserData: userDataString,
 		}
 	} else {
-		userdataMap["userdata"] = userData
+		userdataMap["userdata"] = userDataString
 	}
 
-	_, err = d.client.CreateInstance(ctx, linodego.InstanceCreateOptions{
-		Region:          d.region,
-		Type:            d.instanceType,
+	_, err = p.client.CreateInstance(ctx, linodego.InstanceCreateOptions{
+		Region:          p.region,
+		Type:            p.instanceType,
 		Label:           agent.Name,
-		Image:           d.image,
-		StackScriptID:   d.stackscriptID,
+		Image:           p.image,
+		StackScriptID:   p.stackscriptID,
 		StackScriptData: userdataMap,
-		AuthorizedKeys:  []string{d.sshKey},
-		RootPass:        d.rootPass,
-		Tags:            d.tags,
+		AuthorizedKeys:  []string{p.sshKey},
+		RootPass:        p.rootPass,
+		Tags:            p.tags,
 		Metadata:        metadata,
 	})
 	if err != nil {
-		return fmt.Errorf("%s: CreateInstance: %w", d.name, err)
+		return fmt.Errorf("%s: CreateInstance: %w", p.name, err)
 	}
 
 	return nil
 }
 
-func (d *Provider) getAgent(ctx context.Context, agent *woodpecker.Agent) (*linodego.Instance, error) {
+func (p *Provider) getAgent(ctx context.Context, agent *woodpecker.Agent) (*linodego.Instance, error) {
 	f := linodego.Filter{}
 	f.AddField(linodego.Eq, "label", agent.Name)
 	fStr, err := f.MarshalJSON()
 	if err != nil {
-		return nil, fmt.Errorf("%s: getAgent: %w", d.name, err)
+		return nil, fmt.Errorf("%s: getAgent: %w", p.name, err)
 	}
 	opts := linodego.NewListOptions(0, string(fStr))
-	server, err := d.client.ListInstances(ctx, opts)
+	server, err := p.client.ListInstances(ctx, opts)
 	if err != nil {
-		return nil, fmt.Errorf("%s: ListInstances %w", d.name, err)
+		return nil, fmt.Errorf("%s: ListInstances %w", p.name, err)
 	}
 
 	return &server[0], nil
 }
 
-func (d *Provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) error {
-	server, err := d.getAgent(ctx, agent)
+func (p *Provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) error {
+	server, err := p.getAgent(ctx, agent)
 	if err != nil {
-		return fmt.Errorf("%s: getAgent %w", d.name, err)
+		return fmt.Errorf("%s: getAgent %w", p.name, err)
 	}
 
 	if server == nil {
 		return nil
 	}
 
-	err = d.client.DeleteInstance(ctx, server.ID)
+	err = p.client.DeleteInstance(ctx, server.ID)
 	if err != nil {
-		return fmt.Errorf("%s: DeleteInstance %w", d.name, err)
+		return fmt.Errorf("%s: DeleteInstance %w", p.name, err)
 	}
 
 	return nil
 }
 
-func (d *Provider) ListDeployedAgentNames(ctx context.Context) ([]string, error) {
+func (p *Provider) ListDeployedAgentNames(ctx context.Context) ([]string, error) {
 	var names []string
 
 	f := linodego.Filter{}
@@ -197,9 +203,9 @@ func (d *Provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 		return names, err
 	}
 	opts := linodego.NewListOptions(0, string(fStr))
-	servers, err := d.client.ListInstances(ctx, opts)
+	servers, err := p.client.ListInstances(ctx, opts)
 	if err != nil {
-		return nil, fmt.Errorf("%s: ListInstances %w", d.name, err)
+		return nil, fmt.Errorf("%s: ListInstances %w", p.name, err)
 	}
 
 	for _, server := range servers {
@@ -209,8 +215,8 @@ func (d *Provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 	return names, nil
 }
 
-func (d *Provider) setupKeypair(ctx context.Context) error {
-	res, err := d.client.ListSSHKeys(ctx, nil)
+func (p *Provider) setupKeypair(ctx context.Context) error {
+	res, err := p.client.ListSSHKeys(ctx, nil)
 	if err != nil {
 		return err
 	}
@@ -227,7 +233,7 @@ func (d *Provider) setupKeypair(ctx context.Context) error {
 		if !ok {
 			continue
 		}
-		d.sshKey = fingerprint
+		p.sshKey = fingerprint
 
 		return nil
 	}
@@ -236,7 +242,7 @@ func (d *Provider) setupKeypair(ctx context.Context) error {
 	// one keypair already created we will select the first
 	// in the list.
 	if len(res) > 0 {
-		d.sshKey = res[0].SSHKey
+		p.sshKey = res[0].SSHKey
 		return nil
 	}
 

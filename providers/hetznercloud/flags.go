@@ -25,7 +25,7 @@ var ProviderFlags = []cli.Flag{
 		Sources:  cli.EnvVars("WOODPECKER_HETZNERCLOUD_SERVER_TYPE"),
 		Category: category,
 	},
-	// TODO: Deprecated remove in v1.0
+	// TODO: Deprecated remove in v2.0
 	&cli.StringFlag{
 		Name:     "hetznercloud-location",
 		Value:    "nbg1",
@@ -39,9 +39,10 @@ var ProviderFlags = []cli.Flag{
 		Sources:  cli.EnvVars("WOODPECKER_HETZNERCLOUD_SSH_KEYS"),
 		Category: category,
 	},
+	// TODO: Deprecated remove in v2.0
 	&cli.StringFlag{
 		Name:  "hetznercloud-user-data",
-		Usage: "hetzner cloud userdata template",
+		Usage: "hetzner cloud userdata template (deprecated)",
 		Sources: cli.NewValueSourceChain(
 			cli.EnvVar("WOODPECKER_HETZNERCLOUD_USERDATA"),
 			cli.File(os.Getenv("WOODPECKER_HETZNERCLOUD_USERDATA_FILE")),

@@ -89,6 +89,14 @@ var flags = []cli.Flag{
 		Sources: cli.EnvVars("WOODPECKER_PROVIDER"),
 	},
 	&cli.StringFlag{
+		Name:  "provider-user-data",
+		Usage: "userdata template to setup the provider instance",
+		Sources: cli.NewValueSourceChain(
+			cli.EnvVar("WOODPECKER_PROVIDER_USERDATA"),
+			cli.File(os.Getenv("WOODPECKER_PROVIDER_USERDATA_FILE")),
+		),
+	},
+	&cli.StringFlag{
 		Name:    "agent-image",
 		Value:   "woodpeckerci/woodpecker-agent:next",
 		Usage:   "agent image to use",
