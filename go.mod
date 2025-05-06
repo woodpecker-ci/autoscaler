@@ -7,7 +7,7 @@ toolchain go1.24.2
 require (
 	github.com/aws/aws-sdk-go-v2 v1.36.3
 	github.com/aws/aws-sdk-go-v2/config v1.29.14
-	github.com/aws/aws-sdk-go-v2/service/ec2 v1.213.0
+	github.com/aws/aws-sdk-go-v2/service/ec2 v1.214.0
 	github.com/docker/go-units v0.5.0
 	github.com/hetznercloud/hcloud-go/v2 v2.21.0
 	github.com/joho/godotenv v1.5.1
@@ -19,8 +19,8 @@ require (
 	github.com/vultr/govultr/v3 v3.19.1
 	go.woodpecker-ci.org/woodpecker/v3 v3.5.2
 	golang.org/x/exp v0.0.0-20250408133849-7e4ce0ab07d0
-	golang.org/x/net v0.39.0
-	golang.org/x/oauth2 v0.29.0
+	golang.org/x/net v0.40.0
+	golang.org/x/oauth2 v0.30.0
 )
 
 require (
@@ -51,8 +51,8 @@ require (
 	github.com/prometheus/common v0.62.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
-	golang.org/x/sys v0.32.0 // indirect
-	golang.org/x/text v0.24.0 // indirect
+	golang.org/x/sys v0.33.0 // indirect
+	golang.org/x/text v0.25.0 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
