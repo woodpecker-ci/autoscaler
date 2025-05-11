@@ -12,6 +12,7 @@
 
 ### 📦️ Dependency
 
+- chore(deps): update mstruebing/editorconfig-checker docker tag to v3.3.0 [[#346](https://github.com/woodpecker-ci/autoscaler/pull/346)]
 - fix(deps): update golang deps non-major [[#347](https://github.com/woodpecker-ci/autoscaler/pull/347)]
 - fix(deps): update golang deps non-major [[#344](https://github.com/woodpecker-ci/autoscaler/pull/344)]
 - fix(deps): update golang deps non-major [[#343](https://github.com/woodpecker-ci/autoscaler/pull/343)]
