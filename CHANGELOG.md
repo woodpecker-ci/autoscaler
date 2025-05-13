@@ -12,6 +12,7 @@
 
 ### 📦️ Dependency
 
+- fix(deps): update golang.org/x/exp digest to ce4c2cf [[#345](https://github.com/woodpecker-ci/autoscaler/pull/345)]
 - fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.218.0 [[#348](https://github.com/woodpecker-ci/autoscaler/pull/348)]
 - chore(deps): update mstruebing/editorconfig-checker docker tag to v3.3.0 [[#346](https://github.com/woodpecker-ci/autoscaler/pull/346)]
 - fix(deps): update golang deps non-major [[#347](https://github.com/woodpecker-ci/autoscaler/pull/347)]
