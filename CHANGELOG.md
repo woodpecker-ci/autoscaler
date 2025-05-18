@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.1.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.0) - 2025-05-13
+## [1.1.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.0) - 2025-05-18
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -12,6 +12,7 @@
 
 ### 📦️ Dependency
 
+- chore(deps): update pre-commit hook igorshubovych/markdownlint-cli to v0.45.0 [[#349](https://github.com/woodpecker-ci/autoscaler/pull/349)]
 - fix(deps): update golang.org/x/exp digest to ce4c2cf [[#345](https://github.com/woodpecker-ci/autoscaler/pull/345)]
 - fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.218.0 [[#348](https://github.com/woodpecker-ci/autoscaler/pull/348)]
 - chore(deps): update mstruebing/editorconfig-checker docker tag to v3.3.0 [[#346](https://github.com/woodpecker-ci/autoscaler/pull/346)]
