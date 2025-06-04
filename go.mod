@@ -9,7 +9,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.29.14
 	github.com/aws/aws-sdk-go-v2/service/ec2 v1.224.0
 	github.com/docker/go-units v0.5.0
-	github.com/hetznercloud/hcloud-go/v2 v2.21.0
+	github.com/hetznercloud/hcloud-go/v2 v2.21.1
 	github.com/joho/godotenv v1.5.1
 	github.com/linode/linodego v1.52.1
 	github.com/rs/zerolog v1.34.0
