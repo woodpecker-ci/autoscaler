@@ -12,6 +12,7 @@
 
 ### 📦️ Dependency
 
+- fix(deps): update golang deps non-major [[#361](https://github.com/woodpecker-ci/autoscaler/pull/361)]
 - fix(deps): update golang.org/x/exp digest to dcc06ee [[#360](https://github.com/woodpecker-ci/autoscaler/pull/360)]
 - fix(deps): update module github.com/hetznercloud/hcloud-go/v2 to v2.21.1 [[#359](https://github.com/woodpecker-ci/autoscaler/pull/359)]
 - fix(deps): update module github.com/linode/linodego to v1.52.1 [[#358](https://github.com/woodpecker-ci/autoscaler/pull/358)]
