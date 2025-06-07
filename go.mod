@@ -2,12 +2,12 @@ module go.woodpecker-ci.org/autoscaler
 
 go 1.24.0
 
-toolchain go1.24.3
+toolchain go1.24.4
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.36.3
-	github.com/aws/aws-sdk-go-v2/config v1.29.14
-	github.com/aws/aws-sdk-go-v2/service/ec2 v1.224.0
+	github.com/aws/aws-sdk-go-v2/config v1.29.15
+	github.com/aws/aws-sdk-go-v2/service/ec2 v1.224.1
 	github.com/docker/go-units v0.5.0
 	github.com/hetznercloud/hcloud-go/v2 v2.21.1
 	github.com/joho/godotenv v1.5.1
@@ -17,14 +17,14 @@ require (
 	github.com/stretchr/testify v1.10.0
 	github.com/urfave/cli/v3 v3.3.3
 	github.com/vultr/govultr/v3 v3.20.0
-	go.woodpecker-ci.org/woodpecker/v3 v3.6.0
+	go.woodpecker-ci.org/woodpecker/v3 v3.7.0
 	golang.org/x/exp v0.0.0-20250606033433-dcc06ee1d476
-	golang.org/x/net v0.40.0
+	golang.org/x/net v0.41.0
 	golang.org/x/oauth2 v0.30.0
 )
 
 require (
-	github.com/aws/aws-sdk-go-v2/credentials v1.17.67 // indirect
+	github.com/aws/aws-sdk-go-v2/credentials v1.17.68 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.30 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/configsources v1.3.34 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.6.34 // indirect
@@ -33,7 +33,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.12.15 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sso v1.25.3 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.30.1 // indirect
-	github.com/aws/aws-sdk-go-v2/service/sts v1.33.19 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sts v1.33.20 // indirect
 	github.com/aws/smithy-go v1.22.2 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
@@ -52,7 +52,7 @@ require (
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	golang.org/x/sys v0.33.0 // indirect
-	golang.org/x/text v0.25.0 // indirect
+	golang.org/x/text v0.26.0 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
