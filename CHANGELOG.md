@@ -1,5 +1,50 @@
 # Changelog
 
+## [1.1.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.0) - 2025-06-21
+
+### ❤️ Thanks to all contributors! ❤️
+
+@xoxys
+
+### 📈 Enhancement
+
+- Introduce global user-data flag [[#337](https://github.com/woodpecker-ci/autoscaler/pull/337)]
+
+### 📦️ Dependency
+
+- fix(deps): update module github.com/vultr/govultr/v3 to v3.21.0 [[#367](https://github.com/woodpecker-ci/autoscaler/pull/367)]
+- fix(deps): update golang.org/x/exp digest to b7579e2 [[#366](https://github.com/woodpecker-ci/autoscaler/pull/366)]
+- fix(deps): update golang deps non-major [[#365](https://github.com/woodpecker-ci/autoscaler/pull/365)]
+- fix(deps): update module github.com/urfave/cli/v3 to v3.3.8 [[#364](https://github.com/woodpecker-ci/autoscaler/pull/364)]
+- fix(deps): update golang deps non-major [[#363](https://github.com/woodpecker-ci/autoscaler/pull/363)]
+- fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.225.0 [[#362](https://github.com/woodpecker-ci/autoscaler/pull/362)]
+- fix(deps): update golang deps non-major [[#361](https://github.com/woodpecker-ci/autoscaler/pull/361)]
+- fix(deps): update golang.org/x/exp digest to dcc06ee [[#360](https://github.com/woodpecker-ci/autoscaler/pull/360)]
+- fix(deps): update module github.com/hetznercloud/hcloud-go/v2 to v2.21.1 [[#359](https://github.com/woodpecker-ci/autoscaler/pull/359)]
+- fix(deps): update module github.com/linode/linodego to v1.52.1 [[#358](https://github.com/woodpecker-ci/autoscaler/pull/358)]
+- fix(deps): update golang.org/x/exp digest to b6e5de4 [[#357](https://github.com/woodpecker-ci/autoscaler/pull/357)]
+- fix(deps): update golang.org/x/exp digest to 65e9200 [[#356](https://github.com/woodpecker-ci/autoscaler/pull/356)]
+- fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.224.0 [[#355](https://github.com/woodpecker-ci/autoscaler/pull/355)]
+- fix(deps): update golang deps non-major [[#354](https://github.com/woodpecker-ci/autoscaler/pull/354)]
+- fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.222.0 [[#353](https://github.com/woodpecker-ci/autoscaler/pull/353)]
+- fix(deps): update golang deps non-major [[#352](https://github.com/woodpecker-ci/autoscaler/pull/352)]
+- fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.220.0 [[#351](https://github.com/woodpecker-ci/autoscaler/pull/351)]
+- fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.219.0 [[#350](https://github.com/woodpecker-ci/autoscaler/pull/350)]
+- chore(deps): update pre-commit hook igorshubovych/markdownlint-cli to v0.45.0 [[#349](https://github.com/woodpecker-ci/autoscaler/pull/349)]
+- fix(deps): update golang.org/x/exp digest to ce4c2cf [[#345](https://github.com/woodpecker-ci/autoscaler/pull/345)]
+- fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.218.0 [[#348](https://github.com/woodpecker-ci/autoscaler/pull/348)]
+- chore(deps): update mstruebing/editorconfig-checker docker tag to v3.3.0 [[#346](https://github.com/woodpecker-ci/autoscaler/pull/346)]
+- fix(deps): update golang deps non-major [[#347](https://github.com/woodpecker-ci/autoscaler/pull/347)]
+- fix(deps): update golang deps non-major [[#344](https://github.com/woodpecker-ci/autoscaler/pull/344)]
+- fix(deps): update golang deps non-major [[#343](https://github.com/woodpecker-ci/autoscaler/pull/343)]
+- fix(deps): update golang deps non-major [[#342](https://github.com/woodpecker-ci/autoscaler/pull/342)]
+- chore(deps): update docker.io/woodpeckerci/plugin-docker-buildx docker tag to v6 [[#340](https://github.com/woodpecker-ci/autoscaler/pull/340)]
+- chore(deps): update pre-commit non-major [[#341](https://github.com/woodpecker-ci/autoscaler/pull/341)]
+- fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.213.0 [[#335](https://github.com/woodpecker-ci/autoscaler/pull/335)]
+- fix(deps): update module github.com/urfave/cli/v3 to v3.3.2 [[#334](https://github.com/woodpecker-ci/autoscaler/pull/334)]
+- fix(deps): update module github.com/urfave/cli/v3 to v3.3.1 [[#333](https://github.com/woodpecker-ci/autoscaler/pull/333)]
+- chore(deps): update pre-commit hook golangci/golangci-lint to v2.1.5 [[#331](https://github.com/woodpecker-ci/autoscaler/pull/331)]
+
 ## [1.0.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.0.0) - 2025-04-24
 
 ### ❤️ Thanks to all contributors! ❤️
