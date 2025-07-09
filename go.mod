@@ -2,7 +2,7 @@ module go.woodpecker-ci.org/autoscaler
 
 go 1.24.0
 
-toolchain go1.24.4
+toolchain go1.24.5
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.36.5
@@ -13,7 +13,7 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/linode/linodego v1.53.0
 	github.com/rs/zerolog v1.34.0
-	github.com/scaleway/scaleway-sdk-go v1.0.0-beta.33
+	github.com/scaleway/scaleway-sdk-go v1.0.0-beta.34
 	github.com/stretchr/testify v1.10.0
 	github.com/urfave/cli/v3 v3.3.8
 	github.com/vultr/govultr/v3 v3.21.0
