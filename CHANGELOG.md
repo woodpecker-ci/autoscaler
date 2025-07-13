@@ -12,6 +12,7 @@
 
 ### 📦️ Dependency
 
+- fix(deps): update golang.org/x/exp digest to 6ae5c78 [[#382](https://github.com/woodpecker-ci/autoscaler/pull/382)]
 - fix(deps): update module github.com/hetznercloud/hcloud-go/v2 to v2.22.0 [[#384](https://github.com/woodpecker-ci/autoscaler/pull/384)]
 - fix(deps): update module golang.org/x/net to v0.42.0 [[#381](https://github.com/woodpecker-ci/autoscaler/pull/381)]
 - fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.231.0 [[#380](https://github.com/woodpecker-ci/autoscaler/pull/380)]
