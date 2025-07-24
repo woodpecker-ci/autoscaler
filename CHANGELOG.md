@@ -4,6 +4,7 @@
 
 ### 📦️ Dependency
 
+- fix(deps): update golang.org/x/exp digest to 645b1fa [[#389](https://github.com/woodpecker-ci/autoscaler/pull/389)]
 - fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.235.0 [[#390](https://github.com/woodpecker-ci/autoscaler/pull/390)]
 - fix(deps): update golang deps non-major [[#388](https://github.com/woodpecker-ci/autoscaler/pull/388)]
 - fix(deps): update module github.com/vultr/govultr/v3 to v3.21.1 [[#387](https://github.com/woodpecker-ci/autoscaler/pull/387)]
