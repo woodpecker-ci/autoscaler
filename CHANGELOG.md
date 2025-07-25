@@ -1,4 +1,4 @@
-# Changelog
+# Changelog done
 
 ## [1.1.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.0) - 2025-07-13
 
