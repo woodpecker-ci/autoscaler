@@ -18,3 +18,4 @@ indent_size = 1
 
 [Makefile]
 indent_style = tab
+enter
