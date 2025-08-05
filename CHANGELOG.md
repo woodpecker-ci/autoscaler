@@ -1,9 +1,10 @@
 # Changelog
 
-## [1.1.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.1) - 2025-07-29
+## [1.1.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.1) - 2025-08-05
 
 ### 📦️ Dependency
 
+- fix(deps): update golang deps non-major [[#398](https://github.com/woodpecker-ci/autoscaler/pull/398)]
 - fix(deps): update golang deps non-major [[#395](https://github.com/woodpecker-ci/autoscaler/pull/395)]
 - fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.236.0 [[#394](https://github.com/woodpecker-ci/autoscaler/pull/394)]
 - chore(deps): update pre-commit hook golangci/golangci-lint to v2.3.0 [[#393](https://github.com/woodpecker-ci/autoscaler/pull/393)]
@@ -12,6 +13,10 @@
 - fix(deps): update golang deps non-major [[#388](https://github.com/woodpecker-ci/autoscaler/pull/388)]
 - fix(deps): update module github.com/vultr/govultr/v3 to v3.21.1 [[#387](https://github.com/woodpecker-ci/autoscaler/pull/387)]
 - fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.232.0 [[#385](https://github.com/woodpecker-ci/autoscaler/pull/385)]
+
+### Misc
+
+- [pre-commit.ci] pre-commit autoupdate [[#397](https://github.com/woodpecker-ci/autoscaler/pull/397)]
 
 ## [1.1.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.0) - 2025-07-13
 
