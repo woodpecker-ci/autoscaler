@@ -1,9 +1,10 @@
 # Changelog
 
-## [1.1.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.1) - 2025-08-07
+## [1.1.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.1) - 2025-08-08
 
 ### 📦️ Dependency
 
+- fix(deps): update module golang.org/x/net to v0.43.0 [[#400](https://github.com/woodpecker-ci/autoscaler/pull/400)]
 - fix(deps): update golang deps non-major [[#399](https://github.com/woodpecker-ci/autoscaler/pull/399)]
 - fix(deps): update golang deps non-major [[#398](https://github.com/woodpecker-ci/autoscaler/pull/398)]
 - fix(deps): update golang deps non-major [[#395](https://github.com/woodpecker-ci/autoscaler/pull/395)]
