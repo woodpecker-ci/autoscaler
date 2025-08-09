@@ -4,7 +4,7 @@ when:
 
 steps:
   release:
-    image: woodpeckerci/plugin-ready-release-go:3.3.0
+    image: woodpeckerci/plugin-ready-release-go:3.4.0
     pull: true
     settings:
       git_email: woodpecker-bot@obermui.de
