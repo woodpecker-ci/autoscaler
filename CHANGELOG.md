@@ -4,6 +4,7 @@
 
 ### 📦️ Dependency
 
+- chore(deps): update woodpeckerci/plugin-ready-release-go docker tag to v3.4.0 [[#402](https://github.com/woodpecker-ci/autoscaler/pull/402)]
 - chore(deps): update pre-commit hook pre-commit/pre-commit-hooks to v6 [[#403](https://github.com/woodpecker-ci/autoscaler/pull/403)]
 - fix(deps): update golang deps non-major [[#404](https://github.com/woodpecker-ci/autoscaler/pull/404)]
 - fix(deps): update golang.org/x/exp digest to 51f8813 [[#401](https://github.com/woodpecker-ci/autoscaler/pull/401)]
