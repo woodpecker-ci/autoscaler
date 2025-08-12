@@ -4,6 +4,7 @@
 
 ### 📦️ Dependency
 
+- chore(deps): update pre-commit hook pre-commit/pre-commit-hooks to v6 [[#403](https://github.com/woodpecker-ci/autoscaler/pull/403)]
 - fix(deps): update golang deps non-major [[#404](https://github.com/woodpecker-ci/autoscaler/pull/404)]
 - fix(deps): update golang.org/x/exp digest to 51f8813 [[#401](https://github.com/woodpecker-ci/autoscaler/pull/401)]
 - fix(deps): update module golang.org/x/net to v0.43.0 [[#400](https://github.com/woodpecker-ci/autoscaler/pull/400)]
