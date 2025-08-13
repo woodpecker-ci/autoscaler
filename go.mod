@@ -2,12 +2,12 @@ module go.woodpecker-ci.org/autoscaler
 
 go 1.24.0
 
-toolchain go1.24.6
+toolchain go1.25.0
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.38.0
 	github.com/aws/aws-sdk-go-v2/config v1.31.0
-	github.com/aws/aws-sdk-go-v2/service/ec2 v1.242.0
+	github.com/aws/aws-sdk-go-v2/service/ec2 v1.243.0
 	github.com/docker/go-units v0.5.0
 	github.com/hetznercloud/hcloud-go/v2 v2.22.0
 	github.com/joho/godotenv v1.5.1
@@ -15,7 +15,7 @@ require (
 	github.com/rs/zerolog v1.34.0
 	github.com/scaleway/scaleway-sdk-go v1.0.0-beta.34
 	github.com/stretchr/testify v1.10.0
-	github.com/urfave/cli/v3 v3.3.9
+	github.com/urfave/cli/v3 v3.4.1
 	github.com/vultr/govultr/v3 v3.22.1
 	go.woodpecker-ci.org/woodpecker/v3 v3.8.0
 	golang.org/x/exp v0.0.0-20250811191247-51f88131bc50
