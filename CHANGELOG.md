@@ -1,9 +1,10 @@
 # Changelog
 
-## [1.1.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.1) - 2025-08-14
+## [1.1.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.1) - 2025-08-17
 
 ### 📦️ Dependency
 
+- chore(deps): update pre-commit hook golangci/golangci-lint to v2.4.0 [[#411](https://github.com/woodpecker-ci/autoscaler/pull/411)]
 - fix(deps): update golang deps non-major [[#406](https://github.com/woodpecker-ci/autoscaler/pull/406)]
 - fix(deps): update golang deps non-major [[#405](https://github.com/woodpecker-ci/autoscaler/pull/405)]
 - chore(deps): update woodpeckerci/plugin-ready-release-go docker tag to v3.4.0 [[#402](https://github.com/woodpecker-ci/autoscaler/pull/402)]
