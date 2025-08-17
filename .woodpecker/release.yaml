@@ -11,12 +11,12 @@ variables:
   - &golang_image 'docker.io/golang:1.24'
 
 steps:
-  vendor:
+  - name: vendor
     image: *golang_image
     commands:
       - go mod vendor
 
-  dryrun:
+  - name: dryrun
     image: *buildx_plugin
     settings:
       dockerfile: Dockerfile
@@ -27,7 +27,7 @@ steps:
     when:
       - event: pull_request
 
-  publish-next:
+  - name: publish-next
     image: *buildx_plugin
     settings:
       dockerfile: Dockerfile
@@ -41,7 +41,7 @@ steps:
       branch: ${CI_REPO_DEFAULT_BRANCH}
       event: push
 
-  publish-tag:
+  - name: publish-tag
     image: *buildx_plugin
     settings:
       dockerfile: Dockerfile
