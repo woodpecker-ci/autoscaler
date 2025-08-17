@@ -4,6 +4,7 @@
 
 ### 📦️ Dependency
 
+- fix(deps): update golang.org/x/exp digest to 42675ad [[#407](https://github.com/woodpecker-ci/autoscaler/pull/407)]
 - chore(deps): update docker.io/golang docker tag to v1.25 [[#408](https://github.com/woodpecker-ci/autoscaler/pull/408)]
 - chore(deps): update pre-commit hook golangci/golangci-lint to v2.4.0 [[#411](https://github.com/woodpecker-ci/autoscaler/pull/411)]
 - fix(deps): update golang deps non-major [[#406](https://github.com/woodpecker-ci/autoscaler/pull/406)]
