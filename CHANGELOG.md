@@ -1,6 +1,10 @@
 # Changelog
 
-## [1.1.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.1) - 2025-08-17
+## [1.1.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.1) - 2025-08-18
+
+### ❤️ Thanks to all contributors! ❤️
+
+@xoxys
 
 ### 📦️ Dependency
 
@@ -27,6 +31,7 @@
 
 ### Misc
 
+- Use list format for pipelines [[#412](https://github.com/woodpecker-ci/autoscaler/pull/412)]
 - [pre-commit.ci] pre-commit autoupdate [[#397](https://github.com/woodpecker-ci/autoscaler/pull/397)]
 
 ## [1.1.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.0) - 2025-07-13
