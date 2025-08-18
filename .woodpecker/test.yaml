@@ -2,7 +2,7 @@ when:
   - event: pull_request
 
 variables:
-  - &golang_image 'golang:1.24'
+  - &golang_image 'docker.io/golang:1.24'
   - &when
     - path: &when_path # related config files
         - '.woodpecker/test.yml'
@@ -21,18 +21,18 @@ variables:
       event: [pull_request, tag, deployment]
 
 steps:
-  lint:
+  - name: lint
     image: *golang_image
     depends_on: []
     commands:
       - make lint
     when: *when
 
-  lint-editorconfig:
-    image: mstruebing/editorconfig-checker:v3.3.0
+  - name: lint-editorconfig
+    image: docker.io/mstruebing/editorconfig-checker:v3.3.0
     depends_on: []
 
-  test:
+  - name: test
     image: *golang_image
     depends_on: []
     commands:
