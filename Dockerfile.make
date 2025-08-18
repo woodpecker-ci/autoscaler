@@ -1,5 +1,5 @@
 # docker build --rm  -f docker/Dockerfile.make -t woodpecker/make:local .
-FROM golang:1.24-alpine as golang_image
+FROM golang:1.25-alpine as golang_image
 FROM node:22-alpine
 
 RUN apk add --no-cache --update make gcc binutils-gold musl-dev && \
