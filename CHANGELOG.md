@@ -6,6 +6,10 @@
 
 @xoxys
 
+### 🐛 Bug Fixes
+
+- Improve logging for fallback server types in hcloud provider [[#413](https://github.com/woodpecker-ci/autoscaler/pull/413)]
+
 ### 📦️ Dependency
 
 - chore(deps): update golang docker tag to v1.25 [[#409](https://github.com/woodpecker-ci/autoscaler/pull/409)]
