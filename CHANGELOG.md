@@ -1,5 +1,44 @@
 # Changelog
 
+## [1.1.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.1) - 2025-08-18
+
+### ❤️ Thanks to all contributors! ❤️
+
+@xoxys
+
+### 🐛 Bug Fixes
+
+- Improve logging for fallback server types in hcloud provider [[#413](https://github.com/woodpecker-ci/autoscaler/pull/413)]
+
+### 📦️ Dependency
+
+- chore(deps): update golang docker tag to v1.25 [[#409](https://github.com/woodpecker-ci/autoscaler/pull/409)]
+- fix(deps): update golang.org/x/exp digest to 42675ad [[#407](https://github.com/woodpecker-ci/autoscaler/pull/407)]
+- chore(deps): update docker.io/golang docker tag to v1.25 [[#408](https://github.com/woodpecker-ci/autoscaler/pull/408)]
+- chore(deps): update pre-commit hook golangci/golangci-lint to v2.4.0 [[#411](https://github.com/woodpecker-ci/autoscaler/pull/411)]
+- fix(deps): update golang deps non-major [[#406](https://github.com/woodpecker-ci/autoscaler/pull/406)]
+- fix(deps): update golang deps non-major [[#405](https://github.com/woodpecker-ci/autoscaler/pull/405)]
+- chore(deps): update woodpeckerci/plugin-ready-release-go docker tag to v3.4.0 [[#402](https://github.com/woodpecker-ci/autoscaler/pull/402)]
+- chore(deps): update pre-commit hook pre-commit/pre-commit-hooks to v6 [[#403](https://github.com/woodpecker-ci/autoscaler/pull/403)]
+- fix(deps): update golang deps non-major [[#404](https://github.com/woodpecker-ci/autoscaler/pull/404)]
+- fix(deps): update golang.org/x/exp digest to 51f8813 [[#401](https://github.com/woodpecker-ci/autoscaler/pull/401)]
+- fix(deps): update module golang.org/x/net to v0.43.0 [[#400](https://github.com/woodpecker-ci/autoscaler/pull/400)]
+- fix(deps): update golang deps non-major [[#399](https://github.com/woodpecker-ci/autoscaler/pull/399)]
+- fix(deps): update golang deps non-major [[#398](https://github.com/woodpecker-ci/autoscaler/pull/398)]
+- fix(deps): update golang deps non-major [[#395](https://github.com/woodpecker-ci/autoscaler/pull/395)]
+- fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.236.0 [[#394](https://github.com/woodpecker-ci/autoscaler/pull/394)]
+- chore(deps): update pre-commit hook golangci/golangci-lint to v2.3.0 [[#393](https://github.com/woodpecker-ci/autoscaler/pull/393)]
+- fix(deps): update golang.org/x/exp digest to 645b1fa [[#389](https://github.com/woodpecker-ci/autoscaler/pull/389)]
+- fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.235.0 [[#390](https://github.com/woodpecker-ci/autoscaler/pull/390)]
+- fix(deps): update golang deps non-major [[#388](https://github.com/woodpecker-ci/autoscaler/pull/388)]
+- fix(deps): update module github.com/vultr/govultr/v3 to v3.21.1 [[#387](https://github.com/woodpecker-ci/autoscaler/pull/387)]
+- fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.232.0 [[#385](https://github.com/woodpecker-ci/autoscaler/pull/385)]
+
+### Misc
+
+- Use list format for pipelines [[#412](https://github.com/woodpecker-ci/autoscaler/pull/412)]
+- [pre-commit.ci] pre-commit autoupdate [[#397](https://github.com/woodpecker-ci/autoscaler/pull/397)]
+
 ## [1.1.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.0) - 2025-07-13
 
 ### ❤️ Thanks to all contributors! ❤️
