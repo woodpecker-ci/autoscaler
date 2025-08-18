@@ -145,7 +145,7 @@ func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 		},
 	}
 
-	for _, raw := range p.serverType {
+	for i, raw := range p.serverType {
 		rawType, location, _ := strings.Cut(raw, ":")
 
 		// TODO: Deprecated remove in v2.0
@@ -171,6 +171,8 @@ func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 		serverCreateOpts.ServerType = serverType
 		serverCreateOpts.Image = image
 
+		log.Info().Msg("create agent: location = %s type = %s")
+
 		_, _, err = p.client.Server().Create(ctx, serverCreateOpts)
 		if err == nil {
 			return nil
@@ -180,6 +182,15 @@ func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 		if !hcloud.IsError(err, hcloud.ErrorCodeResourceUnavailable) {
 			return fmt.Errorf("%s: Server.Create: %w", p.name, err)
 		}
+
+		// Only log warning if there are more server types to try
+		if i < len(p.serverType)-1 {
+			log.Warn().Msg(fmt.Sprintf("create agent failed: location = %s type = %s: %s", serverCreateOpts.Location.Name, serverCreateOpts.ServerType.Name, err))
+			continue
+		}
+
+		// Error if last server type fails
+		return fmt.Errorf("%s: Server.Create: %w", p.name, err)
 	}
 
 	return nil
