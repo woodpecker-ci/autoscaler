@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.1.2](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.2) - 2025-08-20
+
+### 📦️ Dependency
+
+- fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.245.0 [[#414](https://github.com/woodpecker-ci/autoscaler/pull/414)]
+
 ## [1.1.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.1) - 2025-08-18
 
 ### ❤️ Thanks to all contributors! ❤️
