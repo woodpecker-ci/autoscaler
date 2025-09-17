@@ -11,9 +11,9 @@ require (
 	github.com/docker/go-units v0.5.0
 	github.com/hetznercloud/hcloud-go/v2 v2.23.0
 	github.com/joho/godotenv v1.5.1
-	github.com/linode/linodego v1.57.0
+	github.com/linode/linodego v1.58.0
 	github.com/rs/zerolog v1.34.0
-	github.com/scaleway/scaleway-sdk-go v1.0.0-beta.34
+	github.com/scaleway/scaleway-sdk-go v1.0.0-beta.35
 	github.com/stretchr/testify v1.11.1
 	github.com/urfave/cli/v3 v3.4.1
 	github.com/vultr/govultr/v3 v3.23.0
