@@ -16,7 +16,7 @@ require (
 	github.com/scaleway/scaleway-sdk-go v1.0.0-beta.35
 	github.com/stretchr/testify v1.11.1
 	github.com/urfave/cli/v3 v3.4.1
-	github.com/vultr/govultr/v3 v3.23.0
+	github.com/vultr/govultr/v3 v3.24.0
 	go.woodpecker-ci.org/woodpecker/v3 v3.9.0
 	golang.org/x/exp v0.0.0-20250911091902-df9299821621
 	golang.org/x/net v0.44.0
