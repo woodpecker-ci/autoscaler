@@ -101,8 +101,8 @@ github.com/stretchr/testify v1.11.1 h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu
 github.com/stretchr/testify v1.11.1/go.mod h1:wZwfW3scLgRK+23gO65QZefKpKQRnfz6sD981Nm4B6U=
 github.com/urfave/cli/v3 v3.4.1 h1:1M9UOCy5bLmGnuu1yn3t3CB4rG79Rtoxuv1sPhnm6qM=
 github.com/urfave/cli/v3 v3.4.1/go.mod h1:FJSKtM/9AiiTOJL4fJ6TbMUkxBXn7GO9guZqoZtpYpo=
-github.com/vultr/govultr/v3 v3.23.0 h1:0jZo4FI+oMkPXFez1bvhsb5Ql0EZUFbe3SNLq3d8IIY=
-github.com/vultr/govultr/v3 v3.23.0/go.mod h1:9WwnWGCKnwDlNjHjtt+j+nP+0QWq6hQXzaHgddqrLWY=
+github.com/vultr/govultr/v3 v3.24.0 h1:fTTTj0VBve+Miy+wGhlb90M2NMDfpGFi6Frlj3HVy6M=
+github.com/vultr/govultr/v3 v3.24.0/go.mod h1:9WwnWGCKnwDlNjHjtt+j+nP+0QWq6hQXzaHgddqrLWY=
 go.uber.org/goleak v1.3.0 h1:2K3zAYmnTNqV73imy9J1T3WC+gmCePx2hEGkimedGto=
 go.uber.org/goleak v1.3.0/go.mod h1:CoHD4mav9JJNrW/WLlf7HGZPjdw8EucARQHekz1X6bE=
 go.woodpecker-ci.org/woodpecker/v3 v3.9.0 h1:WcAvpo7cPl3piZiXhtPVyBKEDIzfrPg1F+f6wyOhwYY=
