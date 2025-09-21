@@ -4,6 +4,7 @@
 
 ### 📦️ Dependency
 
+- chore(deps): update pre-commit hook golangci/golangci-lint to v2.5.0 [[#425](https://github.com/woodpecker-ci/autoscaler/pull/425)]
 - fix(deps): update module github.com/hetznercloud/hcloud-go/v2 to v2.24.0 [[#424](https://github.com/woodpecker-ci/autoscaler/pull/424)]
 - fix(deps): update module github.com/vultr/govultr/v3 to v3.24.0 [[#423](https://github.com/woodpecker-ci/autoscaler/pull/423)]
 - fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.253.0 [[#422](https://github.com/woodpecker-ci/autoscaler/pull/422)]
