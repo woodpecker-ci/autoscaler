@@ -1,9 +1,10 @@
 # Changelog
 
-## [1.1.2](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.2) - 2025-09-21
+## [1.1.2](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.2) - 2025-09-23
 
 ### 📦️ Dependency
 
+- fix(deps): update module github.com/aws/aws-sdk-go-v2/config to v1.31.9 [[#426](https://github.com/woodpecker-ci/autoscaler/pull/426)]
 - chore(deps): update pre-commit hook golangci/golangci-lint to v2.5.0 [[#425](https://github.com/woodpecker-ci/autoscaler/pull/425)]
 - fix(deps): update module github.com/hetznercloud/hcloud-go/v2 to v2.24.0 [[#424](https://github.com/woodpecker-ci/autoscaler/pull/424)]
 - fix(deps): update module github.com/vultr/govultr/v3 to v3.24.0 [[#423](https://github.com/woodpecker-ci/autoscaler/pull/423)]
