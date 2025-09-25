@@ -1,3 +1,8 @@
+# renovate: datasource=github-releases depName=mvdan/gofumpt
+GOFUMPT_VERSION := v0.9.1
+# renovate: datasource=github-releases depName=golangci/golangci-lint
+GOLANGCI_LINT_VERSION := v2.5.0
+
 GO_PACKAGES ?= $(shell go list ./... | grep -v /vendor/)
 
 TARGETOS ?= linux
@@ -67,16 +72,16 @@ clean: ## Clean build artifacts
 
 install-tools: ## Install development tools
 	@hash golangci-lint > /dev/null 2>&1; if [ $$? -ne 0 ]; then \
-		go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest; \
+		go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION); \
 	fi ; \
 	hash lint > /dev/null 2>&1; if [ $$? -ne 0 ]; then \
 		go install github.com/rs/zerolog/cmd/lint@latest; \
 	fi ; \
 	hash gofumpt > /dev/null 2>&1; if [ $$? -ne 0 ]; then \
-		go install mvdan.cc/gofumpt@latest; \
+		go install mvdan.cc/gofumpt@$(GOFUMPT_VERSION); \
 	fi ; \
 	hash mockery > /dev/null 2>&1; if [ $$? -ne 0 ]; then \
-		go install github.com/vektra/mockery/v2@latest; \
+		go install github.com/vektra/mockery/v3@latest; \
 	fi ; \
 
 ##@ Test
