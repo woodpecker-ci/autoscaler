@@ -1,6 +1,10 @@
 # Changelog
 
-## [1.1.2](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.2) - 2025-09-24
+## [1.1.2](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.2) - 2025-09-25
+
+### ❤️ Thanks to all contributors! ❤️
+
+@xoxys
 
 ### 📦️ Dependency
 
@@ -17,6 +21,10 @@
 - fix(deps): update golang deps non-major [[#417](https://github.com/woodpecker-ci/autoscaler/pull/417)]
 - fix(deps): update golang deps non-major [[#416](https://github.com/woodpecker-ci/autoscaler/pull/416)]
 - fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.245.0 [[#414](https://github.com/woodpecker-ci/autoscaler/pull/414)]
+
+### Misc
+
+- Migrate mockery to v3 [[#428](https://github.com/woodpecker-ci/autoscaler/pull/428)]
 
 ## [1.1.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.1) - 2025-08-18
 
