@@ -19,7 +19,7 @@ steps:
   - name: dryrun
     image: *buildx_plugin
     settings:
-      dockerfile: Dockerfile
+      dockerfile: docker/Dockerfile
       dry_run: true
       repo: *repo
       platforms: *platforms
@@ -30,7 +30,7 @@ steps:
   - name: publish-next
     image: *buildx_plugin
     settings:
-      dockerfile: Dockerfile
+      dockerfile: docker/Dockerfile
       repo: *repo
       platforms: *platforms
       tag: next
@@ -44,7 +44,7 @@ steps:
   - name: publish-tag
     image: *buildx_plugin
     settings:
-      dockerfile: Dockerfile
+      dockerfile: docker/Dockerfile
       repo: *repo
       platforms: *platforms
       tag: [latest, '${CI_COMMIT_TAG}']
