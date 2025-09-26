@@ -9,9 +9,9 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.31.10
 	github.com/aws/aws-sdk-go-v2/service/ec2 v1.254.0
 	github.com/docker/go-units v0.5.0
-	github.com/hetznercloud/hcloud-go/v2 v2.24.0
+	github.com/hetznercloud/hcloud-go/v2 v2.25.0
 	github.com/joho/godotenv v1.5.1
-	github.com/linode/linodego v1.58.0
+	github.com/linode/linodego v1.59.0
 	github.com/rs/zerolog v1.34.0
 	github.com/scaleway/scaleway-sdk-go v1.0.0-beta.35
 	github.com/stretchr/testify v1.11.1
