@@ -8,6 +8,7 @@
 
 ### 📦️ Dependency
 
+- chore(deps): update pre-commit hook hadolint/hadolint to v2.14.0 [[#431](https://github.com/woodpecker-ci/autoscaler/pull/431)]
 - fix(deps): update golang deps non-major [[#430](https://github.com/woodpecker-ci/autoscaler/pull/430)]
 - fix(deps): update golang deps non-major [[#429](https://github.com/woodpecker-ci/autoscaler/pull/429)]
 - fix(deps): update golang deps non-major [[#427](https://github.com/woodpecker-ci/autoscaler/pull/427)]
