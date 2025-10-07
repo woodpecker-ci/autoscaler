@@ -8,6 +8,7 @@
 
 ### 📦️ Dependency
 
+- fix(deps): update golang.org/x/exp digest to 27f1f14 [[#434](https://github.com/woodpecker-ci/autoscaler/pull/434)]
 - fix(deps): update module github.com/hetznercloud/hcloud-go/v2 to v2.27.0 [[#436](https://github.com/woodpecker-ci/autoscaler/pull/436)]
 - chore(deps): update docker.io/woodpeckerci/plugin-docker-buildx docker tag to v6.0.3 [[#435](https://github.com/woodpecker-ci/autoscaler/pull/435)]
 - fix(deps): update module github.com/aws/aws-sdk-go-v2/config to v1.31.12 [[#433](https://github.com/woodpecker-ci/autoscaler/pull/433)]
