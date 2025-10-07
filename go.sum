@@ -53,8 +53,8 @@ github.com/hashicorp/go-hclog v1.6.3 h1:Qr2kF+eVWjTiYmU7Y31tYlP1h0q/X3Nl3tPGdaB1
 github.com/hashicorp/go-hclog v1.6.3/go.mod h1:W4Qnvbt70Wk/zYJryRzDRU/4r0kIg0PVHBcfoyhpF5M=
 github.com/hashicorp/go-retryablehttp v0.7.8 h1:ylXZWnqa7Lhqpk0L1P1LzDtGcCR0rPVUrx/c8Unxc48=
 github.com/hashicorp/go-retryablehttp v0.7.8/go.mod h1:rjiScheydd+CxvumBsIrFKlx3iS0jrZ7LvzFGFmuKbw=
-github.com/hetznercloud/hcloud-go/v2 v2.25.1 h1:ib86acotlvgUSnKfFG5FJl0VFeYKe/Ht8nmikdUp+po=
-github.com/hetznercloud/hcloud-go/v2 v2.25.1/go.mod h1:uQdAWaW3d9TimiyOjQWY8HKShs0Nd6S4wNYqo0HjvIY=
+github.com/hetznercloud/hcloud-go/v2 v2.27.0 h1:SOGpAP3kQ6+aevB4Hxr63ukNsdYJjHhuWNB1C3NsiJo=
+github.com/hetznercloud/hcloud-go/v2 v2.27.0/go.mod h1:OVlbjfoEuvNPI8ji3Sm/jPkjOxO7MKEiPyfctZ0R8jw=
 github.com/jarcoal/httpmock v1.4.1 h1:0Ju+VCFuARfFlhVXFc2HxlcQkfB+Xq12/EotHko+x2A=
 github.com/jarcoal/httpmock v1.4.1/go.mod h1:ftW1xULwo+j0R0JJkJIIi7UKigZUXCLLanykgjwBXL0=
 github.com/joho/godotenv v1.5.1 h1:7eLL/+HRGLY0ldzfGMeQkb7vMd0as4CfYvUVzLqw0N0=
