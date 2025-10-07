@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.1.2](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.2) - 2025-10-06
+## [1.1.2](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.2) - 2025-10-07
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -8,6 +8,7 @@
 
 ### 📦️ Dependency
 
+- fix(deps): update module github.com/hetznercloud/hcloud-go/v2 to v2.27.0 [[#436](https://github.com/woodpecker-ci/autoscaler/pull/436)]
 - chore(deps): update docker.io/woodpeckerci/plugin-docker-buildx docker tag to v6.0.3 [[#435](https://github.com/woodpecker-ci/autoscaler/pull/435)]
 - fix(deps): update module github.com/aws/aws-sdk-go-v2/config to v1.31.12 [[#433](https://github.com/woodpecker-ci/autoscaler/pull/433)]
 - fix(deps): update module go.woodpecker-ci.org/woodpecker/v3 to v3.10.0 [[#432](https://github.com/woodpecker-ci/autoscaler/pull/432)]
