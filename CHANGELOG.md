@@ -8,6 +8,7 @@
 
 ### 📦️ Dependency
 
+- chore(deps): update docker.io/mstruebing/editorconfig-checker docker tag to v3.4.1 [[#439](https://github.com/woodpecker-ci/autoscaler/pull/439)]
 - fix(deps): update golang.org/x/exp digest to d2f985d [[#438](https://github.com/woodpecker-ci/autoscaler/pull/438)]
 - fix(deps): update golang deps non-major [[#437](https://github.com/woodpecker-ci/autoscaler/pull/437)]
 - fix(deps): update golang.org/x/exp digest to 27f1f14 [[#434](https://github.com/woodpecker-ci/autoscaler/pull/434)]
