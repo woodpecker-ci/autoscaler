@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.1.2](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.2) - 2025-10-09
+## [1.1.2](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.2) - 2025-10-11
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -8,6 +8,7 @@
 
 ### 📦️ Dependency
 
+- fix(deps): update golang.org/x/exp digest to d2f985d [[#438](https://github.com/woodpecker-ci/autoscaler/pull/438)]
 - fix(deps): update golang deps non-major [[#437](https://github.com/woodpecker-ci/autoscaler/pull/437)]
 - fix(deps): update golang.org/x/exp digest to 27f1f14 [[#434](https://github.com/woodpecker-ci/autoscaler/pull/434)]
 - fix(deps): update module github.com/hetznercloud/hcloud-go/v2 to v2.27.0 [[#436](https://github.com/woodpecker-ci/autoscaler/pull/436)]
