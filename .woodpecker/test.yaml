@@ -29,7 +29,7 @@ steps:
     when: *when
 
   - name: lint-editorconfig
-    image: docker.io/mstruebing/editorconfig-checker:v3.4.0
+    image: docker.io/mstruebing/editorconfig-checker:v3.4.1
     depends_on: []
 
   - name: test
