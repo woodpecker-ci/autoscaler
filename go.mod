@@ -7,7 +7,7 @@ toolchain go1.25.3
 require (
 	github.com/aws/aws-sdk-go-v2 v1.39.2
 	github.com/aws/aws-sdk-go-v2/config v1.31.12
-	github.com/aws/aws-sdk-go-v2/service/ec2 v1.256.0
+	github.com/aws/aws-sdk-go-v2/service/ec2 v1.257.0
 	github.com/docker/go-units v0.5.0
 	github.com/hetznercloud/hcloud-go/v2 v2.27.0
 	github.com/joho/godotenv v1.5.1
