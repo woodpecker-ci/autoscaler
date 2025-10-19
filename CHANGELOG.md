@@ -8,6 +8,7 @@
 
 ### 📦️ Dependency
 
+- fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.257.2 [[#445](https://github.com/woodpecker-ci/autoscaler/pull/445)]
 - fix(deps): update golang deps non-major [[#443](https://github.com/woodpecker-ci/autoscaler/pull/443)]
 - fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.257.0 [[#442](https://github.com/woodpecker-ci/autoscaler/pull/442)]
 - fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.256.0 [[#441](https://github.com/woodpecker-ci/autoscaler/pull/441)]
