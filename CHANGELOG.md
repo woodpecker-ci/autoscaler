@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.1.2](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.2) - 2025-10-17
+## [1.1.2](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.2) - 2025-10-19
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -39,6 +39,7 @@
 
 ### Misc
 
+- Regenerate woodpecker-client mocks [[#446](https://github.com/woodpecker-ci/autoscaler/pull/446)]
 - Migrate mockery to v3 [[#428](https://github.com/woodpecker-ci/autoscaler/pull/428)]
 
 ## [1.1.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.1) - 2025-08-18
