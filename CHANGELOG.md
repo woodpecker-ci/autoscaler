@@ -1,5 +1,49 @@
 # Changelog
 
+## [1.1.2](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.2) - 2025-10-19
+
+### ❤️ Thanks to all contributors! ❤️
+
+@xoxys
+
+### 📦️ Dependency
+
+- fix(deps): update golang.org/x/exp digest to 90e834f [[#444](https://github.com/woodpecker-ci/autoscaler/pull/444)]
+- fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.257.2 [[#445](https://github.com/woodpecker-ci/autoscaler/pull/445)]
+- fix(deps): update golang deps non-major [[#443](https://github.com/woodpecker-ci/autoscaler/pull/443)]
+- fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.257.0 [[#442](https://github.com/woodpecker-ci/autoscaler/pull/442)]
+- fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.256.0 [[#441](https://github.com/woodpecker-ci/autoscaler/pull/441)]
+- fix(deps): update golang deps non-major [[#440](https://github.com/woodpecker-ci/autoscaler/pull/440)]
+- chore(deps): update docker.io/mstruebing/editorconfig-checker docker tag to v3.4.1 [[#439](https://github.com/woodpecker-ci/autoscaler/pull/439)]
+- fix(deps): update golang.org/x/exp digest to d2f985d [[#438](https://github.com/woodpecker-ci/autoscaler/pull/438)]
+- fix(deps): update golang deps non-major [[#437](https://github.com/woodpecker-ci/autoscaler/pull/437)]
+- fix(deps): update golang.org/x/exp digest to 27f1f14 [[#434](https://github.com/woodpecker-ci/autoscaler/pull/434)]
+- fix(deps): update module github.com/hetznercloud/hcloud-go/v2 to v2.27.0 [[#436](https://github.com/woodpecker-ci/autoscaler/pull/436)]
+- chore(deps): update docker.io/woodpeckerci/plugin-docker-buildx docker tag to v6.0.3 [[#435](https://github.com/woodpecker-ci/autoscaler/pull/435)]
+- fix(deps): update module github.com/aws/aws-sdk-go-v2/config to v1.31.12 [[#433](https://github.com/woodpecker-ci/autoscaler/pull/433)]
+- fix(deps): update module go.woodpecker-ci.org/woodpecker/v3 to v3.10.0 [[#432](https://github.com/woodpecker-ci/autoscaler/pull/432)]
+- chore(deps): update pre-commit hook hadolint/hadolint to v2.14.0 [[#431](https://github.com/woodpecker-ci/autoscaler/pull/431)]
+- fix(deps): update golang deps non-major [[#430](https://github.com/woodpecker-ci/autoscaler/pull/430)]
+- fix(deps): update golang deps non-major [[#429](https://github.com/woodpecker-ci/autoscaler/pull/429)]
+- fix(deps): update golang deps non-major [[#427](https://github.com/woodpecker-ci/autoscaler/pull/427)]
+- fix(deps): update module github.com/aws/aws-sdk-go-v2/config to v1.31.9 [[#426](https://github.com/woodpecker-ci/autoscaler/pull/426)]
+- chore(deps): update pre-commit hook golangci/golangci-lint to v2.5.0 [[#425](https://github.com/woodpecker-ci/autoscaler/pull/425)]
+- fix(deps): update module github.com/hetznercloud/hcloud-go/v2 to v2.24.0 [[#424](https://github.com/woodpecker-ci/autoscaler/pull/424)]
+- fix(deps): update module github.com/vultr/govultr/v3 to v3.24.0 [[#423](https://github.com/woodpecker-ci/autoscaler/pull/423)]
+- fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.253.0 [[#422](https://github.com/woodpecker-ci/autoscaler/pull/422)]
+- fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.252.0 [[#421](https://github.com/woodpecker-ci/autoscaler/pull/421)]
+- fix(deps): update golang deps non-major [[#420](https://github.com/woodpecker-ci/autoscaler/pull/420)]
+- chore(deps): update docker.io/mstruebing/editorconfig-checker docker tag to v3.4.0 [[#419](https://github.com/woodpecker-ci/autoscaler/pull/419)]
+- fix(deps): update golang.org/x/exp digest to df92998 [[#418](https://github.com/woodpecker-ci/autoscaler/pull/418)]
+- fix(deps): update golang deps non-major [[#417](https://github.com/woodpecker-ci/autoscaler/pull/417)]
+- fix(deps): update golang deps non-major [[#416](https://github.com/woodpecker-ci/autoscaler/pull/416)]
+- fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.245.0 [[#414](https://github.com/woodpecker-ci/autoscaler/pull/414)]
+
+### Misc
+
+- Regenerate woodpecker-client mocks [[#446](https://github.com/woodpecker-ci/autoscaler/pull/446)]
+- Migrate mockery to v3 [[#428](https://github.com/woodpecker-ci/autoscaler/pull/428)]
+
 ## [1.1.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.1) - 2025-08-18
 
 ### ❤️ Thanks to all contributors! ❤️
