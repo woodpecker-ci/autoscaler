@@ -1567,6 +1567,68 @@ func (_c *MockClient_Org_Call) RunAndReturn(run func(orgID int64) (*woodpecker.O
 	return _c
 }
 
+// OrgList provides a mock function for the type MockClient
+func (_mock *MockClient) OrgList(opt woodpecker.ListOptions) ([]*woodpecker.Org, error) {
+	ret := _mock.Called(opt)
+
+	if len(ret) == 0 {
+		panic("no return value specified for OrgList")
+	}
+
+	var r0 []*woodpecker.Org
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(woodpecker.ListOptions) ([]*woodpecker.Org, error)); ok {
+		return returnFunc(opt)
+	}
+	if returnFunc, ok := ret.Get(0).(func(woodpecker.ListOptions) []*woodpecker.Org); ok {
+		r0 = returnFunc(opt)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*woodpecker.Org)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(woodpecker.ListOptions) error); ok {
+		r1 = returnFunc(opt)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockClient_OrgList_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'OrgList'
+type MockClient_OrgList_Call struct {
+	*mock.Call
+}
+
+// OrgList is a helper method to define mock.On call
+//   - opt woodpecker.ListOptions
+func (_e *MockClient_Expecter) OrgList(opt interface{}) *MockClient_OrgList_Call {
+	return &MockClient_OrgList_Call{Call: _e.mock.On("OrgList", opt)}
+}
+
+func (_c *MockClient_OrgList_Call) Run(run func(opt woodpecker.ListOptions)) *MockClient_OrgList_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 woodpecker.ListOptions
+		if args[0] != nil {
+			arg0 = args[0].(woodpecker.ListOptions)
+		}
+		run(
+			arg0,
+		)
+	})
+	return _c
+}
+
+func (_c *MockClient_OrgList_Call) Return(orgs []*woodpecker.Org, err error) *MockClient_OrgList_Call {
+	_c.Call.Return(orgs, err)
+	return _c
+}
+
+func (_c *MockClient_OrgList_Call) RunAndReturn(run func(opt woodpecker.ListOptions) ([]*woodpecker.Org, error)) *MockClient_OrgList_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // OrgLookup provides a mock function for the type MockClient
 func (_mock *MockClient) OrgLookup(orgName string) (*woodpecker.Org, error) {
 	ret := _mock.Called(orgName)
