@@ -29,7 +29,7 @@ steps:
     when: *when
 
   - name: lint-editorconfig
-    image: codeberg.org/woodpecker-plugins/editorconfig-checker:0.3.2
+    image: docker.io/woodpeckerci/plugin-editorconfig-checker:0.3.2
     depends_on: []
 
   - name: test
