@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.1.3](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.3) - 2025-10-20
+
+### 📦️ Dependency
+
+- fix(deps): update module go.woodpecker-ci.org/woodpecker/v3 to v3.11.0 [[#448](https://github.com/woodpecker-ci/autoscaler/pull/448)]
+
 ## [1.1.2](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.2) - 2025-10-19
 
 ### ❤️ Thanks to all contributors! ❤️
