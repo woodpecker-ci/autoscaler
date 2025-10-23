@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.1.3](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.3) - 2025-10-20
+## [1.1.3](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.3) - 2025-10-23
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -8,6 +8,7 @@
 
 ### 📦️ Dependency
 
+- fix(deps): update golang deps non-major [[#450](https://github.com/woodpecker-ci/autoscaler/pull/450)]
 - Use our own editorconfig checker plugin [[#447](https://github.com/woodpecker-ci/autoscaler/pull/447)]
 - fix(deps): update module go.woodpecker-ci.org/woodpecker/v3 to v3.11.0 [[#448](https://github.com/woodpecker-ci/autoscaler/pull/448)]
 
