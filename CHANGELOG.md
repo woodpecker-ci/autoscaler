@@ -8,6 +8,7 @@
 
 ### 📦️ Dependency
 
+- chore(deps): update dependency mvdan/gofumpt to v0.9.2 [[#452](https://github.com/woodpecker-ci/autoscaler/pull/452)]
 - fix(deps): update golang deps non-major [[#453](https://github.com/woodpecker-ci/autoscaler/pull/453)]
 - fix(deps): update golang deps non-major [[#450](https://github.com/woodpecker-ci/autoscaler/pull/450)]
 - Use our own editorconfig checker plugin [[#447](https://github.com/woodpecker-ci/autoscaler/pull/447)]
