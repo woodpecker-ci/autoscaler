@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.1.3](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.3) - 2025-10-26
+## [1.1.3](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.3) - 2025-10-30
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -8,6 +8,7 @@
 
 ### 📦️ Dependency
 
+- fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.259.0 [[#454](https://github.com/woodpecker-ci/autoscaler/pull/454)]
 - fix(deps): update golang.org/x/exp digest to a4bb9ff [[#451](https://github.com/woodpecker-ci/autoscaler/pull/451)]
 - chore(deps): update dependency mvdan/gofumpt to v0.9.2 [[#452](https://github.com/woodpecker-ci/autoscaler/pull/452)]
 - fix(deps): update golang deps non-major [[#453](https://github.com/woodpecker-ci/autoscaler/pull/453)]
