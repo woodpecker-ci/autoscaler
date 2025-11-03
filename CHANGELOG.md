@@ -8,6 +8,7 @@
 
 ### 📦️ Dependency
 
+- chore(deps): update pre-commit hook golangci/golangci-lint to v2.6.0 [[#457](https://github.com/woodpecker-ci/autoscaler/pull/457)]
 - chore(deps): update dependency golangci/golangci-lint to v2.6.0 [[#456](https://github.com/woodpecker-ci/autoscaler/pull/456)]
 - fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.260.0 [[#459](https://github.com/woodpecker-ci/autoscaler/pull/459)]
 - fix(deps): update golang deps non-major [[#455](https://github.com/woodpecker-ci/autoscaler/pull/455)]
