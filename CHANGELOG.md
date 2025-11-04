@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.1.3](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.3) - 2025-11-03
+## [1.1.3](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.3) - 2025-11-04
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -8,6 +8,7 @@
 
 ### 📦️ Dependency
 
+- fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.261.0 [[#460](https://github.com/woodpecker-ci/autoscaler/pull/460)]
 - chore(deps): update node.js to v24 [[#458](https://github.com/woodpecker-ci/autoscaler/pull/458)]
 - chore(deps): update pre-commit hook golangci/golangci-lint to v2.6.0 [[#457](https://github.com/woodpecker-ci/autoscaler/pull/457)]
 - chore(deps): update dependency golangci/golangci-lint to v2.6.0 [[#456](https://github.com/woodpecker-ci/autoscaler/pull/456)]
