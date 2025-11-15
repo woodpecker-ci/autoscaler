@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.1.3](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.3) - 2025-11-13
+## [1.1.3](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.3) - 2025-11-15
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -8,6 +8,7 @@
 
 ### 📦️ Dependency
 
+- fix(deps): update golang.org/x/exp digest to e25ba8c [[#470](https://github.com/woodpecker-ci/autoscaler/pull/470)]
 - fix(deps): update golang deps non-major [[#469](https://github.com/woodpecker-ci/autoscaler/pull/469)]
 - fix(deps): update golang deps non-major [[#468](https://github.com/woodpecker-ci/autoscaler/pull/468)]
 - fix(deps): update module github.com/urfave/cli/v3 to v3.6.0 [[#467](https://github.com/woodpecker-ci/autoscaler/pull/467)]
