@@ -8,6 +8,7 @@
 
 ### 📦️ Dependency
 
+- chore(deps): update pre-commit hook golangci/golangci-lint to v2.6.2 [[#472](https://github.com/woodpecker-ci/autoscaler/pull/472)]
 - fix(deps): update golang.org/x/exp digest to e25ba8c [[#470](https://github.com/woodpecker-ci/autoscaler/pull/470)]
 - fix(deps): update golang deps non-major [[#469](https://github.com/woodpecker-ci/autoscaler/pull/469)]
 - fix(deps): update golang deps non-major [[#468](https://github.com/woodpecker-ci/autoscaler/pull/468)]
