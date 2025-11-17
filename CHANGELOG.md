@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.1.3](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.3) - 2025-11-16
+## [1.1.3](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.3) - 2025-11-17
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -8,6 +8,7 @@
 
 ### 📦️ Dependency
 
+- fix(deps): update module github.com/urfave/cli/v3 to v3.6.1 [[#474](https://github.com/woodpecker-ci/autoscaler/pull/474)]
 - fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.269.0 [[#473](https://github.com/woodpecker-ci/autoscaler/pull/473)]
 - chore(deps): update pre-commit hook golangci/golangci-lint to v2.6.2 [[#472](https://github.com/woodpecker-ci/autoscaler/pull/472)]
 - fix(deps): update golang.org/x/exp digest to e25ba8c [[#470](https://github.com/woodpecker-ci/autoscaler/pull/470)]
