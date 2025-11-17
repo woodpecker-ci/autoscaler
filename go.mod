@@ -15,7 +15,7 @@ require (
 	github.com/rs/zerolog v1.34.0
 	github.com/scaleway/scaleway-sdk-go v1.0.0-beta.35
 	github.com/stretchr/testify v1.11.1
-	github.com/urfave/cli/v3 v3.6.0
+	github.com/urfave/cli/v3 v3.6.1
 	github.com/vultr/govultr/v3 v3.24.0
 	go.woodpecker-ci.org/woodpecker/v3 v3.11.0
 	golang.org/x/exp v0.0.0-20251113190631-e25ba8c21ef6
