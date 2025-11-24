@@ -12,8 +12,8 @@ github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.7.14 h1:bOS19y6zlJwagBfHxs
 github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.7.14/go.mod h1:1ipeGBMAxZ0xcTm6y6paC2C/J6f6OO7LBODV9afuAyM=
 github.com/aws/aws-sdk-go-v2/internal/ini v1.8.4 h1:WKuaxf++XKWlHWu9ECbMlha8WOEGm0OUEZqm4K/Gcfk=
 github.com/aws/aws-sdk-go-v2/internal/ini v1.8.4/go.mod h1:ZWy7j6v1vWGmPReu0iSGvRiise4YI5SkR3OHKTZ6Wuc=
-github.com/aws/aws-sdk-go-v2/service/ec2 v1.273.0 h1:lJZflraZ8ddloz8bA2dX9ukc4mkLQFoYwZlzG7GLgWk=
-github.com/aws/aws-sdk-go-v2/service/ec2 v1.273.0/go.mod h1:QrV+/GjhSrJh6MRRuTO6ZEg4M2I0nwPakf0lZHSrE1o=
+github.com/aws/aws-sdk-go-v2/service/ec2 v1.274.0 h1:Q2+WD4KSVRkd27QxD9I30nM3O7B4WYwE+ua5dm2NJY0=
+github.com/aws/aws-sdk-go-v2/service/ec2 v1.274.0/go.mod h1:QrV+/GjhSrJh6MRRuTO6ZEg4M2I0nwPakf0lZHSrE1o=
 github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.13.3 h1:x2Ibm/Af8Fi+BH+Hsn9TXGdT+hKbDd5XOTZxTMxDk7o=
 github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.13.3/go.mod h1:IW1jwyrQgMdhisceG8fQLmQIydcT/jWY21rFhzgaKwo=
 github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.13.14 h1:FIouAnCE46kyYqyhs0XEBDFFSREtdnr8HQuLPQPLCrY=
@@ -103,8 +103,8 @@ github.com/stretchr/testify v1.11.1 h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu
 github.com/stretchr/testify v1.11.1/go.mod h1:wZwfW3scLgRK+23gO65QZefKpKQRnfz6sD981Nm4B6U=
 github.com/urfave/cli/v3 v3.6.1 h1:j8Qq8NyUawj/7rTYdBGrxcH7A/j7/G8Q5LhWEW4G3Mo=
 github.com/urfave/cli/v3 v3.6.1/go.mod h1:ysVLtOEmg2tOy6PknnYVhDoouyC/6N42TMeoMzskhso=
-github.com/vultr/govultr/v3 v3.24.0 h1:fTTTj0VBve+Miy+wGhlb90M2NMDfpGFi6Frlj3HVy6M=
-github.com/vultr/govultr/v3 v3.24.0/go.mod h1:9WwnWGCKnwDlNjHjtt+j+nP+0QWq6hQXzaHgddqrLWY=
+github.com/vultr/govultr/v3 v3.25.0 h1:rS8/Vdy8HlHArwmD4MtLY+hbbpYAbcnZueZrE6b0oUg=
+github.com/vultr/govultr/v3 v3.25.0/go.mod h1:9WwnWGCKnwDlNjHjtt+j+nP+0QWq6hQXzaHgddqrLWY=
 go.uber.org/goleak v1.3.0 h1:2K3zAYmnTNqV73imy9J1T3WC+gmCePx2hEGkimedGto=
 go.uber.org/goleak v1.3.0/go.mod h1:CoHD4mav9JJNrW/WLlf7HGZPjdw8EucARQHekz1X6bE=
 go.woodpecker-ci.org/woodpecker/v3 v3.12.0 h1:cWrloP+eUI7XMOL+7mAKnLFQd1j1zHAV+7NEM2hu774=
