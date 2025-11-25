@@ -8,6 +8,7 @@
 
 ### 📦️ Dependency
 
+- chore(deps): update pre-commit hook igorshubovych/markdownlint-cli to v0.46.0 [[#479](https://github.com/woodpecker-ci/autoscaler/pull/479)]
 - fix(deps): update module github.com/aws/aws-sdk-go-v2/config to v1.32.1 [[#480](https://github.com/woodpecker-ci/autoscaler/pull/480)]
 - fix(deps): update golang deps non-major [[#478](https://github.com/woodpecker-ci/autoscaler/pull/478)]
 - fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.273.0 [[#477](https://github.com/woodpecker-ci/autoscaler/pull/477)]
