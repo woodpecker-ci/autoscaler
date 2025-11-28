@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.1.3](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.3) - 2025-11-25
+## [1.1.3](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.3) - 2025-11-28
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -8,6 +8,7 @@
 
 ### 📦️ Dependency
 
+- fix(deps): update golang deps non-major [[#481](https://github.com/woodpecker-ci/autoscaler/pull/481)]
 - chore(deps): update pre-commit hook igorshubovych/markdownlint-cli to v0.46.0 [[#479](https://github.com/woodpecker-ci/autoscaler/pull/479)]
 - fix(deps): update module github.com/aws/aws-sdk-go-v2/config to v1.32.1 [[#480](https://github.com/woodpecker-ci/autoscaler/pull/480)]
 - fix(deps): update golang deps non-major [[#478](https://github.com/woodpecker-ci/autoscaler/pull/478)]
