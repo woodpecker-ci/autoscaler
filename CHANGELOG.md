@@ -8,6 +8,7 @@
 
 ### 📦️ Dependency
 
+- chore(deps): update dependency golangci/golangci-lint to v2.6.2 [[#471](https://github.com/woodpecker-ci/autoscaler/pull/471)]
 - fix(deps): update golang.org/x/exp digest to 87e1e73 [[#482](https://github.com/woodpecker-ci/autoscaler/pull/482)]
 - fix(deps): update golang deps non-major [[#481](https://github.com/woodpecker-ci/autoscaler/pull/481)]
 - chore(deps): update pre-commit hook igorshubovych/markdownlint-cli to v0.46.0 [[#479](https://github.com/woodpecker-ci/autoscaler/pull/479)]
