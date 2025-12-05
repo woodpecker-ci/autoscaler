@@ -1,10 +1,14 @@
 # Changelog
 
-## [1.1.3](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.3) - 2025-12-03
+## [1.1.3](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.3) - 2025-12-05
 
 ### ❤️ Thanks to all contributors! ❤️
 
-@6543
+@6543, @xoxys
+
+### 🐛 Bug Fixes
+
+- Ensure latest qemu packages are installed [[#484](https://github.com/woodpecker-ci/autoscaler/pull/484)]
 
 ### 📦️ Dependency
 
