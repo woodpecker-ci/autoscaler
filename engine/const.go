@@ -11,7 +11,7 @@ var (
 #cloud-config
 
 package_reboot_if_required: false
-package_update: false
+package_update: true
 package_upgrade: false
 
 groups:
@@ -31,6 +31,8 @@ apt:
 packages:
   - docker-ce
   - docker-compose-plugin
+  - binfmt-support
+  - qemu-user-static
 
 write_files:
 - path: /root/docker-compose.yml
