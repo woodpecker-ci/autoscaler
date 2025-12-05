@@ -31,7 +31,7 @@ apt:
 packages:
   - docker-ce
   - docker-compose-plugin
-	- binfmt-support
+  - binfmt-support
   - qemu-user-static
 
 write_files:
