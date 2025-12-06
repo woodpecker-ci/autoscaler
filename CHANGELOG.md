@@ -1,5 +1,56 @@
 # Changelog
 
+## [1.1.3](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.3) - 2025-12-06
+
+### ❤️ Thanks to all contributors! ❤️
+
+@6543, @xoxys
+
+### 🐛 Bug Fixes
+
+- Ensure latest qemu packages are installed [[#484](https://github.com/woodpecker-ci/autoscaler/pull/484)]
+
+### 📦️ Dependency
+
+- chore(deps): update dependency golangci/golangci-lint to v2.7.1 [[#485](https://github.com/woodpecker-ci/autoscaler/pull/485)]
+- chore(deps): update pre-commit hook golangci/golangci-lint to v2.7.1 [[#486](https://github.com/woodpecker-ci/autoscaler/pull/486)]
+- fix(deps): update golang deps non-major [[#483](https://github.com/woodpecker-ci/autoscaler/pull/483)]
+- chore(deps): update dependency golangci/golangci-lint to v2.6.2 [[#471](https://github.com/woodpecker-ci/autoscaler/pull/471)]
+- fix(deps): update golang.org/x/exp digest to 87e1e73 [[#482](https://github.com/woodpecker-ci/autoscaler/pull/482)]
+- fix(deps): update golang deps non-major [[#481](https://github.com/woodpecker-ci/autoscaler/pull/481)]
+- chore(deps): update pre-commit hook igorshubovych/markdownlint-cli to v0.46.0 [[#479](https://github.com/woodpecker-ci/autoscaler/pull/479)]
+- fix(deps): update module github.com/aws/aws-sdk-go-v2/config to v1.32.1 [[#480](https://github.com/woodpecker-ci/autoscaler/pull/480)]
+- fix(deps): update golang deps non-major [[#478](https://github.com/woodpecker-ci/autoscaler/pull/478)]
+- fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.273.0 [[#477](https://github.com/woodpecker-ci/autoscaler/pull/477)]
+- fix(deps): update golang deps non-major [[#476](https://github.com/woodpecker-ci/autoscaler/pull/476)]
+- fix(deps): update golang deps non-major [[#475](https://github.com/woodpecker-ci/autoscaler/pull/475)]
+- fix(deps): update module github.com/urfave/cli/v3 to v3.6.1 [[#474](https://github.com/woodpecker-ci/autoscaler/pull/474)]
+- fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.269.0 [[#473](https://github.com/woodpecker-ci/autoscaler/pull/473)]
+- chore(deps): update pre-commit hook golangci/golangci-lint to v2.6.2 [[#472](https://github.com/woodpecker-ci/autoscaler/pull/472)]
+- fix(deps): update golang.org/x/exp digest to e25ba8c [[#470](https://github.com/woodpecker-ci/autoscaler/pull/470)]
+- fix(deps): update golang deps non-major [[#469](https://github.com/woodpecker-ci/autoscaler/pull/469)]
+- fix(deps): update golang deps non-major [[#468](https://github.com/woodpecker-ci/autoscaler/pull/468)]
+- fix(deps): update module github.com/urfave/cli/v3 to v3.6.0 [[#467](https://github.com/woodpecker-ci/autoscaler/pull/467)]
+- chore(deps): update dependency golangci/golangci-lint to v2.6.1 [[#464](https://github.com/woodpecker-ci/autoscaler/pull/464)]
+- chore(deps): update pre-commit hook golangci/golangci-lint to v2.6.1 [[#465](https://github.com/woodpecker-ci/autoscaler/pull/465)]
+- fix(deps): update golang deps non-major [[#466](https://github.com/woodpecker-ci/autoscaler/pull/466)]
+- fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.263.0 [[#463](https://github.com/woodpecker-ci/autoscaler/pull/463)]
+- fix(deps): update golang deps non-major [[#462](https://github.com/woodpecker-ci/autoscaler/pull/462)]
+- fix(deps): update golang deps non-major [[#461](https://github.com/woodpecker-ci/autoscaler/pull/461)]
+- fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.261.0 [[#460](https://github.com/woodpecker-ci/autoscaler/pull/460)]
+- chore(deps): update node.js to v24 [[#458](https://github.com/woodpecker-ci/autoscaler/pull/458)]
+- chore(deps): update pre-commit hook golangci/golangci-lint to v2.6.0 [[#457](https://github.com/woodpecker-ci/autoscaler/pull/457)]
+- chore(deps): update dependency golangci/golangci-lint to v2.6.0 [[#456](https://github.com/woodpecker-ci/autoscaler/pull/456)]
+- fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.260.0 [[#459](https://github.com/woodpecker-ci/autoscaler/pull/459)]
+- fix(deps): update golang deps non-major [[#455](https://github.com/woodpecker-ci/autoscaler/pull/455)]
+- fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.259.0 [[#454](https://github.com/woodpecker-ci/autoscaler/pull/454)]
+- fix(deps): update golang.org/x/exp digest to a4bb9ff [[#451](https://github.com/woodpecker-ci/autoscaler/pull/451)]
+- chore(deps): update dependency mvdan/gofumpt to v0.9.2 [[#452](https://github.com/woodpecker-ci/autoscaler/pull/452)]
+- fix(deps): update golang deps non-major [[#453](https://github.com/woodpecker-ci/autoscaler/pull/453)]
+- fix(deps): update golang deps non-major [[#450](https://github.com/woodpecker-ci/autoscaler/pull/450)]
+- Use our own editorconfig checker plugin [[#447](https://github.com/woodpecker-ci/autoscaler/pull/447)]
+- fix(deps): update module go.woodpecker-ci.org/woodpecker/v3 to v3.11.0 [[#448](https://github.com/woodpecker-ci/autoscaler/pull/448)]
+
 ## [1.1.2](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.2) - 2025-10-19
 
 ### ❤️ Thanks to all contributors! ❤️
