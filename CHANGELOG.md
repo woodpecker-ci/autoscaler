@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.1.4](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.4) - 2025-12-07
+
+### 📦️ Dependency
+
+- chore(deps): update pre-commit hook golangci/golangci-lint to v2.7.2 [[#487](https://github.com/woodpecker-ci/autoscaler/pull/487)]
+
 ## [1.1.3](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.3) - 2025-12-06
 
 ### ❤️ Thanks to all contributors! ❤️
