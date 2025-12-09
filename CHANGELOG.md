@@ -4,6 +4,7 @@
 
 ### 📦️ Dependency
 
+- chore(deps): update dependency golangci/golangci-lint to v2.7.2 [[#489](https://github.com/woodpecker-ci/autoscaler/pull/489)]
 - fix(deps): update golang deps non-major [[#490](https://github.com/woodpecker-ci/autoscaler/pull/490)]
 - chore(deps): update pre-commit hook golangci/golangci-lint to v2.7.2 [[#487](https://github.com/woodpecker-ci/autoscaler/pull/487)]
 
