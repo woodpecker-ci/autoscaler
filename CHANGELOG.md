@@ -4,6 +4,7 @@
 
 ### 📦️ Dependency
 
+- chore(deps): update pre-commit hook igorshubovych/markdownlint-cli to v0.47.0 [[#494](https://github.com/woodpecker-ci/autoscaler/pull/494)]
 - fix(deps): update golang.org/x/exp digest to 8475f28 [[#493](https://github.com/woodpecker-ci/autoscaler/pull/493)]
 - fix(deps): update module github.com/vultr/govultr/v3 to v3.26.0 [[#492](https://github.com/woodpecker-ci/autoscaler/pull/492)]
 - fix(deps): update golang deps non-major [[#491](https://github.com/woodpecker-ci/autoscaler/pull/491)]
