@@ -1,9 +1,10 @@
 # Changelog
 
-## [1.1.4](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.4) - 2025-12-13
+## [1.1.4](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.4) - 2025-12-16
 
 ### 📦️ Dependency
 
+- fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.277.0 [[#495](https://github.com/woodpecker-ci/autoscaler/pull/495)]
 - chore(deps): update pre-commit hook igorshubovych/markdownlint-cli to v0.47.0 [[#494](https://github.com/woodpecker-ci/autoscaler/pull/494)]
 - fix(deps): update golang.org/x/exp digest to 8475f28 [[#493](https://github.com/woodpecker-ci/autoscaler/pull/493)]
 - fix(deps): update module github.com/vultr/govultr/v3 to v3.26.0 [[#492](https://github.com/woodpecker-ci/autoscaler/pull/492)]
