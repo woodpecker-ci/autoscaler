@@ -39,6 +39,7 @@ type Provider struct {
 	image            string
 	enableIPv6       bool
 	storage          scw.Size
+	storageType      instance.VolumeVolumeType
 	config           *config.Config
 	client           *scw.Client
 }
@@ -75,6 +76,7 @@ func New(_ context.Context, c *cli.Command, config *config.Config) (engine.Provi
 		image:            c.String("scaleway-image"),
 		enableIPv6:       c.Bool("scaleway-enable-ipv6"),
 		storage:          scw.Size(c.Uint64("scaleway-storage-size") * units.GB),
+		storageType:      instance.VolumeVolumeType(c.String("scaleway-storage-type")),
 		config:           config,
 	}
 
@@ -221,7 +223,7 @@ func (p *Provider) createInstance(ctx context.Context, agent *woodpecker.Agent) 
 			"0": {
 				Boot:       scw.BoolPtr(true),
 				Size:       scw.SizePtr(p.storage),
-				VolumeType: instance.VolumeVolumeTypeBSSD,
+				VolumeType: p.storageType,
 			},
 		},
 		EnableIPv6: &p.enableIPv6,
