@@ -82,4 +82,11 @@ var ProviderFlags = []cli.Flag{
 		Category: category,
 		Value:    25,
 	},
+	&cli.StringFlag{
+		Name:     "scaleway-storage-type",
+		Usage:    "The storage type to provision",
+		Sources:  cli.EnvVars("WOODPECKER_SCALEWAY_STORAGE_TYPE"),
+		Category: category,
+		Value:    "l_ssd",
+	},
 }
