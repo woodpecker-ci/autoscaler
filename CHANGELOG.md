@@ -1,5 +1,30 @@
 # Changelog
 
+## [1.1.4](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.4) - 2025-12-23
+
+### ❤️ Thanks to all contributors! ❤️
+
+@mossylion
+
+### 🐛 Bug Fixes
+
+- Allow setting Scaleway storage type and default to l_ssd [[#501](https://github.com/woodpecker-ci/autoscaler/pull/501)]
+
+### 📦️ Dependency
+
+- fix(deps): update golang.org/x/exp digest to 944ab1f [[#499](https://github.com/woodpecker-ci/autoscaler/pull/499)]
+- fix(deps): update golang deps non-major [[#500](https://github.com/woodpecker-ci/autoscaler/pull/500)]
+- fix(deps): update golang deps non-major [[#498](https://github.com/woodpecker-ci/autoscaler/pull/498)]
+- fix(deps): update golang deps non-major [[#496](https://github.com/woodpecker-ci/autoscaler/pull/496)]
+- fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.277.0 [[#495](https://github.com/woodpecker-ci/autoscaler/pull/495)]
+- chore(deps): update pre-commit hook igorshubovych/markdownlint-cli to v0.47.0 [[#494](https://github.com/woodpecker-ci/autoscaler/pull/494)]
+- fix(deps): update golang.org/x/exp digest to 8475f28 [[#493](https://github.com/woodpecker-ci/autoscaler/pull/493)]
+- fix(deps): update module github.com/vultr/govultr/v3 to v3.26.0 [[#492](https://github.com/woodpecker-ci/autoscaler/pull/492)]
+- fix(deps): update golang deps non-major [[#491](https://github.com/woodpecker-ci/autoscaler/pull/491)]
+- chore(deps): update dependency golangci/golangci-lint to v2.7.2 [[#489](https://github.com/woodpecker-ci/autoscaler/pull/489)]
+- fix(deps): update golang deps non-major [[#490](https://github.com/woodpecker-ci/autoscaler/pull/490)]
+- chore(deps): update pre-commit hook golangci/golangci-lint to v2.7.2 [[#487](https://github.com/woodpecker-ci/autoscaler/pull/487)]
+
 ## [1.1.3](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.3) - 2025-12-06
 
 ### ❤️ Thanks to all contributors! ❤️
