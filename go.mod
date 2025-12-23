@@ -7,9 +7,9 @@ toolchain go1.25.5
 require (
 	github.com/aws/aws-sdk-go-v2 v1.41.0
 	github.com/aws/aws-sdk-go-v2/config v1.32.6
-	github.com/aws/aws-sdk-go-v2/service/ec2 v1.278.0
+	github.com/aws/aws-sdk-go-v2/service/ec2 v1.279.0
 	github.com/docker/go-units v0.5.0
-	github.com/hetznercloud/hcloud-go/v2 v2.32.0
+	github.com/hetznercloud/hcloud-go/v2 v2.33.0
 	github.com/joho/godotenv v1.5.1
 	github.com/linode/linodego v1.63.0
 	github.com/rs/zerolog v1.34.0
@@ -18,7 +18,7 @@ require (
 	github.com/urfave/cli/v3 v3.6.1
 	github.com/vultr/govultr/v3 v3.26.1
 	go.woodpecker-ci.org/woodpecker/v3 v3.12.0
-	golang.org/x/exp v0.0.0-20251209150349-8475f28825e9
+	golang.org/x/exp v0.0.0-20251219203646-944ab1f22d93
 	golang.org/x/net v0.48.0
 	golang.org/x/oauth2 v0.34.0
 )
