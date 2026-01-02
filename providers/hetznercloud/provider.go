@@ -171,7 +171,7 @@ func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 		serverCreateOpts.ServerType = serverType
 		serverCreateOpts.Image = image
 
-		log.Info().Msg("create agent: location = %s type = %s")
+		log.Info().Msgf("create agent: location = %s type = %s", location, serverType)
 
 		_, _, err = p.client.Server().Create(ctx, serverCreateOpts)
 		if err == nil {
@@ -185,7 +185,7 @@ func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 
 		// Only log warning if there are more server types to try
 		if i < len(p.serverType)-1 {
-			log.Warn().Msg(fmt.Sprintf("create agent failed: location = %s type = %s: %s", serverCreateOpts.Location.Name, serverCreateOpts.ServerType.Name, err))
+			log.Warn().Msgf("create agent failed: location = %s type = %s: %s", serverCreateOpts.Location.Name, serverCreateOpts.ServerType.Name, err)
 			continue
 		}
 
