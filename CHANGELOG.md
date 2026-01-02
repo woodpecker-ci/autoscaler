@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.1.5](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.5) - 2026-01-02
+
+### ❤️ Thanks to all contributors! ❤️
+
+@qwerty287
+
+### 🐛 Bug Fixes
+
+- Fix log format messages [[#502](https://github.com/woodpecker-ci/autoscaler/pull/502)]
+
 ## [1.1.4](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.4) - 2025-12-23
 
 ### ❤️ Thanks to all contributors! ❤️
