@@ -171,7 +171,7 @@ func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 		serverCreateOpts.ServerType = serverType
 		serverCreateOpts.Image = image
 
-		log.Info().Msgf("create agent: location = %s type = %s", location, serverType)
+		log.Info().Msgf("create agent: location = %s type = %s", location, rawType)
 
 		_, _, err = p.client.Server().Create(ctx, serverCreateOpts)
 		if err == nil {
