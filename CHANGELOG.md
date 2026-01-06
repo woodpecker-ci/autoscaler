@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.1.5](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.5) - 2026-01-02
+## [1.1.5](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.5) - 2026-01-06
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -9,6 +9,10 @@
 ### 🐛 Bug Fixes
 
 - Fix log format messages [[#502](https://github.com/woodpecker-ci/autoscaler/pull/502)]
+
+### 📦️ Dependency
+
+- fix(deps): update module github.com/linode/linodego to v1.64.0 [[#504](https://github.com/woodpecker-ci/autoscaler/pull/504)]
 
 ## [1.1.4](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.4) - 2025-12-23
 
