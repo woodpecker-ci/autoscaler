@@ -4,7 +4,7 @@ when:
 
 steps:
   - name: release
-    image: docker.io/woodpeckerci/plugin-ready-release-go:3.4.0
+    image: docker.io/woodpeckerci/plugin-ready-release-go:3.4.1
     pull: true
     settings:
       git_email: woodpecker-bot@obermui.de
