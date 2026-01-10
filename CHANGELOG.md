@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.1.5](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.5) - 2026-01-09
+## [1.1.5](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.5) - 2026-01-10
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -12,6 +12,7 @@
 
 ### 📦️ Dependency
 
+- chore(deps): update dependency golangci/golangci-lint to v2.8.0 [[#510](https://github.com/woodpecker-ci/autoscaler/pull/510)]
 - fix(deps): update module github.com/hetznercloud/hcloud-go/v2 to v2.34.0 [[#505](https://github.com/woodpecker-ci/autoscaler/pull/505)]
 - fix(deps): update module github.com/linode/linodego to v1.64.0 [[#504](https://github.com/woodpecker-ci/autoscaler/pull/504)]
 
