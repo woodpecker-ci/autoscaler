@@ -12,6 +12,7 @@
 
 ### 📦️ Dependency
 
+- chore(deps): update docker.io/woodpeckerci/plugin-docker-buildx docker tag to v6.0.4 [[#508](https://github.com/woodpecker-ci/autoscaler/pull/508)]
 - chore(deps): update dependency golangci/golangci-lint to v2.8.0 [[#510](https://github.com/woodpecker-ci/autoscaler/pull/510)]
 - fix(deps): update module github.com/hetznercloud/hcloud-go/v2 to v2.34.0 [[#505](https://github.com/woodpecker-ci/autoscaler/pull/505)]
 - fix(deps): update module github.com/linode/linodego to v1.64.0 [[#504](https://github.com/woodpecker-ci/autoscaler/pull/504)]
