@@ -12,6 +12,7 @@
 
 ### 📦️ Dependency
 
+- chore(deps): update docker.io/woodpeckerci/plugin-ready-release-go docker tag to v3.4.1 [[#509](https://github.com/woodpecker-ci/autoscaler/pull/509)]
 - fix(deps): update golang deps non-major [[#507](https://github.com/woodpecker-ci/autoscaler/pull/507)]
 - chore(deps): update docker.io/woodpeckerci/plugin-editorconfig-checker docker tag to v0.3.3 [[#506](https://github.com/woodpecker-ci/autoscaler/pull/506)]
 - chore(deps): update docker.io/woodpeckerci/plugin-docker-buildx docker tag to v6.0.4 [[#508](https://github.com/woodpecker-ci/autoscaler/pull/508)]
