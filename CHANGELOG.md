@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.1.5](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.5) - 2026-01-10
+## [1.1.5](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.5) - 2026-01-12
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -12,6 +12,7 @@
 
 ### 📦️ Dependency
 
+- fix(deps): update golang deps non-major [[#507](https://github.com/woodpecker-ci/autoscaler/pull/507)]
 - chore(deps): update docker.io/woodpeckerci/plugin-editorconfig-checker docker tag to v0.3.3 [[#506](https://github.com/woodpecker-ci/autoscaler/pull/506)]
 - chore(deps): update docker.io/woodpeckerci/plugin-docker-buildx docker tag to v6.0.4 [[#508](https://github.com/woodpecker-ci/autoscaler/pull/508)]
 - chore(deps): update dependency golangci/golangci-lint to v2.8.0 [[#510](https://github.com/woodpecker-ci/autoscaler/pull/510)]
