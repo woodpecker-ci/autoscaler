@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.1.5](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.5) - 2026-01-13
+
+### ❤️ Thanks to all contributors! ❤️
+
+@qwerty287
+
+### 🐛 Bug Fixes
+
+- Fix log format messages [[#502](https://github.com/woodpecker-ci/autoscaler/pull/502)]
+
+### 📦️ Dependency
+
+- chore(deps): update pre-commit non-major [[#511](https://github.com/woodpecker-ci/autoscaler/pull/511)]
+- chore(deps): update docker.io/woodpeckerci/plugin-ready-release-go docker tag to v3.4.1 [[#509](https://github.com/woodpecker-ci/autoscaler/pull/509)]
+- fix(deps): update golang deps non-major [[#507](https://github.com/woodpecker-ci/autoscaler/pull/507)]
+- chore(deps): update docker.io/woodpeckerci/plugin-editorconfig-checker docker tag to v0.3.3 [[#506](https://github.com/woodpecker-ci/autoscaler/pull/506)]
+- chore(deps): update docker.io/woodpeckerci/plugin-docker-buildx docker tag to v6.0.4 [[#508](https://github.com/woodpecker-ci/autoscaler/pull/508)]
+- chore(deps): update dependency golangci/golangci-lint to v2.8.0 [[#510](https://github.com/woodpecker-ci/autoscaler/pull/510)]
+- fix(deps): update module github.com/hetznercloud/hcloud-go/v2 to v2.34.0 [[#505](https://github.com/woodpecker-ci/autoscaler/pull/505)]
+- fix(deps): update module github.com/linode/linodego to v1.64.0 [[#504](https://github.com/woodpecker-ci/autoscaler/pull/504)]
+
 ## [1.1.4](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.4) - 2025-12-23
 
 ### ❤️ Thanks to all contributors! ❤️
