@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.6](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.6) - 2026-01-16
+
+### 📦️ Dependency
+
+- fix(deps): update golang deps non-major [[#514](https://github.com/woodpecker-ci/autoscaler/pull/514)]
+- fix(deps): update module go.woodpecker-ci.org/woodpecker/v3 to v3.13.0 [[#512](https://github.com/woodpecker-ci/autoscaler/pull/512)]
+
 ## [1.1.5](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.5) - 2026-01-13
 
 ### ❤️ Thanks to all contributors! ❤️
