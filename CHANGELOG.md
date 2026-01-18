@@ -4,6 +4,7 @@
 
 ### 📦️ Dependency
 
+- chore(deps): update pre-commit hook adrienverge/yamllint to v1.38.0 [[#516](https://github.com/woodpecker-ci/autoscaler/pull/516)]
 - fix(deps): update module github.com/hetznercloud/hcloud-go/v2 to v2.35.0 [[#517](https://github.com/woodpecker-ci/autoscaler/pull/517)]
 - fix(deps): update golang deps non-major [[#514](https://github.com/woodpecker-ci/autoscaler/pull/514)]
 - fix(deps): update module go.woodpecker-ci.org/woodpecker/v3 to v3.13.0 [[#512](https://github.com/woodpecker-ci/autoscaler/pull/512)]
