@@ -12,6 +12,7 @@
 
 ### 📦️ Dependency
 
+- fix(deps): update golang.org/x/exp digest to 716be56 [[#515](https://github.com/woodpecker-ci/autoscaler/pull/515)]
 - fix(deps): update module github.com/urfave/cli/v3 to v3.6.2 [[#518](https://github.com/woodpecker-ci/autoscaler/pull/518)]
 - chore(deps): update pre-commit hook adrienverge/yamllint to v1.38.0 [[#516](https://github.com/woodpecker-ci/autoscaler/pull/516)]
 - fix(deps): update module github.com/hetznercloud/hcloud-go/v2 to v2.35.0 [[#517](https://github.com/woodpecker-ci/autoscaler/pull/517)]
