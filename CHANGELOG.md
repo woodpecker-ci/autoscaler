@@ -1,9 +1,10 @@
 # Changelog
 
-## [1.1.6](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.6) - 2026-01-18
+## [1.1.6](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.6) - 2026-01-19
 
 ### 📦️ Dependency
 
+- fix(deps): update module github.com/urfave/cli/v3 to v3.6.2 [[#518](https://github.com/woodpecker-ci/autoscaler/pull/518)]
 - chore(deps): update pre-commit hook adrienverge/yamllint to v1.38.0 [[#516](https://github.com/woodpecker-ci/autoscaler/pull/516)]
 - fix(deps): update module github.com/hetznercloud/hcloud-go/v2 to v2.35.0 [[#517](https://github.com/woodpecker-ci/autoscaler/pull/517)]
 - fix(deps): update golang deps non-major [[#514](https://github.com/woodpecker-ci/autoscaler/pull/514)]
