@@ -1,6 +1,14 @@
 # Changelog
 
-## [1.1.6](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.6) - 2026-01-19
+## [1.2.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.2.0) - 2026-01-19
+
+### ❤️ Thanks to all contributors! ❤️
+
+@jooola
+
+### 📈 Enhancement
+
+- feat: add Woodpecker to Hetzner Cloud client user agent [[#519](https://github.com/woodpecker-ci/autoscaler/pull/519)]
 
 ### 📦️ Dependency
 
