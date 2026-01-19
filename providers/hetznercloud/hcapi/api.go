@@ -67,7 +67,10 @@ type firewallClient struct {
 
 func NewClient(opts ...hcloud.ClientOption) Client {
 	return &client{
-		client: hcloud.NewClient(opts...),
+		client: hcloud.NewClient(append(
+			opts,
+			hcloud.WithApplication("woodpecker-autoscaler", ""),
+		)...),
 	}
 }
 
