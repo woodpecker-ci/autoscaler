@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.2.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.2.0) - 2026-01-22
+## [1.2.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.2.0) - 2026-01-23
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -12,6 +12,7 @@
 
 ### 📦️ Dependency
 
+- fix(deps): update golang deps non-major [[#521](https://github.com/woodpecker-ci/autoscaler/pull/521)]
 - fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.280.0 [[#520](https://github.com/woodpecker-ci/autoscaler/pull/520)]
 - fix(deps): update golang.org/x/exp digest to 716be56 [[#515](https://github.com/woodpecker-ci/autoscaler/pull/515)]
 - fix(deps): update module github.com/urfave/cli/v3 to v3.6.2 [[#518](https://github.com/woodpecker-ci/autoscaler/pull/518)]
