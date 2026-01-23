@@ -7,9 +7,9 @@ toolchain go1.25.6
 require (
 	github.com/aws/aws-sdk-go-v2 v1.41.1
 	github.com/aws/aws-sdk-go-v2/config v1.32.7
-	github.com/aws/aws-sdk-go-v2/service/ec2 v1.280.0
+	github.com/aws/aws-sdk-go-v2/service/ec2 v1.281.0
 	github.com/docker/go-units v0.5.0
-	github.com/hetznercloud/hcloud-go/v2 v2.35.0
+	github.com/hetznercloud/hcloud-go/v2 v2.36.0
 	github.com/joho/godotenv v1.5.1
 	github.com/linode/linodego v1.64.0
 	github.com/rs/zerolog v1.34.0
