@@ -19,6 +19,7 @@ import (
 	"go.woodpecker-ci.org/autoscaler/providers/scaleway"
 	"go.woodpecker-ci.org/autoscaler/providers/vultr"
 	"go.woodpecker-ci.org/autoscaler/server"
+	"go.woodpecker-ci.org/autoscaler/version"
 )
 
 func setupProvider(ctx context.Context, cmd *cli.Command, config *config.Config) (engine.Provider, error) {
@@ -43,7 +44,7 @@ func setupProvider(ctx context.Context, cmd *cli.Command, config *config.Config)
 }
 
 func run(ctx context.Context, cmd *cli.Command) error {
-	log.Log().Msgf("starting autoscaler with log-level=%s", zerolog.GlobalLevel().String())
+	log.Log().Msgf("starting autoscaler with version '%s'", version.String())
 
 	client, err := server.NewClient(ctx, cmd)
 	if err != nil {
@@ -109,9 +110,10 @@ func run(ctx context.Context, cmd *cli.Command) error {
 
 func main() {
 	app := &cli.Command{
-		Name:  "autoscaler",
-		Usage: "scale to the moon and back",
-		Flags: flags,
+		Name:    "autoscaler",
+		Version: version.String(),
+		Usage:   "scale to the moon and back",
+		Flags:   flags,
 		Before: func(ctx context.Context, cmd *cli.Command) (context.Context, error) {
 			zerolog.SetGlobalLevel(zerolog.InfoLevel)
 			if cmd.IsSet("log-level") {
