@@ -44,7 +44,7 @@ func setupProvider(ctx context.Context, cmd *cli.Command, config *config.Config)
 }
 
 func run(ctx context.Context, cmd *cli.Command) error {
-	log.Log().Msgf("starting autoscaler with log-level=%s", zerolog.GlobalLevel().String())
+	log.Log().Msgf("starting autoscaler with version '%s'", version.String())
 
 	client, err := server.NewClient(ctx, cmd)
 	if err != nil {
