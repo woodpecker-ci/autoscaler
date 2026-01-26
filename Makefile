@@ -8,7 +8,24 @@ GO_PACKAGES ?= $(shell go list ./... | grep -v /vendor/)
 TARGETOS ?= linux
 TARGETARCH ?= amd64
 
-LDFLAGS := -s -w -extldflags "-static"
+VERSION ?= next
+CI_COMMIT_SHA ?= $(shell git rev-parse HEAD)
+
+# it's a tagged release
+ifneq ($(CI_COMMIT_TAG),)
+	VERSION := $(CI_COMMIT_TAG:v%=%)
+else
+	# append commit-sha to next version
+	ifeq ($(VERSION),next)
+		VERSION := $(shell echo "next-$(shell echo ${CI_COMMIT_SHA} | cut -c -10)")
+	endif
+	# append commit-sha to release branch version
+	ifeq ($(shell echo ${CI_COMMIT_BRANCH} | cut -c -9),release/v)
+		VERSION := $(shell echo "$(shell echo ${CI_COMMIT_BRANCH} | cut -c 10-)-$(shell echo ${CI_COMMIT_SHA} | cut -c -10)")
+	endif
+endif
+
+LDFLAGS := -s -w -extldflags "-static" -X go.woodpecker-ci.org/autoscaler/version.Version=${VERSION}
 CGO_ENABLED := 0
 
 HAS_GO = $(shell hash go > /dev/null 2>&1 && echo "GO" || echo "NOGO" )
@@ -29,6 +46,7 @@ ifeq (in_docker,$(firstword $(MAKECMDGOALS)))
 	@echo run in docker:
 	@docker run -it \
 		--user $(shell id -u):$(shell id -g) \
+		-e VERSION="$(VERSION)" \
 		-e CI_COMMIT_SHA="$(CI_COMMIT_SHA)" \
 		-e TARGETOS="$(TARGETOS)" \
 		-e TARGETARCH="$(TARGETARCH)" \
@@ -59,6 +77,10 @@ all: help
 .PHONY: help
 help: ## Display this help.
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
+
+.PHONY: version
+version: ## Print the current version
+	@echo ${VERSION}
 
 format: install-tools ## Format source code
 	@gofumpt -extra -w .

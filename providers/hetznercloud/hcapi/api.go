@@ -2,6 +2,8 @@ package hcapi
 
 import (
 	"github.com/hetznercloud/hcloud-go/v2/hcloud"
+
+	"go.woodpecker-ci.org/autoscaler/version"
 )
 
 type Client interface {
@@ -69,7 +71,7 @@ func NewClient(opts ...hcloud.ClientOption) Client {
 	return &client{
 		client: hcloud.NewClient(append(
 			opts,
-			hcloud.WithApplication("woodpecker-autoscaler", ""),
+			hcloud.WithApplication("woodpecker-autoscaler", version.String()),
 		)...),
 	}
 }
