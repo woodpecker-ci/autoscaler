@@ -1,5 +1,31 @@
 # Changelog
 
+## [1.2.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.2.0) - 2026-01-30
+
+### ❤️ Thanks to all contributors! ❤️
+
+@jooola, @xoxys
+
+### 📈 Enhancement
+
+- feat: add version flag [[#523](https://github.com/woodpecker-ci/autoscaler/pull/523)]
+- feat: add Woodpecker to Hetzner Cloud client user agent [[#519](https://github.com/woodpecker-ci/autoscaler/pull/519)]
+
+### 📦️ Dependency
+
+- fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.285.0 [[#527](https://github.com/woodpecker-ci/autoscaler/pull/527)]
+- fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.284.0 [[#526](https://github.com/woodpecker-ci/autoscaler/pull/526)]
+- fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.283.0 [[#525](https://github.com/woodpecker-ci/autoscaler/pull/525)]
+- fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.282.0 [[#524](https://github.com/woodpecker-ci/autoscaler/pull/524)]
+- fix(deps): update golang deps non-major [[#521](https://github.com/woodpecker-ci/autoscaler/pull/521)]
+- fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.280.0 [[#520](https://github.com/woodpecker-ci/autoscaler/pull/520)]
+- fix(deps): update golang.org/x/exp digest to 716be56 [[#515](https://github.com/woodpecker-ci/autoscaler/pull/515)]
+- fix(deps): update module github.com/urfave/cli/v3 to v3.6.2 [[#518](https://github.com/woodpecker-ci/autoscaler/pull/518)]
+- chore(deps): update pre-commit hook adrienverge/yamllint to v1.38.0 [[#516](https://github.com/woodpecker-ci/autoscaler/pull/516)]
+- fix(deps): update module github.com/hetznercloud/hcloud-go/v2 to v2.35.0 [[#517](https://github.com/woodpecker-ci/autoscaler/pull/517)]
+- fix(deps): update golang deps non-major [[#514](https://github.com/woodpecker-ci/autoscaler/pull/514)]
+- fix(deps): update module go.woodpecker-ci.org/woodpecker/v3 to v3.13.0 [[#512](https://github.com/woodpecker-ci/autoscaler/pull/512)]
+
 ## [1.1.5](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.1.5) - 2026-01-13
 
 ### ❤️ Thanks to all contributors! ❤️
