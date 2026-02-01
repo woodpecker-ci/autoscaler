@@ -16,6 +16,7 @@ import (
 	"go.woodpecker-ci.org/autoscaler/engine"
 	"go.woodpecker-ci.org/autoscaler/providers/aws"
 	"go.woodpecker-ci.org/autoscaler/providers/hetznercloud"
+	"go.woodpecker-ci.org/autoscaler/providers/oracle"
 	"go.woodpecker-ci.org/autoscaler/providers/scaleway"
 	"go.woodpecker-ci.org/autoscaler/providers/vultr"
 	"go.woodpecker-ci.org/autoscaler/server"
@@ -36,6 +37,8 @@ func setupProvider(ctx context.Context, cmd *cli.Command, config *config.Config)
 		return vultr.New(ctx, cmd, config)
 	case "scaleway":
 		return scaleway.New(ctx, cmd, config)
+	case "oracle":
+		return oracle.New(ctx, cmd, config)
 	case "":
 		return nil, fmt.Errorf("please select a provider")
 	}
@@ -136,6 +139,7 @@ func main() {
 	}
 
 	app.Flags = append(app.Flags, hetznercloud.ProviderFlags...)
+	app.Flags = append(app.Flags, oracle.ProviderFlags...)
 	app.Flags = append(app.Flags, scaleway.ProviderFlags...)
 	// TODO: Temp disabled due to the security issue https://github.com/woodpecker-ci/autoscaler/issues/91
 	// Enable it again when the issue is fixed.
