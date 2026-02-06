@@ -1,9 +1,10 @@
 # Changelog
 
-## [1.2.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.2.1) - 2026-02-05
+## [1.2.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.2.1) - 2026-02-06
 
 ### 📦️ Dependency
 
+- fix(deps): update module github.com/vultr/govultr/v3 to v3.27.0 [[#536](https://github.com/woodpecker-ci/autoscaler/pull/536)]
 - chore(deps): update dependency go to v1.25.7 [[#535](https://github.com/woodpecker-ci/autoscaler/pull/535)]
 - fix(deps): update module github.com/linode/linodego to v1.65.0 [[#533](https://github.com/woodpecker-ci/autoscaler/pull/533)]
 
