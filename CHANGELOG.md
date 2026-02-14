@@ -4,6 +4,7 @@
 
 ### 📦️ Dependency
 
+- fix(deps): update golang.org/x/exp digest to 81e46e3 [[#542](https://github.com/woodpecker-ci/autoscaler/pull/542)]
 - chore(deps): update pre-commit hook golangci/golangci-lint to v2.9.0 [[#546](https://github.com/woodpecker-ci/autoscaler/pull/546)]
 - chore(deps): update golang docker tag to v1.26 [[#545](https://github.com/woodpecker-ci/autoscaler/pull/545)]
 - fix(deps): update module golang.org/x/oauth2 to v0.35.0 [[#540](https://github.com/woodpecker-ci/autoscaler/pull/540)]
