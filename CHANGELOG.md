@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.2.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.2.1) - 2026-02-14
+
+### 📦️ Dependency
+
+- fix(deps): update golang.org/x/exp digest to 81e46e3 [[#542](https://github.com/woodpecker-ci/autoscaler/pull/542)]
+- chore(deps): update pre-commit hook golangci/golangci-lint to v2.9.0 [[#546](https://github.com/woodpecker-ci/autoscaler/pull/546)]
+- chore(deps): update golang docker tag to v1.26 [[#545](https://github.com/woodpecker-ci/autoscaler/pull/545)]
+- fix(deps): update module golang.org/x/oauth2 to v0.35.0 [[#540](https://github.com/woodpecker-ci/autoscaler/pull/540)]
+- fix(deps): update module github.com/vultr/govultr/v3 to v3.27.0 [[#536](https://github.com/woodpecker-ci/autoscaler/pull/536)]
+- chore(deps): update dependency go to v1.25.7 [[#535](https://github.com/woodpecker-ci/autoscaler/pull/535)]
+- fix(deps): update module github.com/linode/linodego to v1.65.0 [[#533](https://github.com/woodpecker-ci/autoscaler/pull/533)]
+
 ## [1.2.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.2.0) - 2026-01-30
 
 ### ❤️ Thanks to all contributors! ❤️
