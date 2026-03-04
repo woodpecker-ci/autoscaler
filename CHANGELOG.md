@@ -1,9 +1,10 @@
 # Changelog
 
-## [1.2.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.2.1) - 2026-03-03
+## [1.2.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.2.1) - 2026-03-04
 
 ### 📦️ Dependency
 
+- fix(deps): update golang deps non-major [[#551](https://github.com/woodpecker-ci/autoscaler/pull/551)]
 - fix(deps): update golang deps non-major [[#541](https://github.com/woodpecker-ci/autoscaler/pull/541)]
 - chore(deps): update docker.io/golang docker tag to v1.26 [[#544](https://github.com/woodpecker-ci/autoscaler/pull/544)]
 - chore(deps): update pre-commit non-major [[#549](https://github.com/woodpecker-ci/autoscaler/pull/549)]
