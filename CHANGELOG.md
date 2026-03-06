@@ -4,6 +4,7 @@
 
 ### 📦️ Dependency
 
+- chore(deps): update dependency golangci/golangci-lint to v2.11.0 [[#543](https://github.com/woodpecker-ci/autoscaler/pull/543)]
 - fix(deps): update golang deps non-major [[#552](https://github.com/woodpecker-ci/autoscaler/pull/552)]
 - fix(deps): update golang deps non-major [[#551](https://github.com/woodpecker-ci/autoscaler/pull/551)]
 - fix(deps): update golang deps non-major [[#541](https://github.com/woodpecker-ci/autoscaler/pull/541)]
