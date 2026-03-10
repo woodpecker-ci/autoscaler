@@ -1,9 +1,10 @@
 # Changelog
 
-## [1.2.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.2.1) - 2026-03-06
+## [1.2.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.2.1) - 2026-03-10
 
 ### 📦️ Dependency
 
+- chore(deps): update pre-commit hook golangci/golangci-lint to v2.11.3 [[#555](https://github.com/woodpecker-ci/autoscaler/pull/555)]
 - chore(deps): update dependency go to v1.26.1 [[#553](https://github.com/woodpecker-ci/autoscaler/pull/553)]
 - chore(deps): update dependency golangci/golangci-lint to v2.11.0 [[#543](https://github.com/woodpecker-ci/autoscaler/pull/543)]
 - fix(deps): update golang deps non-major [[#552](https://github.com/woodpecker-ci/autoscaler/pull/552)]
