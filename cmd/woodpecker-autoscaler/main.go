@@ -15,6 +15,7 @@ import (
 	"go.woodpecker-ci.org/autoscaler/config"
 	"go.woodpecker-ci.org/autoscaler/engine"
 	"go.woodpecker-ci.org/autoscaler/providers/aws"
+	"go.woodpecker-ci.org/autoscaler/providers/azure"
 	"go.woodpecker-ci.org/autoscaler/providers/hetznercloud"
 	"go.woodpecker-ci.org/autoscaler/providers/scaleway"
 	"go.woodpecker-ci.org/autoscaler/providers/vultr"
@@ -34,6 +35,8 @@ func setupProvider(ctx context.Context, cmd *cli.Command, config *config.Config)
 	// 	return linode.New(ctx, config)
 	case "vultr":
 		return vultr.New(ctx, cmd, config)
+	case "azure":
+		return azure.New(ctx, cmd, config)
 	case "scaleway":
 		return scaleway.New(ctx, cmd, config)
 	case "":
@@ -142,6 +145,7 @@ func main() {
 	// app.Flags = append(app.Flags, linode.ProviderFlags...)
 	app.Flags = append(app.Flags, aws.ProviderFlags...)
 	app.Flags = append(app.Flags, vultr.ProviderFlags...)
+	app.Flags = append(app.Flags, azure.ProviderFlags...)
 
 	if err := app.Run(context.Background(), os.Args); err != nil {
 		log.Error().Err(err).Msg("got error while try to run autoscaler")
