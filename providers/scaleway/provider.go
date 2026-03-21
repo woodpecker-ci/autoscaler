@@ -268,12 +268,40 @@ func (p *Provider) deleteInstance(ctx context.Context, inst *instance.Server) er
 		return err
 	}
 
+	// Collect volume IDs before deleting the server, so we can clean them up
+	// afterwards and avoid orphaned volumes that continue to incur billing.
+	type volumeRef struct {
+		zone scw.Zone
+		id   string
+	}
+
+	volumeRefs := make([]volumeRef, 0, len(inst.Volumes))
+	for _, vol := range inst.Volumes {
+		volumeRefs = append(volumeRefs, volumeRef{zone: inst.Zone, id: vol.ID})
+	}
+
 	api := instance.NewAPI(p.client)
 
-	return api.DeleteServer(&instance.DeleteServerRequest{
+	err = api.DeleteServer(&instance.DeleteServerRequest{
 		Zone:     inst.Zone,
 		ServerID: inst.ID,
 	}, scw.WithContext(ctx))
+	if err != nil {
+		return err
+	}
+
+	// Delete volumes that were attached to the instance.
+	for _, ref := range volumeRefs {
+		log.Info().Str("volume", ref.id).Msg("deleting volume associated with removed instance")
+		if err := api.DeleteVolume(&instance.DeleteVolumeRequest{
+			Zone:     ref.zone,
+			VolumeID: ref.id,
+		}, scw.WithContext(ctx)); err != nil {
+			log.Error().Err(err).Str("volume", ref.id).Msg("failed to delete volume")
+		}
+	}
+
+	return nil
 }
 
 func (p *Provider) bootInstance(ctx context.Context, inst *instance.Server) (*instance.ServerActionResponse, error) {
