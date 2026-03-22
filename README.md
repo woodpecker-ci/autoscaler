@@ -75,6 +75,7 @@ The billing model is selected automatically by the provider, so no extra configu
   - [ ] Azure
   - [ ] Digital Ocean
   - [x] Linode
+  - [x] OpenStack
   - [ ] Oracle Cloud
   - [x] Equinix Metal **[experimental]** (untested by the maintainers against real provider access, see [above](#equinix-metal))
   - [x] Vultr
