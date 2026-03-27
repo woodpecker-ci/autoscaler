@@ -4,6 +4,7 @@
 
 ### 📦️ Dependency
 
+- chore(deps): update pre-commit hook golangci/golangci-lint to v2.11.4 [[#569](https://github.com/woodpecker-ci/autoscaler/pull/569)]
 - fix(deps): update golang deps non-major [[#571](https://github.com/woodpecker-ci/autoscaler/pull/571)]
 - fix(deps): update module github.com/urfave/cli/v3 to v3.8.0 [[#570](https://github.com/woodpecker-ci/autoscaler/pull/570)]
 - fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.296.0 [[#562](https://github.com/woodpecker-ci/autoscaler/pull/562)]
