@@ -60,4 +60,10 @@ var ProviderFlags = []cli.Flag{
 		Sources:  cli.EnvVars("WOODPECKER_AWS_SSH_KEYNAME"),
 		Category: Category,
 	},
+	&cli.StringSliceFlag{
+		Name:     "aws-fallback-instance-types",
+		Usage:    "fallback EC2 instance types to try if the primary type fails due to capacity errors",
+		Sources:  cli.EnvVars("WOODPECKER_AWS_FALLBACK_INSTANCE_TYPES"),
+		Category: Category,
+	},
 }
