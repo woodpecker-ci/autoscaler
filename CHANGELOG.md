@@ -1,9 +1,10 @@
 # Changelog
 
-## [1.2.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.2.1) - 2026-03-27
+## [1.2.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.2.1) - 2026-03-28
 
 ### 📦️ Dependency
 
+- fix(deps): update golang deps non-major [[#572](https://github.com/woodpecker-ci/autoscaler/pull/572)]
 - chore(deps): update pre-commit hook golangci/golangci-lint to v2.11.4 [[#569](https://github.com/woodpecker-ci/autoscaler/pull/569)]
 - fix(deps): update golang deps non-major [[#571](https://github.com/woodpecker-ci/autoscaler/pull/571)]
 - fix(deps): update module github.com/urfave/cli/v3 to v3.8.0 [[#570](https://github.com/woodpecker-ci/autoscaler/pull/570)]
