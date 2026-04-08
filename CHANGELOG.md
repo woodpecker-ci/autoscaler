@@ -4,6 +4,7 @@
 
 ### 📦️ Dependency
 
+- fix(deps): update golang.org/x/exp digest to 7ab1446 [[#560](https://github.com/woodpecker-ci/autoscaler/pull/560)]
 - fix(deps): update golang deps non-major [[#575](https://github.com/woodpecker-ci/autoscaler/pull/575)]
 - fix(deps): update module github.com/aws/aws-sdk-go-v2/config to v1.32.14 [[#574](https://github.com/woodpecker-ci/autoscaler/pull/574)]
 - fix(deps): update golang deps non-major [[#573](https://github.com/woodpecker-ci/autoscaler/pull/573)]
