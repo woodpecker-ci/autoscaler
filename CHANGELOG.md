@@ -1,9 +1,10 @@
 # Changelog
 
-## [1.2.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.2.1) - 2026-04-03
+## [1.2.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.2.1) - 2026-04-08
 
 ### 📦️ Dependency
 
+- fix(deps): update golang deps non-major [[#575](https://github.com/woodpecker-ci/autoscaler/pull/575)]
 - fix(deps): update module github.com/aws/aws-sdk-go-v2/config to v1.32.14 [[#574](https://github.com/woodpecker-ci/autoscaler/pull/574)]
 - fix(deps): update golang deps non-major [[#573](https://github.com/woodpecker-ci/autoscaler/pull/573)]
 - fix(deps): update golang deps non-major [[#572](https://github.com/woodpecker-ci/autoscaler/pull/572)]
