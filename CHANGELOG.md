@@ -1,9 +1,10 @@
 # Changelog
 
-## [1.2.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.2.1) - 2026-04-08
+## [1.2.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.2.1) - 2026-04-09
 
 ### 📦️ Dependency
 
+- fix(deps): update module github.com/vultr/govultr/v3 to v3.30.0 [[#576](https://github.com/woodpecker-ci/autoscaler/pull/576)]
 - chore(deps): update docker.io/woodpeckerci/plugin-ready-release-go docker tag to v4 [[#556](https://github.com/woodpecker-ci/autoscaler/pull/556)]
 - fix(deps): update golang.org/x/exp digest to 7ab1446 [[#560](https://github.com/woodpecker-ci/autoscaler/pull/560)]
 - fix(deps): update golang deps non-major [[#575](https://github.com/woodpecker-ci/autoscaler/pull/575)]
