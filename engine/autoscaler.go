@@ -11,6 +11,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"go.woodpecker-ci.org/autoscaler/config"
+	"go.woodpecker-ci.org/autoscaler/engine/provider"
 	"go.woodpecker-ci.org/autoscaler/server"
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
@@ -19,15 +20,15 @@ type Autoscaler struct {
 	client   server.Client
 	agents   []*woodpecker.Agent
 	config   *config.Config
-	provider Provider
+	provider provider.Provider
 }
 
 // NewAutoscaler creates a new Autoscaler instance.
 // It takes in a Provider, Client and Config, and returns a configured
 // Autoscaler struct.
-func NewAutoscaler(provider Provider, client server.Client, config *config.Config) Autoscaler {
+func NewAutoscaler(p provider.Provider, client server.Client, config *config.Config) Autoscaler {
 	return Autoscaler{
-		provider: provider,
+		provider: p,
 		client:   client,
 		config:   config,
 	}

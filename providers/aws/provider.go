@@ -18,6 +18,8 @@ import (
 
 	"go.woodpecker-ci.org/autoscaler/config"
 	"go.woodpecker-ci.org/autoscaler/engine"
+	"go.woodpecker-ci.org/autoscaler/engine/inits/cloudinit"
+	"go.woodpecker-ci.org/autoscaler/engine/provider"
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
 
@@ -39,7 +41,7 @@ type Provider struct {
 	userDataTemplate      *template.Template
 }
 
-func New(ctx context.Context, c *cli.Command, config *config.Config) (engine.Provider, error) {
+func New(ctx context.Context, c *cli.Command, config *config.Config) (provider.Provider, error) {
 	if len(c.StringSlice("aws-subnets")) == 0 {
 		return nil, fmt.Errorf("aws-subnets must be set")
 	}
@@ -76,9 +78,9 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (engine.Pro
 }
 
 func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
-	userData, err := engine.RenderUserDataTemplate(p.config, agent, p.userDataTemplate)
+	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, p.userDataTemplate)
 	if err != nil {
-		return fmt.Errorf("%s: engine.RenderUserDataTemplate: %w", p.name, err)
+		return fmt.Errorf("%s: cloudinit.RenderUserDataTemplate: %w", p.name, err)
 	}
 
 	// Generate base tags for instance

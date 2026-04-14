@@ -14,6 +14,8 @@ import (
 
 	"go.woodpecker-ci.org/autoscaler/config"
 	"go.woodpecker-ci.org/autoscaler/engine"
+	"go.woodpecker-ci.org/autoscaler/engine/inits/cloudinit"
+	"go.woodpecker-ci.org/autoscaler/engine/provider"
 	"go.woodpecker-ci.org/autoscaler/providers/hetznercloud/hcapi"
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
@@ -44,7 +46,7 @@ type Provider struct {
 	client           hcapi.Client
 }
 
-func New(_ context.Context, c *cli.Command, config *config.Config) (engine.Provider, error) {
+func New(_ context.Context, c *cli.Command, config *config.Config) (provider.Provider, error) {
 	p := &Provider{
 		name:       "hetznercloud",
 		serverType: c.StringSlice("hetznercloud-server-type"),
@@ -91,9 +93,9 @@ func New(_ context.Context, c *cli.Command, config *config.Config) (engine.Provi
 }
 
 func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
-	userData, err := engine.RenderUserDataTemplate(p.config, agent, p.userDataTemplate)
+	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, p.userDataTemplate)
 	if err != nil {
-		return fmt.Errorf("%s: engine.RenderUserDataTemplate: %w", p.name, err)
+		return fmt.Errorf("%s: cloudinit.RenderUserDataTemplate: %w", p.name, err)
 	}
 
 	sshKeys := make([]*hcloud.SSHKey, 0)
