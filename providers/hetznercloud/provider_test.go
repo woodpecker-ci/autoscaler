@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"go.woodpecker-ci.org/autoscaler/config"
-	"go.woodpecker-ci.org/autoscaler/engine/provider"
 	"go.woodpecker-ci.org/autoscaler/providers/hetznercloud/hcapi/mocks"
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
