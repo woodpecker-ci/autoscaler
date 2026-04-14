@@ -121,11 +121,7 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (provider.P
 	return p, nil
 }
 
-func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cap provider.Capability) error { //nolint:revive
-	if cap.DeployMethod != provider.CloudInit {
-		return fmt.Errorf("unsupported deploy method: %q", cap.DeployMethod)
-	}
-
+func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
 	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, p.userDataTemplate)
 	if err != nil {
 		return fmt.Errorf("%s: cloudinit.RenderUserDataTemplate: %w", p.name, err)
@@ -267,17 +263,4 @@ func newClient(apiKey string) *linodego.Client {
 	linodeClient.SetDebug(false)
 
 	return &linodeClient
-}
-
-func (p *Provider) Capabilities(_ context.Context) ([]provider.Capability, error) {
-	// TODO: actually call linode with it's config to see what's available
-	return []provider.Capability{{
-		Platform:     "linux/amd64",
-		Backend:      provider.BackendDocker,
-		DeployMethod: provider.CloudInit,
-	}, {
-		Platform:     "linux/arm64",
-		Backend:      provider.BackendDocker,
-		DeployMethod: provider.CloudInit,
-	}}, nil
 }

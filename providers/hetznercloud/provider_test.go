@@ -95,7 +95,7 @@ func TestDeployAgent(t *testing.T) {
 			}
 
 			agent := &woodpecker.Agent{}
-			err := p.DeployAgent(t.Context(), agent, provider.Capability{DeployMethod: provider.CloudInit})
+			err := p.DeployAgent(t.Context(), agent)
 			if tt.expectedError != "" {
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), tt.expectedError)
