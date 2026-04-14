@@ -157,7 +157,7 @@ func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cap
 
 		// TODO: Deprecated remove in v2.0
 		if location == "" {
-			log.Warn().Msg("hetznercloud-location is deprecated, please use hetznercloud-server-type instead")
+			log.Error().Msg("hetznercloud-location is deprecated, please use hetznercloud-server-type instead")
 			location = p.location
 		}
 
@@ -260,15 +260,38 @@ func (p *Provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 	return names, nil
 }
 
-func (p *Provider) Capabilities(_ context.Context) ([]provider.Capability, error) {
-	// TODO: actually call hetzner with it's config to see what's available
-	return []provider.Capability{{
-		Platform:     "linux/amd64",
-		Backend:      provider.BackendDocker,
-		DeployMethod: provider.CloudInit,
-	}, {
-		Platform:     "linux/arm64",
-		Backend:      provider.BackendDocker,
-		DeployMethod: provider.CloudInit,
-	}}, nil
+func (p *Provider) Capabilities(ctx context.Context) ([]provider.Capability, error) {
+	seen := map[string]bool{}
+	var caps []provider.Capability
+
+	for _, raw := range p.serverType {
+		rawType, _, _ := strings.Cut(raw, ":")
+		st, err := p.LookupServerType(ctx, rawType)
+		if err != nil {
+			return nil, err
+		}
+
+		platform := "linux/" + hcloudArchToGoArch(st.Architecture)
+		if !seen[platform] {
+			seen[platform] = true
+			caps = append(caps, provider.Capability{
+				Platform:     platform,
+				Backend:      provider.BackendDocker,
+				DeployMethod: provider.CloudInit,
+			})
+		}
+	}
+	return caps, nil
+}
+
+// hcloudArchToGoArch maps hcloud architecture names to Go GOARCH strings.
+func hcloudArchToGoArch(a hcloud.Architecture) string {
+	switch a {
+	case hcloud.ArchitectureARM:
+		return "arm64"
+	case hcloud.ArchitectureX86:
+		return "amd64"
+	default:
+		return string(a)
+	}
 }
