@@ -61,6 +61,15 @@ func run(ctx context.Context, cmd *cli.Command) error {
 		agentEnvironment[before] = after
 	}
 
+	agentLabels := make(map[string]string)
+	for _, env := range cmd.StringSlice("agent-labels") {
+		before, after, _ := strings.Cut(env, "=")
+		if before == "" || after == "" {
+			return fmt.Errorf("invalid agent labels variable: %s", env)
+		}
+		agentLabels[before] = after
+	}
+
 	config := &config.Config{
 		MinAgents:         cmd.Int("min-agents"),
 		MaxAgents:         cmd.Int("max-agents"),
@@ -71,6 +80,7 @@ func run(ctx context.Context, cmd *cli.Command) error {
 		Image:             cmd.String("agent-image"),
 		FilterLabels:      cmd.String("filter-labels"),
 		UserData:          cmd.String("provider-user-data"),
+		ExtraAgentLabels:  agentLabels,
 		Environment:       agentEnvironment,
 	}
 
@@ -78,8 +88,6 @@ func run(ctx context.Context, cmd *cli.Command) error {
 	if err != nil {
 		return err
 	}
-
-	autoscaler := engine.NewAutoscaler(provider, client, config)
 
 	config.AgentInactivityTimeout, err = time.ParseDuration(cmd.String("agent-inactivity-timeout"))
 	if err != nil {
@@ -91,9 +99,15 @@ func run(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("can't parse agent-idle-timeout: %w", err)
 	}
 
+	autoscaler := engine.NewAutoscaler(provider, client, config)
+
 	reconciliationInterval, err := time.ParseDuration(cmd.String("reconciliation-interval"))
 	if err != nil {
 		return fmt.Errorf("can't parse reconciliation-interval: %w", err)
+	}
+
+	if err := autoscaler.GetCaps(ctx); err != nil {
+		return fmt.Errorf("could not query provider capabilities: %w", err)
 	}
 
 	for {

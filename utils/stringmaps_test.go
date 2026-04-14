@@ -1,9 +1,10 @@
-package engine
+package utils_test
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"go.woodpecker-ci.org/autoscaler/utils"
 )
 
 func TestSliceToMap(t *testing.T) {
@@ -39,7 +40,7 @@ func TestSliceToMap(t *testing.T) {
 
 	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
-			actual, err := SliceToMap(tt.input, tt.del)
+			actual, err := utils.SliceToMap(tt.input, tt.del)
 			if tt.wantErr != nil {
 				assert.Error(t, err)
 
@@ -87,7 +88,7 @@ func TestMergeMaps(t *testing.T) {
 
 	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
-			merged := MergeMaps(tt.m1, tt.m2)
+			merged := utils.MergeMaps(tt.m1, tt.m2)
 			assert.Equal(t, tt.want, merged)
 		})
 	}

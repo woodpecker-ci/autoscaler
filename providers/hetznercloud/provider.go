@@ -17,6 +17,7 @@ import (
 	"go.woodpecker-ci.org/autoscaler/engine/inits/cloudinit"
 	"go.woodpecker-ci.org/autoscaler/engine/provider"
 	"go.woodpecker-ci.org/autoscaler/providers/hetznercloud/hcapi"
+	"go.woodpecker-ci.org/autoscaler/utils"
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
 
@@ -77,7 +78,7 @@ func New(_ context.Context, c *cli.Command, config *config.Config) (provider.Pro
 	defaultLabels[engine.LabelPool] = p.config.PoolID
 	defaultLabels[engine.LabelImage] = p.image
 
-	labels, err := engine.SliceToMap(c.StringSlice("hetznercloud-labels"), "=")
+	labels, err := utils.SliceToMap(c.StringSlice("hetznercloud-labels"), "=")
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", p.name, err)
 	}
@@ -87,12 +88,16 @@ func New(_ context.Context, c *cli.Command, config *config.Config) (provider.Pro
 			return nil, fmt.Errorf("%s: %w: %s", p.name, ErrIllegalLablePrefix, engine.LabelPrefix)
 		}
 	}
-	p.labels = engine.MergeMaps(defaultLabels, p.labels)
+	p.labels = utils.MergeMaps(defaultLabels, p.labels)
 
 	return p, nil
 }
 
-func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
+func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cap provider.Capability) error {
+	if cap.DeployMethod != provider.CloudInit {
+		return fmt.Errorf("unsupported deploy method: %q", cap.DeployMethod)
+	}
+
 	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, p.userDataTemplate)
 	if err != nil {
 		return fmt.Errorf("%s: cloudinit.RenderUserDataTemplate: %w", p.name, err)
@@ -253,4 +258,17 @@ func (p *Provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 	}
 
 	return names, nil
+}
+
+func (p *Provider) Capabilities(ctx context.Context) ([]provider.Capability, error) {
+	// TODO: actually call hetzner with it's config to see what's available
+	return []provider.Capability{{
+		Platform:     "linux/amd64",
+		Backend:      provider.BackendDocker,
+		DeployMethod: provider.CloudInit,
+	}, {
+		Platform:     "linux/arm64",
+		Backend:      provider.BackendDocker,
+		DeployMethod: provider.CloudInit,
+	}}, nil
 }

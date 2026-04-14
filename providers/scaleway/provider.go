@@ -93,7 +93,11 @@ func New(_ context.Context, c *cli.Command, config *config.Config) (provider.Pro
 	return p, err
 }
 
-func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
+func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cap provider.Capability) error {
+	if cap.DeployMethod != provider.CloudInit {
+		return fmt.Errorf("unsupported deploy method: %q", cap.DeployMethod)
+	}
+
 	_, err := p.getInstance(ctx, agent.Name)
 	if err != nil {
 		return err
@@ -319,4 +323,17 @@ func (p *Provider) resolveZones() error {
 	}
 
 	return nil
+}
+
+func (p *Provider) Capabilities(ctx context.Context) ([]provider.Capability, error) {
+	// TODO: actually call scaleway with it's config to see what's available
+	return []provider.Capability{{
+		Platform:     "linux/amd64",
+		Backend:      provider.BackendDocker,
+		DeployMethod: provider.CloudInit,
+	}, {
+		Platform:     "linux/arm64",
+		Backend:      provider.BackendDocker,
+		DeployMethod: provider.CloudInit,
+	}}, nil
 }
