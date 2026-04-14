@@ -72,7 +72,7 @@ func run(ctx context.Context, cmd *cli.Command) error {
 	// TODO: make it just fail in v2.0
 	if agentLabelsViaEnv, exist := agentEnvironment["WOODPECKER_AGENT_LABELS"]; exist {
 		if !cmd.IsSet("agent-labels") {
-			log.Warn().Msg("setting WOODPECKER_AGENT_LABELS via WOODPECKER_AGENT_ENV is discouraged, use native autoscaler setting for that")
+			log.Warn().Msg("setting WOODPECKER_AGENT_LABELS via WOODPECKER_AGENT_ENV is deprecated, use native autoscaler setting for that")
 
 			// as backwards compatibility we calc agentLabels from agentEnvironment
 			agentLabels = convertEnvSettingToLabels(agentLabelsViaEnv)
