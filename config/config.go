@@ -15,5 +15,4 @@ type Config struct {
 	AgentIdleTimeout       time.Duration
 	UserData               string
 	FilterLabels           string
-	ExtraAgentLabels       map[string]string
 }

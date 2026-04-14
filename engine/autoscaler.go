@@ -18,11 +18,10 @@ import (
 )
 
 type Autoscaler struct {
-	client               server.Client
-	agents               []*woodpecker.Agent
-	config               *config.Config
-	provider             provider.Provider
-	providerCapabilities []provider.Capability
+	client   server.Client
+	agents   []*woodpecker.Agent
+	config   *config.Config
+	provider provider.Provider
 }
 
 // NewAutoscaler creates a new Autoscaler instance.
@@ -34,11 +33,6 @@ func NewAutoscaler(p provider.Provider, client server.Client, config *config.Con
 		client:   client,
 		config:   config,
 	}
-}
-
-func (a *Autoscaler) GetCaps(ctx context.Context) (err error) {
-	a.providerCapabilities, err = a.provider.Capabilities(ctx)
-	return err
 }
 
 func (a *Autoscaler) loadAgents(_ context.Context) error {
@@ -104,7 +98,7 @@ func (a *Autoscaler) createAgents(ctx context.Context, amount int) error {
 
 		log.Info().Str("agent", agent.Name).Msg("deploying agent")
 
-		err = a.provider.DeployAgent(ctx, agent, provider.Capability{DeployMethod: provider.CloudInit})
+		err = a.provider.DeployAgent(ctx, agent)
 		if err != nil {
 			return fmt.Errorf("provider.DeployAgent: %w", err)
 		}
