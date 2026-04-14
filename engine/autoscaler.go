@@ -12,6 +12,7 @@ import (
 
 	"go.woodpecker-ci.org/autoscaler/config"
 	"go.woodpecker-ci.org/autoscaler/engine/provider"
+	"go.woodpecker-ci.org/autoscaler/engine/scheduler"
 	"go.woodpecker-ci.org/autoscaler/server"
 	"go.woodpecker-ci.org/autoscaler/utils"
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
@@ -23,6 +24,7 @@ type Autoscaler struct {
 	config               *config.Config
 	provider             provider.Provider
 	providerCapabilities []provider.Capability
+	scheduler            scheduler.Scheduler
 }
 
 // NewAutoscaler creates a new Autoscaler instance.
@@ -30,9 +32,10 @@ type Autoscaler struct {
 // Autoscaler struct.
 func NewAutoscaler(p provider.Provider, client server.Client, config *config.Config) Autoscaler {
 	return Autoscaler{
-		provider: p,
-		client:   client,
-		config:   config,
+		provider:  p,
+		client:    client,
+		config:    config,
+		scheduler: &scheduler.SimpleScheduler{},
 	}
 }
 
@@ -302,48 +305,50 @@ func (a *Autoscaler) cleanupStaleAgents(ctx context.Context) error {
 	return nil
 }
 
-func (a *Autoscaler) getQueueInfo(_ context.Context) (freeTasks, runningTasks, pendingTasks int, err error) {
+func (a *Autoscaler) calcAgents(ctx context.Context) (float64, error) {
 	queueInfo, err := a.client.QueueInfo()
 	if err != nil {
-		return 0, 0, 0, fmt.Errorf("error from QueueInfo: %s", err.Error())
+		return 0, fmt.Errorf("client.QueueInfo: %w", err)
 	}
 
-	if a.config.FilterLabels == "" {
-		return queueInfo.Stats.Workers, queueInfo.Stats.Running, queueInfo.Stats.Pending, nil
+	running := queueInfo.Running
+	pending := queueInfo.Pending
+
+	if a.config.FilterLabels != "" {
+		labelFilterKey, labelFilterValue, ok := strings.Cut(a.config.FilterLabels, "=")
+		if !ok {
+			return 0, fmt.Errorf("invalid labels filter: %s", a.config.FilterLabels)
+		}
+		running = filterTasksByLabel(running, labelFilterKey, labelFilterValue)
+		pending = filterTasksByLabel(pending, labelFilterKey, labelFilterValue)
 	}
 
-	labelFilterKey, labelFilterValue, ok := strings.Cut(a.config.FilterLabels, "=")
-	if !ok {
-		return 0, 0, 0, fmt.Errorf("invalid labels filter: %s", a.config.FilterLabels)
-	}
-
-	running := countTasksByLabel(queueInfo.Running, labelFilterKey, labelFilterValue)
-	pending := countTasksByLabel(queueInfo.Pending, labelFilterKey, labelFilterValue)
-
-	return queueInfo.Stats.Workers, running, pending, nil
-}
-
-func (a *Autoscaler) calcAgents(ctx context.Context) (float64, error) {
-	freeTasks, runningTasks, pendingTasks, err := a.getQueueInfo(ctx)
+	decisions, err := a.scheduler.Plan(
+		a.providerCapabilities,
+		running,
+		pending,
+		a.getPoolAgents(true),
+		a.config,
+	)
 	if err != nil {
 		return 0, err
 	}
 
-	log.Debug().Msgf("queue info: freeTasks = %v runningTasks = %v pendingTasks = %v", freeTasks, runningTasks, pendingTasks)
-	availableAgents := math.Ceil(float64(freeTasks+runningTasks) / float64((a.config.WorkflowsPerAgent)))
-	reqAgents := math.Ceil(float64(pendingTasks+runningTasks) / float64(a.config.WorkflowsPerAgent))
+	var total float64
+	for _, d := range decisions {
+		total += float64(d.Delta)
+	}
+	return total, nil
+}
 
-	availablePoolAgents := len(a.getPoolAgents(true))
-	maxUp := float64(a.config.MaxAgents - availablePoolAgents)
-	maxDown := float64(availablePoolAgents - a.config.MinAgents)
-
-	reqPoolAgents := math.Ceil(reqAgents - (availableAgents + float64(availablePoolAgents)))
-	reqPoolAgents = math.Max(reqPoolAgents, -maxDown)
-	reqPoolAgents = math.Min(reqPoolAgents, maxUp)
-
-	log.Debug().Msgf("capacity info: agents = %v/%v pool = %v/%v limits = %v/%v", availableAgents, reqAgents, availablePoolAgents, reqPoolAgents, maxUp, maxDown)
-
-	return reqPoolAgents, nil
+func filterTasksByLabel(jobs []woodpecker.Task, labelKey, labelValue string) []woodpecker.Task {
+	filtered := make([]woodpecker.Task, 0)
+	for _, job := range jobs {
+		if val, exists := job.Labels[labelKey]; exists && val == labelValue {
+			filtered = append(filtered, job)
+		}
+	}
+	return filtered
 }
 
 // Reconcile periodically checks the status of the agent pool and adjusts it to match
@@ -392,15 +397,4 @@ func (a *Autoscaler) Reconcile(ctx context.Context) error {
 	}
 
 	return nil
-}
-
-func countTasksByLabel(jobs []woodpecker.Task, labelKey, labelValue string) int {
-	count := 0
-	for _, job := range jobs {
-		val, exists := job.Labels[labelKey]
-		if exists && val == labelValue {
-			count++
-		}
-	}
-	return count
 }
