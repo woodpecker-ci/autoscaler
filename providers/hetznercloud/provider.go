@@ -14,7 +14,10 @@ import (
 
 	"go.woodpecker-ci.org/autoscaler/config"
 	"go.woodpecker-ci.org/autoscaler/engine"
+	"go.woodpecker-ci.org/autoscaler/engine/inits/cloudinit"
+	"go.woodpecker-ci.org/autoscaler/engine/provider"
 	"go.woodpecker-ci.org/autoscaler/providers/hetznercloud/hcapi"
+	"go.woodpecker-ci.org/autoscaler/utils"
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
 
@@ -44,7 +47,7 @@ type Provider struct {
 	client           hcapi.Client
 }
 
-func New(_ context.Context, c *cli.Command, config *config.Config) (engine.Provider, error) {
+func New(_ context.Context, c *cli.Command, config *config.Config) (provider.Provider, error) {
 	p := &Provider{
 		name:       "hetznercloud",
 		serverType: c.StringSlice("hetznercloud-server-type"),
@@ -75,7 +78,7 @@ func New(_ context.Context, c *cli.Command, config *config.Config) (engine.Provi
 	defaultLabels[engine.LabelPool] = p.config.PoolID
 	defaultLabels[engine.LabelImage] = p.image
 
-	labels, err := engine.SliceToMap(c.StringSlice("hetznercloud-labels"), "=")
+	labels, err := utils.SliceToMap(c.StringSlice("hetznercloud-labels"), "=")
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", p.name, err)
 	}
@@ -85,15 +88,19 @@ func New(_ context.Context, c *cli.Command, config *config.Config) (engine.Provi
 			return nil, fmt.Errorf("%s: %w: %s", p.name, ErrIllegalLablePrefix, engine.LabelPrefix)
 		}
 	}
-	p.labels = engine.MergeMaps(defaultLabels, p.labels)
+	p.labels = utils.MergeMaps(defaultLabels, p.labels)
 
 	return p, nil
 }
 
-func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
-	userData, err := engine.RenderUserDataTemplate(p.config, agent, p.userDataTemplate)
+func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cap provider.Capability) error {
+	if cap.DeployMethod != provider.CloudInit {
+		return fmt.Errorf("unsupported deploy method: %q", cap.DeployMethod)
+	}
+
+	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, p.userDataTemplate)
 	if err != nil {
-		return fmt.Errorf("%s: engine.RenderUserDataTemplate: %w", p.name, err)
+		return fmt.Errorf("%s: cloudinit.RenderUserDataTemplate: %w", p.name, err)
 	}
 
 	sshKeys := make([]*hcloud.SSHKey, 0)
@@ -150,7 +157,7 @@ func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 
 		// TODO: Deprecated remove in v2.0
 		if location == "" {
-			log.Warn().Msg("hetznercloud-location is deprecated, please use hetznercloud-server-type instead")
+			log.Error().Msg("hetznercloud-location is deprecated, please use hetznercloud-server-type instead")
 			location = p.location
 		}
 
@@ -251,4 +258,40 @@ func (p *Provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 	}
 
 	return names, nil
+}
+
+func (p *Provider) Capabilities(ctx context.Context) ([]provider.Capability, error) {
+	seen := map[string]bool{}
+	var caps []provider.Capability
+
+	for _, raw := range p.serverType {
+		rawType, _, _ := strings.Cut(raw, ":")
+		st, err := p.LookupServerType(ctx, rawType)
+		if err != nil {
+			return nil, err
+		}
+
+		platform := "linux/" + hcloudArchToGoArch(st.Architecture)
+		if !seen[platform] {
+			seen[platform] = true
+			caps = append(caps, provider.Capability{
+				Platform:     platform,
+				Backend:      provider.BackendDocker,
+				DeployMethod: provider.CloudInit,
+			})
+		}
+	}
+	return caps, nil
+}
+
+// hcloudArchToGoArch maps hcloud architecture names to Go GOARCH strings.
+func hcloudArchToGoArch(a hcloud.Architecture) string {
+	switch a {
+	case hcloud.ArchitectureARM:
+		return "arm64"
+	case hcloud.ArchitectureX86:
+		return "amd64"
+	default:
+		return string(a)
+	}
 }
