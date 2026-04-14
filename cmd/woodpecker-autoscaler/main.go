@@ -77,7 +77,8 @@ func run(ctx context.Context, cmd *cli.Command) error {
 			// as backwards compatibility we calc agentLabels from agentEnvironment
 			agentLabels = convertEnvSettingToLabels(agentLabelsViaEnv)
 		} else {
-			log.Fatal().Msg("setting WOODPECKER_AGENT_LABELS and redefine it in WOODPECKER_AGENT_ENV is unsupported just use WOODPECKER_AGENT_LABELS")
+			log.Error().Msg("setting WOODPECKER_AGENT_LABELS and redefine it in WOODPECKER_AGENT_ENV is unsupported just use WOODPECKER_AGENT_LABELS")
+			return fmt.Errorf("remove 'WOODPECKER_AGENT_LABELS' within 'WOODPECKER_AGENT_ENV'")
 		}
 	}
 
