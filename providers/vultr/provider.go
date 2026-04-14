@@ -259,7 +259,7 @@ func (p *Provider) setupKeypair(ctx context.Context) error {
 	return ErrSSHKeyNotFound
 }
 
-func (p *Provider) Capabilities(ctx context.Context) ([]provider.Capability, error) {
+func (p *Provider) Capabilities(_ context.Context) ([]provider.Capability, error) {
 	// TODO: actually call vultr with it's config to see what's available
 	return []provider.Capability{{
 		Platform:     "linux/amd64",

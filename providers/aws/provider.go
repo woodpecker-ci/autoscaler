@@ -246,7 +246,7 @@ func (p *Provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 	return names, nil
 }
 
-func (p *Provider) Capabilities(ctx context.Context) ([]provider.Capability, error) {
+func (p *Provider) Capabilities(_ context.Context) ([]provider.Capability, error) {
 	// TODO: actually call aws with it's config to see what's available
 	return []provider.Capability{{
 		Platform:     "linux/amd64",
