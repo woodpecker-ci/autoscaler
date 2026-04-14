@@ -93,7 +93,7 @@ func New(_ context.Context, c *cli.Command, config *config.Config) (provider.Pro
 	return p, err
 }
 
-func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cap provider.Capability) error {
+func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cap provider.Capability) error { //nolint:revive
 	if cap.DeployMethod != provider.CloudInit {
 		return fmt.Errorf("unsupported deploy method: %q", cap.DeployMethod)
 	}
