@@ -9,7 +9,8 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"go.woodpecker-ci.org/autoscaler/config"
-	mocks_engine "go.woodpecker-ci.org/autoscaler/engine/mocks"
+	mocks_provider "go.woodpecker-ci.org/autoscaler/engine/provider/mocks"
+	"go.woodpecker-ci.org/autoscaler/engine/scheduler"
 	mocks_server "go.woodpecker-ci.org/autoscaler/server/mocks"
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
@@ -58,7 +59,7 @@ func Test_calcAgents(t *testing.T) {
 			WorkflowsPerAgent: 1,
 			MaxAgents:         2,
 			MinAgents:         1,
-		}}
+		}, scheduler: &scheduler.SimpleScheduler{}}
 
 		value, _ := autoscaler.calcAgents(t.Context())
 		assert.Equal(t, float64(1), value)
@@ -70,7 +71,7 @@ func Test_calcAgents(t *testing.T) {
 		}, config: &config.Config{
 			WorkflowsPerAgent: 5,
 			MaxAgents:         3,
-		}}
+		}, scheduler: &scheduler.SimpleScheduler{}}
 
 		value, _ := autoscaler.calcAgents(t.Context())
 		assert.Equal(t, float64(1), value)
@@ -82,7 +83,7 @@ func Test_calcAgents(t *testing.T) {
 		}, config: &config.Config{
 			WorkflowsPerAgent: 5,
 			MaxAgents:         3,
-		}}
+		}, scheduler: &scheduler.SimpleScheduler{}}
 
 		value, _ := autoscaler.calcAgents(t.Context())
 		assert.Equal(t, float64(2), value)
@@ -96,72 +97,112 @@ func Test_calcAgents(t *testing.T) {
 			MaxAgents:         2,
 		}, agents: []*woodpecker.Agent{
 			{Name: "pool-1-agent-1234"},
-		}}
+		}, scheduler: &scheduler.SimpleScheduler{}}
 
 		value, _ := autoscaler.calcAgents(t.Context())
 		assert.Equal(t, float64(1), value)
 	})
 
-	t.Run("should not create new agent (availableAgents)", func(t *testing.T) {
+	t.Run("should not create new agent when pool already covers demand", func(t *testing.T) {
+		// Previously this tested "availableAgents" from queueInfo.Stats.Workers (free slots
+		// reported fleet-wide by the server). That value is no longer passed through the
+		// Scheduler interface; free capacity is now derived from the pool agents list.
+		// The equivalent test: one pool agent with WorkflowsPerAgent=2 can absorb 2 pending
+		// tasks, so no new agent should be created.
 		autoscaler := Autoscaler{client: &MockClient{
-			workers: 2,
 			pending: 2,
 		}, config: &config.Config{
-			WorkflowsPerAgent: 1,
+			WorkflowsPerAgent: 2,
 			MaxAgents:         2,
-		}}
+		}, agents: []*woodpecker.Agent{
+			{Name: "pool-1-agent-1234"},
+		}, scheduler: &scheduler.SimpleScheduler{}}
 
 		value, _ := autoscaler.calcAgents(t.Context())
 		assert.Equal(t, float64(0), value)
 	})
 }
 
-func Test_getQueueInfo(t *testing.T) {
+func Test_filterTasksByLabel(t *testing.T) {
 	zerolog.SetGlobalLevel(zerolog.ErrorLevel)
-	t.Run("should not filter", func(t *testing.T) {
-		autoscaler := Autoscaler{
-			client: &MockClient{
-				pending: 2,
-			},
-			config: &config.Config{},
-		}
 
-		free, running, pending, _ := autoscaler.getQueueInfo(t.Context())
-		assert.Equal(t, 0, free)
-		assert.Equal(t, 0, running)
-		assert.Equal(t, 2, pending)
+	tasks := []woodpecker.Task{
+		{Labels: map[string]string{"arch": "amd64"}},
+		{Labels: map[string]string{"arch": "arm64"}},
+	}
+
+	t.Run("should return all tasks when label matches all", func(t *testing.T) {
+		result := filterTasksByLabel(tasks, "arch", "amd64")
+		assert.Equal(t, 1, len(result))
+		assert.Equal(t, "amd64", result[0].Labels["arch"])
 	})
 
-	t.Run("should filter one by label", func(t *testing.T) {
-		autoscaler := Autoscaler{
-			client: &MockClient{
-				pending: 2,
-			},
-			config: &config.Config{
-				FilterLabels: "arch=amd64",
-			},
-		}
-
-		free, running, pending, _ := autoscaler.getQueueInfo(t.Context())
-		assert.Equal(t, 0, free)
-		assert.Equal(t, 1, running)
-		assert.Equal(t, 1, pending)
+	t.Run("should return empty when label matches none", func(t *testing.T) {
+		result := filterTasksByLabel(tasks, "arch", "riscv64")
+		assert.Equal(t, 0, len(result))
 	})
 
-	t.Run("should filter all by label", func(t *testing.T) {
+	t.Run("should return all matching tasks", func(t *testing.T) {
+		mixed := []woodpecker.Task{
+			{Labels: map[string]string{"arch": "amd64"}},
+			{Labels: map[string]string{"arch": "amd64"}},
+			{Labels: map[string]string{"arch": "arm64"}},
+		}
+		result := filterTasksByLabel(mixed, "arch", "amd64")
+		assert.Equal(t, 2, len(result))
+	})
+}
+
+func Test_calcAgents_labelFilter(t *testing.T) {
+	zerolog.SetGlobalLevel(zerolog.ErrorLevel)
+
+	// MockClient always returns 1 running amd64 task and 1 pending amd64 task.
+
+	t.Run("should not filter when FilterLabels is empty", func(t *testing.T) {
 		autoscaler := Autoscaler{
-			client: &MockClient{
-				pending: 2,
-			},
+			client: &MockClient{pending: 2},
 			config: &config.Config{
-				FilterLabels: "arch=arm64",
+				WorkflowsPerAgent: 1,
+				MaxAgents:         3,
 			},
+			scheduler: &scheduler.SimpleScheduler{},
 		}
 
-		free, running, pending, _ := autoscaler.getQueueInfo(t.Context())
-		assert.Equal(t, 0, free)
-		assert.Equal(t, 0, running)
-		assert.Equal(t, 0, pending)
+		value, _ := autoscaler.calcAgents(t.Context())
+		// 1 running + 1 pending = 2 tasks, 0 pool agents → needs 2 agents
+		assert.Equal(t, float64(2), value)
+	})
+
+	t.Run("should filter by label (amd64 matches both tasks)", func(t *testing.T) {
+		autoscaler := Autoscaler{
+			client: &MockClient{pending: 2},
+			config: &config.Config{
+				WorkflowsPerAgent: 1,
+				MaxAgents:         3,
+				FilterLabels:      "arch=amd64",
+			},
+			scheduler: &scheduler.SimpleScheduler{},
+		}
+
+		value, _ := autoscaler.calcAgents(t.Context())
+		// 1 amd64 running + 1 amd64 pending = 2 tasks → needs 2 agents
+		assert.Equal(t, float64(2), value)
+	})
+
+	t.Run("should filter all out by label (arm64 matches nothing)", func(t *testing.T) {
+		autoscaler := Autoscaler{
+			client: &MockClient{pending: 2},
+			config: &config.Config{
+				WorkflowsPerAgent: 1,
+				MaxAgents:         3,
+				FilterLabels:      "arch=arm64",
+			},
+			scheduler: &scheduler.SimpleScheduler{},
+		}
+
+		value, _ := autoscaler.calcAgents(t.Context())
+		// 0 matching tasks → 0 agents needed
+		assert.Equal(t, float64(0), value)
 	})
 }
 
@@ -187,7 +228,7 @@ func Test_createAgents(t *testing.T) {
 	t.Run("should create a new agent", func(t *testing.T) {
 		ctx := t.Context()
 		client := mocks_server.NewMockClient(t)
-		provider := mocks_engine.NewMockProvider(t)
+		provider := mocks_provider.NewMockProvider(t)
 		autoscaler := Autoscaler{
 			client:   client,
 			provider: provider,
@@ -197,7 +238,7 @@ func Test_createAgents(t *testing.T) {
 		}
 
 		client.On("AgentCreate", mock.Anything).Return(&woodpecker.Agent{Name: "pool-1-agent-1"}, nil)
-		provider.On("DeployAgent", ctx, mock.Anything).Return(nil)
+		provider.On("DeployAgent", ctx, mock.Anything, mock.Anything).Return(nil)
 
 		err := autoscaler.createAgents(ctx, 1)
 		assert.NoError(t, err)
@@ -206,7 +247,7 @@ func Test_createAgents(t *testing.T) {
 	t.Run("should reuse an no-schedule agent first before creating a new one", func(t *testing.T) {
 		ctx := t.Context()
 		client := mocks_server.NewMockClient(t)
-		provider := mocks_engine.NewMockProvider(t)
+		provider := mocks_provider.NewMockProvider(t)
 		autoscaler := Autoscaler{
 			client:   client,
 			provider: provider,
@@ -225,7 +266,7 @@ func Test_createAgents(t *testing.T) {
 			return agent.ID == 1 && agent.NoSchedule == false
 		})).Return(nil, nil)
 		client.On("AgentCreate", mock.Anything).Return(&woodpecker.Agent{Name: "pool-1-agent-1"}, nil)
-		provider.On("DeployAgent", ctx, mock.Anything).Return(nil)
+		provider.On("DeployAgent", ctx, mock.Anything, mock.Anything).Return(nil)
 
 		err := autoscaler.createAgents(ctx, 2)
 		assert.NoError(t, err)
@@ -236,7 +277,7 @@ func Test_cleanupDanglingAgents(t *testing.T) {
 	t.Run("should remove agent that is only present on woodpecker (not provider)", func(t *testing.T) {
 		ctx := t.Context()
 		client := mocks_server.NewMockClient(t)
-		provider := mocks_engine.NewMockProvider(t)
+		provider := mocks_provider.NewMockProvider(t)
 		autoscaler := Autoscaler{
 			agents: []*woodpecker.Agent{
 				{ID: 1, Name: "pool-1-agent-1", NoSchedule: false},
@@ -255,7 +296,7 @@ func Test_cleanupDanglingAgents(t *testing.T) {
 	t.Run("should remove agent that is only present on provider (not woodpecker)", func(t *testing.T) {
 		ctx := t.Context()
 		client := mocks_server.NewMockClient(t)
-		provider := mocks_engine.NewMockProvider(t)
+		provider := mocks_provider.NewMockProvider(t)
 		autoscaler := Autoscaler{
 			agents: []*woodpecker.Agent{
 				{ID: 1, Name: "pool-1-agent-1", NoSchedule: false},
@@ -278,7 +319,7 @@ func Test_cleanupStaleAgents(t *testing.T) {
 	t.Run("should remove agent that never connected (last contact = 0) in over 15 minutes", func(t *testing.T) {
 		ctx := t.Context()
 		client := mocks_server.NewMockClient(t)
-		provider := mocks_engine.NewMockProvider(t)
+		provider := mocks_provider.NewMockProvider(t)
 		autoscaler := Autoscaler{
 			agents: []*woodpecker.Agent{
 				{
@@ -316,7 +357,7 @@ func Test_cleanupStaleAgents(t *testing.T) {
 	t.Run("should remove agent that has lost connection for more than 15 minutes", func(t *testing.T) {
 		ctx := t.Context()
 		client := mocks_server.NewMockClient(t)
-		provider := mocks_engine.NewMockProvider(t)
+		provider := mocks_provider.NewMockProvider(t)
 		autoscaler := Autoscaler{
 			agents: []*woodpecker.Agent{
 				{
@@ -422,7 +463,7 @@ func Test_drainAgents(t *testing.T) {
 	t.Run("should drain agents and skip no-schedule ones", func(t *testing.T) {
 		ctx := t.Context()
 		client := mocks_server.NewMockClient(t)
-		provider := mocks_engine.NewMockProvider(t)
+		provider := mocks_provider.NewMockProvider(t)
 		autoscaler := Autoscaler{
 			agents: []*woodpecker.Agent{
 				{ID: 1, Name: "pool-1-agent-1", NoSchedule: false, LastContact: time.Now().Add(-time.Minute * 2).Unix()},
@@ -450,7 +491,7 @@ func Test_drainAgents(t *testing.T) {
 	t.Run("should not remove an agent that never connected", func(t *testing.T) {
 		ctx := t.Context()
 		client := mocks_server.NewMockClient(t)
-		provider := mocks_engine.NewMockProvider(t)
+		provider := mocks_provider.NewMockProvider(t)
 		autoscaler := Autoscaler{
 			agents: []*woodpecker.Agent{
 				{ID: 1, Name: "pool-1-agent-1", NoSchedule: false, LastContact: 0},
@@ -470,7 +511,7 @@ func Test_drainAgents(t *testing.T) {
 	t.Run("should not remove an agent that has recently done some work", func(t *testing.T) {
 		ctx := t.Context()
 		client := mocks_server.NewMockClient(t)
-		provider := mocks_engine.NewMockProvider(t)
+		provider := mocks_provider.NewMockProvider(t)
 		autoscaler := Autoscaler{
 			agents: []*woodpecker.Agent{
 				{
@@ -498,7 +539,7 @@ func Test_removeDrainedAgents(t *testing.T) {
 	t.Run("should remove agent", func(t *testing.T) {
 		ctx := t.Context()
 		client := mocks_server.NewMockClient(t)
-		provider := mocks_engine.NewMockProvider(t)
+		provider := mocks_provider.NewMockProvider(t)
 		autoscaler := Autoscaler{
 			agents: []*woodpecker.Agent{
 				{ID: 1, Name: "pool-1-agent-1", NoSchedule: false},
@@ -525,7 +566,7 @@ func Test_removeDrainedAgents(t *testing.T) {
 	t.Run("should not remove agent with tasks", func(t *testing.T) {
 		ctx := t.Context()
 		client := mocks_server.NewMockClient(t)
-		provider := mocks_engine.NewMockProvider(t)
+		provider := mocks_provider.NewMockProvider(t)
 		autoscaler := Autoscaler{
 			agents: []*woodpecker.Agent{
 				{ID: 1, Name: "pool-1-agent-1", NoSchedule: false},

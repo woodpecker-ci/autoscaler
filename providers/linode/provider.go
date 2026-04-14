@@ -14,7 +14,8 @@ import (
 	"golang.org/x/oauth2"
 
 	"go.woodpecker-ci.org/autoscaler/config"
-	"go.woodpecker-ci.org/autoscaler/engine"
+	"go.woodpecker-ci.org/autoscaler/engine/inits/cloudinit"
+	"go.woodpecker-ci.org/autoscaler/engine/provider"
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
 
@@ -77,7 +78,7 @@ type Provider struct {
 	client           *linodego.Client
 }
 
-func New(ctx context.Context, c *cli.Command, config *config.Config) (engine.Provider, error) {
+func New(ctx context.Context, c *cli.Command, config *config.Config) (provider.Provider, error) {
 	p := &Provider{
 		name:          "linode",
 		region:        c.String("linode-region"),
@@ -120,10 +121,14 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (engine.Pro
 	return p, nil
 }
 
-func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
-	userData, err := engine.RenderUserDataTemplate(p.config, agent, p.userDataTemplate)
+func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cap provider.Capability) error { //nolint:revive
+	if cap.DeployMethod != provider.CloudInit {
+		return fmt.Errorf("unsupported deploy method: %q", cap.DeployMethod)
+	}
+
+	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, p.userDataTemplate)
 	if err != nil {
-		return fmt.Errorf("%s: engine.RenderUserDataTemplate: %w", p.name, err)
+		return fmt.Errorf("%s: cloudinit.RenderUserDataTemplate: %w", p.name, err)
 	}
 	userDataString := b64.StdEncoding.EncodeToString([]byte(userData))
 
@@ -262,4 +267,17 @@ func newClient(apiKey string) *linodego.Client {
 	linodeClient.SetDebug(false)
 
 	return &linodeClient
+}
+
+func (p *Provider) Capabilities(_ context.Context) ([]provider.Capability, error) {
+	// TODO: actually call linode with it's config to see what's available
+	return []provider.Capability{{
+		Platform:     "linux/amd64",
+		Backend:      provider.BackendDocker,
+		DeployMethod: provider.CloudInit,
+	}, {
+		Platform:     "linux/arm64",
+		Backend:      provider.BackendDocker,
+		DeployMethod: provider.CloudInit,
+	}}, nil
 }
