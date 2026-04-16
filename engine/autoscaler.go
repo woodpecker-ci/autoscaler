@@ -40,7 +40,10 @@ func (a *Autoscaler) loadAgents(_ context.Context) error {
 	if err != nil {
 		return fmt.Errorf("client.AgentList: %w", err)
 	}
-	r, _ := regexp.Compile(fmt.Sprintf("pool-%s-agent-.*?", a.config.PoolID))
+	r, err := regexp.Compile(fmt.Sprintf("pool-%s-agent-.*?", a.config.PoolID))
+	if err != nil {
+		return fmt.Errorf("could not create regex matcher for agent names by pool ID: %w", err)
+	}
 
 	for _, agent := range agents {
 		if r.MatchString(agent.Name) {
