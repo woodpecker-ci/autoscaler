@@ -1,6 +1,14 @@
 # Changelog
 
-## [1.2.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.2.1) - 2026-04-11
+## [1.3.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.3.0) - 2026-04-16
+
+### ❤️ Thanks to all contributors! ❤️
+
+@6543
+
+### 📈 Enhancement
+
+- Surface regex compile error [[#586](https://github.com/woodpecker-ci/autoscaler/pull/586)]
 
 ### 📦️ Dependency
 
