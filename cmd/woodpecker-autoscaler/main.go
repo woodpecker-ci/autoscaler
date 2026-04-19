@@ -15,6 +15,7 @@ import (
 	"go.woodpecker-ci.org/autoscaler/config"
 	"go.woodpecker-ci.org/autoscaler/engine"
 	"go.woodpecker-ci.org/autoscaler/providers/aws"
+	"go.woodpecker-ci.org/autoscaler/providers/digitalocean"
 	"go.woodpecker-ci.org/autoscaler/providers/hetznercloud"
 	"go.woodpecker-ci.org/autoscaler/providers/scaleway"
 	"go.woodpecker-ci.org/autoscaler/providers/vultr"
@@ -34,6 +35,8 @@ func setupProvider(ctx context.Context, cmd *cli.Command, config *config.Config)
 	// 	return linode.New(ctx, config)
 	case "vultr":
 		return vultr.New(ctx, cmd, config)
+	case "digitalocean":
+		return digitalocean.New(ctx, cmd, config)
 	case "scaleway":
 		return scaleway.New(ctx, cmd, config)
 	case "":
@@ -141,6 +144,7 @@ func main() {
 	// Enable it again when the issue is fixed.
 	// app.Flags = append(app.Flags, linode.ProviderFlags...)
 	app.Flags = append(app.Flags, aws.ProviderFlags...)
+	app.Flags = append(app.Flags, digitalocean.ProviderFlags...)
 	app.Flags = append(app.Flags, vultr.ProviderFlags...)
 
 	if err := app.Run(context.Background(), os.Args); err != nil {
