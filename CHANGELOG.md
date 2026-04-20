@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.3.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.3.0) - 2026-04-16
+## [1.3.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.3.0) - 2026-04-20
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -12,6 +12,7 @@
 
 ### 📦️ Dependency
 
+- fix(deps): update golang deps non-major [[#578](https://github.com/woodpecker-ci/autoscaler/pull/578)]
 - fix(deps): update golang.org/x/exp digest to 746e56f [[#579](https://github.com/woodpecker-ci/autoscaler/pull/579)]
 - chore(deps): update dependency golangci/golangci-lint to v2.11.4 [[#554](https://github.com/woodpecker-ci/autoscaler/pull/554)]
 - fix(deps): update module github.com/vultr/govultr/v3 to v3.30.0 [[#576](https://github.com/woodpecker-ci/autoscaler/pull/576)]
