@@ -1,5 +1,56 @@
 # Changelog
 
+## [1.3.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.3.0) - 2026-04-21
+
+### ❤️ Thanks to all contributors! ❤️
+
+@6543, @BnMcG
+
+### 📈 Enhancement
+
+- Surface regex compile error [[#586](https://github.com/woodpecker-ci/autoscaler/pull/586)]
+
+### 🐛 Bug Fixes
+
+- fix(scaleway): tidy up scaleway volumes [[#559](https://github.com/woodpecker-ci/autoscaler/pull/559)]
+
+### 📦️ Dependency
+
+- fix(deps): update golang deps non-major [[#588](https://github.com/woodpecker-ci/autoscaler/pull/588)]
+- chore(deps): update docker.io/woodpeckerci/plugin-ready-release-go docker tag to v4.1.1 [[#587](https://github.com/woodpecker-ci/autoscaler/pull/587)]
+- fix(deps): update golang deps non-major [[#578](https://github.com/woodpecker-ci/autoscaler/pull/578)]
+- fix(deps): update golang.org/x/exp digest to 746e56f [[#579](https://github.com/woodpecker-ci/autoscaler/pull/579)]
+- chore(deps): update dependency golangci/golangci-lint to v2.11.4 [[#554](https://github.com/woodpecker-ci/autoscaler/pull/554)]
+- fix(deps): update module github.com/vultr/govultr/v3 to v3.30.0 [[#576](https://github.com/woodpecker-ci/autoscaler/pull/576)]
+- chore(deps): update docker.io/woodpeckerci/plugin-ready-release-go docker tag to v4 [[#556](https://github.com/woodpecker-ci/autoscaler/pull/556)]
+- fix(deps): update golang.org/x/exp digest to 7ab1446 [[#560](https://github.com/woodpecker-ci/autoscaler/pull/560)]
+- fix(deps): update golang deps non-major [[#575](https://github.com/woodpecker-ci/autoscaler/pull/575)]
+- fix(deps): update module github.com/aws/aws-sdk-go-v2/config to v1.32.14 [[#574](https://github.com/woodpecker-ci/autoscaler/pull/574)]
+- fix(deps): update golang deps non-major [[#573](https://github.com/woodpecker-ci/autoscaler/pull/573)]
+- fix(deps): update golang deps non-major [[#572](https://github.com/woodpecker-ci/autoscaler/pull/572)]
+- chore(deps): update pre-commit hook golangci/golangci-lint to v2.11.4 [[#569](https://github.com/woodpecker-ci/autoscaler/pull/569)]
+- fix(deps): update golang deps non-major [[#571](https://github.com/woodpecker-ci/autoscaler/pull/571)]
+- fix(deps): update module github.com/urfave/cli/v3 to v3.8.0 [[#570](https://github.com/woodpecker-ci/autoscaler/pull/570)]
+- fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.296.0 [[#562](https://github.com/woodpecker-ci/autoscaler/pull/562)]
+- fix(deps): update golang deps non-major [[#561](https://github.com/woodpecker-ci/autoscaler/pull/561)]
+- fix(deps): update golang deps non-major [[#557](https://github.com/woodpecker-ci/autoscaler/pull/557)]
+- fix(deps): update golang.org/x/exp digest to 3dfff04 [[#548](https://github.com/woodpecker-ci/autoscaler/pull/548)]
+- chore(deps): update pre-commit hook golangci/golangci-lint to v2.11.3 [[#555](https://github.com/woodpecker-ci/autoscaler/pull/555)]
+- chore(deps): update dependency go to v1.26.1 [[#553](https://github.com/woodpecker-ci/autoscaler/pull/553)]
+- chore(deps): update dependency golangci/golangci-lint to v2.11.0 [[#543](https://github.com/woodpecker-ci/autoscaler/pull/543)]
+- fix(deps): update golang deps non-major [[#552](https://github.com/woodpecker-ci/autoscaler/pull/552)]
+- fix(deps): update golang deps non-major [[#551](https://github.com/woodpecker-ci/autoscaler/pull/551)]
+- fix(deps): update golang deps non-major [[#541](https://github.com/woodpecker-ci/autoscaler/pull/541)]
+- chore(deps): update docker.io/golang docker tag to v1.26 [[#544](https://github.com/woodpecker-ci/autoscaler/pull/544)]
+- chore(deps): update pre-commit non-major [[#549](https://github.com/woodpecker-ci/autoscaler/pull/549)]
+- fix(deps): update golang.org/x/exp digest to 81e46e3 [[#542](https://github.com/woodpecker-ci/autoscaler/pull/542)]
+- chore(deps): update pre-commit hook golangci/golangci-lint to v2.9.0 [[#546](https://github.com/woodpecker-ci/autoscaler/pull/546)]
+- chore(deps): update golang docker tag to v1.26 [[#545](https://github.com/woodpecker-ci/autoscaler/pull/545)]
+- fix(deps): update module golang.org/x/oauth2 to v0.35.0 [[#540](https://github.com/woodpecker-ci/autoscaler/pull/540)]
+- fix(deps): update module github.com/vultr/govultr/v3 to v3.27.0 [[#536](https://github.com/woodpecker-ci/autoscaler/pull/536)]
+- chore(deps): update dependency go to v1.25.7 [[#535](https://github.com/woodpecker-ci/autoscaler/pull/535)]
+- fix(deps): update module github.com/linode/linodego to v1.65.0 [[#533](https://github.com/woodpecker-ci/autoscaler/pull/533)]
+
 ## [1.2.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.2.0) - 2026-01-30
 
 ### ❤️ Thanks to all contributors! ❤️
