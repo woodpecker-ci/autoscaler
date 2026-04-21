@@ -4,11 +4,15 @@
 
 ### ❤️ Thanks to all contributors! ❤️
 
-@6543
+@6543, @BnMcG
 
 ### 📈 Enhancement
 
 - Surface regex compile error [[#586](https://github.com/woodpecker-ci/autoscaler/pull/586)]
+
+### 🐛 Bug Fixes
+
+- fix(scaleway): tidy up scaleway volumes [[#559](https://github.com/woodpecker-ci/autoscaler/pull/559)]
 
 ### 📦️ Dependency
 
