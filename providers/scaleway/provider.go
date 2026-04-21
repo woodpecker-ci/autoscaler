@@ -10,6 +10,7 @@ import (
 
 	"github.com/docker/go-units"
 	"github.com/rs/zerolog/log"
+	"github.com/scaleway/scaleway-sdk-go/api/block/v1"
 	"github.com/scaleway/scaleway-sdk-go/api/instance/v1"
 	"github.com/scaleway/scaleway-sdk-go/scw"
 	"github.com/urfave/cli/v3"
@@ -269,11 +270,58 @@ func (p *Provider) deleteInstance(ctx context.Context, inst *instance.Server) er
 	}
 
 	api := instance.NewAPI(p.client)
+	blockAPI := block.NewAPI(p.client)
 
-	return api.DeleteServer(&instance.DeleteServerRequest{
+	// Capture volumes before deletion (server deletion detaches them)
+	volumes := inst.Volumes
+
+	// Delete server first
+	err = api.DeleteServer(&instance.DeleteServerRequest{
 		Zone:     inst.Zone,
 		ServerID: inst.ID,
 	}, scw.WithContext(ctx))
+	if err != nil {
+		return err
+	}
+
+	// Delete volumes - collect all errors
+	var errs []error
+	for _, volume := range volumes {
+		switch volume.VolumeType {
+		case instance.VolumeServerVolumeTypeLSSD:
+			// Local SSD - delete via instance API
+			if err := api.DeleteVolume(&instance.DeleteVolumeRequest{
+				VolumeID: volume.ID,
+				Zone:     inst.Zone,
+			}, scw.WithContext(ctx)); err != nil {
+				errs = append(errs, fmt.Errorf("delete LSSD volume %s: %w", volume.ID, err))
+			}
+
+		case instance.VolumeServerVolumeTypeSbsVolume:
+			// Block storage - wait for available status, then delete via block API
+			terminalStatus := block.VolumeStatusAvailable
+			if _, err := blockAPI.WaitForVolume(&block.WaitForVolumeRequest{
+				VolumeID:       volume.ID,
+				Zone:           inst.Zone,
+				TerminalStatus: &terminalStatus,
+			}, scw.WithContext(ctx)); err != nil {
+				errs = append(errs, fmt.Errorf("wait for SBS volume %s: %w", volume.ID, err))
+				continue
+			}
+
+			if err := blockAPI.DeleteVolume(&block.DeleteVolumeRequest{
+				VolumeID: volume.ID,
+				Zone:     inst.Zone,
+			}, scw.WithContext(ctx)); err != nil {
+				errs = append(errs, fmt.Errorf("delete SBS volume %s: %w", volume.ID, err))
+			}
+
+		case instance.VolumeServerVolumeTypeScratch:
+			// Scratch volumes are automatically deleted with the server
+		}
+	}
+
+	return errors.Join(errs...)
 }
 
 func (p *Provider) bootInstance(ctx context.Context, inst *instance.Server) (*instance.ServerActionResponse, error) {
