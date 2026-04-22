@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.3.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.3.1) - 2026-04-22
+
+### 📦️ Dependency
+
+- fix(deps): update module github.com/vultr/govultr/v3 to v3.31.1 [[#589](https://github.com/woodpecker-ci/autoscaler/pull/589)]
+
 ## [1.3.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.3.0) - 2026-04-21
 
 ### ❤️ Thanks to all contributors! ❤️
