@@ -14,7 +14,10 @@ import (
 
 	"go.woodpecker-ci.org/autoscaler/config"
 	"go.woodpecker-ci.org/autoscaler/engine"
+	"go.woodpecker-ci.org/autoscaler/engine/inits/cloudinit"
+	"go.woodpecker-ci.org/autoscaler/engine/provider"
 	"go.woodpecker-ci.org/autoscaler/providers/hetznercloud/hcapi"
+	"go.woodpecker-ci.org/autoscaler/utils"
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
 
@@ -44,7 +47,7 @@ type Provider struct {
 	client           hcapi.Client
 }
 
-func New(_ context.Context, c *cli.Command, config *config.Config) (engine.Provider, error) {
+func New(_ context.Context, c *cli.Command, config *config.Config) (provider.Provider, error) {
 	p := &Provider{
 		name:       "hetznercloud",
 		serverType: c.StringSlice("hetznercloud-server-type"),
@@ -75,7 +78,7 @@ func New(_ context.Context, c *cli.Command, config *config.Config) (engine.Provi
 	defaultLabels[engine.LabelPool] = p.config.PoolID
 	defaultLabels[engine.LabelImage] = p.image
 
-	labels, err := engine.SliceToMap(c.StringSlice("hetznercloud-labels"), "=")
+	labels, err := utils.SliceToMap(c.StringSlice("hetznercloud-labels"), "=")
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", p.name, err)
 	}
@@ -85,15 +88,15 @@ func New(_ context.Context, c *cli.Command, config *config.Config) (engine.Provi
 			return nil, fmt.Errorf("%s: %w: %s", p.name, ErrIllegalLablePrefix, engine.LabelPrefix)
 		}
 	}
-	p.labels = engine.MergeMaps(defaultLabels, p.labels)
+	p.labels = utils.MergeMaps(defaultLabels, p.labels)
 
 	return p, nil
 }
 
 func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
-	userData, err := engine.RenderUserDataTemplate(p.config, agent, p.userDataTemplate)
+	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, p.userDataTemplate)
 	if err != nil {
-		return fmt.Errorf("%s: engine.RenderUserDataTemplate: %w", p.name, err)
+		return fmt.Errorf("%s: cloudinit.RenderUserDataTemplate: %w", p.name, err)
 	}
 
 	sshKeys := make([]*hcloud.SSHKey, 0)

@@ -1,4 +1,4 @@
-package engine
+package cloudinit_test
 
 import (
 	"testing"
@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"go.woodpecker-ci.org/autoscaler/config"
+	"go.woodpecker-ci.org/autoscaler/engine/inits/cloudinit"
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
 
@@ -33,7 +34,7 @@ func TestRenderUserDataTemplate(t *testing.T) {
 		Token: "test-token",
 	}
 
-	userData, err := RenderUserDataTemplate(config, agent, testUserDataTmpl)
+	userData, err := cloudinit.RenderUserDataTemplate(config, agent, testUserDataTmpl)
 
 	assert.NoError(t, err)
 	assert.Contains(t, userData, "test-image")
@@ -48,7 +49,7 @@ func TestRenderUserDataTemplate_Secure(t *testing.T) {
 	}
 	agent := &woodpecker.Agent{}
 
-	userData, err := RenderUserDataTemplate(config, agent, testUserDataTmpl)
+	userData, err := cloudinit.RenderUserDataTemplate(config, agent, testUserDataTmpl)
 
 	assert.NoError(t, err)
 	assert.Contains(t, userData, "WOODPECKER_GRPC_SECURE=true")
@@ -59,6 +60,6 @@ func TestRenderUserDataTemplate_Error(t *testing.T) {
 	agent := &woodpecker.Agent{}
 	tmpl := template.Must(template.New("test").Parse("{{.Missing}}"))
 
-	_, err := RenderUserDataTemplate(config, agent, tmpl)
+	_, err := cloudinit.RenderUserDataTemplate(config, agent, tmpl)
 	assert.Error(t, err)
 }

@@ -11,7 +11,9 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"go.woodpecker-ci.org/autoscaler/config"
+	"go.woodpecker-ci.org/autoscaler/engine/provider"
 	"go.woodpecker-ci.org/autoscaler/server"
+	"go.woodpecker-ci.org/autoscaler/utils"
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
 
@@ -19,15 +21,15 @@ type Autoscaler struct {
 	client   server.Client
 	agents   []*woodpecker.Agent
 	config   *config.Config
-	provider Provider
+	provider provider.Provider
 }
 
 // NewAutoscaler creates a new Autoscaler instance.
 // It takes in a Provider, Client and Config, and returns a configured
 // Autoscaler struct.
-func NewAutoscaler(provider Provider, client server.Client, config *config.Config) Autoscaler {
+func NewAutoscaler(p provider.Provider, client server.Client, config *config.Config) Autoscaler {
 	return Autoscaler{
-		provider: provider,
+		provider: p,
 		client:   client,
 		config:   config,
 	}
@@ -88,7 +90,7 @@ func (a *Autoscaler) createAgents(ctx context.Context, amount int) error {
 	// create new agents
 	for i := 0; i < amount-reactivatedAgents; i++ {
 		agent, err := a.client.AgentCreate(&woodpecker.Agent{
-			Name: fmt.Sprintf("pool-%s-agent-%s", a.config.PoolID, RandomString(suffixLength)),
+			Name: fmt.Sprintf("pool-%s-agent-%s", a.config.PoolID, utils.RandomString(suffixLength)),
 		})
 		if err != nil {
 			return fmt.Errorf("client.AgentCreate: %w", err)
@@ -384,4 +386,15 @@ func (a *Autoscaler) Reconcile(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func countTasksByLabel(jobs []woodpecker.Task, labelKey, labelValue string) int {
+	count := 0
+	for _, job := range jobs {
+		val, exists := job.Labels[labelKey]
+		if exists && val == labelValue {
+			count++
+		}
+	}
+	return count
 }
