@@ -172,7 +172,7 @@ func main() {
 }
 
 // convertEnvSettingToLabels is a helper function for backwards compatibility,
-// that parses value of WOODPECKER_AGENT_LABELS and make it usable fo us.
+// that parses value of WOODPECKER_AGENT_LABELS and make it usable for us.
 func convertEnvSettingToLabels(env string) map[string]string {
 	out := make(map[string]string)
 	for _, v := range strings.Split(env, ",") {
