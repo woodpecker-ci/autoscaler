@@ -3,6 +3,7 @@ package aws
 import (
 	"context"
 	b64 "encoding/base64"
+	"errors"
 	"fmt"
 	"strings"
 	"sync"
@@ -13,6 +14,7 @@ import (
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	"github.com/aws/smithy-go"
 	"github.com/rs/zerolog/log"
 	"github.com/urfave/cli/v3"
 
@@ -25,6 +27,7 @@ type Provider struct {
 	name                  string
 	config                *config.Config
 	instanceType          string
+	fallbackInstanceTypes []string
 	amiID                 string
 	tags                  []string
 	region                string
@@ -47,6 +50,7 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (engine.Pro
 		name:                  "aws",
 		config:                config,
 		instanceType:          c.String("aws-instance-type"),
+		fallbackInstanceTypes: c.StringSlice("aws-fallback-instance-types"),
 		amiID:                 c.String("aws-ami-id"),
 		tags:                  c.StringSlice("aws-tags"),
 		region:                c.String("aws-region"),
@@ -113,8 +117,7 @@ func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 		IamInstanceProfile: &types.IamInstanceProfileSpecification{
 			Arn: aws.String(p.iamInstanceProfileArn),
 		},
-		ImageId:      aws.String(p.amiID),
-		InstanceType: types.InstanceType(p.instanceType),
+		ImageId: aws.String(p.amiID),
 		MetadataOptions: &types.InstanceMetadataOptionsRequest{
 			HttpEndpoint:            types.InstanceMetadataEndpointStateEnabled,
 			HttpPutResponseHopLimit: aws.Int32(1),
@@ -152,9 +155,32 @@ func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 	}
 
 	runInstancesInput.UserData = aws.String(b64.StdEncoding.EncodeToString([]byte(userData)))
-	result, err := p.client.RunInstances(ctx, &runInstancesInput)
-	if err != nil {
-		return fmt.Errorf("%s: RunInstances: %w", p.name, err)
+
+	// Try primary instance type, then fallback types on capacity errors
+	instanceTypes := []string{p.instanceType}
+	instanceTypes = append(instanceTypes, p.fallbackInstanceTypes...)
+
+	var result *ec2.RunInstancesOutput
+	for i, instanceType := range instanceTypes {
+		runInstancesInput.InstanceType = types.InstanceType(instanceType)
+
+		if i > 0 {
+			log.Info().Msgf("retrying with fallback instance type %s (%d/%d)", instanceType, i, len(instanceTypes)-1)
+		}
+
+		result, err = p.client.RunInstances(ctx, &runInstancesInput)
+		if err == nil {
+			if i > 0 {
+				log.Info().Msgf("successfully launched instance with fallback type %s", instanceType)
+			}
+			break
+		}
+
+		if !isCapacityError(err) || i == len(instanceTypes)-1 {
+			return fmt.Errorf("%s: RunInstances: %w", p.name, err)
+		}
+
+		log.Warn().Msgf("instance type %s failed with capacity error: %v", instanceType, err)
 	}
 
 	// Wait until instance is available. Sometimes it can take a second or two for the tag based
@@ -242,4 +268,22 @@ func (p *Provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 		}
 	}
 	return names, nil
+}
+
+// isCapacityError checks if an AWS error is related to instance capacity issues
+// that could be resolved by trying a different instance type.
+func isCapacityError(err error) bool {
+	var apiErr smithy.APIError
+	if !errors.As(err, &apiErr) {
+		return false
+	}
+
+	switch apiErr.ErrorCode() {
+	case "InsufficientInstanceCapacity",
+		"InstanceLimitExceeded",
+		"Unsupported":
+		return true
+	default:
+		return false
+	}
 }
