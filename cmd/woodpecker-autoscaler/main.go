@@ -60,6 +60,28 @@ func run(ctx context.Context, cmd *cli.Command) error {
 		agentEnvironment[before] = after
 	}
 
+	agentLabels := make(map[string]string)
+	for _, env := range cmd.StringSlice("agent-labels") {
+		before, after, _ := strings.Cut(env, "=")
+		if before == "" || after == "" {
+			return fmt.Errorf("invalid agent labels variable: %s", env)
+		}
+		agentLabels[before] = after
+	}
+
+	// TODO: make it just fail in v2.0
+	if agentLabelsViaEnv, exist := agentEnvironment["WOODPECKER_AGENT_LABELS"]; exist {
+		if !cmd.IsSet("agent-labels") {
+			log.Warn().Msg("setting WOODPECKER_AGENT_LABELS via WOODPECKER_AGENT_ENV is deprecated, use native autoscaler setting for that")
+
+			// as backwards compatibility we calc agentLabels from agentEnvironment
+			agentLabels = convertEnvSettingToLabels(agentLabelsViaEnv)
+		} else {
+			log.Error().Msg("setting WOODPECKER_AGENT_LABELS and redefine it in WOODPECKER_AGENT_ENV is unsupported just use WOODPECKER_AGENT_LABELS")
+			return fmt.Errorf("remove 'WOODPECKER_AGENT_LABELS' within 'WOODPECKER_AGENT_ENV'")
+		}
+	}
+
 	config := &config.Config{
 		MinAgents:         cmd.Int("min-agents"),
 		MaxAgents:         cmd.Int("max-agents"),
@@ -70,6 +92,7 @@ func run(ctx context.Context, cmd *cli.Command) error {
 		Image:             cmd.String("agent-image"),
 		FilterLabels:      cmd.String("filter-labels"),
 		UserData:          cmd.String("provider-user-data"),
+		ExtraAgentLabels:  agentLabels,
 		Environment:       agentEnvironment,
 	}
 
@@ -146,4 +169,23 @@ func main() {
 	if err := app.Run(context.Background(), os.Args); err != nil {
 		log.Error().Err(err).Msg("got error while try to run autoscaler")
 	}
+}
+
+// convertEnvSettingToLabels is a helper function for backwards compatibility,
+// that parses value of WOODPECKER_AGENT_LABELS and make it usable for us.
+func convertEnvSettingToLabels(env string) map[string]string {
+	out := make(map[string]string)
+	for _, v := range strings.Split(env, ",") {
+		v = strings.TrimSpace(v)
+		if v == "" {
+			continue
+		}
+		key, val, _ := strings.Cut(v, "=")
+		if key != "" && val != "" {
+			out[key] = val
+		} else {
+			log.Error().Msgf("while converting agent labels from WOODPECKER_AGENT_ENV, a wrong entry was detected: %q", v)
+		}
+	}
+	return out
 }
