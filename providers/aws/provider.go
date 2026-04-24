@@ -130,6 +130,10 @@ func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 				ResourceType: "instance",
 				Tags:         tags,
 			},
+			{
+				ResourceType: "volume",
+				Tags:         tags,
+			},
 		},
 	}
 
