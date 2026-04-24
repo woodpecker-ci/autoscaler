@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.3.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.3.1) - 2026-04-24
+
+### ❤️ Thanks to all contributors! ❤️
+
+@mendarb
+
+### 🐛 Bug Fixes
+
+- Propagate tags to EBS volumes on AWS instances [[#568](https://github.com/woodpecker-ci/autoscaler/pull/568)]
+
+### 📦️ Dependency
+
+- fix(deps): update golang deps non-major [[#591](https://github.com/woodpecker-ci/autoscaler/pull/591)]
+- fix(deps): update module github.com/vultr/govultr/v3 to v3.31.1 [[#589](https://github.com/woodpecker-ci/autoscaler/pull/589)]
+
 ## [1.3.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.3.0) - 2026-04-21
 
 ### ❤️ Thanks to all contributors! ❤️
