@@ -1,6 +1,14 @@
 # Changelog
 
-## [1.3.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.3.1) - 2026-04-23
+## [1.3.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.3.1) - 2026-04-24
+
+### ❤️ Thanks to all contributors! ❤️
+
+@mendarb
+
+### 🐛 Bug Fixes
+
+- Propagate tags to EBS volumes on AWS instances [[#568](https://github.com/woodpecker-ci/autoscaler/pull/568)]
 
 ### 📦️ Dependency
 
