@@ -1,20 +1,13 @@
-package engine
+package cloudinit
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"text/template"
 
 	"go.woodpecker-ci.org/autoscaler/config"
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
-
-type Provider interface {
-	DeployAgent(context.Context, *woodpecker.Agent) error
-	RemoveAgent(context.Context, *woodpecker.Agent) error
-	ListDeployedAgentNames(context.Context) ([]string, error)
-}
 
 // RenderUserDataTemplate renders the user data template for an Agent
 // using the provided configuration.
@@ -60,3 +53,53 @@ func RenderUserDataTemplate(config *config.Config, agent *woodpecker.Agent, tmpl
 
 	return userData.String(), nil
 }
+
+// editorconfig-checker-disable
+var CloudInitUserDataUbuntuDefault = `
+#cloud-config
+
+package_reboot_if_required: false
+package_update: true
+package_upgrade: false
+
+groups:
+  - docker
+
+system_info:
+  default_user:
+    groups: [ docker ]
+
+apt:
+  sources:
+    docker.list:
+      keyid: 9DC858229FC7DD38854AE2D88D81803C0EBFCD88
+      keyserver: https://download.docker.com/linux/ubuntu/gpg
+      source: deb [signed-by=$KEY_FILE] https://download.docker.com/linux/ubuntu $RELEASE stable
+
+packages:
+  - docker-ce
+  - docker-compose-plugin
+  - binfmt-support
+  - qemu-user-static
+
+write_files:
+- path: /root/docker-compose.yml
+  content: |
+    # docker-compose.yml
+    version: '3'
+    services:
+      woodpecker-agent:
+        image: {{ .Image }}
+        restart: always
+        volumes:
+          - /var/run/docker.sock:/var/run/docker.sock
+        environment:
+          {{- range $key, $value := .Environment }}
+          - {{ $key }}={{ $value }}
+          {{- end }}
+
+runcmd:
+  - sh -xc "cd /root; docker compose up -d"
+
+final_message: "The system is finally up, after $UPTIME seconds"
+` // editorconfig-checker-enable

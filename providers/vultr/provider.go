@@ -17,6 +17,9 @@ import (
 
 	"go.woodpecker-ci.org/autoscaler/config"
 	"go.woodpecker-ci.org/autoscaler/engine"
+	"go.woodpecker-ci.org/autoscaler/engine/inits/cloudinit"
+	"go.woodpecker-ci.org/autoscaler/engine/provider"
+	"go.woodpecker-ci.org/autoscaler/utils"
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
 
@@ -39,7 +42,7 @@ type Provider struct {
 	client           *govultr.Client
 }
 
-func New(ctx context.Context, c *cli.Command, config *config.Config) (engine.Provider, error) {
+func New(ctx context.Context, c *cli.Command, config *config.Config) (provider.Provider, error) {
 	p := &Provider{
 		name:       "vultr",
 		region:     c.String("vultr-region"),
@@ -71,7 +74,7 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (engine.Pro
 	defaultLabels[engine.LabelPool] = p.config.PoolID
 	defaultLabels[engine.LabelImage] = p.image
 
-	labels, err := engine.SliceToMap(c.StringSlice("vultr-labels"), "=")
+	labels, err := utils.SliceToMap(c.StringSlice("vultr-labels"), "=")
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", p.name, err)
 	}
@@ -80,15 +83,19 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (engine.Pro
 			return nil, fmt.Errorf("%s: %w: %s", p.name, ErrIllegalLablePrefix, engine.LabelPrefix)
 		}
 	}
-	p.labels = engine.MergeMaps(defaultLabels, p.labels)
+	p.labels = utils.MergeMaps(defaultLabels, p.labels)
 
 	return p, nil
 }
 
-func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
-	userData, err := engine.RenderUserDataTemplate(p.config, agent, p.userDataTemplate)
+func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cap provider.Capability) error { //nolint:revive
+	if cap.DeployMethod != provider.CloudInit {
+		return fmt.Errorf("unsupported deploy method: %q", cap.DeployMethod)
+	}
+
+	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, p.userDataTemplate)
 	if err != nil {
-		return fmt.Errorf("%s: engine.RenderUserDataTemplate: %w", p.name, err)
+		return fmt.Errorf("%s: cloudinit.RenderUserDataTemplate: %w", p.name, err)
 	}
 
 	image := -1
@@ -250,4 +257,17 @@ func (p *Provider) setupKeypair(ctx context.Context) error {
 	}
 
 	return ErrSSHKeyNotFound
+}
+
+func (p *Provider) Capabilities(_ context.Context) ([]provider.Capability, error) {
+	// TODO: actually call vultr with it's config to see what's available
+	return []provider.Capability{{
+		Platform:     "linux/amd64",
+		Backend:      provider.BackendDocker,
+		DeployMethod: provider.CloudInit,
+	}, {
+		Platform:     "linux/arm64",
+		Backend:      provider.BackendDocker,
+		DeployMethod: provider.CloudInit,
+	}}, nil
 }

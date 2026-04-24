@@ -16,7 +16,8 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"go.woodpecker-ci.org/autoscaler/config"
-	"go.woodpecker-ci.org/autoscaler/engine"
+	"go.woodpecker-ci.org/autoscaler/engine/inits/cloudinit"
+	"go.woodpecker-ci.org/autoscaler/engine/provider"
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
 
@@ -45,7 +46,7 @@ type Provider struct {
 	client           *scw.Client
 }
 
-func New(_ context.Context, c *cli.Command, config *config.Config) (engine.Provider, error) {
+func New(_ context.Context, c *cli.Command, config *config.Config) (provider.Provider, error) {
 	if !c.IsSet("scaleway-instance-type") {
 		return nil, fmt.Errorf("%w: scaleway-instance-type", ErrParameterNotSet)
 	}
@@ -93,7 +94,11 @@ func New(_ context.Context, c *cli.Command, config *config.Config) (engine.Provi
 	return p, err
 }
 
-func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
+func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cap provider.Capability) error { //nolint:revive
+	if cap.DeployMethod != provider.CloudInit {
+		return fmt.Errorf("unsupported deploy method: %q", cap.DeployMethod)
+	}
+
 	_, err := p.getInstance(ctx, agent.Name)
 	if err != nil {
 		return err
@@ -241,7 +246,7 @@ func (p *Provider) createInstance(ctx context.Context, agent *woodpecker.Agent) 
 }
 
 func (p *Provider) setCloudInit(ctx context.Context, agent *woodpecker.Agent, inst *instance.Server) error {
-	ud, err := engine.RenderUserDataTemplate(p.config, agent, nil)
+	ud, err := cloudinit.RenderUserDataTemplate(p.config, agent, nil)
 	if err != nil {
 		return err
 	}
@@ -366,4 +371,17 @@ func (p *Provider) resolveZones() error {
 	}
 
 	return nil
+}
+
+func (p *Provider) Capabilities(_ context.Context) ([]provider.Capability, error) {
+	// TODO: actually call scaleway with it's config to see what's available
+	return []provider.Capability{{
+		Platform:     "linux/amd64",
+		Backend:      provider.BackendDocker,
+		DeployMethod: provider.CloudInit,
+	}, {
+		Platform:     "linux/arm64",
+		Backend:      provider.BackendDocker,
+		DeployMethod: provider.CloudInit,
+	}}, nil
 }
