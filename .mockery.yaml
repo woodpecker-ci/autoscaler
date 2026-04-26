@@ -6,5 +6,5 @@ pkgname: mocks
 recursive: true
 packages:
   go.woodpecker-ci.org/autoscaler/providers/hetznercloud/hcapi:
-  go.woodpecker-ci.org/autoscaler/engine:
+  go.woodpecker-ci.org/autoscaler/engine/types:
   go.woodpecker-ci.org/autoscaler/server:
