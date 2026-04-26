@@ -18,7 +18,7 @@ import (
 	"go.woodpecker-ci.org/autoscaler/config"
 	"go.woodpecker-ci.org/autoscaler/engine"
 	"go.woodpecker-ci.org/autoscaler/engine/inits/cloudinit"
-	"go.woodpecker-ci.org/autoscaler/engine/provider"
+	"go.woodpecker-ci.org/autoscaler/engine/types"
 	"go.woodpecker-ci.org/autoscaler/utils"
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
@@ -42,7 +42,7 @@ type Provider struct {
 	client           *govultr.Client
 }
 
-func New(ctx context.Context, c *cli.Command, config *config.Config) (provider.Provider, error) {
+func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Provider, error) {
 	p := &Provider{
 		name:       "vultr",
 		region:     c.String("vultr-region"),

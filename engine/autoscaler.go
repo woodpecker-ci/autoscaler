@@ -11,7 +11,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"go.woodpecker-ci.org/autoscaler/config"
-	"go.woodpecker-ci.org/autoscaler/engine/provider"
+	"go.woodpecker-ci.org/autoscaler/engine/types"
 	"go.woodpecker-ci.org/autoscaler/server"
 	"go.woodpecker-ci.org/autoscaler/utils"
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
@@ -21,13 +21,13 @@ type Autoscaler struct {
 	client   server.Client
 	agents   []*woodpecker.Agent
 	config   *config.Config
-	provider provider.Provider
+	provider types.Provider
 }
 
 // NewAutoscaler creates a new Autoscaler instance.
 // It takes in a Provider, Client and Config, and returns a configured
 // Autoscaler struct.
-func NewAutoscaler(p provider.Provider, client server.Client, config *config.Config) Autoscaler {
+func NewAutoscaler(p types.Provider, client server.Client, config *config.Config) Autoscaler {
 	return Autoscaler{
 		provider: p,
 		client:   client,
@@ -100,7 +100,7 @@ func (a *Autoscaler) createAgents(ctx context.Context, amount int) error {
 
 		err = a.provider.DeployAgent(ctx, agent)
 		if err != nil {
-			return fmt.Errorf("provider.DeployAgent: %w", err)
+			return fmt.Errorf("types.DeployAgent: %w", err)
 		}
 
 		a.agents = append(a.agents, agent)
@@ -227,7 +227,7 @@ func (a *Autoscaler) cleanupDanglingAgents(ctx context.Context) error {
 		if !found {
 			log.Info().Str("agent", agentName).Str("reason", "not found on woodpecker").Msg("remove agent")
 			if err := a.provider.RemoveAgent(ctx, &woodpecker.Agent{Name: agentName}); err != nil {
-				return fmt.Errorf("provider.RemoveAgent: %w", err)
+				return fmt.Errorf("types.RemoveAgent: %w", err)
 			}
 
 			// remove agent from providerAgentNames
