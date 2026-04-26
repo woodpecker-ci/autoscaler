@@ -21,9 +21,14 @@ variables:
       event: [pull_request, tag, deployment]
 
 steps:
+  - name: vendor
+    image: *golang_image
+    commands:
+      - go mod vendor
+
   - name: lint
     image: *golang_image
-    depends_on: []
+    depends_on: [vendor]
     commands:
       - make lint
     when: *when
@@ -34,7 +39,7 @@ steps:
 
   - name: test
     image: *golang_image
-    depends_on: []
+    depends_on: [vendor]
     commands:
       - make test
     when: *when
