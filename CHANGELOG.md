@@ -1,10 +1,14 @@
 # Changelog
 
-## [1.3.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.3.1) - 2026-04-24
+## [1.4.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.4.0) - 2026-04-26
 
 ### ❤️ Thanks to all contributors! ❤️
 
-@mendarb
+@6543, @mendarb
+
+### 📈 Enhancement
+
+- Move code in subpackages [[#585](https://github.com/woodpecker-ci/autoscaler/pull/585)]
 
 ### 🐛 Bug Fixes
 
