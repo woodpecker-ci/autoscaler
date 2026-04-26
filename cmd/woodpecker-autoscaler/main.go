@@ -14,6 +14,7 @@ import (
 
 	"go.woodpecker-ci.org/autoscaler/config"
 	"go.woodpecker-ci.org/autoscaler/engine"
+	"go.woodpecker-ci.org/autoscaler/engine/types"
 	"go.woodpecker-ci.org/autoscaler/providers/aws"
 	"go.woodpecker-ci.org/autoscaler/providers/hetznercloud"
 	"go.woodpecker-ci.org/autoscaler/providers/scaleway"
@@ -22,7 +23,7 @@ import (
 	"go.woodpecker-ci.org/autoscaler/version"
 )
 
-func setupProvider(ctx context.Context, cmd *cli.Command, config *config.Config) (engine.Provider, error) {
+func setupProvider(ctx context.Context, cmd *cli.Command, config *config.Config) (types.Provider, error) {
 	switch cmd.String("provider") {
 	case "aws":
 		return aws.New(ctx, cmd, config)

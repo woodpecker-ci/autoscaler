@@ -81,7 +81,7 @@ func TestDeployAgent(t *testing.T) {
 			mockClient := mocks.NewMockClient(t)
 			tt.setupMocks(mockClient)
 
-			provider := &Provider{
+			p := &Provider{
 				client:           mockClient,
 				config:           &config.Config{},
 				userDataTemplate: template.Must(template.New("").Parse(tt.userdata)),
@@ -90,11 +90,11 @@ func TestDeployAgent(t *testing.T) {
 			}
 
 			if tt.serverType != nil {
-				provider.serverType = tt.serverType
+				p.serverType = tt.serverType
 			}
 
 			agent := &woodpecker.Agent{}
-			err := provider.DeployAgent(t.Context(), agent)
+			err := p.DeployAgent(t.Context(), agent)
 			if tt.expectedError != "" {
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), tt.expectedError)
