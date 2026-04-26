@@ -3,6 +3,7 @@ package cloudinit
 import (
 	"bytes"
 	"fmt"
+	"strings"
 	"text/template"
 
 	"go.woodpecker-ci.org/autoscaler/config"
@@ -46,12 +47,22 @@ func RenderUserDataTemplate(config *config.Config, agent *woodpecker.Agent, tmpl
 		params.Environment[key] = value
 	}
 
+	params.Environment["WOODPECKER_AGENT_LABELS"] = genExtraAgentLabels(config.ExtraAgentLabels)
+
 	var userData bytes.Buffer
 	if err := tmpl.Execute(&userData, params); err != nil {
 		return "", err
 	}
 
 	return userData.String(), nil
+}
+
+func genExtraAgentLabels(conf map[string]string) string {
+	out := make([]string, 0, len(conf))
+	for k, v := range conf {
+		out = append(out, fmt.Sprintf("%s=%s", k, v))
+	}
+	return strings.Join(out, ",")
 }
 
 // editorconfig-checker-disable
