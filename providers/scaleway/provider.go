@@ -94,7 +94,7 @@ func New(_ context.Context, c *cli.Command, config *config.Config) (types.Provid
 	return p, err
 }
 
-func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
+func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cap types.Capability) error {
 	_, err := p.getInstance(ctx, agent.Name)
 	if err != nil {
 		return err
@@ -367,4 +367,15 @@ func (p *Provider) resolveZones() error {
 	}
 
 	return nil
+}
+
+func (p *Provider) Capabilities(_ context.Context) ([]types.Capability, error) {
+	// TODO: actually call scaleway with it's config to see what's available
+	return []types.Capability{{
+		Platform: "linux/amd64",
+		Backend:  types.BackendDocker,
+	}, {
+		Platform: "linux/arm64",
+		Backend:  types.BackendDocker,
+	}}, nil
 }

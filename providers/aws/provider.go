@@ -77,7 +77,7 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 	return p, nil
 }
 
-func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
+func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cap types.Capability) error {
 	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, p.userDataTemplate)
 	if err != nil {
 		return fmt.Errorf("%s: cloudinit.RenderUserDataTemplate: %w", p.name, err)
@@ -244,4 +244,15 @@ func (p *Provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 		}
 	}
 	return names, nil
+}
+
+func (p *Provider) Capabilities(_ context.Context) ([]types.Capability, error) {
+	// TODO: actually call aws with it's config to see what's available
+	return []types.Capability{{
+		Platform: "linux/amd64",
+		Backend:  types.BackendDocker,
+	}, {
+		Platform: "linux/arm64",
+		Backend:  types.BackendDocker,
+	}}, nil
 }

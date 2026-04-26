@@ -197,7 +197,7 @@ func Test_createAgents(t *testing.T) {
 		}
 
 		client.On("AgentCreate", mock.Anything).Return(&woodpecker.Agent{Name: "pool-1-agent-1"}, nil)
-		provider.On("DeployAgent", ctx, mock.Anything).Return(nil)
+		provider.On("DeployAgent", ctx, mock.Anything, mock.Anything).Return(nil)
 
 		err := autoscaler.createAgents(ctx, 1)
 		assert.NoError(t, err)
@@ -225,7 +225,7 @@ func Test_createAgents(t *testing.T) {
 			return agent.ID == 1 && agent.NoSchedule == false
 		})).Return(nil, nil)
 		client.On("AgentCreate", mock.Anything).Return(&woodpecker.Agent{Name: "pool-1-agent-1"}, nil)
-		provider.On("DeployAgent", ctx, mock.Anything).Return(nil)
+		provider.On("DeployAgent", ctx, mock.Anything, mock.Anything).Return(nil)
 
 		err := autoscaler.createAgents(ctx, 2)
 		assert.NoError(t, err)
