@@ -8,6 +8,7 @@
 
 ### 📈 Enhancement
 
+- Make agent extra labels an explicit option [[#584](https://github.com/woodpecker-ci/autoscaler/pull/584)]
 - Move code in subpackages [[#585](https://github.com/woodpecker-ci/autoscaler/pull/585)]
 
 ### 🐛 Bug Fixes
