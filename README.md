@@ -45,7 +45,7 @@ The agents will use `WOODPECKER_GRPC_ADDR` and a token automatically generated b
   - [ ] Digital Ocean
   - [x] Linode (temp disabled until the [security issue](https://github.com/woodpecker-ci/autoscaler/issues/91) was addressed)
   - [ ] Oracle Cloud
-  - [ ] Equinix Metal
+  - [x] Equinix Metal
   - [x] Vultr
   - [x] Scaleway
 - [ ] Cleanup agents
