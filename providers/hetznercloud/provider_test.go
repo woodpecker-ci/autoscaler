@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"go.woodpecker-ci.org/autoscaler/config"
+	"go.woodpecker-ci.org/autoscaler/engine/types"
 	"go.woodpecker-ci.org/autoscaler/providers/hetznercloud/hcapi/mocks"
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
@@ -94,7 +95,7 @@ func TestDeployAgent(t *testing.T) {
 			}
 
 			agent := &woodpecker.Agent{}
-			err := p.DeployAgent(t.Context(), agent)
+			err := p.DeployAgent(t.Context(), agent, types.Capability{})
 			if tt.expectedError != "" {
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), tt.expectedError)

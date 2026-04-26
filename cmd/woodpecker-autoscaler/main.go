@@ -117,6 +117,10 @@ func run(ctx context.Context, cmd *cli.Command) error {
 
 	autoscaler := engine.NewAutoscaler(provider, client, config)
 
+	if err := autoscaler.GetCaps(ctx); err != nil {
+		return fmt.Errorf("could not query provider capabilities: %w", err)
+	}
+
 	reconciliationInterval, err := time.ParseDuration(cmd.String("reconciliation-interval"))
 	if err != nil {
 		return fmt.Errorf("can't parse reconciliation-interval: %w", err)
