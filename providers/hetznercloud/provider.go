@@ -2,7 +2,6 @@ package hetznercloud
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 	"text/template"
@@ -19,15 +18,6 @@ import (
 	"go.woodpecker-ci.org/autoscaler/providers/hetznercloud/hcapi"
 	"go.woodpecker-ci.org/autoscaler/utils"
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
-)
-
-var (
-	ErrIllegalLablePrefix = errors.New("illegal label prefix")
-	ErrImageNotFound      = errors.New("image not found")
-	ErrSSHKeyNotFound     = errors.New("SSH key not found")
-	ErrNetworkNotFound    = errors.New("network not found")
-	ErrFirewallNotFound   = errors.New("firewall not found")
-	ErrServerTypeNotFound = errors.New("server type not found")
 )
 
 type Provider struct {
@@ -148,21 +138,45 @@ func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cap
 		},
 	}
 
-	for i, raw := range p.serverType {
-		rawType, location, _ := strings.Cut(raw, ":")
-
-		// TODO: Deprecated remove in v2.0
-		if location == "" {
-			log.Error().Msg("hetznercloud-location is deprecated, please use hetznercloud-server-type instead")
-			location = p.location
-		}
+	// First pass: resolve all configured entries and filter to those that
+	// match the requested capability and whose location actually supports
+	// the server type. We need this list up front so that we can correctly
+	// distinguish "no last entry to error on" from "last viable entry
+	// failed".
+	candidates := make([]deployCandidate, 0, len(p.serverType))
+	for _, raw := range p.serverType {
+		rawType, location := p.parseServerTypeEntry(raw)
 
 		serverType, err := p.LookupServerType(ctx, rawType)
 		if err != nil {
 			return err
 		}
 
-		image, _, err := p.client.Image().GetByNameAndArchitecture(ctx, p.image, serverType.Architecture)
+		// Filter by requested capability (arch). cap is always one of the
+		// platforms we returned from Capabilities, so a mismatch here just
+		// means this entry is for a different arch in the fallback chain.
+		platform := "linux/" + hcloudArchToGoArch(serverType.Architecture)
+		if platform != cap.Platform {
+			continue
+		}
+
+		if !serverTypeSupportsLocation(serverType, location) {
+			log.Warn().Msgf(
+				"skipping server type %s in %s: %s",
+				rawType, location, ErrLocationNotSupported,
+			)
+			continue
+		}
+
+		candidates = append(candidates, deployCandidate{rawType, location, serverType})
+	}
+
+	if len(candidates) == 0 {
+		return fmt.Errorf("%s: %w: %s", p.name, ErrNoMatchingServerType, cap.Platform)
+	}
+
+	for i, c := range candidates {
+		image, _, err := p.client.Image().GetByNameAndArchitecture(ctx, p.image, c.serverType.Architecture)
 		if err != nil {
 			return fmt.Errorf("%s: Image.GetByNameAndArchitecture: %w", p.name, err)
 		}
@@ -170,54 +184,36 @@ func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cap
 			return fmt.Errorf("%s: %w: %s", p.name, ErrImageNotFound, p.image)
 		}
 
-		serverCreateOpts.Location = &hcloud.Location{Name: location}
-		serverCreateOpts.ServerType = serverType
+		serverCreateOpts.Location = &hcloud.Location{Name: c.location}
+		serverCreateOpts.ServerType = c.serverType
 		serverCreateOpts.Image = image
 
-		log.Info().Msgf("create agent: location = %s type = %s", location, rawType)
+		log.Info().Msgf("create agent: location = %s type = %s", c.location, c.rawType)
 
 		_, _, err = p.client.Server().Create(ctx, serverCreateOpts)
 		if err == nil {
 			return nil
 		}
 
-		// Continue to next fallback type if still unavailable
+		// Continue to next fallback entry only if the resource is unavailable.
 		if !hcloud.IsError(err, hcloud.ErrorCodeResourceUnavailable) {
 			return fmt.Errorf("%s: Server.Create: %w", p.name, err)
 		}
 
-		// Only log warning if there are more server types to try
-		if i < len(p.serverType)-1 {
-			log.Warn().Msgf("create agent failed: location = %s type = %s: %s", serverCreateOpts.Location.Name, serverCreateOpts.ServerType.Name, err)
+		// Only log and continue if there are more candidates left.
+		if i < len(candidates)-1 {
+			log.Warn().Msgf(
+				"create agent failed: location = %s type = %s: %s",
+				c.location, c.rawType, err,
+			)
 			continue
 		}
 
-		// Error if last server type fails
+		// Last candidate failed.
 		return fmt.Errorf("%s: Server.Create: %w", p.name, err)
 	}
 
 	return nil
-}
-
-func (p *Provider) LookupServerType(ctx context.Context, name string) (*hcloud.ServerType, error) {
-	serverType, _, err := p.client.ServerType().GetByName(ctx, name)
-	if err != nil {
-		return nil, fmt.Errorf("%s: ServerType.GetByName: %w", name, err)
-	}
-	if serverType == nil {
-		return nil, fmt.Errorf("%s: %w: %s", p.name, ErrServerTypeNotFound, name)
-	}
-
-	return serverType, nil
-}
-
-func (p *Provider) getAgent(ctx context.Context, agent *woodpecker.Agent) (*hcloud.Server, error) {
-	server, _, err := p.client.Server().GetByName(ctx, agent.Name)
-	if err != nil {
-		return nil, fmt.Errorf("%s: Server.GetByName %w", p.name, err)
-	}
-
-	return server, nil
 }
 
 func (p *Provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) error {
@@ -261,10 +257,31 @@ func (p *Provider) Capabilities(ctx context.Context) ([]types.Capability, error)
 	var caps []types.Capability
 
 	for _, raw := range p.serverType {
-		rawType, _, _ := strings.Cut(raw, ":")
+		rawType, location := p.parseServerTypeEntry(raw)
+
 		st, err := p.LookupServerType(ctx, rawType)
 		if err != nil {
 			return nil, err
+		}
+
+		// Skip entries whose location doesn't actually offer this server
+		// type (or where it's deprecated there). This prevents us from
+		// advertising a capability we can't fulfil.
+		if !serverTypeSupportsLocation(st, location) {
+			log.Warn().Msgf(
+				"skipping server type %s in %s when computing capabilities: %s",
+				rawType, location, ErrLocationNotSupported,
+			)
+			continue
+		}
+
+		image, _, err := p.client.Image().GetByNameAndArchitecture(ctx, p.image, st.Architecture)
+		if err != nil || image == nil {
+			log.Warn().Msgf(
+				"skipping server type %s in %s when computing capabilities: %s",
+				rawType, location, ErrImageNotSupported,
+			)
+			continue
 		}
 
 		platform := "linux/" + hcloudArchToGoArch(st.Architecture)
@@ -277,16 +294,4 @@ func (p *Provider) Capabilities(ctx context.Context) ([]types.Capability, error)
 		}
 	}
 	return caps, nil
-}
-
-// hcloudArchToGoArch maps hcloud architecture names to Go GOARCH strings.
-func hcloudArchToGoArch(a hcloud.Architecture) string {
-	switch a {
-	case hcloud.ArchitectureARM:
-		return "arm64"
-	case hcloud.ArchitectureX86:
-		return "amd64"
-	default:
-		return string(a)
-	}
 }
