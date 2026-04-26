@@ -1,387 +1,229 @@
-package engine
-
-import (
-	"context"
-	"fmt"
-	"math"
-	"regexp"
-	"strings"
-	"time"
-
-	"github.com/rs/zerolog/log"
-
-	"go.woodpecker-ci.org/autoscaler/config"
-	"go.woodpecker-ci.org/autoscaler/server"
-	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
-)
-
-type Autoscaler struct {
-	client   server.Client
-	agents   []*woodpecker.Agent
-	config   *config.Config
-	provider Provider
-}
-
-// NewAutoscaler creates a new Autoscaler instance.
-// It takes in a Provider, Client and Config, and returns a configured
-// Autoscaler struct.
-func NewAutoscaler(provider Provider, client server.Client, config *config.Config) Autoscaler {
-	return Autoscaler{
-		provider: provider,
-		client:   client,
-		config:   config,
-	}
-}
-
-func (a *Autoscaler) loadAgents(_ context.Context) error {
-	a.agents = []*woodpecker.Agent{}
-
-	agents, err := a.client.AgentList()
-	if err != nil {
-		return fmt.Errorf("client.AgentList: %w", err)
-	}
-	r, err := regexp.Compile(fmt.Sprintf("pool-%s-agent-.*?", a.config.PoolID))
-	if err != nil {
-		return fmt.Errorf("could not create regex matcher for agent names by pool ID: %w", err)
-	}
-
-	for _, agent := range agents {
-		if r.MatchString(agent.Name) {
-			a.agents = append(a.agents, agent)
-		}
-	}
-
-	return nil
-}
-
-func (a *Autoscaler) getPoolAgents(excludeNoSchedule bool) []*woodpecker.Agent {
-	agents := make([]*woodpecker.Agent, 0)
-	for _, agent := range a.agents {
-		if excludeNoSchedule && agent.NoSchedule {
-			continue
-		}
-		agents = append(agents, agent)
-	}
-	return agents
-}
-
-func (a *Autoscaler) createAgents(ctx context.Context, amount int) error {
-	suffixLength := 4
-
-	reactivatedAgents := 0
-
-	// try to re-activate agents that are in no-schedule state
-	for i := 0; i < amount; i++ {
-		for _, agent := range a.agents {
-			if agent.NoSchedule {
-				log.Info().Str("agent", agent.Name).Msg("reactivate agent")
-				agent.NoSchedule = false
-				_, err := a.client.AgentUpdate(agent)
-				if err != nil {
-					return fmt.Errorf("client.AgentUpdate: %w", err)
-				}
-				reactivatedAgents++
-			}
-		}
-	}
-
-	// create new agents
-	for i := 0; i < amount-reactivatedAgents; i++ {
-		agent, err := a.client.AgentCreate(&woodpecker.Agent{
-			Name: fmt.Sprintf("pool-%s-agent-%s", a.config.PoolID, RandomString(suffixLength)),
-		})
-		if err != nil {
-			return fmt.Errorf("client.AgentCreate: %w", err)
-		}
-
-		log.Info().Str("agent", agent.Name).Msg("deploying agent")
-
-		err = a.provider.DeployAgent(ctx, agent)
-		if err != nil {
-			return fmt.Errorf("provider.DeployAgent: %w", err)
-		}
-
-		a.agents = append(a.agents, agent)
-	}
-
-	return nil
-}
-
-func (a *Autoscaler) drainAgents(_ context.Context, amount int) error {
-	for i := 0; i < amount; i++ {
-		for _, agent := range a.agents {
-			// agent is already marked for draining
-			if agent.NoSchedule {
-				continue
-			}
-
-			// agent has recently done work => not ready for draining
-			if time.Since(time.Unix(agent.LastWork, 0)) < a.config.AgentIdleTimeout {
-				continue
-			}
-
-			// agent has never contacted the server => not ready for draining
-			if agent.LastContact == 0 {
-				continue
-			}
-
-			log.Info().Str("agent", agent.Name).Msg("drain agent")
-			agent.NoSchedule = true
-			_, err := a.client.AgentUpdate(agent)
-			if err != nil {
-				return fmt.Errorf("client.AgentUpdate: %w", err)
-			}
-			break
-		}
-	}
-
-	return nil
-}
-
-func (a *Autoscaler) isAgentIdle(agent *woodpecker.Agent) (bool, error) {
-	tasks, err := a.client.AgentTasksList(agent.ID)
-	if err != nil {
-		return false, fmt.Errorf("client.AgentTasksList: %w", err)
-	}
-
-	// agent still has tasks => not idle
-	if len(tasks) > 0 {
-		return false, nil
-	}
-
-	// agent has done work recently => not idle
-	if time.Since(time.Unix(agent.LastWork, 0)) < a.config.AgentIdleTimeout {
-		return false, nil
-	}
-
-	return true, nil
-}
-
-func (a *Autoscaler) removeAgent(ctx context.Context, agent *woodpecker.Agent, reason string) error {
-	isIdle, err := a.isAgentIdle(agent)
-	if err != nil {
-		return err
-	}
-	if !isIdle {
-		log.Info().Str("agent", agent.Name).Msg("agent is still processing workload")
-		return nil
-	}
-
-	log.Info().Str("agent", agent.Name).Str("reason", reason).Msgf("removing agent")
-
-	err = a.provider.RemoveAgent(ctx, agent)
-	if err != nil {
-		return err
-	}
-
-	err = a.client.AgentDelete(agent.ID)
-	if err != nil {
-		return fmt.Errorf("client.AgentDelete: %w", err)
-	}
-
-	filteredAgents := make([]*woodpecker.Agent, 0)
-	for _, a := range a.agents {
-		if a.ID != agent.ID {
-			filteredAgents = append(filteredAgents, a)
-		}
-	}
-	a.agents = filteredAgents
-
-	return nil
-}
-
-func (a *Autoscaler) removeDrainedAgents(ctx context.Context) error {
-	for _, agent := range a.getPoolAgents(false) {
-		if !agent.NoSchedule {
-			continue
-		}
-
-		err := a.removeAgent(ctx, agent, "was drained")
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (a *Autoscaler) cleanupDanglingAgents(ctx context.Context) error {
-	woodpeckerAgents := a.getPoolAgents(false)
-	providerAgentNames, err := a.provider.ListDeployedAgentNames(ctx)
-	if err != nil {
-		return err
-	}
-
-	// remove agents that are not in the woodpecker agent list anymore
-	for _, agentName := range providerAgentNames {
-		found := false
-		for _, agent := range woodpeckerAgents {
-			if agent.Name == agentName {
-				found = true
-				break
-			}
-		}
-
-		if !found {
-			log.Info().Str("agent", agentName).Str("reason", "not found on woodpecker").Msg("remove agent")
-			if err := a.provider.RemoveAgent(ctx, &woodpecker.Agent{Name: agentName}); err != nil {
-				return fmt.Errorf("provider.RemoveAgent: %w", err)
-			}
-
-			// remove agent from providerAgentNames
-			_providerAgentNames := make([]string, 0)
-			for _, a := range providerAgentNames {
-				if a != agentName {
-					_providerAgentNames = append(_providerAgentNames, a)
-				}
-			}
-			providerAgentNames = _providerAgentNames
-		}
-	}
-
-	// remove agents that do not exist on the provider anymore
-	for _, agent := range woodpeckerAgents {
-		found := false
-		for _, agentName := range providerAgentNames {
-			if agent.Name == agentName {
-				found = true
-				break
-			}
-		}
-
-		if !found {
-			log.Info().Str("agent", agent.Name).Str("reason", "not found on provider").Msg("remove agent")
-			if err = a.client.AgentDelete(agent.ID); err != nil {
-				return fmt.Errorf("client.AgentDelete: %w", err)
-			}
-
-			// remove agent from woodpeckerAgents
-			_woodpeckerAgents := make([]*woodpecker.Agent, 0)
-			for _, a := range a.agents {
-				if a.Name != agent.Name {
-					woodpeckerAgents = append(woodpeckerAgents, a)
-				}
-			}
-			a.agents = _woodpeckerAgents
-		}
-	}
-
-	return nil
-}
-
-func (a *Autoscaler) cleanupStaleAgents(ctx context.Context) error {
-	// remove agents that haven't contacted the server for a while (including agents that never contacted the server)
-	for _, agent := range a.getPoolAgents(false) {
-		if agent.NoSchedule {
-			continue
-		}
-
-		lastContact := agent.LastContact
-
-		// if agent has never contacted the server, use the creation time
-		if lastContact == 0 {
-			lastContact = agent.Created
-		}
-
-		if time.Since(time.Unix(lastContact, 0)) > a.config.AgentInactivityTimeout {
-			err := a.removeAgent(ctx, agent, "hasn't connected to the server for a while")
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
-}
-
-func (a *Autoscaler) getQueueInfo(_ context.Context) (freeTasks, runningTasks, pendingTasks int, err error) {
-	queueInfo, err := a.client.QueueInfo()
-	if err != nil {
-		return 0, 0, 0, fmt.Errorf("error from QueueInfo: %s", err.Error())
-	}
-
-	if a.config.FilterLabels == "" {
-		return queueInfo.Stats.Workers, queueInfo.Stats.Running, queueInfo.Stats.Pending, nil
-	}
-
-	labelFilterKey, labelFilterValue, ok := strings.Cut(a.config.FilterLabels, "=")
-	if !ok {
-		return 0, 0, 0, fmt.Errorf("invalid labels filter: %s", a.config.FilterLabels)
-	}
-
-	running := countTasksByLabel(queueInfo.Running, labelFilterKey, labelFilterValue)
-	pending := countTasksByLabel(queueInfo.Pending, labelFilterKey, labelFilterValue)
-
-	return queueInfo.Stats.Workers, running, pending, nil
-}
-
-func (a *Autoscaler) calcAgents(ctx context.Context) (float64, error) {
-	freeTasks, runningTasks, pendingTasks, err := a.getQueueInfo(ctx)
-	if err != nil {
-		return 0, err
-	}
-
-	log.Debug().Msgf("queue info: freeTasks = %v runningTasks = %v pendingTasks = %v", freeTasks, runningTasks, pendingTasks)
-	availableAgents := math.Ceil(float64(freeTasks+runningTasks) / float64((a.config.WorkflowsPerAgent)))
-	reqAgents := math.Ceil(float64(pendingTasks+runningTasks) / float64(a.config.WorkflowsPerAgent))
-
-	availablePoolAgents := len(a.getPoolAgents(true))
-	maxUp := float64(a.config.MaxAgents - availablePoolAgents)
-	maxDown := float64(availablePoolAgents - a.config.MinAgents)
-
-	reqPoolAgents := math.Ceil(reqAgents - (availableAgents + float64(availablePoolAgents)))
-	reqPoolAgents = math.Max(reqPoolAgents, -maxDown)
-	reqPoolAgents = math.Min(reqPoolAgents, maxUp)
-
-	log.Debug().Msgf("capacity info: agents = %v/%v pool = %v/%v limits = %v/%v", availableAgents, reqAgents, availablePoolAgents, reqPoolAgents, maxUp, maxDown)
-
-	return reqPoolAgents, nil
-}
-
-// Reconcile periodically checks the status of the agent pool and adjusts it to match
-// the desired capacity based on the current queue state.
-func (a *Autoscaler) Reconcile(ctx context.Context) error {
-	if err := a.loadAgents(ctx); err != nil {
-		return fmt.Errorf("loading agents failed: %w", err)
-	}
-
-	reqPoolAgents, err := a.calcAgents(ctx)
-	if err != nil {
-		return fmt.Errorf("calculating agents failed: %w", err)
-	}
-
-	if reqPoolAgents > 0 {
-		num := int(math.Abs(reqPoolAgents))
-		log.Debug().Msgf("starting %d additional agents", num)
-
-		if err := a.createAgents(ctx, num); err != nil {
-			return fmt.Errorf("creating agents failed: %w", err)
-		}
-	}
-
-	if reqPoolAgents < 0 {
-		num := int(math.Abs(reqPoolAgents))
-
-		log.Debug().Msgf("checking %d agents if ready for draining", num)
-		if err := a.drainAgents(ctx, num); err != nil {
-			return fmt.Errorf("draining agents failed: %w", err)
-		}
-	}
-
-	// cleanup agents that are only present at the provider or woodpecker
-	if err := a.cleanupDanglingAgents(ctx); err != nil {
-		return fmt.Errorf("cleaning up dangling agents failed: %w", err)
-	}
-
-	// cleanup agents that haven't contacted the server for a while
-	if err := a.cleanupStaleAgents(ctx); err != nil {
-		return fmt.Errorf("cleaning up stale agents failed: %w", err)
-	}
-
-	// remove agents that are drained
-	if err := a.removeDrainedAgents(ctx); err != nil {
-		return fmt.Errorf("removing drained agents failed: %w", err)
-	}
-
-	return nil
-}
+... (truncated)
+
+   We are not given the entire files. We are to fix the issue by adding the necessary code in the appropriate places.
+
+   Since we are to add Oracle support, we must:
+
+   1. In flags.go: add the Oracle flags (and fix the truncation if necessary).
+   2. In main.go: add the Oracle case in setupProvider.
+   3. Create a new file: providers/oracle.go.
+
+   But note: the issue does not show the entire flags.go, so we cannot see the rest of the flags. We are only given a part.
+
+   We have two options:
+
+   Option 1: Assume that the flags.go file ends after the truncated flag and we are to complete that flag and then add our flags.
+
+   Option 2: Since we are only to fix the issue, we can just add the Oracle flags at the end of the existing flags (without touching the truncation) and hope that the truncation is a mistake in the issue body? 
+
+   However, the truncation is in the issue body. We must complete the flag to make the code compile.
+
+   Let's look at the provided flags.go snippet:
+
+        &cli.StringFlag{
+            Name:    "agent-inactivity-
+
+   We don't know the rest. But we can complete it by guessing from the context of the other flags and the config.
+
+   In config.go, we see:
+
+        AgentInactivityTimeout time.Duration
+
+   So the flag should be for AgentInactivityTimeout.
+
+   We'll complete it as:
+
+        &cli.StringFlag{
+            Name:    "agent-inactivity-timeout",
+            Value:   "5m",
+            Usage:   "timeout after which an agent is considered inactive",
+            Sources: cli.EnvVars("WOODPECKER_AGENT_INACTIVITY_TIMEOUT"),
+        },
+
+   Then we add the Oracle flags.
+
+   For Oracle, we'll add:
+
+        &cli.StringFlag{
+            Name:    " oracle-tenancy-ocid",
+            Value:   "",
+            Usage:   "OCI tenancy OCID",
+            Sources: cli.EnvVars("WOODPECKER_ORACLE_TENANCY_OCID"),
+        },
+        &cli.StringFlag{
+            Name:    " oracle-user-ocid",
+            Value:   "",
+            Usage:   "OCI user OCID",
+            Sources: cli.EnvVars("WOODPECKER_ORACLE_USER_OCID"),
+        },
+        &cli.StringFlag{
+            Name:    " oracle-fingerprint",
+            Value:   "",
+            Usage:   "OCI API key fingerprint",
+            Sources: cli.EnvVars("WOODPECKER_ORACLE_FINGERPRINT"),
+        },
+        &cli.StringFlag{
+            Name:    " oracle-private-key",
+            Value:   "",
+            Usage:   "OCI API private key (or path to private key file)",
+            Sources: cli.EnvVars("WOODPECKER_ORACLE_PRIVATE_KEY"),
+        },
+        &cli.StringFlag{
+            Name:    " oracle-region",
+            Value:   "",
+            Usage:   "OCI region",
+            Sources: cli.EnvVars("WOODPECKER_ORACLE_REGION"),
+        },
+        &cli.StringFlag{
+            Name:    " oracle-compartment-ocid",
+            Value:   "",
+            Usage:   "OCI compartment OCID",
+            Sources: cli.EnvVars("WOODPECKER_ORACLE_COMPARTMENT_OCID"),
+        },
+
+   However, note: the existing flags use kebab-case and without spaces. We should use the same style.
+
+   Also, note that the existing flags do not have a space after the name. We'll do:
+
+        Name:    "oracle-tenancy-ocid",
+
+   But wait: the existing flags are like:
+
+        Name:    "log-level",
+
+   So we use kebab-case.
+
+   Now, for main.go: we add a case for "oracle" in the switch statement in setupProvider.
+
+        case "oracle":
+            return oracle.New(ctx, cmd, config)
+
+   And we must import the oracle provider.
+
+   Then, we create the file providers/oracle.go.
+
+   In providers/oracle.go, we implement the Provider interface.
+
+   We'll define:
+
+        type OracleProvider struct {
+            // ... fields for the configuration
+        }
+
+        func New(ctx context.Context, cmd *cli.Command, config *config.Config) (Provider, error) {
+            // read the flags from cmd
+            tenancyOCID := cmd.String("oracle-tenancy-ocid")
+            // ... etc.
+
+            // validate
+            // create the OCI client
+            // return &OracleProvider{ ... }
+        }
+
+        func (o *OracleProvider) CreateAgent(ctx context.Context, config *config.Config) error {
+            // create an instance in OCI
+        }
+
+        func (o *OracleProvider) DeleteAgent(ctx context.Context, agent *woodpecker.Agent) error {
+            // terminate the instance
+        }
+
+        func (o *OracleProvider) GetAgent(ctx context.Context, agentID string) (*woodpecker.Agent, error) {
+            // get the instance by ID and convert to woodpecker.Agent
+        }
+
+        func (o *OracleProvider) ListAgents(ctx context.Context) ([]*woodpecker.Agent, error) {
+            // list instances in the compartment that are our agents (by tag or display name?)
+        }
+
+   However, note: the existing providers (like aws) have a different structure. We must mimic that.
+
+   Looking at the aws provider (not provided, but we can infer from the usage in main.go and the fact that it returns a Provider):
+
+        type Provider interface {
+            CreateAgent(context.Context, *config.Config) error
+            DeleteAgent(context.Context, *woodpecker.Agent) error
+            GetAgent(context.Context, string) (*woodpecker.Agent, error)
+            ListAgents(context.Context) ([]*woodpecker.Agent, error)
+        }
+
+   We'll implement the same.
+
+   But note: we are not given the woodpecker.Agent structure. We assume it has at least an ID and maybe other fields.
+
+   We'll create the Oracle agent with:
+
+        ID: the instance OCID
+        // and maybe we set labels? The Provider interface doesn't require labels in the Agent, but the woodpecker.Agent might have them.
+
+   However, the woodpecker.Agent is from "go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker". We don't have its definition.
+
+   We'll assume it has:
+
+        ID string
+        // and maybe we can set Labels? But the Provider's ListAgents returns []*woodpecker.Agent.
+
+   We'll set the ID to the instance OCID and leave other fields as zero? Or we can set more if needed.
+
+   Since we are not sure, we'll follow the existing providers. But we don't have the code for the existing providers.
+
+   We'll do as the aws provider does (which we don't see). We must rely on the pattern.
+
+   Alternatively, we can look at the hetznercloud or scaleway providers? But we don't have them.
+
+   Given the constraints, we'll implement a minimal Oracle provider that sets the ID and hope that the woodpecker.Agent only requires the ID for deletion and listing.
+
+   However, note: the DeleteAgent method takes a *woodpecker.Agent. We can use the ID from that agent to delete the instance.
+
+   So in DeleteAgent, we do:
+
+        instanceOCID := agent.ID
+        // terminate the instance with that OCID
+
+   And in ListAgents, we return a slice of woodpecker.Agent with the ID set to the instance OCID.
+
+   We'll also need to tag our instances so we can list only ours? Or we can list by compartment and then filter by a tag that we set when creating.
+
+   We'll set a tag when creating the instance: for example, "woodpecker-autoscaler" = "true" and maybe the pool ID.
+
+   Then in ListAgents, we list instances in the compartment that have that tag and are in running state.
+
+   Steps for CreateAgent:
+
+        - Create an instance in the specified compartment, with the specified image (from config.Image), and shape? We don't have a shape flag.
+
+   We need to add a shape flag? Or use a default? 
+
+   The config has an Image field. We can use that for the image OCID.
+
+   But we also need a shape. We don't have that in config. We can add a flag for shape? Or use a default.
+
+   Since the issue does not specify, we'll add a flag for shape in the Oracle provider.
+
+   We'll add:
+
+        &cli.StringFlag{
+            Name:    "oracle-shape",
+            Value:   "VM.Standard.E2.1.Micro", // free tier eligible
+            Usage:   "OCI instance shape",
+            Sources: cli.EnvVars("WOODPECKER_ORACLE_SHAPE"),
+        },
+
+   And then in the provider, we use that shape.
+
+   We'll also need to pass the user data? The config has UserData field. We can pass that as user data (cloud-init) to the instance.
+
+   Steps:
+
+        1. Complete the truncated flag in flags.go.
+        2. Add Oracle flags to flags.go.
+        3. In main.go, add the oracle case and import the oracle provider.
+        4. Create providers/oracle.go with the OracleProvider implementation.
+
+   Let's write the code accordingly.
+
+   Note: We are to write ONLY code, no explanations.
+
+   We'll break it down by file.
+
+   IMPORTANT: We must start each file with "
