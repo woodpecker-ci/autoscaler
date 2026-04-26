@@ -14,7 +14,7 @@
 
    Option 1: Assume that the flags.go file ends after the truncated flag and we are to complete that flag and then add our flags.
 
-   Option 2: Since we are only to fix the issue, we can just add the Oracle flags at the end of the existing flags (without touching the truncation) and hope that the truncation is a mistake in the issue body? 
+   Option 2: Since we are only to fix the issue, we can just add the Oracle flags at the end of the existing flags (without touching the truncation) and hope that the truncation is a mistake in the issue body?
 
    However, the truncation is in the issue body. We must complete the flag to make the code compile.
 
@@ -192,7 +192,7 @@
 
         - Create an instance in the specified compartment, with the specified image (from config.Image), and shape? We don't have a shape flag.
 
-   We need to add a shape flag? Or use a default? 
+   We need to add a shape flag? Or use a default?
 
    The config has an Image field. We can use that for the image OCID.
 

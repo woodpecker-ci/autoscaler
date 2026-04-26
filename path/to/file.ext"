@@ -1,6 +1,6 @@
 We are going to write three files.
 
-   However, note: the issue might be that we are only allowed to change the files that are provided in the context? 
+   However, note: the issue might be that we are only allowed to change the files that are provided in the context?
    But the issue says to add Oracle Autoscaler support, which requires a new file and changes to two existing files.
 
    We'll proceed.
@@ -9,7 +9,7 @@ We are going to write three files.
 
    We are given the beginning of flags.go. We'll complete the truncated flag and then add the Oracle flags at the end.
 
-   We don't know what comes after the truncated flag, so we assume that the truncated flag is the last one in the slice? 
+   We don't know what comes after the truncated flag, so we assume that the truncated flag is the last one in the slice?
    But we are adding more flags after it.
 
    We'll write:

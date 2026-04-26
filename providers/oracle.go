@@ -13,7 +13,7 @@
 
    func New(ctx context.Context, cmd *cli.Command, config *config.Config) (Provider, error) {
         accessKeyID := cmd.String("aws-access-key-id")
-        ... 
+        ...
    }
 
  So we should add flags for Oracle in flags.go.
@@ -39,13 +39,13 @@
 
  We must complete that flag and then add our Oracle flags.
 
- However, the issue does not show the entire flags.go. We are only allowed to write the fix? 
+ However, the issue does not show the entire flags.go. We are only allowed to write the fix?
 
  Since we are to return ONLY code, we will:
 
    For flags.go: we will complete the existing truncated flag and then add the Oracle flags at the end.
 
-   But note: the issue says "Fix this GitHub issue", meaning we are to add the Oracle support. We are not to fix the truncation? 
+   But note: the issue says "Fix this GitHub issue", meaning we are to add the Oracle support. We are not to fix the truncation?
    However, the truncation is in the provided context. We must complete the existing flag because it's broken.
 
    Let's assume the existing flag is:
