@@ -16,7 +16,8 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"go.woodpecker-ci.org/autoscaler/config"
-	"go.woodpecker-ci.org/autoscaler/engine"
+	"go.woodpecker-ci.org/autoscaler/engine/inits/cloudinit"
+	"go.woodpecker-ci.org/autoscaler/engine/types"
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
 
@@ -45,7 +46,7 @@ type Provider struct {
 	client           *scw.Client
 }
 
-func New(_ context.Context, c *cli.Command, config *config.Config) (engine.Provider, error) {
+func New(_ context.Context, c *cli.Command, config *config.Config) (types.Provider, error) {
 	if !c.IsSet("scaleway-instance-type") {
 		return nil, fmt.Errorf("%w: scaleway-instance-type", ErrParameterNotSet)
 	}
@@ -241,7 +242,7 @@ func (p *Provider) createInstance(ctx context.Context, agent *woodpecker.Agent) 
 }
 
 func (p *Provider) setCloudInit(ctx context.Context, agent *woodpecker.Agent, inst *instance.Server) error {
-	ud, err := engine.RenderUserDataTemplate(p.config, agent, nil)
+	ud, err := cloudinit.RenderUserDataTemplate(p.config, agent, nil)
 	if err != nil {
 		return err
 	}

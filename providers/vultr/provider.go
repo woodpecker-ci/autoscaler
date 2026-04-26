@@ -17,6 +17,9 @@ import (
 
 	"go.woodpecker-ci.org/autoscaler/config"
 	"go.woodpecker-ci.org/autoscaler/engine"
+	"go.woodpecker-ci.org/autoscaler/engine/inits/cloudinit"
+	"go.woodpecker-ci.org/autoscaler/engine/types"
+	"go.woodpecker-ci.org/autoscaler/utils"
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
 
@@ -39,7 +42,7 @@ type Provider struct {
 	client           *govultr.Client
 }
 
-func New(ctx context.Context, c *cli.Command, config *config.Config) (engine.Provider, error) {
+func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Provider, error) {
 	p := &Provider{
 		name:       "vultr",
 		region:     c.String("vultr-region"),
@@ -71,7 +74,7 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (engine.Pro
 	defaultLabels[engine.LabelPool] = p.config.PoolID
 	defaultLabels[engine.LabelImage] = p.image
 
-	labels, err := engine.SliceToMap(c.StringSlice("vultr-labels"), "=")
+	labels, err := utils.SliceToMap(c.StringSlice("vultr-labels"), "=")
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", p.name, err)
 	}
@@ -80,15 +83,15 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (engine.Pro
 			return nil, fmt.Errorf("%s: %w: %s", p.name, ErrIllegalLablePrefix, engine.LabelPrefix)
 		}
 	}
-	p.labels = engine.MergeMaps(defaultLabels, p.labels)
+	p.labels = utils.MergeMaps(defaultLabels, p.labels)
 
 	return p, nil
 }
 
 func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
-	userData, err := engine.RenderUserDataTemplate(p.config, agent, p.userDataTemplate)
+	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, p.userDataTemplate)
 	if err != nil {
-		return fmt.Errorf("%s: engine.RenderUserDataTemplate: %w", p.name, err)
+		return fmt.Errorf("%s: cloudinit.RenderUserDataTemplate: %w", p.name, err)
 	}
 
 	image := -1

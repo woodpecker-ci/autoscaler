@@ -12,12 +12,14 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
-	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	ec2_types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/rs/zerolog/log"
 	"github.com/urfave/cli/v3"
 
 	"go.woodpecker-ci.org/autoscaler/config"
 	"go.woodpecker-ci.org/autoscaler/engine"
+	"go.woodpecker-ci.org/autoscaler/engine/inits/cloudinit"
+	"go.woodpecker-ci.org/autoscaler/engine/types"
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
 
@@ -39,7 +41,7 @@ type Provider struct {
 	userDataTemplate      *template.Template
 }
 
-func New(ctx context.Context, c *cli.Command, config *config.Config) (engine.Provider, error) {
+func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Provider, error) {
 	if len(c.StringSlice("aws-subnets")) == 0 {
 		return nil, fmt.Errorf("aws-subnets must be set")
 	}
@@ -76,13 +78,13 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (engine.Pro
 }
 
 func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
-	userData, err := engine.RenderUserDataTemplate(p.config, agent, p.userDataTemplate)
+	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, p.userDataTemplate)
 	if err != nil {
-		return fmt.Errorf("%s: engine.RenderUserDataTemplate: %w", p.name, err)
+		return fmt.Errorf("%s: cloudinit.RenderUserDataTemplate: %w", p.name, err)
 	}
 
 	// Generate base tags for instance
-	tags := []types.Tag{{
+	tags := []ec2_types.Tag{{
 		Key:   aws.String("Name"),
 		Value: aws.String(agent.Name),
 	}, {
@@ -94,14 +96,14 @@ func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 	tagKVParts := 2
 	for _, tag := range p.tags {
 		parts := strings.Split(tag, "=")
-		var rt types.Tag
+		var rt ec2_types.Tag
 		if len(parts) >= tagKVParts {
-			rt = types.Tag{
+			rt = ec2_types.Tag{
 				Key:   aws.String(parts[0]),
 				Value: aws.String(parts[1]),
 			}
 		} else {
-			rt = types.Tag{
+			rt = ec2_types.Tag{
 				Key: aws.String(parts[0]),
 			}
 		}
@@ -110,20 +112,20 @@ func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 	}
 
 	runInstancesInput := ec2.RunInstancesInput{
-		IamInstanceProfile: &types.IamInstanceProfileSpecification{
+		IamInstanceProfile: &ec2_types.IamInstanceProfileSpecification{
 			Arn: aws.String(p.iamInstanceProfileArn),
 		},
 		ImageId:      aws.String(p.amiID),
-		InstanceType: types.InstanceType(p.instanceType),
-		MetadataOptions: &types.InstanceMetadataOptionsRequest{
-			HttpEndpoint:            types.InstanceMetadataEndpointStateEnabled,
+		InstanceType: ec2_types.InstanceType(p.instanceType),
+		MetadataOptions: &ec2_types.InstanceMetadataOptionsRequest{
+			HttpEndpoint:            ec2_types.InstanceMetadataEndpointStateEnabled,
 			HttpPutResponseHopLimit: aws.Int32(1),
-			HttpTokens:              types.HttpTokensStateRequired,
+			HttpTokens:              ec2_types.HttpTokensStateRequired,
 		},
 		SecurityGroupIds: p.securityGroups,
 		MinCount:         aws.Int32(1),
 		MaxCount:         aws.Int32(1),
-		TagSpecifications: []types.TagSpecification{
+		TagSpecifications: []ec2_types.TagSpecification{
 			{
 				ResourceType: "instance",
 				Tags:         tags,
@@ -142,8 +144,8 @@ func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 	p.lock.Unlock()
 
 	if p.useSpotInstances {
-		runInstancesInput.InstanceMarketOptions = &types.InstanceMarketOptionsRequest{
-			MarketType: types.MarketTypeSpot,
+		runInstancesInput.InstanceMarketOptions = &ec2_types.InstanceMarketOptionsRequest{
+			MarketType: ec2_types.MarketTypeSpot,
 		}
 	}
 
@@ -179,9 +181,9 @@ func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 	return fmt.Errorf("instance did not resolve in agent list: %s", *result.Instances[0].InstanceId)
 }
 
-func (p *Provider) getAgent(ctx context.Context, agent *woodpecker.Agent) (*types.Instance, error) {
+func (p *Provider) getAgent(ctx context.Context, agent *woodpecker.Agent) (*ec2_types.Instance, error) {
 	instances, err := p.client.DescribeInstances(ctx, &ec2.DescribeInstancesInput{
-		Filters: []types.Filter{
+		Filters: []ec2_types.Filter{
 			{
 				Name:   aws.String("tag:Name"),
 				Values: []string{agent.Name},
@@ -217,7 +219,7 @@ func (p *Provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 
 	var names []string
 	instances, err := p.client.DescribeInstances(ctx, &ec2.DescribeInstancesInput{
-		Filters: []types.Filter{
+		Filters: []ec2_types.Filter{
 			{
 				Name:   aws.String(fmt.Sprintf("tag:%s", engine.LabelPool)),
 				Values: []string{p.config.PoolID},
@@ -229,8 +231,8 @@ func (p *Provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 	}
 	for _, reservation := range instances.Reservations {
 		for _, instance := range reservation.Instances {
-			if instance.State.Name != types.InstanceStateNamePending &&
-				instance.State.Name != types.InstanceStateNameRunning {
+			if instance.State.Name != ec2_types.InstanceStateNamePending &&
+				instance.State.Name != ec2_types.InstanceStateNameRunning {
 				continue
 			}
 			for _, tag := range instance.Tags {
