@@ -75,7 +75,10 @@ func run(ctx context.Context, cmd *cli.Command) error {
 			log.Warn().Msg("setting WOODPECKER_AGENT_LABELS via WOODPECKER_AGENT_ENV is deprecated, use native autoscaler setting for that")
 
 			// as backwards compatibility we calc agentLabels from agentEnvironment
-			agentLabels = convertEnvSettingToLabels(agentLabelsViaEnv)
+			agentLabels, err = convertEnvSettingToLabels(agentLabelsViaEnv)
+			if err != nil {
+				return fmt.Errorf("'WOODPECKER_AGENT_LABELS' has an error: %w", err)
+			}
 		} else {
 			log.Error().Msg("setting WOODPECKER_AGENT_LABELS and redefine it in WOODPECKER_AGENT_ENV is unsupported just use WOODPECKER_AGENT_LABELS")
 			return fmt.Errorf("remove 'WOODPECKER_AGENT_LABELS' within 'WOODPECKER_AGENT_ENV'")
@@ -174,20 +177,20 @@ func main() {
 // convertEnvSettingToLabels is a helper function for backwards compatibility,
 // that parses value of WOODPECKER_AGENT_LABELS and make it usable for us.
 func convertEnvSettingToLabels(env string) (map[string]string, error) {
-    out := make(map[string]string)
-    for _, v := range strings.Split(env, ",") {
-        v = strings.TrimSpace(v)
-        if v == "" {
-            continue
-        }
-        key, val, _ := strings.Cut(v, "=")
-        if key == "" || val == "" {
-            return nil, fmt.Errorf("invalid agent labels variable: %s", v)
-        }
-        if _, exists := out[key]; exists {
-            log.Warn().Msgf("duplicate agent label key %q, overwriting", key)
-        }
-        out[key] = val
-    }
-    return out, nil
+	out := make(map[string]string)
+	for _, v := range strings.Split(env, ",") {
+		v = strings.TrimSpace(v)
+		if v == "" {
+			continue
+		}
+		key, val, _ := strings.Cut(v, "=")
+		if key == "" || val == "" {
+			return nil, fmt.Errorf("invalid agent labels variable: %s", v)
+		}
+		if _, exists := out[key]; exists {
+			log.Warn().Msgf("duplicate agent label key %q, overwriting", key)
+		}
+		out[key] = val
+	}
+	return out, nil
 }
