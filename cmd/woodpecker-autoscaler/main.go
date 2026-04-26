@@ -173,19 +173,21 @@ func main() {
 
 // convertEnvSettingToLabels is a helper function for backwards compatibility,
 // that parses value of WOODPECKER_AGENT_LABELS and make it usable for us.
-func convertEnvSettingToLabels(env string) map[string]string {
-	out := make(map[string]string)
-	for _, v := range strings.Split(env, ",") {
-		v = strings.TrimSpace(v)
-		if v == "" {
-			continue
-		}
-		key, val, _ := strings.Cut(v, "=")
-		if key != "" && val != "" {
-			out[key] = val
-		} else {
-			log.Error().Msgf("while converting agent labels from WOODPECKER_AGENT_ENV, a wrong entry was detected: %q", v)
-		}
-	}
-	return out
+func convertEnvSettingToLabels(env string) (map[string]string, error) {
+    out := make(map[string]string)
+    for _, v := range strings.Split(env, ",") {
+        v = strings.TrimSpace(v)
+        if v == "" {
+            continue
+        }
+        key, val, _ := strings.Cut(v, "=")
+        if key == "" || val == "" {
+            return nil, fmt.Errorf("invalid agent labels variable: %s", v)
+        }
+        if _, exists := out[key]; exists {
+            log.Warn().Msgf("duplicate agent label key %q, overwriting", key)
+        }
+        out[key] = val
+    }
+    return out, nil
 }
