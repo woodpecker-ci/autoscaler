@@ -11,7 +11,7 @@ import (
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
 
-func (p *Provider) LookupServerType(ctx context.Context, name string) (*hcloud.ServerType, error) {
+func (p *Provider) lookupServerType(ctx context.Context, name string) (*hcloud.ServerType, error) {
 	serverType, _, err := p.client.ServerType().GetByName(ctx, name)
 	if err != nil {
 		return nil, fmt.Errorf("%s: ServerType.GetByName: %w", name, err)

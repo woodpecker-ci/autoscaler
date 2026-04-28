@@ -147,7 +147,7 @@ func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cap
 	for _, raw := range p.serverType {
 		rawType, location := p.parseServerTypeEntry(raw)
 
-		serverType, err := p.LookupServerType(ctx, rawType)
+		serverType, err := p.lookupServerType(ctx, rawType)
 		if err != nil {
 			return err
 		}
@@ -259,7 +259,7 @@ func (p *Provider) Capabilities(ctx context.Context) ([]types.Capability, error)
 	for _, raw := range p.serverType {
 		rawType, location := p.parseServerTypeEntry(raw)
 
-		st, err := p.LookupServerType(ctx, rawType)
+		st, err := p.lookupServerType(ctx, rawType)
 		if err != nil {
 			return nil, err
 		}
