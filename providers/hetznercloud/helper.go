@@ -38,7 +38,7 @@ func (p *Provider) getAgent(ctx context.Context, agent *woodpecker.Agent) (*hclo
 // TODO: Deprecated location-fallback should be removed in v2.0.
 func (p *Provider) parseServerTypeEntry(raw string) (rawType, location string) {
 	rawType, location, _ = strings.Cut(raw, ":")
-	if location == "" {
+	if location == "" && p.location != "" {
 		log.Error().Msg("hetznercloud-location is deprecated, please use hetznercloud-server-type instead")
 		location = p.location
 	}
@@ -48,6 +48,10 @@ func (p *Provider) parseServerTypeEntry(raw string) (rawType, location string) {
 // serverTypeSupportsLocation reports whether the given server type is
 // available in the given location and not deprecated there.
 func serverTypeSupportsLocation(st *hcloud.ServerType, location string) bool {
+	if location == "" {
+		return true
+	}
+
 	for _, l := range st.Locations {
 		if l.Location == nil || l.Location.Name != location {
 			continue
