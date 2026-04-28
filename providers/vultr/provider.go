@@ -24,12 +24,12 @@ import (
 )
 
 var (
-	ErrIllegalLablePrefix = errors.New("illegal label prefix")
+	ErrIllegalLabelPrefix = errors.New("illegal label prefix")
 	ErrImageNotFound      = errors.New("image not found")
 	ErrSSHKeyNotFound     = errors.New("SSH key not found")
 )
 
-type Provider struct {
+type provider struct {
 	plan             string
 	userDataTemplate *template.Template
 	image            string
@@ -43,7 +43,7 @@ type Provider struct {
 }
 
 func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Provider, error) {
-	p := &Provider{
+	p := &provider{
 		name:       "vultr",
 		region:     c.String("vultr-region"),
 		plan:       c.String("vultr-plan"),
@@ -55,9 +55,9 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 	ts := oauthConfig.TokenSource(ctx, &oauth2.Token{AccessToken: c.String("vultr-api-token")})
 	p.client = govultr.NewClient(oauth2.NewClient(ctx, ts))
 
-	err := p.setupKeypair(ctx)
+	err := p.setupKeyPair(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("%s: setupKeypair: %w", p.name, err)
+		return nil, fmt.Errorf("%s: setupKeyPair: %w", p.name, err)
 	}
 
 	// # TODO: Deprecated remove in v2.0
@@ -80,7 +80,7 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 	}
 	for _, key := range maps.Keys(labels) {
 		if strings.HasPrefix(key, engine.LabelPrefix) {
-			return nil, fmt.Errorf("%s: %w: %s", p.name, ErrIllegalLablePrefix, engine.LabelPrefix)
+			return nil, fmt.Errorf("%s: %w: %s", p.name, ErrIllegalLabelPrefix, engine.LabelPrefix)
 		}
 	}
 	p.labels = utils.MergeMaps(defaultLabels, p.labels)
@@ -88,7 +88,7 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 	return p, nil
 }
 
-func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cap types.Capability) error {
+func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cap types.Capability) error {
 	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, p.userDataTemplate)
 	if err != nil {
 		return fmt.Errorf("%s: cloudinit.RenderUserDataTemplate: %w", p.name, err)
@@ -151,7 +151,7 @@ func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cap
 	return fmt.Errorf("instance did not resolve in agent list: %s", instance.ID)
 }
 
-func (p *Provider) getAgent(ctx context.Context, agent *woodpecker.Agent) (*govultr.Instance, error) {
+func (p *provider) getAgent(ctx context.Context, agent *woodpecker.Agent) (*govultr.Instance, error) {
 	servers, _, _, err := p.client.Instance.List(ctx, &govultr.ListOptions{
 		Label: agent.Name,
 	})
@@ -170,7 +170,7 @@ func (p *Provider) getAgent(ctx context.Context, agent *woodpecker.Agent) (*govu
 	return &servers[0], nil
 }
 
-func (p *Provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) error {
+func (p *provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) error {
 	server, err := p.getAgent(ctx, agent)
 	if err != nil {
 		return fmt.Errorf("%s: %w", p.name, err)
@@ -188,7 +188,7 @@ func (p *Provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) err
 	return nil
 }
 
-func (p *Provider) ListDeployedAgentNames(ctx context.Context) ([]string, error) {
+func (p *provider) ListDeployedAgentNames(ctx context.Context) ([]string, error) {
 	var cursor string
 
 	names := make([]string, 0)
@@ -221,7 +221,7 @@ func (p *Provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 	return names, nil
 }
 
-func (p *Provider) setupKeypair(ctx context.Context) error {
+func (p *provider) setupKeyPair(ctx context.Context) error {
 	res, _, _, err := p.client.SSHKey.List(ctx, nil)
 	if err != nil {
 		return err
@@ -255,7 +255,7 @@ func (p *Provider) setupKeypair(ctx context.Context) error {
 	return ErrSSHKeyNotFound
 }
 
-func (p *Provider) Capabilities(_ context.Context) ([]types.Capability, error) {
+func (p *provider) Capabilities(_ context.Context) ([]types.Capability, error) {
 	// TODO: actually call vultr with it's config to see what's available
 	return []types.Capability{{
 		Platform: "linux/amd64",
