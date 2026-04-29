@@ -59,16 +59,22 @@ func routeTaskToBucket(task woodpecker.Task, buckets []agentBucket) int {
 	return -1
 }
 
+// agentMatchesCapability reports whether an agent's reported (platform,
+// backend) pair matches the given capability. We match on the
+// woodpecker-reported pair rather than custom labels because that pair
+// is a property of the machine and stable across config changes;
+// CustomLabels can drift if the operator edits ExtraAgentLabels between
+// reconciles.
+func agentMatchesCapability(agent *woodpecker.Agent, capability types.Capability) bool {
+	return agent.Platform == capability.Platform &&
+		agent.Backend == string(capability.Backend)
+}
+
 // matchAgentToBucket returns the index of the bucket whose capability
-// matches an existing agent's reported (platform, backend) pair, or -1
-// if none. We match on woodpecker-reported (platform, backend) rather
-// than custom labels because that pair is a property of the machine and
-// stable across config changes; CustomLabels can drift if the operator
-// edits ExtraAgentLabels between reconciles.
+// matches the given agent, or -1 if none.
 func matchAgentToBucket(agent *woodpecker.Agent, buckets []agentBucket) int {
 	for i, b := range buckets {
-		if agent.Platform == b.Capability.Platform &&
-			agent.Backend == string(b.Capability.Backend) {
+		if agentMatchesCapability(agent, b.Capability) {
 			return i
 		}
 	}

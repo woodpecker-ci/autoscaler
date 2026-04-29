@@ -80,7 +80,7 @@ func (a *Autoscaler) createAgents(ctx context.Context, bucket agentBucket, amoun
 		if !agent.NoSchedule {
 			continue
 		}
-		if matchAgentToBucket(agent, []agentBucket{bucket}) < 0 {
+		if !agentMatchesCapability(agent, bucket.Capability) {
 			continue
 		}
 
@@ -133,7 +133,7 @@ func (a *Autoscaler) drainAgents(_ context.Context, bucket agentBucket, amount i
 		if agent.NoSchedule {
 			continue
 		}
-		if matchAgentToBucket(agent, []agentBucket{bucket}) < 0 {
+		if !agentMatchesCapability(agent, bucket.Capability) {
 			continue
 		}
 		if time.Since(time.Unix(agent.LastWork, 0)) < a.config.AgentIdleTimeout {

@@ -119,3 +119,24 @@ func Test_computeBucketStates(t *testing.T) {
 	assert.Equal(t, 1, states[1].Running)
 	assert.Equal(t, 1, states[1].PoolAgents) // drained one not counted
 }
+
+func Test_agentMatchesCapability(t *testing.T) {
+	t.Run("matches when both fields are equal", func(t *testing.T) {
+		assert.True(t, agentMatchesCapability(
+			&woodpecker.Agent{Platform: "linux/amd64", Backend: "docker"},
+			dockerAmd64Cap,
+		))
+	})
+	t.Run("rejects when platform differs", func(t *testing.T) {
+		assert.False(t, agentMatchesCapability(
+			&woodpecker.Agent{Platform: "linux/arm64", Backend: "docker"},
+			dockerAmd64Cap,
+		))
+	})
+	t.Run("rejects when backend differs", func(t *testing.T) {
+		assert.False(t, agentMatchesCapability(
+			&woodpecker.Agent{Platform: "linux/amd64", Backend: "kubernetes"},
+			dockerAmd64Cap,
+		))
+	})
+}
