@@ -3,7 +3,7 @@ package engine
 import (
 	"context"
 	"fmt"
-	"regexp"
+	"strings"
 	"time"
 
 	"github.com/rs/zerolog/log"
@@ -47,13 +47,10 @@ func (a *Autoscaler) loadAgents(_ context.Context) error {
 	if err != nil {
 		return fmt.Errorf("client.AgentList: %w", err)
 	}
-	r, err := regexp.Compile(fmt.Sprintf("pool-%s-agent-.*?", a.config.PoolID))
-	if err != nil {
-		return fmt.Errorf("could not create regex matcher for agent names by pool ID: %w", err)
-	}
 
+	prefix := fmt.Sprintf("pool-%s-agent-", a.config.PoolID)
 	for _, agent := range agents {
-		if r.MatchString(agent.Name) {
+		if strings.HasPrefix(agent.Name, prefix) {
 			a.agents[agent.Name] = agent
 		}
 	}
