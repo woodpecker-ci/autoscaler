@@ -213,43 +213,39 @@ func (a *Autoscaler) removeDrainedAgents(ctx context.Context) error {
 }
 
 func (a *Autoscaler) cleanupDanglingAgents(ctx context.Context) error {
-	providerAgent := make(map[string]struct{})
 	providerAgentNames, err := a.provider.ListDeployedAgentNames(ctx)
 	if err != nil {
 		return err
 	}
 
-	// remove agents that are not in the woodpecker agent list anymore
-	for _, agentName := range providerAgentNames {
-		// we first init provider agent map
-		providerAgent[agentName] = struct{}{}
-		// and then see if woodpecker server knows them
-		if _, found := a.agents[agentName]; found {
-			continue
-		}
-
-		log.Info().Str("agent", agentName).Str("reason", "not found on woodpecker").Msg("remove agent")
-		if err := a.provider.RemoveAgent(ctx, &woodpecker.Agent{Name: agentName}); err != nil {
-			return fmt.Errorf("types.RemoveAgent: %w", err)
-		}
-
-		// remove agent from providerAgent
-		delete(providerAgent, agentName)
+	// Build the provider-side set up front so the two reconciliation
+	// directions below are independent of each other.
+	providerSet := make(map[string]struct{}, len(providerAgentNames))
+	for _, name := range providerAgentNames {
+		providerSet[name] = struct{}{}
 	}
 
-	// remove agents that do not exist on the provider anymore
-	for _, agent := range a.agents {
-		if _, found := providerAgent[agent.Name]; found {
+	// On provider but not on woodpecker → tear down on the provider.
+	for name := range providerSet {
+		if _, ok := a.agents[name]; ok {
 			continue
 		}
+		log.Info().Str("agent", name).Str("reason", "not found on woodpecker").Msg("remove agent")
+		if err := a.provider.RemoveAgent(ctx, &woodpecker.Agent{Name: name}); err != nil {
+			return fmt.Errorf("types.RemoveAgent: %w", err)
+		}
+	}
 
-		log.Info().Str("agent", agent.Name).Str("reason", "not found on provider").Msg("remove agent")
-		if err = a.client.AgentDelete(agent.ID); err != nil {
+	// On woodpecker but not on provider → delete on woodpecker.
+	for name, agent := range a.agents {
+		if _, ok := providerSet[name]; ok {
+			continue
+		}
+		log.Info().Str("agent", name).Str("reason", "not found on provider").Msg("remove agent")
+		if err := a.client.AgentDelete(agent.ID); err != nil {
 			return fmt.Errorf("client.AgentDelete: %w", err)
 		}
-
-		// remove agent from woodpecker agents
-		delete(a.agents, agent.Name)
+		delete(a.agents, name)
 	}
 
 	return nil
