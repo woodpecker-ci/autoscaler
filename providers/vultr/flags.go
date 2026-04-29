@@ -21,14 +21,15 @@ var ProviderFlags = []cli.Flag{
 	},
 	&cli.StringFlag{
 		Name:     "vultr-region",
-		Value:    "nbg1",
 		Usage:    "vultr region",
+		Value:    "ams",
 		Sources:  cli.EnvVars("WOODPECKER_VULTR_REGION"),
 		Category: category,
 	},
 	&cli.StringFlag{
 		Name:     "vultr-plan",
 		Usage:    "vultr plan",
+		Value:    "vhp-1c-2gb",
 		Sources:  cli.EnvVars("WOODPECKER_VULTR_PLAN"),
 		Category: category,
 	},
@@ -50,8 +51,8 @@ var ProviderFlags = []cli.Flag{
 	},
 	&cli.StringFlag{
 		Name:     "vultr-image",
-		Value:    "ubuntu-22.04",
 		Usage:    "vultr image",
+		Value:    "Ubuntu 24.04 LTS x64",
 		Sources:  cli.EnvVars("WOODPECKER_VULTR_IMAGE"),
 		Category: category,
 	},

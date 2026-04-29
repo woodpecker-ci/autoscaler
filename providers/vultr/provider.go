@@ -30,24 +30,22 @@ var (
 )
 
 type provider struct {
-	plan             string
 	userDataTemplate *template.Template
-	image            string
 	sshKeys          []string
 	labels           map[string]string
 	config           *config.Config
-	region           string
 	enableIPv6       bool
 	name             string
 	client           *govultr.Client
+	// resolved config
+	region govultr.Region
+	plan   govultr.Plan
+	image  govultr.OS
 }
 
 func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Provider, error) {
 	p := &provider{
 		name:       "vultr",
-		region:     c.String("vultr-region"),
-		plan:       c.String("vultr-plan"),
-		image:      c.String("vultr-image"),
 		enableIPv6: c.Bool("vultr-public-ipv6-enable"),
 		config:     config,
 	}
@@ -55,8 +53,21 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 	ts := oauthConfig.TokenSource(ctx, &oauth2.Token{AccessToken: c.String("vultr-api-token")})
 	p.client = govultr.NewClient(oauth2.NewClient(ctx, ts))
 
-	err := p.setupKeyPair(ctx)
-	if err != nil {
+	// first resolve and check config
+	if err := p.resolveRegion(ctx, c.String("vultr-region")); err != nil {
+		return nil, err
+	}
+	if err := p.resolvePlan(ctx, c.String("vultr-plan")); err != nil {
+		return nil, err
+	}
+	if err := p.resolveImage(ctx, c.String("vultr-image")); err != nil {
+		return nil, err
+	}
+	// log debug info
+	p.printResolvedConfig()
+
+	// if not done setup ssh key-pair
+	if err := p.setupKeyPair(ctx); err != nil {
 		return nil, fmt.Errorf("%s: setupKeyPair: %w", p.name, err)
 	}
 
@@ -72,7 +83,7 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 
 	defaultLabels := make(map[string]string, 0)
 	defaultLabels[engine.LabelPool] = p.config.PoolID
-	defaultLabels[engine.LabelImage] = p.image
+	defaultLabels[engine.LabelImage] = p.image.Name
 
 	labels, err := utils.SliceToMap(c.StringSlice("vultr-labels"), "=")
 	if err != nil {
@@ -89,25 +100,16 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 }
 
 func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cap types.Capability) error {
+	if cap.Backend != types.BackendDocker ||
+		cap.Platform != "linux/amd64" {
+		return fmt.Errorf("we only support docker on linux/amd64 but %#v was requested", cap)
+	}
+
 	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, p.userDataTemplate)
 	if err != nil {
 		return fmt.Errorf("%s: cloudinit.RenderUserDataTemplate: %w", p.name, err)
 	}
 
-	image := -1
-	osList, _, _, err := p.client.OS.List(ctx, &govultr.ListOptions{})
-	if err != nil {
-		return fmt.Errorf("%s: OS.List: %w", p.name, err)
-	}
-	for _, osS := range osList {
-		if osS.Name == p.image {
-			image = osS.ID
-			break
-		}
-	}
-	if image == -1 {
-		return fmt.Errorf("%s: DeployAgent: no image found for %s", p.name, p.image)
-	}
 	tags := make([]string, 0)
 	for key, item := range p.labels {
 		tags = append(tags, fmt.Sprintf("%s=%s", key, item))
@@ -116,15 +118,16 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cap
 	instance, _, err := p.client.Instance.Create(ctx, &govultr.InstanceCreateReq{
 		Hostname:        agent.Name,
 		UserData:        base64.StdEncoding.EncodeToString([]byte(userData)),
-		Plan:            p.plan,
-		Region:          p.region,
+		Plan:            p.plan.ID,
+		Region:          p.region.ID,
 		Label:           agent.Name,
 		Tags:            tags,
-		OsID:            image,
+		OsID:            p.image.ID,
 		EnableVPC:       govultr.BoolToBoolPtr(false), // TODO: allow to use private networks
 		ActivationEmail: govultr.BoolToBoolPtr(false),
 		SSHKeys:         p.sshKeys,
 		EnableIPv6:      &p.enableIPv6,
+		Backups:         "disabled",
 	})
 	if err != nil {
 		return fmt.Errorf("%s: Instance.Create: %w", p.name, err)
@@ -221,47 +224,10 @@ func (p *provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 	return names, nil
 }
 
-func (p *provider) setupKeyPair(ctx context.Context) error {
-	res, _, _, err := p.client.SSHKey.List(ctx, nil)
-	if err != nil {
-		return err
-	}
-
-	index := map[string]string{}
-	for key := range res {
-		index[res[key].Name] = res[key].ID
-	}
-
-	// if the account has multiple keys configured try to
-	// use an existing key based on naming convention.
-	for _, name := range []string{"woodpecker", "id_rsa_woodpecker"} {
-		fingerprint, ok := index[name]
-		if !ok {
-			continue
-		}
-		p.sshKeys = append(p.sshKeys, fingerprint)
-
-		return nil
-	}
-
-	// if there were no matches but the account has at least
-	// one keypair already created we will select the first
-	// in the list.
-	if len(res) > 0 {
-		p.sshKeys = append(p.sshKeys, res[0].ID)
-		return nil
-	}
-
-	return ErrSSHKeyNotFound
-}
-
 func (p *provider) Capabilities(_ context.Context) ([]types.Capability, error) {
-	// TODO: actually call vultr with it's config to see what's available
+	// TODO: add native k8s and local backend (with FreeBSD) support
 	return []types.Capability{{
 		Platform: "linux/amd64",
-		Backend:  types.BackendDocker,
-	}, {
-		Platform: "linux/arm64",
 		Backend:  types.BackendDocker,
 	}}, nil
 }
