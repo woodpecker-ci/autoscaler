@@ -1,8 +1,6 @@
 package linode
 
 import (
-	"os"
-
 	"github.com/urfave/cli/v3"
 )
 
@@ -11,12 +9,10 @@ const category = "Linode"
 //nolint:mnd
 var ProviderFlags = []cli.Flag{
 	&cli.StringFlag{
-		Name:  "linode-api-token",
-		Usage: "Linode api token",
-		Sources: cli.NewValueSourceChain(
-			cli.EnvVar("WOODPECKER_LINODE_API_TOKEN"),
-			cli.File(os.Getenv("WOODPECKER_LINODE_API_TOKEN_FILE")),
-		),
+		Name:     "linode-api-token",
+		Usage:    "Linode api token",
+		Sources:  cli.EnvVars("WOODPECKER_LINODE_API_TOKEN"),
+		Required: true,
 		Category: category,
 	},
 	&cli.StringFlag{
@@ -52,19 +48,9 @@ var ProviderFlags = []cli.Flag{
 		Sources:  cli.EnvVars("WOODPECKER_LINODE_ROOT_PASS"),
 		Category: category,
 	},
-	// TODO: Deprecated remove in v2.0
-	&cli.StringFlag{
-		Name:  "linode-user-data",
-		Usage: "Linode userdata template (deprecated)",
-		Sources: cli.NewValueSourceChain(
-			cli.EnvVar("WOODPECKER_LINODE_USERDATA"),
-			cli.File(os.Getenv("WOODPECKER_LINODE_USERDATA_FILE")),
-		),
-		Category: category,
-	},
 	&cli.StringFlag{
 		Name:     "linode-image",
-		Value:    "linode/ubuntu22.04",
+		Value:    "linode/ubuntu24.04",
 		Usage:    "Linode OS image",
 		Sources:  cli.EnvVars("WOODPECKER_LINODE_IMAGE"),
 		Category: category,
