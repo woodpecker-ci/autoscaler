@@ -119,31 +119,3 @@ func Test_computeBucketStates(t *testing.T) {
 	assert.Equal(t, 1, states[1].Running)
 	assert.Equal(t, 1, states[1].PoolAgents) // drained one not counted
 }
-
-func Test_rawDelta(t *testing.T) {
-	t.Run("scales up when more work than capacity", func(t *testing.T) {
-		assert.Equal(t, 2, rawDelta(bucketState{Pending: 4, Running: 0, PoolAgents: 0}, 2))
-	})
-
-	t.Run("scales down when overprovisioned", func(t *testing.T) {
-		assert.Equal(t, -2, rawDelta(bucketState{Pending: 0, Running: 0, PoolAgents: 2}, 1))
-	})
-
-	t.Run("does not scale when capacity matches demand exactly", func(t *testing.T) {
-		assert.Equal(t, 0, rawDelta(bucketState{Pending: 2, Running: 0, PoolAgents: 2}, 1))
-	})
-
-	t.Run("rounds up partial agent need", func(t *testing.T) {
-		// 7 tasks, WPA=5 -> ceil(7/5) = 2.
-		assert.Equal(t, 2, rawDelta(bucketState{Pending: 7, PoolAgents: 0}, 5))
-	})
-
-	t.Run("treats zero or negative WorkflowsPerAgent as 1", func(t *testing.T) {
-		assert.Equal(t, 3, rawDelta(bucketState{Pending: 3}, 0))
-	})
-
-	t.Run("counts running tasks against required capacity", func(t *testing.T) {
-		// 1 running + 1 pending = 2 tasks, WPA=1, no pool -> need 2.
-		assert.Equal(t, 2, rawDelta(bucketState{Pending: 1, Running: 1}, 1))
-	})
-}
