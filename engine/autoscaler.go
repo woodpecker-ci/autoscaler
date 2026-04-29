@@ -3,7 +3,6 @@ package engine
 import (
 	"context"
 	"fmt"
-	"math"
 	"regexp"
 	"strings"
 	"time"
@@ -73,28 +72,46 @@ func (a *Autoscaler) getPoolAgents(excludeNoSchedule bool) []*woodpecker.Agent {
 	return agents
 }
 
-func (a *Autoscaler) createAgents(ctx context.Context, amount int) error {
-	suffixLength := 4
+// createAgents deploys `amount` new agents into the given bucket. It first
+// tries to reactivate matching no-schedule agents (which are already
+// provisioned on the provider) before deploying new ones, since
+// reactivation is much cheaper than spinning up a new VM.
+//
+// "Matching" means an agent whose woodpecker-reported (platform, backend)
+// matches the bucket's capability — those agents already advertise the
+// right base labels and will pick up the same workflows once reactivated.
+func (a *Autoscaler) createAgents(ctx context.Context, bucket agentBucket, amount int) error {
+	const suffixLength = 4
 
-	reactivatedAgents := 0
-
-	// try to re-activate agents that are in no-schedule state
-	for i := 0; i < amount; i++ {
-		for _, agent := range a.agents {
-			if agent.NoSchedule {
-				log.Info().Str("agent", agent.Name).Msg("reactivate agent")
-				agent.NoSchedule = false
-				_, err := a.client.AgentUpdate(agent)
-				if err != nil {
-					return fmt.Errorf("client.AgentUpdate: %w", err)
-				}
-				reactivatedAgents++
-			}
-		}
+	if amount <= 0 {
+		return nil
 	}
 
-	// create new agents
-	for i := 0; i < amount-reactivatedAgents; i++ {
+	// First, reactivate matching no-schedule agents. The legacy version of
+	// this loop walked all no-schedule agents on every outer iteration and
+	// reactivated all of them regardless of `amount`; we cap at `amount`.
+	reactivated := 0
+	for _, agent := range a.agents {
+		if reactivated >= amount {
+			break
+		}
+		if !agent.NoSchedule {
+			continue
+		}
+		if matchAgentToBucket(agent, []agentBucket{bucket}) < 0 {
+			continue
+		}
+
+		log.Info().Str("agent", agent.Name).Msg("reactivate agent")
+		agent.NoSchedule = false
+		if _, err := a.client.AgentUpdate(agent); err != nil {
+			return fmt.Errorf("client.AgentUpdate: %w", err)
+		}
+		reactivated++
+	}
+
+	// Deploy fresh agents for whatever's left.
+	for i := reactivated; i < amount; i++ {
 		agent, err := a.client.AgentCreate(&woodpecker.Agent{
 			Name: fmt.Sprintf("pool-%s-agent-%s", a.config.PoolID, utils.RandomString(suffixLength)),
 		})
@@ -102,10 +119,13 @@ func (a *Autoscaler) createAgents(ctx context.Context, amount int) error {
 			return fmt.Errorf("client.AgentCreate: %w", err)
 		}
 
-		log.Info().Str("agent", agent.Name).Msg("deploying agent")
+		log.Info().
+			Str("agent", agent.Name).
+			Str("platform", bucket.Capability.Platform).
+			Str("backend", string(bucket.Capability.Backend)).
+			Msg("deploying agent")
 
-		err = a.provider.DeployAgent(ctx, agent, types.Capability{}) // TODO: use capability
-		if err != nil {
+		if err := a.provider.DeployAgent(ctx, agent, bucket.Capability); err != nil {
 			return fmt.Errorf("types.DeployAgent: %w", err)
 		}
 
@@ -115,32 +135,39 @@ func (a *Autoscaler) createAgents(ctx context.Context, amount int) error {
 	return nil
 }
 
-func (a *Autoscaler) drainAgents(_ context.Context, amount int) error {
-	for i := 0; i < amount; i++ {
-		for _, agent := range a.agents {
-			// agent is already marked for draining
-			if agent.NoSchedule {
-				continue
-			}
-
-			// agent has recently done work => not ready for draining
-			if time.Since(time.Unix(agent.LastWork, 0)) < a.config.AgentIdleTimeout {
-				continue
-			}
-
-			// agent has never contacted the server => not ready for draining
-			if agent.LastContact == 0 {
-				continue
-			}
-
-			log.Info().Str("agent", agent.Name).Msg("drain agent")
-			agent.NoSchedule = true
-			_, err := a.client.AgentUpdate(agent)
-			if err != nil {
-				return fmt.Errorf("client.AgentUpdate: %w", err)
-			}
+// drainAgents marks up to `amount` agents in the given bucket as
+// no-schedule so woodpecker stops dispatching new tasks to them. An agent
+// is only drained if it's been idle long enough and has actually
+// connected to the server before — same readiness rules as the legacy
+// flow, just scoped to one bucket.
+func (a *Autoscaler) drainAgents(_ context.Context, bucket agentBucket, amount int) error {
+	if amount <= 0 {
+		return nil
+	}
+	drained := 0
+	for _, agent := range a.agents {
+		if drained >= amount {
 			break
 		}
+		if agent.NoSchedule {
+			continue
+		}
+		if matchAgentToBucket(agent, []agentBucket{bucket}) < 0 {
+			continue
+		}
+		if time.Since(time.Unix(agent.LastWork, 0)) < a.config.AgentIdleTimeout {
+			continue
+		}
+		if agent.LastContact == 0 {
+			continue
+		}
+
+		log.Info().Str("agent", agent.Name).Msg("drain agent")
+		agent.NoSchedule = true
+		if _, err := a.client.AgentUpdate(agent); err != nil {
+			return fmt.Errorf("client.AgentUpdate: %w", err)
+		}
+		drained++
 	}
 
 	return nil
@@ -302,121 +329,90 @@ func (a *Autoscaler) cleanupStaleAgents(ctx context.Context) error {
 	return nil
 }
 
-func (a *Autoscaler) getQueueInfo(_ context.Context) (freeTasks, runningTasks, pendingTasks int, err error) {
+// queueSnapshot is the full task-level view of the queue used for
+// bucket-aware scheduling. It carries the actual pending/running task
+// lists (so we can match each task's labels against an agent bucket) plus
+// the global free-worker count reported by the server.
+type queueSnapshot struct {
+	Free    int
+	Pending []woodpecker.Task
+	Running []woodpecker.Task
+}
+
+// loadQueueSnapshot fetches the queue and applies any operator-configured
+// FilterLabels filter, returning the surviving pending and running tasks
+// alongside the free-worker count.
+//
+// FilterLabels is a coarse pre-filter retained for backwards compat;
+// fine-grained per-bucket filtering happens later in planScaling using
+// each bucket's full label set.
+func (a *Autoscaler) loadQueueSnapshot(_ context.Context) (queueSnapshot, error) {
 	queueInfo, err := a.client.QueueInfo()
 	if err != nil {
-		return 0, 0, 0, fmt.Errorf("error from QueueInfo: %s", err.Error())
+		return queueSnapshot{}, fmt.Errorf("error from QueueInfo: %s", err.Error())
 	}
 
-	if a.config.FilterLabels == "" {
-		return queueInfo.Stats.Workers, queueInfo.Stats.Running, queueInfo.Stats.Pending, nil
+	pending := queueInfo.Pending
+	running := queueInfo.Running
+
+	if a.config.FilterLabels != "" {
+		key, value, ok := strings.Cut(a.config.FilterLabels, "=")
+		if !ok {
+			return queueSnapshot{}, fmt.Errorf("invalid labels filter: %s", a.config.FilterLabels)
+		}
+		pending = filterTasksByLabel(pending, key, value)
+		running = filterTasksByLabel(running, key, value)
 	}
 
-	labelFilterKey, labelFilterValue, ok := strings.Cut(a.config.FilterLabels, "=")
-	if !ok {
-		return 0, 0, 0, fmt.Errorf("invalid labels filter: %s", a.config.FilterLabels)
-	}
-
-	running := countTasksByLabel(queueInfo.Running, labelFilterKey, labelFilterValue)
-	pending := countTasksByLabel(queueInfo.Pending, labelFilterKey, labelFilterValue)
-
-	return queueInfo.Stats.Workers, running, pending, nil
+	return queueSnapshot{
+		Free:    queueInfo.Stats.Workers,
+		Pending: pending,
+		Running: running,
+	}, nil
 }
 
-// queueDemand is the autoscaler's view of how much work is sitting in (or
-// running through) the woodpecker server queue. It is intentionally a small
-// value type so the load step (talking to woodpecker) can be tested
-// independently from the scaling math.
-type queueDemand struct {
-	// Free is the number of free worker slots already available across
-	// agents that are connected and not draining.
-	Free int
-	// Running is the number of tasks currently running.
-	Running int
-	// Pending is the number of tasks waiting for an agent to pick them up.
-	Pending int
-}
-
-// loadQueueDemand fetches the current queue snapshot from the woodpecker
-// server and applies any operator-configured FilterLabels filter on top.
+// Reconcile periodically checks the status of the agent pool and adjusts
+// it to match the desired capacity based on the current queue state.
 //
-// This is a thin wrapper around getQueueInfo that exists so future iterations
-// can grow the demand model (e.g. per-capability buckets) without touching
-// the scaling math in calcAgentDelta.
-func (a *Autoscaler) loadQueueDemand(ctx context.Context) (queueDemand, error) {
-	free, running, pending, err := a.getQueueInfo(ctx)
-	if err != nil {
-		return queueDemand{}, err
-	}
-	return queueDemand{Free: free, Running: running, Pending: pending}, nil
-}
-
-// calcAgentDelta turns a queue demand snapshot plus the current pool size
-// into a desired delta — positive means "scale up by N", negative means
-// "scale down by N", zero means "leave the pool alone". It clamps the result
-// to the configured min/max bounds.
-//
-// This function is deliberately pure: it only depends on the snapshot, the
-// current pool size and the configured limits/divisor. That makes it easy to
-// unit-test, and it gives us the seam where capability- and label-aware
-// scheduling will plug in: a future iteration will replace the single
-// (free, running, pending) triple with per-bucket counts and run the same
-// math per bucket, summing the per-bucket deltas back together.
-func (a *Autoscaler) calcAgentDelta(d queueDemand) float64 {
-	availableAgents := math.Ceil(float64(d.Free+d.Running) / float64(a.config.WorkflowsPerAgent))
-	reqAgents := math.Ceil(float64(d.Pending+d.Running) / float64(a.config.WorkflowsPerAgent))
-
-	availablePoolAgents := len(a.getPoolAgents(true))
-	maxUp := float64(a.config.MaxAgents - availablePoolAgents)
-	maxDown := float64(availablePoolAgents - a.config.MinAgents)
-
-	reqPoolAgents := math.Ceil(reqAgents - (availableAgents + float64(availablePoolAgents)))
-	reqPoolAgents = math.Max(reqPoolAgents, -maxDown)
-	reqPoolAgents = math.Min(reqPoolAgents, maxUp)
-
-	log.Debug().Msgf("capacity info: agents = %v/%v pool = %v/%v limits = %v/%v",
-		availableAgents, reqAgents, availablePoolAgents, reqPoolAgents, maxUp, maxDown)
-
-	return reqPoolAgents
-}
-
-func (a *Autoscaler) calcAgents(ctx context.Context) (float64, error) {
-	d, err := a.loadQueueDemand(ctx)
-	if err != nil {
-		return 0, err
-	}
-	log.Debug().Msgf("queue info: freeTasks = %v runningTasks = %v pendingTasks = %v",
-		d.Free, d.Running, d.Pending)
-	return a.calcAgentDelta(d), nil
-}
-
-// Reconcile periodically checks the status of the agent pool and adjusts it to match
-// the desired capacity based on the current queue state.
+// The decision is per-bucket: each provider capability merged with the
+// configured ExtraAgentLabels is one bucket, and we ask the planner how
+// much each bucket needs to scale up or down. Tasks that no bucket can
+// serve are excluded from the math — spinning up agents that can't run
+// them wouldn't help.
 func (a *Autoscaler) Reconcile(ctx context.Context) error {
 	if err := a.loadAgents(ctx); err != nil {
 		return fmt.Errorf("loading agents failed: %w", err)
 	}
 
-	reqPoolAgents, err := a.calcAgents(ctx)
+	snap, err := a.loadQueueSnapshot(ctx)
 	if err != nil {
-		return fmt.Errorf("calculating agents failed: %w", err)
+		return fmt.Errorf("loading queue snapshot failed: %w", err)
 	}
+	log.Debug().
+		Int("free", snap.Free).
+		Int("pending", len(snap.Pending)).
+		Int("running", len(snap.Running)).
+		Msg("queue snapshot")
 
-	if reqPoolAgents > 0 {
-		num := int(math.Abs(reqPoolAgents))
-		log.Debug().Msgf("starting %d additional agents", num)
-
-		if err := a.createAgents(ctx, num); err != nil {
-			return fmt.Errorf("creating agents failed: %w", err)
-		}
-	}
-
-	if reqPoolAgents < 0 {
-		num := int(math.Abs(reqPoolAgents))
-
-		log.Debug().Msgf("checking %d agents if ready for draining", num)
-		if err := a.drainAgents(ctx, num); err != nil {
-			return fmt.Errorf("draining agents failed: %w", err)
+	for _, d := range a.planScaling(snap) {
+		if d.Delta > 0 {
+			log.Debug().
+				Str("platform", d.Bucket.Capability.Platform).
+				Str("backend", string(d.Bucket.Capability.Backend)).
+				Int("count", d.Delta).
+				Msg("starting additional agents")
+			if err := a.createAgents(ctx, d.Bucket, d.Delta); err != nil {
+				return fmt.Errorf("creating agents failed: %w", err)
+			}
+		} else {
+			log.Debug().
+				Str("platform", d.Bucket.Capability.Platform).
+				Str("backend", string(d.Bucket.Capability.Backend)).
+				Int("count", -d.Delta).
+				Msg("checking agents for draining")
+			if err := a.drainAgents(ctx, d.Bucket, -d.Delta); err != nil {
+				return fmt.Errorf("draining agents failed: %w", err)
+			}
 		}
 	}
 
@@ -438,13 +434,12 @@ func (a *Autoscaler) Reconcile(ctx context.Context) error {
 	return nil
 }
 
-func countTasksByLabel(jobs []woodpecker.Task, labelKey, labelValue string) int {
-	count := 0
+func filterTasksByLabel(jobs []woodpecker.Task, labelKey, labelValue string) []woodpecker.Task {
+	out := make([]woodpecker.Task, 0, len(jobs))
 	for _, job := range jobs {
-		val, exists := job.Labels[labelKey]
-		if exists && val == labelValue {
-			count++
+		if val, ok := job.Labels[labelKey]; ok && val == labelValue {
+			out = append(out, job)
 		}
 	}
-	return count
+	return out
 }
