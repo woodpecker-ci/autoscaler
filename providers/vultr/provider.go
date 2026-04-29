@@ -71,16 +71,6 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 		return nil, fmt.Errorf("%s: setupKeyPair: %w", p.name, err)
 	}
 
-	// # TODO: Deprecated remove in v2.0
-	if u := c.String("vultr-user-data"); u != "" {
-		log.Warn().Msg("vultr-user-data is deprecated, please use provider-user-data instead")
-		userDataTmpl, err := template.New("user-data").Parse(u)
-		if err != nil {
-			return nil, fmt.Errorf("%s: template.New.Parse %w", p.name, err)
-		}
-		p.userDataTemplate = userDataTmpl
-	}
-
 	defaultLabels := make(map[string]string, 0)
 	defaultLabels[engine.LabelPool] = p.config.PoolID
 	defaultLabels[engine.LabelImage] = p.image.Name

@@ -64,16 +64,6 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 	}
 	p.client = ec2.NewFromConfig(cfg)
 
-	// # TODO: Deprecated remove in v2.0
-	if u := c.String("aws-user-data"); u != "" {
-		log.Warn().Msg("aws-user-data is deprecated, please use provider-user-data instead")
-		userDataTmpl, err := template.New("user-data").Parse(u)
-		if err != nil {
-			return nil, fmt.Errorf("%s: template.New.Parse %w", p.name, err)
-		}
-		p.userDataTemplate = userDataTmpl
-	}
-
 	return p, nil
 }
 

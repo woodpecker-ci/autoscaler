@@ -39,16 +39,6 @@ var ProviderFlags = []cli.Flag{
 		Sources:  cli.EnvVars("WOODPECKER_HETZNERCLOUD_SSH_KEYS"),
 		Category: category,
 	},
-	// TODO: Deprecated remove in v2.0
-	&cli.StringFlag{
-		Name:  "hetznercloud-user-data",
-		Usage: "hetzner cloud userdata template (deprecated)",
-		Sources: cli.NewValueSourceChain(
-			cli.EnvVar("WOODPECKER_HETZNERCLOUD_USERDATA"),
-			cli.File(os.Getenv("WOODPECKER_HETZNERCLOUD_USERDATA_FILE")),
-		),
-		Category: category,
-	},
 	&cli.StringFlag{
 		Name:     "hetznercloud-image",
 		Value:    "ubuntu-22.04",
