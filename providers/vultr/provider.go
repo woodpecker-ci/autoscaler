@@ -217,7 +217,7 @@ func (p *provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 func (p *provider) Capabilities(_ context.Context) ([]types.Capability, error) {
 	// TODO: add native k8s and local backend (with FreeBSD) support
 	return []types.Capability{{
-		Platform: "linux/amd64",
+		Platform: "linux/" + imageToGoArch(p.image),
 		Backend:  types.BackendDocker,
 	}}, nil
 }
