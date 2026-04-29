@@ -56,9 +56,12 @@ var ProviderFlags = []cli.Flag{
 		Category: category,
 	},
 	&cli.StringFlag{
-		Name:     "scaleway-project",
-		Usage:    "Scaleway Project ID in which to spawn the instances",
-		Sources:  cli.EnvVars("WOODPECKER_SCALEWAY_PROJECT"),
+		Name:  "scaleway-project",
+		Usage: "Scaleway Project ID in which to spawn the instances",
+		Sources: cli.EnvVars(
+			"WOODPECKER_SCALEWAY_PROJECT",
+			"SCW_DEFAULT_PROJECT_ID", // scaleway official naming
+		),
 		Required: true,
 		Category: category,
 	},
