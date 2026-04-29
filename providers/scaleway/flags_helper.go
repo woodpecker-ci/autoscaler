@@ -15,7 +15,7 @@ func allZones() (zones []string) {
 
 func zoneValidator(sl []string) error {
 	for _, s := range sl {
-		if scw.Zone(s).Exists() {
+		if !scw.Zone(s).Exists() {
 			return fmt.Errorf("%w: %q does not exist", ErrInvalidZone, s)
 		}
 	}

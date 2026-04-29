@@ -22,13 +22,14 @@ import (
 )
 
 var (
-	ErrInvalidZone        = errors.New("invalid zone")
-	ErrInvalidRegion      = errors.New("invalid region")
-	ErrParameterNotSet    = errors.New("required parameter not set")
-	ErrRegionOrZoneNotSet = errors.New("region or zone not set")
+	ErrInvalidZone          = errors.New("invalid zone")
+	ErrInvalidRegion        = errors.New("invalid region")
+	ErrParameterNotSet      = errors.New("required parameter not set")
+	ErrRegionOrZoneNotSet   = errors.New("region or zone not set")
+	ErrInstanceTypeNotFound = errors.New("instance type not found in zone")
 )
 
-type Provider struct {
+type provider struct {
 	secretKey        string
 	accessKey        string
 	defaultProjectID string
@@ -44,10 +45,13 @@ type Provider struct {
 	storageType      instance.VolumeVolumeType
 	config           *config.Config
 	client           *scw.Client
+	// resolved config: one ServerType entry per zone (zones where the type is
+	// not available or end-of-service are silently dropped).
+	serverTypes map[scw.Zone]*instance.ServerType
 }
 
 func New(_ context.Context, c *cli.Command, config *config.Config) (types.Provider, error) {
-	p := &Provider{
+	p := &provider{
 		secretKey:        c.String("scaleway-secret-key"),
 		accessKey:        c.String("scaleway-access-key"),
 		defaultProjectID: c.String("scaleway-project"),
@@ -60,6 +64,7 @@ func New(_ context.Context, c *cli.Command, config *config.Config) (types.Provid
 		storage:          scw.Size(c.Uint64("scaleway-storage-size") * units.GB),
 		storageType:      instance.VolumeVolumeType(c.String("scaleway-storage-type")),
 		config:           config,
+		serverTypes:      make(map[scw.Zone]*instance.ServerType),
 	}
 
 	rawZones := c.StringSlice("scaleway-zones")
@@ -69,11 +74,74 @@ func New(_ context.Context, c *cli.Command, config *config.Config) (types.Provid
 
 	var err error
 	p.client, err = scw.NewClient(scw.WithDefaultProjectID(p.defaultProjectID), scw.WithAuth(p.accessKey, p.secretKey))
+	if err != nil {
+		return nil, err
+	}
 
-	return p, err
+	// Resolve zone first — availability of instance types is per-zone.
+	if err := p.resolveZones(); err != nil {
+		return nil, err
+	}
+
+	// Then resolve the configured instance type in each zone.
+	if err := p.resolveServerTypes(context.Background()); err != nil {
+		return nil, err
+	}
+
+	p.printResolvedConfig()
+
+	return p, nil
 }
 
-func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, _ types.Capability) error {
+// resolveServerTypes queries each zone for the configured commercialType and
+// stores the result. Zones where the type is absent or end-of-service are
+// logged and skipped rather than treated as hard errors, because a valid
+// multi-zone config may have the type available in only a subset.
+func (p *provider) resolveServerTypes(ctx context.Context) error {
+	api := instance.NewAPI(p.client)
+	for _, zone := range p.zones {
+		resp, err := api.ListServersTypes(&instance.ListServersTypesRequest{
+			Zone: zone,
+		}, scw.WithContext(ctx))
+		if err != nil {
+			return fmt.Errorf("scaleway: ListServersTypes zone=%s: %w", zone, err)
+		}
+		st, ok := resp.Servers[p.commercialType]
+		if !ok {
+			log.Warn().Str("zone", zone.String()).Str("type", p.commercialType).Msg("instance type not available in zone, skipping")
+			continue
+		}
+		if st.EndOfService {
+			log.Warn().Str("zone", zone.String()).Str("type", p.commercialType).Msg("instance type is end-of-service in zone, skipping")
+			continue
+		}
+		p.serverTypes[zone] = st
+	}
+	if len(p.serverTypes) == 0 {
+		return fmt.Errorf("%w: %s is not available in any configured zone", ErrInstanceTypeNotFound, p.commercialType)
+	}
+	return nil
+}
+
+func (p *provider) printResolvedConfig() {
+	for zone, st := range p.serverTypes {
+		log.Info().
+			Str("zone", zone.String()).
+			Str("type", p.commercialType).
+			Str("arch", string(st.Arch)).
+			Uint32("ncpus", st.Ncpus).
+			Uint64("ram_bytes", st.RAM).
+			Msg("deploy instance type")
+	}
+}
+
+func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cb types.Capability) error {
+	// Validate the requested capability against what the resolved server types
+	// actually support before touching the API.
+	if err := p.validateCapability(cb); err != nil {
+		return err
+	}
+
 	_, err := p.getInstance(ctx, agent.Name)
 	if err != nil {
 		return err
@@ -94,7 +162,60 @@ func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, _ t
 	return err
 }
 
-func (p *Provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) error {
+// validateCapability checks the requested (platform, backend) pair against
+// every resolved zone's server type. Returns nil if at least one zone can
+// satisfy the request.
+func (p *provider) validateCapability(cb types.Capability) error {
+	for _, st := range p.serverTypes {
+		goarch := scwArchToGoArch(st.Arch)
+		if goarch == "" {
+			continue
+		}
+		if "linux/"+goarch == cb.Platform && cb.Backend == types.BackendDocker {
+			return nil
+		}
+	}
+	return fmt.Errorf("scaleway: %s does not support requested capability platform=%s backend=%s",
+		p.commercialType, cb.Platform, cb.Backend)
+}
+
+func (p *provider) Capabilities(_ context.Context) ([]types.Capability, error) {
+	seen := make(map[string]struct{})
+	var caps []types.Capability
+	for _, st := range p.serverTypes {
+		goarch := scwArchToGoArch(st.Arch)
+		if goarch == "" {
+			continue
+		}
+		platform := "linux/" + goarch
+		if _, exists := seen[platform]; exists {
+			continue
+		}
+		seen[platform] = struct{}{}
+		caps = append(caps, types.Capability{
+			Platform: platform,
+			Backend:  types.BackendDocker,
+		})
+	}
+	return caps, nil
+}
+
+// scwArchToGoArch maps Scaleway Arch values to Go GOARCH strings used in
+// the woodpecker platform label ("linux/<goarch>").
+func scwArchToGoArch(a instance.Arch) string {
+	switch a {
+	case instance.ArchX86_64:
+		return "amd64"
+	case instance.ArchArm64:
+		return "arm64"
+	case instance.ArchArm:
+		return "arm"
+	default:
+		return ""
+	}
+}
+
+func (p *provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) error {
 	inst, err := p.getInstance(ctx, agent.Name)
 	if err != nil {
 		return err
@@ -103,7 +224,7 @@ func (p *Provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) err
 	return p.deleteInstance(ctx, inst)
 }
 
-func (p *Provider) ListDeployedAgentNames(ctx context.Context) ([]string, error) {
+func (p *provider) ListDeployedAgentNames(ctx context.Context) ([]string, error) {
 	instances, err := p.getAllInstances(ctx)
 	if err != nil {
 		return nil, err
@@ -117,11 +238,7 @@ func (p *Provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 	return names, nil
 }
 
-func (p *Provider) getInstance(ctx context.Context, name string) (*instance.Server, error) {
-	if err := p.resolveZones(); err != nil {
-		return nil, err
-	}
-
+func (p *provider) getInstance(ctx context.Context, name string) (*instance.Server, error) {
 	api := instance.NewAPI(p.client)
 	project := p.projectID
 
@@ -129,7 +246,7 @@ func (p *Provider) getInstance(ctx context.Context, name string) (*instance.Serv
 		project = &p.defaultProjectID
 	}
 
-	for _, zone := range p.zones {
+	for zone := range p.serverTypes {
 		req := instance.ListServersRequest{
 			Zone:    zone,
 			Project: project,
@@ -153,15 +270,11 @@ func (p *Provider) getInstance(ctx context.Context, name string) (*instance.Serv
 	return nil, nil
 }
 
-func (p *Provider) getAllInstances(ctx context.Context) ([]*instance.Server, error) {
-	if err := p.resolveZones(); err != nil {
-		return nil, err
-	}
-
+func (p *provider) getAllInstances(ctx context.Context) ([]*instance.Server, error) {
 	api := instance.NewAPI(p.client)
 	instances := make([]*instance.Server, 0)
 
-	for _, zone := range p.zones {
+	for zone := range p.serverTypes {
 		req := instance.ListServersRequest{
 			Zone:    zone,
 			Project: p.projectID,
@@ -182,15 +295,15 @@ func (p *Provider) getAllInstances(ctx context.Context) ([]*instance.Server, err
 	return instances, nil
 }
 
-func (p *Provider) createInstance(ctx context.Context, agent *woodpecker.Agent) (*instance.Server, error) {
-	if err := p.resolveZones(); err != nil {
-		return nil, err
-	}
-
+func (p *provider) createInstance(ctx context.Context, agent *woodpecker.Agent) (*instance.Server, error) {
 	// TODO(raskyld): Implement a well-balanced zone anti-affinity to spread instance
-	// 								evenly among zones for greater resilience.
+	// 					evenly among zones for greater resilience.
+	zones := make([]scw.Zone, 0, len(p.serverTypes))
+	for z := range p.serverTypes {
+		zones = append(zones, z)
+	}
 	random := rand.New(rand.NewSource(time.Now().Unix()))
-	zone := p.zones[random.Intn(len(p.zones))]
+	zone := zones[random.Intn(len(zones))]
 
 	api := instance.NewAPI(p.client)
 
@@ -220,7 +333,7 @@ func (p *Provider) createInstance(ctx context.Context, agent *woodpecker.Agent) 
 	return res.Server, nil
 }
 
-func (p *Provider) setCloudInit(ctx context.Context, agent *woodpecker.Agent, inst *instance.Server) error {
+func (p *provider) setCloudInit(ctx context.Context, agent *woodpecker.Agent, inst *instance.Server) error {
 	ud, err := cloudinit.RenderUserDataTemplate(p.config, agent, nil)
 	if err != nil {
 		return err
@@ -243,7 +356,7 @@ func (p *Provider) setCloudInit(ctx context.Context, agent *woodpecker.Agent, in
 	return nil
 }
 
-func (p *Provider) deleteInstance(ctx context.Context, inst *instance.Server) error {
+func (p *provider) deleteInstance(ctx context.Context, inst *instance.Server) error {
 	err := p.haltInstance(ctx, inst)
 	if err != nil {
 		return err
@@ -304,7 +417,7 @@ func (p *Provider) deleteInstance(ctx context.Context, inst *instance.Server) er
 	return errors.Join(errs...)
 }
 
-func (p *Provider) bootInstance(ctx context.Context, inst *instance.Server) (*instance.ServerActionResponse, error) {
+func (p *provider) bootInstance(ctx context.Context, inst *instance.Server) (*instance.ServerActionResponse, error) {
 	api := instance.NewAPI(p.client)
 
 	return api.ServerAction(&instance.ServerActionRequest{
@@ -314,7 +427,7 @@ func (p *Provider) bootInstance(ctx context.Context, inst *instance.Server) (*in
 	}, scw.WithContext(ctx))
 }
 
-func (p *Provider) haltInstance(ctx context.Context, inst *instance.Server) error {
+func (p *provider) haltInstance(ctx context.Context, inst *instance.Server) error {
 	api := instance.NewAPI(p.client)
 
 	return api.ServerActionAndWait(&instance.ServerActionAndWaitRequest{
@@ -324,7 +437,7 @@ func (p *Provider) haltInstance(ctx context.Context, inst *instance.Server) erro
 	}, scw.WithContext(ctx))
 }
 
-func (p *Provider) resolveZones() error {
+func (p *provider) resolveZones() error {
 	if p.region != nil {
 		if !p.region.Exists() {
 			return fmt.Errorf("%w: %s", ErrInvalidRegion, p.region.String())
@@ -346,15 +459,4 @@ func (p *Provider) resolveZones() error {
 	}
 
 	return nil
-}
-
-func (p *Provider) Capabilities(_ context.Context) ([]types.Capability, error) {
-	// TODO: actually call scaleway with it's config to see what's available
-	return []types.Capability{{
-		Platform: "linux/amd64",
-		Backend:  types.BackendDocker,
-	}, {
-		Platform: "linux/arm64",
-		Backend:  types.BackendDocker,
-	}}, nil
 }
