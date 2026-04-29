@@ -302,25 +302,19 @@ func (a *Autoscaler) Reconcile(ctx context.Context) error {
 		Int("running", len(queueInfo.Running)).
 		Msg("queue snapshot")
 
+	// planScaling already logs the per-bucket plan at debug level — we
+	// just dispatch.
 	for _, d := range a.planScaling(queueInfo.Pending, queueInfo.Running) {
-		if d.Delta > 0 {
-			log.Debug().
-				Str("platform", d.Bucket.Capability.Platform).
-				Str("backend", string(d.Bucket.Capability.Backend)).
-				Int("count", d.Delta).
-				Msg("starting additional agents")
-			if err := a.createAgents(ctx, d.Bucket, d.Delta); err != nil {
-				return fmt.Errorf("creating agents failed: %w", err)
-			}
-		} else {
-			log.Debug().
-				Str("platform", d.Bucket.Capability.Platform).
-				Str("backend", string(d.Bucket.Capability.Backend)).
-				Int("count", -d.Delta).
-				Msg("checking agents for draining")
-			if err := a.drainAgents(ctx, d.Bucket, -d.Delta); err != nil {
-				return fmt.Errorf("draining agents failed: %w", err)
-			}
+		var err error
+		switch {
+		case d.Delta > 0:
+			err = a.createAgents(ctx, d.Bucket, d.Delta)
+		case d.Delta < 0:
+			err = a.drainAgents(ctx, d.Bucket, -d.Delta)
+		}
+		if err != nil {
+			return fmt.Errorf("scaling bucket %s/%s: %w",
+				d.Bucket.Capability.Platform, d.Bucket.Capability.Backend, err)
 		}
 	}
 
