@@ -6,8 +6,11 @@ when:
 
 variables:
   - &buildx_plugin 'docker.io/woodpeckerci/plugin-docker-buildx:6.0.4'
-  - &repo 'woodpeckerci/autoscaler'
-  - &platforms 'linux/arm/v7,linux/arm64/v8,linux/amd64,linux/ppc64le'
+  - &buildx_settings
+    buildkit_oci_max_parallelism: 1
+    dockerfile: docker/Dockerfile
+    repo: 'woodpeckerci/autoscaler'
+    platforms: 'linux/arm/v7,linux/arm64/v8,linux/amd64,linux/ppc64le'
   - &golang_image 'docker.io/golang:1.26'
 
 steps:
@@ -19,10 +22,8 @@ steps:
   - name: dryrun
     image: *buildx_plugin
     settings:
-      dockerfile: docker/Dockerfile
+      <<: *buildx_settings
       dry_run: true
-      repo: *repo
-      platforms: *platforms
       tag: test
     when:
       - event: pull_request
@@ -30,9 +31,7 @@ steps:
   - name: publish-next
     image: *buildx_plugin
     settings:
-      dockerfile: docker/Dockerfile
-      repo: *repo
-      platforms: *platforms
+      <<: *buildx_settings
       tag: next
       username: woodpeckerbot
       password:
@@ -44,9 +43,7 @@ steps:
   - name: publish-tag
     image: *buildx_plugin
     settings:
-      dockerfile: docker/Dockerfile
-      repo: *repo
-      platforms: *platforms
+      <<: *buildx_settings
       tag: [latest, '${CI_COMMIT_TAG}']
       username: woodpeckerbot
       password:
