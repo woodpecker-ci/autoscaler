@@ -329,6 +329,7 @@ func Test_createAgents(t *testing.T) {
 		autoscaler := Autoscaler{
 			client:   client,
 			provider: provider,
+			agents:   map[string]*woodpecker.Agent{},
 			config:   &config.Config{PoolID: "1"},
 		}
 
@@ -383,14 +384,14 @@ func Test_createAgents(t *testing.T) {
 				"pool-1-agent-1": {
 					ID:         1,
 					Name:       "pool-1-agent-1",
-					Platform:   "linux/amd64",
+					Platform:   "linux/arm64",
 					Backend:    "docker",
 					NoSchedule: true,
 				},
 			},
 			config: &config.Config{PoolID: "1"},
 		}
-		client.On("AgentCreate", mock.Anything).Return(&woodpecker.Agent{Name: "pool-1-agent-1"}, nil)
+		client.On("AgentCreate", mock.Anything).Return(&woodpecker.Agent{Name: "pool-1-agent-2"}, nil)
 		provider.On("DeployAgent", ctx, mock.Anything, dockerAmd64Cap).Return(nil)
 		// AgentUpdate explicitly NOT expected — mock will fail the test
 		// if it's called.
