@@ -47,26 +47,6 @@ type Provider struct {
 }
 
 func New(_ context.Context, c *cli.Command, config *config.Config) (types.Provider, error) {
-	if !c.IsSet("scaleway-instance-type") {
-		return nil, fmt.Errorf("%w: scaleway-instance-type", ErrParameterNotSet)
-	}
-
-	if !c.IsSet("scaleway-tags") {
-		return nil, fmt.Errorf("%w: scaleway-tags", ErrParameterNotSet)
-	}
-
-	if !c.IsSet("scaleway-project") {
-		return nil, fmt.Errorf("%w: scaleway-project", ErrParameterNotSet)
-	}
-
-	if !c.IsSet("scaleway-secret-key") {
-		return nil, fmt.Errorf("%w: scaleway-secret-key", ErrParameterNotSet)
-	}
-
-	if !c.IsSet("scaleway-access-key") {
-		return nil, fmt.Errorf("%w: scaleway-access-key", ErrParameterNotSet)
-	}
-
 	p := &Provider{
 		secretKey:        c.String("scaleway-secret-key"),
 		accessKey:        c.String("scaleway-access-key"),

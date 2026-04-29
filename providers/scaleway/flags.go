@@ -18,6 +18,7 @@ var ProviderFlags = []cli.Flag{
 			cli.EnvVar("SCW_ACCESS_KEY"), // scaleway official naming
 			cli.File(os.Getenv("WOODPECKER_SCALEWAY_ACCESS_KEY_FILE")),
 		),
+		Required: true,
 		Category: category,
 	},
 	&cli.StringFlag{
@@ -28,6 +29,7 @@ var ProviderFlags = []cli.Flag{
 			cli.EnvVar("SCW_SECRET_KEY"), // scaleway official naming
 			cli.File(os.Getenv("WOODPECKER_SCALEWAY_SECRET_KEY_FILE")),
 		),
+		Required: true,
 		Category: category,
 	},
 	&cli.StringSliceFlag{
@@ -43,18 +45,21 @@ var ProviderFlags = []cli.Flag{
 		Name:     "scaleway-instance-type",
 		Usage:    "Scaleway instance type to spawn",
 		Sources:  cli.EnvVars("WOODPECKER_SCALEWAY_INSTANCE_TYPE"),
+		Required: true,
 		Category: category,
 	},
 	&cli.StringSliceFlag{
 		Name:     "scaleway-tags",
 		Usage:    "Comma separated list of tags to uniquely identify the instances spawned",
 		Sources:  cli.EnvVars("WOODPECKER_SCALEWAY_TAGS"),
+		Required: true,
 		Category: category,
 	},
 	&cli.StringFlag{
 		Name:     "scaleway-project",
 		Usage:    "Scaleway Project ID in which to spawn the instances",
 		Sources:  cli.EnvVars("WOODPECKER_SCALEWAY_PROJECT"),
+		Required: true,
 		Category: category,
 	},
 	&cli.StringFlag{
