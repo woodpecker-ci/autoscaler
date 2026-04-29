@@ -154,8 +154,8 @@ func Test_planScaling(t *testing.T) {
 		// agent — only need one more.
 		a := Autoscaler{
 			providerCapabilities: []types.Capability{dockerAmd64Cap},
-			agents: []*woodpecker.Agent{
-				{ID: 1, Name: "pool-1-agent-1", Platform: "linux/amd64", Backend: "docker"},
+			agents: map[string]*woodpecker.Agent{
+				"pool-1-agent-1": {ID: 1, Name: "pool-1-agent-1", Platform: "linux/amd64", Backend: "docker"},
 			},
 			config: &config.Config{
 				WorkflowsPerAgent: 1,
@@ -197,10 +197,10 @@ func Test_planScaling(t *testing.T) {
 		// two drains.
 		a := Autoscaler{
 			providerCapabilities: []types.Capability{dockerAmd64Cap},
-			agents: []*woodpecker.Agent{
-				{ID: 1, Name: "pool-1-agent-1", Platform: "linux/amd64", Backend: "docker"},
-				{ID: 2, Name: "pool-1-agent-2", Platform: "linux/amd64", Backend: "docker"},
-				{ID: 3, Name: "pool-1-agent-3", Platform: "linux/amd64", Backend: "docker"},
+			agents: map[string]*woodpecker.Agent{
+				"pool-1-agent-1": {ID: 1, Name: "pool-1-agent-1", Platform: "linux/amd64", Backend: "docker"},
+				"pool-1-agent-2": {ID: 2, Name: "pool-1-agent-2", Platform: "linux/amd64", Backend: "docker"},
+				"pool-1-agent-3": {ID: 3, Name: "pool-1-agent-3", Platform: "linux/amd64", Backend: "docker"},
 			},
 			config: &config.Config{
 				WorkflowsPerAgent: 1,
@@ -315,19 +315,6 @@ func Test_loadQueueSnapshot(t *testing.T) {
 	})
 }
 
-func Test_getPoolAgents(t *testing.T) {
-	autoscaler := Autoscaler{
-		agents: []*woodpecker.Agent{
-			{ID: 1, Name: "pool-1-agent-1", NoSchedule: false},
-			{ID: 2, Name: "pool-1-agent-2", NoSchedule: true},
-			{ID: 3, Name: "pool-1-agent-3", NoSchedule: false},
-		},
-	}
-
-	assert.Equal(t, 3, len(autoscaler.getPoolAgents(false)))
-	assert.Equal(t, 2, len(autoscaler.getPoolAgents(true)))
-}
-
 func Test_createAgents(t *testing.T) {
 	zerolog.SetGlobalLevel(zerolog.ErrorLevel)
 	bucket := agentBucket{
@@ -360,9 +347,10 @@ func Test_createAgents(t *testing.T) {
 		autoscaler := Autoscaler{
 			client:   client,
 			provider: provider,
-			agents: []*woodpecker.Agent{
-				{
+			agents: map[string]*woodpecker.Agent{
+				"pool-1-agent-1": {
 					ID:         1,
+					Name:       "pool-1-agent-1",
 					Platform:   "linux/amd64",
 					Backend:    "docker",
 					NoSchedule: true,
@@ -391,10 +379,11 @@ func Test_createAgents(t *testing.T) {
 		autoscaler := Autoscaler{
 			client:   client,
 			provider: provider,
-			agents: []*woodpecker.Agent{
-				{
+			agents: map[string]*woodpecker.Agent{
+				"pool-1-agent-1": {
 					ID:         1,
-					Platform:   "linux/arm64",
+					Name:       "pool-1-agent-1",
+					Platform:   "linux/amd64",
 					Backend:    "docker",
 					NoSchedule: true,
 				},
@@ -417,8 +406,14 @@ func Test_cleanupDanglingAgents(t *testing.T) {
 		client := mocks_server.NewMockClient(t)
 		provider := mocks_provider.NewMockProvider(t)
 		autoscaler := Autoscaler{
-			agents: []*woodpecker.Agent{
-				{ID: 1, Name: "pool-1-agent-1", NoSchedule: false},
+			agents: map[string]*woodpecker.Agent{
+				"pool-1-agent-1": {
+					ID:         1,
+					Name:       "pool-1-agent-1",
+					Platform:   "linux/amd64",
+					Backend:    "docker",
+					NoSchedule: false,
+				},
 			},
 			provider: provider,
 			client:   client,
@@ -436,8 +431,14 @@ func Test_cleanupDanglingAgents(t *testing.T) {
 		client := mocks_server.NewMockClient(t)
 		provider := mocks_provider.NewMockProvider(t)
 		autoscaler := Autoscaler{
-			agents: []*woodpecker.Agent{
-				{ID: 1, Name: "pool-1-agent-1", NoSchedule: false},
+			agents: map[string]*woodpecker.Agent{
+				"pool-1-agent-1": {
+					ID:         1,
+					Name:       "pool-1-agent-1",
+					Platform:   "linux/amd64",
+					Backend:    "docker",
+					NoSchedule: false,
+				},
 			},
 			provider: provider,
 			client:   client,
@@ -459,15 +460,15 @@ func Test_cleanupStaleAgents(t *testing.T) {
 		client := mocks_server.NewMockClient(t)
 		provider := mocks_provider.NewMockProvider(t)
 		autoscaler := Autoscaler{
-			agents: []*woodpecker.Agent{
-				{
+			agents: map[string]*woodpecker.Agent{
+				"active agent": {
 					ID:          1,
 					Name:        "active agent",
 					NoSchedule:  false,
 					Created:     time.Now().Add(-time.Minute * 20).Unix(),
 					LastContact: time.Now().Add(-time.Minute * 5).Unix(),
 				},
-				{
+				"never contacted agent": {
 					ID:          2,
 					Name:        "never contacted agent",
 					NoSchedule:  false,
@@ -497,15 +498,15 @@ func Test_cleanupStaleAgents(t *testing.T) {
 		client := mocks_server.NewMockClient(t)
 		provider := mocks_provider.NewMockProvider(t)
 		autoscaler := Autoscaler{
-			agents: []*woodpecker.Agent{
-				{
+			agents: map[string]*woodpecker.Agent{
+				"active agent": {
 					ID:          1,
 					Name:        "active agent",
 					NoSchedule:  false,
 					Created:     time.Now().Add(-time.Minute * 20).Unix(),
 					LastContact: time.Now().Add(-time.Minute * 5).Unix(),
 				},
-				{
+				"stale agent": {
 					ID:          2,
 					Name:        "stale agent",
 					NoSchedule:  false,
@@ -608,11 +609,11 @@ func Test_drainAgents(t *testing.T) {
 		client := mocks_server.NewMockClient(t)
 		provider := mocks_provider.NewMockProvider(t)
 		autoscaler := Autoscaler{
-			agents: []*woodpecker.Agent{
-				{ID: 1, Name: "pool-1-agent-1", Platform: "linux/amd64", Backend: "docker", LastContact: time.Now().Add(-time.Minute * 2).Unix()},
-				{ID: 2, Name: "pool-1-agent-2", Platform: "linux/amd64", Backend: "docker", NoSchedule: true, LastContact: time.Now().Add(-time.Minute * 2).Unix()},
-				{ID: 3, Name: "pool-1-agent-3", Platform: "linux/arm64", Backend: "docker", LastContact: time.Now().Add(-time.Minute * 2).Unix()},
-				{ID: 4, Name: "pool-1-agent-4", Platform: "linux/amd64", Backend: "docker", LastContact: time.Now().Add(-time.Minute * 2).Unix()},
+			agents: map[string]*woodpecker.Agent{
+				"pool-1-agent-1": {ID: 1, Name: "pool-1-agent-1", Platform: "linux/amd64", Backend: "docker", LastContact: time.Now().Add(-time.Minute * 2).Unix()},
+				"pool-1-agent-2": {ID: 2, Name: "pool-1-agent-2", Platform: "linux/amd64", Backend: "docker", NoSchedule: true, LastContact: time.Now().Add(-time.Minute * 2).Unix()},
+				"pool-1-agent-3": {ID: 3, Name: "pool-1-agent-3", Platform: "linux/arm64", Backend: "docker", LastContact: time.Now().Add(-time.Minute * 2).Unix()},
+				"pool-1-agent-4": {ID: 4, Name: "pool-1-agent-4", Platform: "linux/amd64", Backend: "docker", LastContact: time.Now().Add(-time.Minute * 2).Unix()},
 			},
 			provider: provider,
 			client:   client,
@@ -629,9 +630,9 @@ func Test_drainAgents(t *testing.T) {
 
 		err := autoscaler.drainAgents(ctx, bucket, 2)
 		assert.NoError(t, err)
-		assert.True(t, autoscaler.agents[0].NoSchedule)
-		assert.True(t, autoscaler.agents[3].NoSchedule)
-		assert.False(t, autoscaler.agents[2].NoSchedule, "wrong-bucket agent must not be drained")
+		assert.True(t, autoscaler.agents["pool-1-agent-1"].NoSchedule)
+		assert.True(t, autoscaler.agents["pool-1-agent-4"].NoSchedule)
+		assert.False(t, autoscaler.agents["pool-1-agent-3"].NoSchedule, "wrong-bucket agent must not be drained")
 	})
 
 	t.Run("does not drain an agent that never connected", func(t *testing.T) {
@@ -639,8 +640,8 @@ func Test_drainAgents(t *testing.T) {
 		client := mocks_server.NewMockClient(t)
 		provider := mocks_provider.NewMockProvider(t)
 		autoscaler := Autoscaler{
-			agents: []*woodpecker.Agent{
-				{ID: 1, Name: "pool-1-agent-1", Platform: "linux/amd64", Backend: "docker", LastContact: 0},
+			agents: map[string]*woodpecker.Agent{
+				"pool-1-agent-1": {ID: 1, Name: "pool-1-agent-1", Platform: "linux/amd64", Backend: "docker", LastContact: 0},
 			},
 			provider: provider,
 			client:   client,
@@ -651,7 +652,7 @@ func Test_drainAgents(t *testing.T) {
 
 		err := autoscaler.drainAgents(ctx, bucket, 1)
 		assert.NoError(t, err)
-		assert.False(t, autoscaler.agents[0].NoSchedule)
+		assert.False(t, autoscaler.agents["pool-1-agent-1"].NoSchedule)
 	})
 
 	t.Run("does not drain an agent that has recently done work", func(t *testing.T) {
@@ -659,8 +660,8 @@ func Test_drainAgents(t *testing.T) {
 		client := mocks_server.NewMockClient(t)
 		provider := mocks_provider.NewMockProvider(t)
 		autoscaler := Autoscaler{
-			agents: []*woodpecker.Agent{
-				{
+			agents: map[string]*woodpecker.Agent{
+				"pool-1-agent-1": {
 					ID:          1,
 					Name:        "pool-1-agent-1",
 					Platform:    "linux/amd64",
@@ -678,7 +679,7 @@ func Test_drainAgents(t *testing.T) {
 
 		err := autoscaler.drainAgents(ctx, bucket, 1)
 		assert.NoError(t, err)
-		assert.False(t, autoscaler.agents[0].NoSchedule)
+		assert.False(t, autoscaler.agents["pool-1-agent-1"].NoSchedule)
 	})
 }
 
@@ -688,10 +689,10 @@ func Test_removeDrainedAgents(t *testing.T) {
 		client := mocks_server.NewMockClient(t)
 		provider := mocks_provider.NewMockProvider(t)
 		autoscaler := Autoscaler{
-			agents: []*woodpecker.Agent{
-				{ID: 1, Name: "pool-1-agent-1", NoSchedule: false},
-				{ID: 2, Name: "pool-1-agent-2", NoSchedule: true},
-				{ID: 3, Name: "pool-1-agent-3", NoSchedule: false},
+			agents: map[string]*woodpecker.Agent{
+				"pool-1-agent-1": {ID: 1, Name: "pool-1-agent-1", NoSchedule: false},
+				"pool-1-agent-2": {ID: 2, Name: "pool-1-agent-2", NoSchedule: true},
+				"pool-1-agent-3": {ID: 3, Name: "pool-1-agent-3", NoSchedule: false},
 			},
 			provider: provider,
 			client:   client,
@@ -715,10 +716,10 @@ func Test_removeDrainedAgents(t *testing.T) {
 		client := mocks_server.NewMockClient(t)
 		provider := mocks_provider.NewMockProvider(t)
 		autoscaler := Autoscaler{
-			agents: []*woodpecker.Agent{
-				{ID: 1, Name: "pool-1-agent-1", NoSchedule: false},
-				{ID: 2, Name: "pool-1-agent-2", NoSchedule: true},
-				{ID: 3, Name: "pool-1-agent-3", NoSchedule: false},
+			agents: map[string]*woodpecker.Agent{
+				"pool-1-agent-1": {ID: 1, Name: "pool-1-agent-1", NoSchedule: false},
+				"pool-1-agent-2": {ID: 2, Name: "pool-1-agent-2", NoSchedule: true},
+				"pool-1-agent-3": {ID: 3, Name: "pool-1-agent-3", NoSchedule: false},
 			},
 			provider: provider,
 			client:   client,

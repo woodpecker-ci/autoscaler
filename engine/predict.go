@@ -86,7 +86,7 @@ func matchAgentToBucket(agent *woodpecker.Agent, buckets []agentBucket) int {
 func computeBucketStates(
 	buckets []agentBucket,
 	pending, running []woodpecker.Task,
-	poolAgents []*woodpecker.Agent,
+	poolAgents map[string]*woodpecker.Agent,
 ) (states []bucketState, unmatchedPending, unmatchedRunning int) {
 	states = make([]bucketState, len(buckets))
 	for i, b := range buckets {

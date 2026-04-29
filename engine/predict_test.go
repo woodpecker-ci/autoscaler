@@ -99,10 +99,11 @@ func Test_computeBucketStates(t *testing.T) {
 	running := []woodpecker.Task{
 		{Labels: map[string]string{"platform": "linux/arm64"}},
 	}
-	pool := []*woodpecker.Agent{
-		{ID: 1, Platform: "linux/amd64", Backend: "docker"},
-		{ID: 2, Platform: "linux/arm64", Backend: "docker", NoSchedule: true}, // drained, skipped
-		{ID: 3, Platform: "linux/arm64", Backend: "docker"},
+
+	pool := map[string]*woodpecker.Agent{
+		"pool-1-agent-1": {ID: 1, Name: "pool-1-agent-1", Platform: "linux/amd64", Backend: "docker"},
+		"pool-1-agent-2": {ID: 2, Name: "pool-1-agent-2", Platform: "linux/arm64", Backend: "docker", NoSchedule: true}, // drained, skipped
+		"pool-1-agent-3": {ID: 3, Name: "pool-1-agent-3", Platform: "linux/arm64", Backend: "docker"},
 	}
 
 	states, unmatchedPending, unmatchedRunning := computeBucketStates(buckets, pending, running, pool)
