@@ -94,7 +94,7 @@ func New(_ context.Context, c *cli.Command, config *config.Config) (types.Provid
 	return p, err
 }
 
-func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cap types.Capability) error {
+func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, _ types.Capability) error {
 	_, err := p.getInstance(ctx, agent.Name)
 	if err != nil {
 		return err

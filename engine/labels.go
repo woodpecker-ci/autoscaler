@@ -39,17 +39,17 @@ type agentLabelSet struct {
 // (matching exactly what the woodpecker agent self-reports on connect).
 // extraAgentLabels are merged on top, with the "!" prefix interpreted as
 // "mandatory key" per the woodpecker label rules.
-func agentLabelsFor(cap types.Capability, extraAgentLabels map[string]string) agentLabelSet {
+func agentLabelsFor(cb types.Capability, extraAgentLabels map[string]string) agentLabelSet {
 	out := agentLabelSet{
-		Labels:    make(map[string]string, 2+len(extraAgentLabels)),
+		Labels:    make(map[string]string, 2+len(extraAgentLabels)), //nolint:mnd
 		Mandatory: make(map[string]struct{}),
 	}
 
-	if cap.Platform != "" {
-		out.Labels["platform"] = cap.Platform
+	if cb.Platform != "" {
+		out.Labels["platform"] = cb.Platform
 	}
-	if cap.Backend != "" {
-		out.Labels["backend"] = string(cap.Backend)
+	if cb.Backend != "" {
+		out.Labels["backend"] = string(cb.Backend)
 	}
 
 	for k, v := range extraAgentLabels {

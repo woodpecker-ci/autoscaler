@@ -176,7 +176,7 @@ func (a *Autoscaler) planScaling(snap queueSnapshot) []bucketDecision {
 	}
 
 	// Apply the global Min/Max caps. Distribute the remaining
-	// scale-up/scale-down budget across buckets, prioritising the ones
+	// scale-up/scale-down budget across buckets, prioritizing the ones
 	// with the largest absolute demand so the most-loaded buckets are
 	// served first.
 	totalOnline := 0

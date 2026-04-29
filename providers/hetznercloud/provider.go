@@ -73,7 +73,7 @@ func New(_ context.Context, c *cli.Command, config *config.Config) (types.Provid
 	return p, nil
 }
 
-func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cap types.Capability) error {
+func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cb types.Capability) error {
 	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, p.userDataTemplate)
 	if err != nil {
 		return fmt.Errorf("%s: cloudinit.RenderUserDataTemplate: %w", p.name, err)
@@ -146,7 +146,7 @@ func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cap
 		// platforms we returned from Capabilities, so a mismatch here just
 		// means this entry is for a different arch in the fallback chain.
 		platform := "linux/" + hcloudArchToGoArch(serverType.Architecture)
-		if platform != cap.Platform {
+		if platform != cb.Platform {
 			continue
 		}
 
@@ -162,7 +162,7 @@ func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cap
 	}
 
 	if len(candidates) == 0 {
-		return fmt.Errorf("%s: %w: %s", p.name, ErrNoMatchingServerType, cap.Platform)
+		return fmt.Errorf("%s: %w: %s", p.name, ErrNoMatchingServerType, cb.Platform)
 	}
 
 	for i, c := range candidates {
@@ -256,7 +256,7 @@ func (p *Provider) Capabilities(ctx context.Context) ([]types.Capability, error)
 
 		// Skip entries whose location doesn't actually offer this server
 		// type (or where it's deprecated there). This prevents us from
-		// advertising a capability we can't fulfil.
+		// advertising a capability we can't fulfill.
 		if !serverTypeSupportsLocation(st, location) {
 			log.Warn().Msgf(
 				"skipping server type %s in %s when computing capabilities: %s",
