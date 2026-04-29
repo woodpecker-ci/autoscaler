@@ -323,15 +323,48 @@ func (a *Autoscaler) getQueueInfo(_ context.Context) (freeTasks, runningTasks, p
 	return queueInfo.Stats.Workers, running, pending, nil
 }
 
-func (a *Autoscaler) calcAgents(ctx context.Context) (float64, error) {
-	freeTasks, runningTasks, pendingTasks, err := a.getQueueInfo(ctx)
-	if err != nil {
-		return 0, err
-	}
+// queueDemand is the autoscaler's view of how much work is sitting in (or
+// running through) the woodpecker server queue. It is intentionally a small
+// value type so the load step (talking to woodpecker) can be tested
+// independently from the scaling math.
+type queueDemand struct {
+	// Free is the number of free worker slots already available across
+	// agents that are connected and not draining.
+	Free int
+	// Running is the number of tasks currently running.
+	Running int
+	// Pending is the number of tasks waiting for an agent to pick them up.
+	Pending int
+}
 
-	log.Debug().Msgf("queue info: freeTasks = %v runningTasks = %v pendingTasks = %v", freeTasks, runningTasks, pendingTasks)
-	availableAgents := math.Ceil(float64(freeTasks+runningTasks) / float64((a.config.WorkflowsPerAgent)))
-	reqAgents := math.Ceil(float64(pendingTasks+runningTasks) / float64(a.config.WorkflowsPerAgent))
+// loadQueueDemand fetches the current queue snapshot from the woodpecker
+// server and applies any operator-configured FilterLabels filter on top.
+//
+// This is a thin wrapper around getQueueInfo that exists so future iterations
+// can grow the demand model (e.g. per-capability buckets) without touching
+// the scaling math in calcAgentDelta.
+func (a *Autoscaler) loadQueueDemand(ctx context.Context) (queueDemand, error) {
+	free, running, pending, err := a.getQueueInfo(ctx)
+	if err != nil {
+		return queueDemand{}, err
+	}
+	return queueDemand{Free: free, Running: running, Pending: pending}, nil
+}
+
+// calcAgentDelta turns a queue demand snapshot plus the current pool size
+// into a desired delta — positive means "scale up by N", negative means
+// "scale down by N", zero means "leave the pool alone". It clamps the result
+// to the configured min/max bounds.
+//
+// This function is deliberately pure: it only depends on the snapshot, the
+// current pool size and the configured limits/divisor. That makes it easy to
+// unit-test, and it gives us the seam where capability- and label-aware
+// scheduling will plug in: a future iteration will replace the single
+// (free, running, pending) triple with per-bucket counts and run the same
+// math per bucket, summing the per-bucket deltas back together.
+func (a *Autoscaler) calcAgentDelta(d queueDemand) float64 {
+	availableAgents := math.Ceil(float64(d.Free+d.Running) / float64(a.config.WorkflowsPerAgent))
+	reqAgents := math.Ceil(float64(d.Pending+d.Running) / float64(a.config.WorkflowsPerAgent))
 
 	availablePoolAgents := len(a.getPoolAgents(true))
 	maxUp := float64(a.config.MaxAgents - availablePoolAgents)
@@ -341,9 +374,20 @@ func (a *Autoscaler) calcAgents(ctx context.Context) (float64, error) {
 	reqPoolAgents = math.Max(reqPoolAgents, -maxDown)
 	reqPoolAgents = math.Min(reqPoolAgents, maxUp)
 
-	log.Debug().Msgf("capacity info: agents = %v/%v pool = %v/%v limits = %v/%v", availableAgents, reqAgents, availablePoolAgents, reqPoolAgents, maxUp, maxDown)
+	log.Debug().Msgf("capacity info: agents = %v/%v pool = %v/%v limits = %v/%v",
+		availableAgents, reqAgents, availablePoolAgents, reqPoolAgents, maxUp, maxDown)
 
-	return reqPoolAgents, nil
+	return reqPoolAgents
+}
+
+func (a *Autoscaler) calcAgents(ctx context.Context) (float64, error) {
+	d, err := a.loadQueueDemand(ctx)
+	if err != nil {
+		return 0, err
+	}
+	log.Debug().Msgf("queue info: freeTasks = %v runningTasks = %v pendingTasks = %v",
+		d.Free, d.Running, d.Pending)
+	return a.calcAgentDelta(d), nil
 }
 
 // Reconcile periodically checks the status of the agent pool and adjusts it to match
