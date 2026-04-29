@@ -82,11 +82,10 @@ func New(_ context.Context, c *cli.Command, config *config.Config) (types.Provid
 		config:           config,
 	}
 
-	zone := scw.Zone(c.String("scaleway-zone"))
-	if !zone.Exists() {
-		return nil, fmt.Errorf("%w: %s", ErrInvalidZone, zone.String())
+	rawZones := c.StringSlice("scaleway-zones")
+	for _, z := range rawZones {
+		p.zones = append(p.zones, scw.Zone(z))
 	}
-	p.zones = []scw.Zone{zone}
 
 	var err error
 	p.client, err = scw.NewClient(scw.WithDefaultProjectID(p.defaultProjectID), scw.WithAuth(p.accessKey, p.secretKey))

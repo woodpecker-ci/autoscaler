@@ -3,7 +3,6 @@ package scaleway
 import (
 	"os"
 
-	"github.com/scaleway/scaleway-sdk-go/scw"
 	"github.com/urfave/cli/v3"
 )
 
@@ -16,6 +15,7 @@ var ProviderFlags = []cli.Flag{
 		Usage: "Scaleway IAM API Token Access Key",
 		Sources: cli.NewValueSourceChain(
 			cli.EnvVar("WOODPECKER_SCALEWAY_ACCESS_KEY"),
+			cli.EnvVar("SCW_ACCESS_KEY"), // scaleway official naming
 			cli.File(os.Getenv("WOODPECKER_SCALEWAY_ACCESS_KEY_FILE")),
 		),
 		Category: category,
@@ -25,17 +25,20 @@ var ProviderFlags = []cli.Flag{
 		Usage: "Scaleway IAM API Token Secret Key",
 		Sources: cli.NewValueSourceChain(
 			cli.EnvVar("WOODPECKER_SCALEWAY_SECRET_KEY"),
+			cli.EnvVar("SCW_SECRET_KEY"), // scaleway official naming
 			cli.File(os.Getenv("WOODPECKER_SCALEWAY_SECRET_KEY_FILE")),
 		),
 		Category: category,
 	},
 	// TODO(raskyld): implement multi-AZ
-	&cli.StringFlag{
-		Name:     "scaleway-zone",
-		Usage:    "Scaleway zone where to spawn instances",
-		Sources:  cli.EnvVars("WOODPECKER_SCALEWAY_ZONE"),
-		Category: category,
-		Value:    scw.ZoneFrPar2.String(),
+	&cli.StringSliceFlag{
+		Name:      "scaleway-zones",
+		Aliases:   []string{"scaleway-zone"},
+		Usage:     "Scaleway zone where to spawn instances",
+		Sources:   cli.EnvVars("WOODPECKER_SCALEWAY_ZONES", "WOODPECKER_SCALEWAY_ZONE"),
+		Category:  category,
+		Value:     allZones(),
+		Validator: zoneValidator,
 	},
 	&cli.StringFlag{
 		Name:     "scaleway-instance-type",
