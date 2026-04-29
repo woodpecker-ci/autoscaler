@@ -94,6 +94,8 @@ func (p *provider) printResolvedConfig() {
 
 	log.Info().
 		Str("name", p.image.Name).
+		Str("family", p.image.Family).
+		Str("arch", p.image.Arch).
 		Msg("deploy with image")
 }
 
