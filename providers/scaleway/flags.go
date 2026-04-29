@@ -30,7 +30,6 @@ var ProviderFlags = []cli.Flag{
 		),
 		Category: category,
 	},
-	// TODO(raskyld): implement multi-AZ
 	&cli.StringSliceFlag{
 		Name:      "scaleway-zones",
 		Aliases:   []string{"scaleway-zone"},
