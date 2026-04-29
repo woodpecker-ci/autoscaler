@@ -28,7 +28,7 @@ var ProviderFlags = []cli.Flag{
 	// TODO: Deprecated remove in v2.0
 	&cli.StringFlag{
 		Name:     "hetznercloud-location",
-		Value:    "nbg1",
+		Value:    "",
 		Usage:    "hetzner cloud location (deprecated)",
 		Sources:  cli.EnvVars("WOODPECKER_HETZNERCLOUD_LOCATION"),
 		Category: category,
@@ -41,7 +41,7 @@ var ProviderFlags = []cli.Flag{
 	},
 	&cli.StringFlag{
 		Name:     "hetznercloud-image",
-		Value:    "ubuntu-22.04",
+		Value:    "ubuntu-24.04",
 		Usage:    "hetzner cloud image",
 		Sources:  cli.EnvVars("WOODPECKER_HETZNERCLOUD_IMAGE"),
 		Category: category,
