@@ -15,30 +15,6 @@ import (
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
 
-// MockClient is a thin canned-response woodpecker client used by the
-// queue/scheduling tests. The Pending and Running slices are returned
-// verbatim from QueueInfo, and Stats counts are derived from len(slice)
-// so the snapshot is internally consistent (the legacy mock returned
-// mismatched scalar Stats vs. one-element slices, which made it useless
-// for any test that actually walks the task list).
-type MockClient struct {
-	workers int
-	pending []woodpecker.Task
-	running []woodpecker.Task
-	woodpecker.Client
-}
-
-func (m MockClient) QueueInfo() (*woodpecker.Info, error) {
-	info := &woodpecker.Info{
-		Pending: m.pending,
-		Running: m.running,
-	}
-	info.Stats.Workers = m.workers
-	info.Stats.Pending = len(m.pending)
-	info.Stats.Running = len(m.running)
-	return info, nil
-}
-
 var (
 	dockerAmd64Cap = types.Capability{Platform: "linux/amd64", Backend: types.BackendDocker}
 	dockerArm64Cap = types.Capability{Platform: "linux/arm64", Backend: types.BackendDocker}
@@ -61,12 +37,10 @@ func Test_planScaling(t *testing.T) {
 				MinAgents:         0,
 			},
 		}
-		decisions := a.planScaling(queueSnapshot{
-			Pending: []woodpecker.Task{
-				taskWithLabels(map[string]string{"platform": "linux/amd64"}),
-				taskWithLabels(map[string]string{"platform": "linux/amd64"}),
-			},
-		})
+		decisions := a.planScaling([]woodpecker.Task{
+			taskWithLabels(map[string]string{"platform": "linux/amd64"}),
+			taskWithLabels(map[string]string{"platform": "linux/amd64"}),
+		}, nil)
 		assert.Len(t, decisions, 1)
 		assert.Equal(t, dockerAmd64Cap, decisions[0].Bucket.Capability)
 		assert.Equal(t, 2, decisions[0].Delta)
@@ -84,11 +58,9 @@ func Test_planScaling(t *testing.T) {
 				MinAgents:         0,
 			},
 		}
-		decisions := a.planScaling(queueSnapshot{
-			Pending: []woodpecker.Task{
-				taskWithLabels(map[string]string{"backend": "local"}),
-			},
-		})
+		decisions := a.planScaling([]woodpecker.Task{
+			taskWithLabels(map[string]string{"backend": "local"}),
+		}, nil)
 		assert.Empty(t, decisions, "must not scale for unschedulable tasks")
 	})
 
@@ -101,12 +73,10 @@ func Test_planScaling(t *testing.T) {
 				MinAgents:         0,
 			},
 		}
-		decisions := a.planScaling(queueSnapshot{
-			Pending: []woodpecker.Task{
-				taskWithLabels(map[string]string{"platform": "linux/amd64"}),
-				taskWithLabels(map[string]string{"platform": "linux/arm64"}),
-			},
-		})
+		decisions := a.planScaling([]woodpecker.Task{
+			taskWithLabels(map[string]string{"platform": "linux/amd64"}),
+			taskWithLabels(map[string]string{"platform": "linux/arm64"}),
+		}, nil)
 		assert.Len(t, decisions, 2)
 		seen := map[string]int{}
 		for _, d := range decisions {
@@ -129,22 +99,18 @@ func Test_planScaling(t *testing.T) {
 			},
 		}
 		// Task that doesn't mention gpu -> not scheduled.
-		decisions := a.planScaling(queueSnapshot{
-			Pending: []woodpecker.Task{
-				taskWithLabels(map[string]string{"platform": "linux/amd64"}),
-			},
-		})
+		decisions := a.planScaling([]woodpecker.Task{
+			taskWithLabels(map[string]string{"platform": "linux/amd64"}),
+		}, nil)
 		assert.Empty(t, decisions)
 
 		// Task that explicitly asks for gpu=true -> scheduled.
-		decisions = a.planScaling(queueSnapshot{
-			Pending: []woodpecker.Task{
-				taskWithLabels(map[string]string{
-					"platform": "linux/amd64",
-					"gpu":      "true",
-				}),
-			},
-		})
+		decisions = a.planScaling([]woodpecker.Task{
+			taskWithLabels(map[string]string{
+				"platform": "linux/amd64",
+				"gpu":      "true",
+			}),
+		}, nil)
 		assert.Len(t, decisions, 1)
 		assert.Equal(t, 1, decisions[0].Delta)
 	})
@@ -163,12 +129,10 @@ func Test_planScaling(t *testing.T) {
 				MinAgents:         0,
 			},
 		}
-		decisions := a.planScaling(queueSnapshot{
-			Pending: []woodpecker.Task{
-				taskWithLabels(map[string]string{"platform": "linux/amd64"}),
-				taskWithLabels(map[string]string{"platform": "linux/amd64"}),
-			},
-		})
+		decisions := a.planScaling([]woodpecker.Task{
+			taskWithLabels(map[string]string{"platform": "linux/amd64"}),
+			taskWithLabels(map[string]string{"platform": "linux/amd64"}),
+		}, nil)
 		assert.Len(t, decisions, 1)
 		assert.Equal(t, 1, decisions[0].Delta)
 	})
@@ -187,7 +151,7 @@ func Test_planScaling(t *testing.T) {
 		for i := range pending {
 			pending[i] = taskWithLabels(map[string]string{"platform": "linux/amd64"})
 		}
-		decisions := a.planScaling(queueSnapshot{Pending: pending})
+		decisions := a.planScaling(pending, nil)
 		assert.Len(t, decisions, 1)
 		assert.Equal(t, 3, decisions[0].Delta)
 	})
@@ -208,7 +172,7 @@ func Test_planScaling(t *testing.T) {
 				MinAgents:         1,
 			},
 		}
-		decisions := a.planScaling(queueSnapshot{})
+		decisions := a.planScaling(nil, nil)
 		assert.Len(t, decisions, 1)
 		assert.Equal(t, -2, decisions[0].Delta)
 	})
@@ -221,9 +185,7 @@ func Test_planScaling(t *testing.T) {
 				MinAgents:         0,
 			},
 		}
-		decisions := a.planScaling(queueSnapshot{
-			Pending: []woodpecker.Task{taskWithLabels(nil)},
-		})
+		decisions := a.planScaling([]woodpecker.Task{taskWithLabels(nil)}, nil)
 		assert.Nil(t, decisions)
 	})
 
@@ -237,11 +199,9 @@ func Test_planScaling(t *testing.T) {
 				ExtraAgentLabels:  map[string]string{"region": "*"},
 			},
 		}
-		decisions := a.planScaling(queueSnapshot{
-			Pending: []woodpecker.Task{
-				taskWithLabels(map[string]string{"region": "europe"}),
-			},
-		})
+		decisions := a.planScaling([]woodpecker.Task{
+			taskWithLabels(map[string]string{"region": "europe"}),
+		}, nil)
 		assert.Len(t, decisions, 1)
 		assert.Equal(t, 1, decisions[0].Delta)
 	})
@@ -260,58 +220,9 @@ func Test_planScaling(t *testing.T) {
 		for i := range pending {
 			pending[i] = taskWithLabels(map[string]string{"platform": "linux/amd64"})
 		}
-		decisions := a.planScaling(queueSnapshot{Pending: pending})
+		decisions := a.planScaling(pending, nil)
 		assert.Len(t, decisions, 1)
 		assert.Equal(t, 2, decisions[0].Delta)
-	})
-}
-
-func Test_loadQueueSnapshot(t *testing.T) {
-	zerolog.SetGlobalLevel(zerolog.ErrorLevel)
-
-	t.Run("returns all tasks unfiltered", func(t *testing.T) {
-		a := Autoscaler{
-			client: &MockClient{
-				workers: 1,
-				pending: []woodpecker.Task{
-					taskWithLabels(map[string]string{"arch": "amd64"}),
-					taskWithLabels(map[string]string{"arch": "arm64"}),
-				},
-			},
-			config: &config.Config{},
-		}
-		snap, err := a.loadQueueSnapshot(t.Context())
-		assert.NoError(t, err)
-		assert.Equal(t, 1, snap.Free)
-		assert.Len(t, snap.Pending, 2)
-	})
-
-	t.Run("FilterLabels narrows pending and running tasks", func(t *testing.T) {
-		a := Autoscaler{
-			client: &MockClient{
-				pending: []woodpecker.Task{
-					taskWithLabels(map[string]string{"arch": "amd64"}),
-					taskWithLabels(map[string]string{"arch": "arm64"}),
-				},
-			},
-			config: &config.Config{
-				FilterLabels: "arch=amd64",
-			},
-		}
-		snap, err := a.loadQueueSnapshot(t.Context())
-		assert.NoError(t, err)
-		assert.Len(t, snap.Pending, 1)
-	})
-
-	t.Run("malformed FilterLabels errors out", func(t *testing.T) {
-		a := Autoscaler{
-			client: &MockClient{},
-			config: &config.Config{
-				FilterLabels: "malformed",
-			},
-		}
-		_, err := a.loadQueueSnapshot(t.Context())
-		assert.Error(t, err)
 	})
 }
 

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"regexp"
-	"strings"
 	"time"
 
 	"github.com/rs/zerolog/log"
@@ -284,48 +283,6 @@ func (a *Autoscaler) cleanupStaleAgents(ctx context.Context) error {
 	return nil
 }
 
-// queueSnapshot is the full task-level view of the queue used for
-// bucket-aware scheduling. It carries the actual pending/running task
-// lists (so we can match each task's labels against an agent bucket) plus
-// the global free-worker count reported by the server.
-type queueSnapshot struct {
-	Free    int
-	Pending []woodpecker.Task
-	Running []woodpecker.Task
-}
-
-// loadQueueSnapshot fetches the queue and applies any operator-configured
-// FilterLabels filter, returning the surviving pending and running tasks
-// alongside the free-worker count.
-//
-// FilterLabels is a coarse pre-filter retained for backwards compat;
-// fine-grained per-bucket filtering happens later in planScaling using
-// each bucket's full label set.
-func (a *Autoscaler) loadQueueSnapshot(_ context.Context) (queueSnapshot, error) {
-	queueInfo, err := a.client.QueueInfo()
-	if err != nil {
-		return queueSnapshot{}, fmt.Errorf("error from QueueInfo: %s", err.Error())
-	}
-
-	pending := queueInfo.Pending
-	running := queueInfo.Running
-
-	if a.config.FilterLabels != "" {
-		key, value, ok := strings.Cut(a.config.FilterLabels, "=")
-		if !ok {
-			return queueSnapshot{}, fmt.Errorf("invalid labels filter: %s", a.config.FilterLabels)
-		}
-		pending = filterTasksByLabel(pending, key, value)
-		running = filterTasksByLabel(running, key, value)
-	}
-
-	return queueSnapshot{
-		Free:    queueInfo.Stats.Workers,
-		Pending: pending,
-		Running: running,
-	}, nil
-}
-
 // Reconcile periodically checks the status of the agent pool and adjusts
 // it to match the desired capacity based on the current queue state.
 //
@@ -339,17 +296,16 @@ func (a *Autoscaler) Reconcile(ctx context.Context) error {
 		return fmt.Errorf("loading agents failed: %w", err)
 	}
 
-	snap, err := a.loadQueueSnapshot(ctx)
+	queueInfo, err := a.client.QueueInfo()
 	if err != nil {
-		return fmt.Errorf("loading queue snapshot failed: %w", err)
+		return fmt.Errorf("loading queue info failed: %w", err)
 	}
 	log.Debug().
-		Int("free", snap.Free).
-		Int("pending", len(snap.Pending)).
-		Int("running", len(snap.Running)).
+		Int("pending", len(queueInfo.Pending)).
+		Int("running", len(queueInfo.Running)).
 		Msg("queue snapshot")
 
-	for _, d := range a.planScaling(snap) {
+	for _, d := range a.planScaling(queueInfo.Pending, queueInfo.Running) {
 		if d.Delta > 0 {
 			log.Debug().
 				Str("platform", d.Bucket.Capability.Platform).
@@ -387,14 +343,4 @@ func (a *Autoscaler) Reconcile(ctx context.Context) error {
 	}
 
 	return nil
-}
-
-func filterTasksByLabel(jobs []woodpecker.Task, labelKey, labelValue string) []woodpecker.Task {
-	out := make([]woodpecker.Task, 0, len(jobs))
-	for _, job := range jobs {
-		if val, ok := job.Labels[labelKey]; ok && val == labelValue {
-			out = append(out, job)
-		}
-	}
-	return out
 }

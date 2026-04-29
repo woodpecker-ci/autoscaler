@@ -149,7 +149,7 @@ func rawDelta(s bucketState, workflowsPerAgent int) int {
 // When no provider capabilities are available (e.g. the provider couldn't
 // be queried) planScaling returns nil and logs — there is no safe way to
 // scale without knowing what we can deploy.
-func (a *Autoscaler) planScaling(snap queueSnapshot) []bucketDecision {
+func (a *Autoscaler) planScaling(pending, running []woodpecker.Task) []bucketDecision {
 	buckets := a.agentBuckets()
 	if len(buckets) == 0 {
 		log.Warn().Msg("no provider capabilities known; skipping scale decision")
@@ -157,7 +157,7 @@ func (a *Autoscaler) planScaling(snap queueSnapshot) []bucketDecision {
 	}
 
 	states, unmatchedPending, unmatchedRunning := computeBucketStates(
-		buckets, snap.Pending, snap.Running, a.agents,
+		buckets, pending, running, a.agents,
 	)
 
 	if unmatchedPending > 0 {
