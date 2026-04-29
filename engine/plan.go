@@ -87,21 +87,22 @@ func allocateBudget(states []bucketState, rawDeltas []int, minAgents, maxAgents 
 	for _, s := range states {
 		totalOnline += s.PoolAgents
 	}
-	upBudget := maxAgents - totalOnline
-	if upBudget < 0 {
-		upBudget = 0
-	}
-	downBudget := totalOnline - minAgents
-	if downBudget < 0 {
-		downBudget = 0
-	}
+	upBudget := max(maxAgents-totalOnline, 0)
+	downBudget := max(totalOnline-minAgents, 0)
 
 	order := make([]int, len(states))
 	for i := range order {
 		order[i] = i
 	}
 	sort.SliceStable(order, func(i, j int) bool {
-		return abs(rawDeltas[order[i]]) > abs(rawDeltas[order[j]])
+		ai, aj := rawDeltas[order[i]], rawDeltas[order[j]]
+		if ai < 0 {
+			ai = -ai
+		}
+		if aj < 0 {
+			aj = -aj
+		}
+		return ai > aj
 	})
 
 	finalDeltas := make([]int, len(states))
@@ -109,33 +110,17 @@ func allocateBudget(states []bucketState, rawDeltas []int, minAgents, maxAgents 
 		raw := rawDeltas[idx]
 		switch {
 		case raw > 0:
-			grant := raw
-			if grant > upBudget {
-				grant = upBudget
-			}
+			grant := min(raw, upBudget)
 			finalDeltas[idx] = grant
 			upBudget -= grant
 		case raw < 0:
-			// We can drain at most |raw| agents from this bucket, at most
-			// this bucket's own PoolAgents (can't drain what isn't there),
+			// Drain at most |raw| agents from this bucket, at most this
+			// bucket's own PoolAgents (can't drain what isn't there),
 			// and at most the global downBudget.
-			want := -raw
-			if want > states[idx].PoolAgents {
-				want = states[idx].PoolAgents
-			}
-			if want > downBudget {
-				want = downBudget
-			}
+			want := min(-raw, states[idx].PoolAgents, downBudget)
 			finalDeltas[idx] = -want
 			downBudget -= want
 		}
 	}
 	return finalDeltas
-}
-
-func abs(x int) int {
-	if x < 0 {
-		return -x
-	}
-	return x
 }
