@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.4.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.4.0) - 2026-04-26
+## [1.4.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.4.0) - 2026-04-29
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -17,6 +17,7 @@
 
 ### 📦️ Dependency
 
+- fix(deps): update module github.com/hetznercloud/hcloud-go/v2 to v2.39.0 [[#599](https://github.com/woodpecker-ci/autoscaler/pull/599)]
 - fix(deps): update golang deps non-major [[#591](https://github.com/woodpecker-ci/autoscaler/pull/591)]
 - fix(deps): update module github.com/vultr/govultr/v3 to v3.31.1 [[#589](https://github.com/woodpecker-ci/autoscaler/pull/589)]
 
