@@ -44,7 +44,7 @@ var ProviderFlags = []cli.Flag{
 	},
 	&cli.StringFlag{
 		Name:     "equinixmetal-operating-system",
-		Value:    "ubuntu_22_04",
+		Value:    "ubuntu_24_04",
 		Usage:    "Equinix Metal operating system slug",
 		Sources:  cli.EnvVars("WOODPECKER_EQUINIXMETAL_OPERATING_SYSTEM"),
 		Category: category,

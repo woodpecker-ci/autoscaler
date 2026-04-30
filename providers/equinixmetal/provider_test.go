@@ -63,7 +63,7 @@ func TestDeployAgentCreatesDeviceWithExpectedFields(t *testing.T) {
 		projectID:    "project-123",
 		metro:        "sv",
 		plans:        []string{"c3.small.x86"},
-		operatingSys: "ubuntu_22_04",
+		operatingSys: "ubuntu_24_04",
 		billingCycle: "hourly",
 		tags: []string{
 			"team=ci",
@@ -88,7 +88,7 @@ func TestDeployAgentCreatesDeviceWithExpectedFields(t *testing.T) {
 	assert.Equal(t, "agent-1", got.Hostname)
 	assert.Equal(t, "project-123", got.ProjectID)
 	assert.Equal(t, "c3.small.x86", got.Plan)
-	assert.Equal(t, "ubuntu_22_04", got.OS)
+	assert.Equal(t, "ubuntu_24_04", got.OS)
 	assert.Equal(t, "hourly", got.BillingCycle)
 	assert.Equal(t, "sv", got.Metro)
 	assert.Empty(t, got.Facility)
@@ -190,7 +190,7 @@ func TestValidateRequiresExactlyOneLocation(t *testing.T) {
 			provider: Provider{
 				projectID:    "project-123",
 				plans:        []string{"c3.small.x86"},
-				operatingSys: "ubuntu_22_04",
+				operatingSys: "ubuntu_24_04",
 			},
 			wantErr: ErrLocationRequired,
 		},
@@ -199,7 +199,7 @@ func TestValidateRequiresExactlyOneLocation(t *testing.T) {
 			provider: Provider{
 				projectID:    "project-123",
 				plans:        []string{"c3.small.x86"},
-				operatingSys: "ubuntu_22_04",
+				operatingSys: "ubuntu_24_04",
 				metro:        "sv",
 				facility:     []string{"sv15"},
 			},
@@ -219,7 +219,7 @@ func TestValidateRejectsReservedTagPrefix(t *testing.T) {
 	p := Provider{
 		projectID:    "project-123",
 		plans:        []string{"c3.small.x86"},
-		operatingSys: "ubuntu_22_04",
+		operatingSys: "ubuntu_24_04",
 		metro:        "sv",
 		tags:         []string{engine.LabelPool + "=override"},
 	}
