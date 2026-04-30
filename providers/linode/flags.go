@@ -33,13 +33,6 @@ var ProviderFlags = []cli.Flag{
 		Sources:  cli.EnvVars("WOODPECKER_LINODE_INSTANCE_TYPE"),
 		Category: category,
 	},
-	&cli.IntFlag{
-		Name:     "linode-stackscript-id",
-		Value:    1227924,
-		Usage:    "Linode Stackscript ID (set to -1 to use the beta user-data feature instead)",
-		Sources:  cli.EnvVars("WOODPECKER_LINODE_STACKSCRIPT_ID"),
-		Category: category,
-	},
 	&cli.StringFlag{
 		Name:     "linode-ssh-key",
 		Usage:    "Name of Linode cloud ssh key",
@@ -52,19 +45,9 @@ var ProviderFlags = []cli.Flag{
 		Sources:  cli.EnvVars("WOODPECKER_LINODE_ROOT_PASS"),
 		Category: category,
 	},
-	// TODO: Deprecated remove in v2.0
-	&cli.StringFlag{
-		Name:  "linode-user-data",
-		Usage: "Linode userdata template (deprecated)",
-		Sources: cli.NewValueSourceChain(
-			cli.EnvVar("WOODPECKER_LINODE_USERDATA"),
-			cli.File(os.Getenv("WOODPECKER_LINODE_USERDATA_FILE")),
-		),
-		Category: category,
-	},
 	&cli.StringFlag{
 		Name:     "linode-image",
-		Value:    "linode/ubuntu22.04",
+		Value:    "linode/ubuntu24.04",
 		Usage:    "Linode OS image",
 		Sources:  cli.EnvVars("WOODPECKER_LINODE_IMAGE"),
 		Category: category,
