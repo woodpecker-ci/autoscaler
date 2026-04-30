@@ -9,7 +9,6 @@ import (
 	"text/template"
 
 	"github.com/packethost/packngo"
-	"github.com/rs/zerolog/log"
 	"github.com/urfave/cli/v3"
 
 	"go.woodpecker-ci.org/autoscaler/config"
@@ -21,7 +20,7 @@ import (
 
 var (
 	ErrProjectIDRequired    = errors.New("project ID is required")
-	ErrPlanRequired         = errors.New("plan is required")
+	ErrPlanRequired         = errors.New("at least one plan is required")
 	ErrOperatingSysRequired = errors.New("operating system is required")
 	ErrLocationRequired     = errors.New("either metro or facility must be set")
 	ErrLocationConflict     = errors.New("metro and facility are mutually exclusive")
@@ -42,7 +41,7 @@ type Provider struct {
 	projectID        string
 	metro            string
 	facility         []string
-	plan             string
+	plans            []string
 	operatingSys     string
 	billingCycle     string
 	tags             []string
@@ -60,7 +59,7 @@ func New(_ context.Context, c *cli.Command, config *config.Config) (types.Provid
 		projectID:      c.String("equinixmetal-project-id"),
 		metro:          c.String("equinixmetal-metro"),
 		facility:       c.StringSlice("equinixmetal-facility"),
-		plan:           c.String("equinixmetal-plan"),
+		plans:          c.StringSlice("equinixmetal-plan"),
 		operatingSys:   c.String("equinixmetal-operating-system"),
 		billingCycle:   c.String("equinixmetal-billing-cycle"),
 		tags:           c.StringSlice("equinixmetal-tags"),
@@ -72,16 +71,6 @@ func New(_ context.Context, c *cli.Command, config *config.Config) (types.Provid
 
 	if err := p.validate(); err != nil {
 		return nil, fmt.Errorf("%s: %w", p.name, err)
-	}
-
-	// TODO: Deprecated remove in v2.0
-	if u := c.String("equinixmetal-user-data"); u != "" {
-		log.Warn().Msg("equinixmetal-user-data is deprecated, please use provider-user-data instead")
-		userDataTmpl, err := template.New("user-data").Parse(u)
-		if err != nil {
-			return nil, fmt.Errorf("%s: template.New.Parse %w", p.name, err)
-		}
-		p.userDataTemplate = userDataTmpl
 	}
 
 	client, err := packngo.NewClient(packngo.WithAuth("woodpecker-autoscaler", c.String("equinixmetal-api-token")))
@@ -97,7 +86,7 @@ func (p *Provider) validate() error {
 	switch {
 	case p.projectID == "":
 		return ErrProjectIDRequired
-	case p.plan == "":
+	case len(p.plans) == 0:
 		return ErrPlanRequired
 	case p.operatingSys == "":
 		return ErrOperatingSysRequired
@@ -105,6 +94,12 @@ func (p *Provider) validate() error {
 		return ErrLocationRequired
 	case p.metro != "" && len(p.facility) > 0:
 		return ErrLocationConflict
+	}
+
+	for _, plan := range p.plans {
+		if strings.TrimSpace(plan) == "" {
+			return ErrPlanRequired
+		}
 	}
 
 	for _, tag := range p.tags {
@@ -128,7 +123,7 @@ func (p *Provider) DeployAgent(_ context.Context, agent *woodpecker.Agent) error
 
 	req := &packngo.DeviceCreateRequest{
 		Hostname:       agent.Name,
-		Plan:           p.plan,
+		Plan:           p.primaryPlan(),
 		Metro:          p.metro,
 		Facility:       slices.Clone(p.facility),
 		OS:             p.operatingSys,
@@ -218,6 +213,10 @@ func (p *Provider) listPoolDevices(_ context.Context) ([]packngo.Device, error) 
 	}
 
 	return filtered, nil
+}
+
+func (p *Provider) primaryPlan() string {
+	return strings.TrimSpace(p.plans[0])
 }
 
 func (p *Provider) deviceTags() []string {

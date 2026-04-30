@@ -62,7 +62,7 @@ func TestDeployAgentCreatesDeviceWithExpectedFields(t *testing.T) {
 		name:         "equinixmetal",
 		projectID:    "project-123",
 		metro:        "sv",
-		plan:         "c3.small.x86",
+		plans:        []string{"c3.small.x86"},
 		operatingSys: "ubuntu_22_04",
 		billingCycle: "hourly",
 		tags: []string{
@@ -189,7 +189,7 @@ func TestValidateRequiresExactlyOneLocation(t *testing.T) {
 			name: "missing location",
 			provider: Provider{
 				projectID:    "project-123",
-				plan:         "c3.small.x86",
+				plans:        []string{"c3.small.x86"},
 				operatingSys: "ubuntu_22_04",
 			},
 			wantErr: ErrLocationRequired,
@@ -198,7 +198,7 @@ func TestValidateRequiresExactlyOneLocation(t *testing.T) {
 			name: "metro and facility conflict",
 			provider: Provider{
 				projectID:    "project-123",
-				plan:         "c3.small.x86",
+				plans:        []string{"c3.small.x86"},
 				operatingSys: "ubuntu_22_04",
 				metro:        "sv",
 				facility:     []string{"sv15"},
@@ -218,7 +218,7 @@ func TestValidateRequiresExactlyOneLocation(t *testing.T) {
 func TestValidateRejectsReservedTagPrefix(t *testing.T) {
 	p := Provider{
 		projectID:    "project-123",
-		plan:         "c3.small.x86",
+		plans:        []string{"c3.small.x86"},
 		operatingSys: "ubuntu_22_04",
 		metro:        "sv",
 		tags:         []string{engine.LabelPool + "=override"},

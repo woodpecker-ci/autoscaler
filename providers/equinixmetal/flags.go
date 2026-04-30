@@ -36,9 +36,9 @@ var ProviderFlags = []cli.Flag{
 		Sources:  cli.EnvVars("WOODPECKER_EQUINIXMETAL_FACILITY"),
 		Category: category,
 	},
-	&cli.StringFlag{
+	&cli.StringSliceFlag{
 		Name:     "equinixmetal-plan",
-		Usage:    "Equinix Metal server plan slug",
+		Usage:    "Equinix Metal server plan slug(s); the first matching plan is used today and extra entries reserve room for future multi-arch scheduling",
 		Sources:  cli.EnvVars("WOODPECKER_EQUINIXMETAL_PLAN"),
 		Category: category,
 	},
@@ -78,16 +78,6 @@ var ProviderFlags = []cli.Flag{
 		Name:     "equinixmetal-spot-price-max",
 		Usage:    "maximum spot price when using spot instances",
 		Sources:  cli.EnvVars("WOODPECKER_EQUINIXMETAL_SPOT_PRICE_MAX"),
-		Category: category,
-	},
-	// TODO: Deprecated remove in v2.0
-	&cli.StringFlag{
-		Name:  "equinixmetal-user-data",
-		Usage: "Equinix Metal userdata template (deprecated)",
-		Sources: cli.NewValueSourceChain(
-			cli.EnvVar("WOODPECKER_EQUINIXMETAL_USERDATA"),
-			cli.File(os.Getenv("WOODPECKER_EQUINIXMETAL_USERDATA_FILE")),
-		),
 		Category: category,
 	},
 }
