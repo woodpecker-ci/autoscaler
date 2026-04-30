@@ -27,6 +27,7 @@ func TestDeployAgent(t *testing.T) {
 				mockServerTypeClient.On("GetByName", mock.Anything, mock.Anything).Return(nil, nil, nil)
 				mockClient.On("ServerType").Return(mockServerTypeClient)
 			},
+			serverType:    []string{"cx11"},
 			expectedError: ErrServerTypeNotFound.Error(),
 		},
 		{
@@ -41,6 +42,7 @@ func TestDeployAgent(t *testing.T) {
 				mockImageClient.On("GetByNameAndArchitecture", mock.Anything, mock.Anything, hcloud.ArchitectureX86).Return(nil, nil, nil)
 				mockClient.On("Image").Return(mockImageClient)
 			},
+			serverType:    []string{"cx11"},
 			expectedError: ErrImageNotFound.Error(),
 		},
 		{
