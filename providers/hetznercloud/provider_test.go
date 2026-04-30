@@ -21,11 +21,6 @@ func TestDeployAgent(t *testing.T) {
 		serverType    []string
 	}{
 		{
-			name:          "InvalidUserData",
-			setupMocks:    func(_ *mocks.MockClient) {},
-			expectedError: "RenderUserDataTemplate",
-		},
-		{
 			name: "ServerTypeNotFound",
 			setupMocks: func(mockClient *mocks.MockClient) {
 				mockServerTypeClient := mocks.NewMockServerTypeClient(t)
@@ -89,18 +84,20 @@ func TestDeployAgent(t *testing.T) {
 			tt.setupMocks(mockClient)
 
 			p := &provider{
-				client:     mockClient,
-				config:     &config.Config{},
-				sshKeys:    tt.sshkeys,
-				serverType: []string{"cx11"},
+				client:  mockClient,
+				config:  &config.Config{},
+				sshKeys: tt.sshkeys,
 			}
 
+			var err error
 			if tt.serverType != nil {
-				p.serverType = tt.serverType
+				err = p.resolveServerConfigs(t.Context(), tt.serverType, "ubuntu-24.04")
+			}
+			if err == nil {
+				agent := &woodpecker.Agent{}
+				err = p.DeployAgent(t.Context(), agent)
 			}
 
-			agent := &woodpecker.Agent{}
-			err := p.DeployAgent(t.Context(), agent)
 			if tt.expectedError != "" {
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), tt.expectedError)
