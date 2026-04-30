@@ -20,24 +20,22 @@ import (
 )
 
 type provider struct {
-	name       string
-	serverType []string
-	image      string
-	sshKeys    []string
-	labels     map[string]string
-	config     *config.Config
-	networks   []string
-	firewalls  []string
-	enableIPv4 bool
-	enableIPv6 bool
-	client     hcapi.Client
+	name            string
+	deployCandidate []deployCandidate
+	sshKeys         []string
+	labels          map[string]string
+	config          *config.Config
+	networks        []string
+	firewalls       []string
+	enableIPv4      bool
+	enableIPv6      bool
+	client          hcapi.Client
 }
 
-func New(_ context.Context, c *cli.Command, config *config.Config) (types.Provider, error) {
+func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Provider, error) {
 	p := &provider{
-		name:       "hetznercloud",
-		serverType: c.StringSlice("hetznercloud-server-type"),
-		image:      c.String("hetznercloud-image"),
+		name: "hetznercloud",
+
 		sshKeys:    c.StringSlice("hetznercloud-ssh-keys"),
 		firewalls:  c.StringSlice("hetznercloud-firewalls"),
 		networks:   c.StringSlice("hetznercloud-networks"),
@@ -48,9 +46,13 @@ func New(_ context.Context, c *cli.Command, config *config.Config) (types.Provid
 
 	p.client = hcapi.NewClient(hcloud.WithToken(c.String("hetznercloud-api-token")))
 
+	if err := p.resolveServerConfigs(ctx, c.StringSlice("hetznercloud-server-type"), c.String("hetznercloud-image")); err != nil {
+		return nil, err
+	}
+
 	defaultLabels := make(map[string]string, 0)
 	defaultLabels[engine.LabelPool] = p.config.PoolID
-	defaultLabels[engine.LabelImage] = p.image
+	defaultLabels[engine.LabelImage] = p.deployCandidate[0].image.Name
 
 	labels, err := utils.SliceToMap(c.StringSlice("hetznercloud-labels"), "=")
 	if err != nil {
@@ -122,49 +124,12 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 		},
 	}
 
-	// First pass: resolve all configured entries and filter to those that
-	// match the requested capability and whose location actually supports
-	// the server type. We need this list up front so that we can correctly
-	// distinguish "no last entry to error on" from "last viable entry
-	// failed".
-	candidates := make([]deployCandidate, 0, len(p.serverType))
-	for _, raw := range p.serverType {
-		rawType, location, _ := strings.Cut(raw, ":")
-
-		serverType, err := p.lookupServerType(ctx, rawType)
-		if err != nil {
-			return err
-		}
-
-		if !serverTypeSupportsLocation(serverType, location) {
-			log.Warn().Msgf(
-				"skipping server type %s in %s: %s",
-				rawType, location, ErrLocationNotSupported,
-			)
-			continue
-		}
-
-		candidates = append(candidates, deployCandidate{rawType, location, serverType})
-	}
-
-	if len(candidates) == 0 {
-		return fmt.Errorf("%s: %w", p.name, ErrNoMatchingServerType)
-	}
-
-	for i, c := range candidates {
-		image, _, err := p.client.Image().GetByNameAndArchitecture(ctx, p.image, c.serverType.Architecture)
-		if err != nil {
-			return fmt.Errorf("%s: Image.GetByNameAndArchitecture: %w", p.name, err)
-		}
-		if image == nil {
-			return fmt.Errorf("%s: %w: %s", p.name, ErrImageNotFound, p.image)
-		}
-
-		serverCreateOpts.Location = &hcloud.Location{Name: c.location}
+	for i, c := range p.deployCandidate {
+		serverCreateOpts.Location = c.location
 		serverCreateOpts.ServerType = c.serverType
-		serverCreateOpts.Image = image
+		serverCreateOpts.Image = c.image
 
-		log.Info().Msgf("create agent: location = %s type = %s", c.location, c.rawType)
+		log.Info().Msgf("create agent: location = %s type = %s", c.location, c.serverType.Name)
 
 		_, _, err = p.client.Server().Create(ctx, serverCreateOpts)
 		if err == nil {
@@ -177,10 +142,10 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 		}
 
 		// Only log and continue if there are more candidates left.
-		if i < len(candidates)-1 {
+		if i < len(p.deployCandidate)-1 {
 			log.Warn().Msgf(
 				"create agent failed: location = %s type = %s: %s",
-				c.location, c.rawType, err,
+				c.location, c.serverType.Name, err,
 			)
 			continue
 		}

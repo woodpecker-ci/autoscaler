@@ -3,22 +3,54 @@ package hetznercloud
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/hetznercloud/hcloud-go/v2/hcloud"
+	"github.com/rs/zerolog/log"
 
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
 
-func (p *provider) lookupServerType(ctx context.Context, name string) (*hcloud.ServerType, error) {
-	serverType, _, err := p.client.ServerType().GetByName(ctx, name)
-	if err != nil {
-		return nil, fmt.Errorf("%s: ServerType.GetByName: %w", name, err)
-	}
-	if serverType == nil {
-		return nil, fmt.Errorf("%s: %w: %s", p.name, ErrServerTypeNotFound, name)
+func (p *provider) resolveServerConfigs(ctx context.Context, serverType []string, rawImage string) error {
+	for _, raw := range serverType {
+		rawType, rawLocation, _ := strings.Cut(raw, ":")
+
+		serverType, _, err := p.client.ServerType().GetByName(ctx, rawType)
+		if err != nil {
+			return fmt.Errorf("%s: ServerType.GetByName: %w", rawType, err)
+		}
+		if serverType == nil {
+			return fmt.Errorf("%s: %w: %s", p.name, ErrServerTypeNotFound, rawType)
+		}
+		if serverType.IsDeprecated() {
+			log.Error().Msgf("server type %q is deprecated", serverType.Name)
+		}
+
+		location, err := resolveLocation(serverType, rawLocation)
+		if err != nil {
+			return err
+		}
+
+		image, _, err := p.client.Image().GetByNameAndArchitecture(ctx, rawImage, serverType.Architecture)
+		if err != nil {
+			return fmt.Errorf("%s: Image.GetByNameAndArchitecture: %w", p.name, err)
+		}
+		if image == nil {
+			return fmt.Errorf("%s: %w: %s", p.name, ErrImageNotFound, rawImage)
+		}
+
+		p.deployCandidate = append(p.deployCandidate, deployCandidate{
+			location:   location,
+			serverType: serverType,
+			image:      image,
+		})
 	}
 
-	return serverType, nil
+	if len(p.deployCandidate) == 0 {
+		return fmt.Errorf("no deploy candidates resolved")
+	}
+
+	return nil
 }
 
 func (p *provider) getAgent(ctx context.Context, agent *woodpecker.Agent) (*hcloud.Server, error) {
@@ -30,11 +62,9 @@ func (p *provider) getAgent(ctx context.Context, agent *woodpecker.Agent) (*hclo
 	return server, nil
 }
 
-// serverTypeSupportsLocation reports whether the given server type is
-// available in the given location and not deprecated there.
-func serverTypeSupportsLocation(st *hcloud.ServerType, location string) bool {
+func resolveLocation(st *hcloud.ServerType, location string) (*hcloud.Location, error) {
 	if location == "" {
-		return true
+		return nil, nil
 	}
 
 	for _, l := range st.Locations {
@@ -43,21 +73,9 @@ func serverTypeSupportsLocation(st *hcloud.ServerType, location string) bool {
 		}
 		// Filter out locations where this server type is being phased out.
 		if l.IsDeprecated() {
-			return false
+			return nil, fmt.Errorf("%w: %s is deprecated", ErrImageNotSupported, location)
 		}
-		return true
+		return l.Location, nil
 	}
-	return false
-}
-
-// hcloudArchToGoArch maps hcloud architecture names to Go GOARCH strings.
-func hcloudArchToGoArch(a hcloud.Architecture) string {
-	switch a {
-	case hcloud.ArchitectureARM:
-		return "arm64"
-	case hcloud.ArchitectureX86:
-		return "amd64"
-	default:
-		return string(a)
-	}
+	return nil, fmt.Errorf("%w: %q", ErrImageNotFound, location)
 }
