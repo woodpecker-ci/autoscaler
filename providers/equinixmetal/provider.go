@@ -35,6 +35,8 @@ type devicesService interface {
 	Delete(string, bool) (*packngo.Response, error)
 }
 
+const deviceListPerPage = 1000
+
 type Provider struct {
 	name             string
 	projectID        string
@@ -118,7 +120,7 @@ func (p *Provider) validate() error {
 	return nil
 }
 
-func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
+func (p *Provider) DeployAgent(_ context.Context, agent *woodpecker.Agent) error {
 	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, p.userDataTemplate)
 	if err != nil {
 		return fmt.Errorf("%s: cloudinit.RenderUserDataTemplate: %w", p.name, err)
@@ -202,7 +204,7 @@ func (p *Provider) getAgent(ctx context.Context, hostname string) (*packngo.Devi
 }
 
 func (p *Provider) listPoolDevices(_ context.Context) ([]packngo.Device, error) {
-	devices, _, err := p.devices.List(p.projectID, &packngo.ListOptions{PerPage: 1000})
+	devices, _, err := p.devices.List(p.projectID, &packngo.ListOptions{PerPage: deviceListPerPage})
 	if err != nil {
 		return nil, fmt.Errorf("%s: Devices.List: %w", p.name, err)
 	}

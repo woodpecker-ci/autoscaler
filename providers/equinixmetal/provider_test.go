@@ -106,7 +106,7 @@ func TestListDeployedAgentNamesReturnsPoolDevices(t *testing.T) {
 		name:      "equinixmetal",
 		projectID: "project-123",
 		config:    &config.Config{PoolID: "pool-7"},
-		devices: &fakeDevicesService{listFn: func(projectID string, opts *packngo.ListOptions) ([]packngo.Device, *packngo.Response, error) {
+		devices: &fakeDevicesService{listFn: func(projectID string, _ *packngo.ListOptions) ([]packngo.Device, *packngo.Response, error) {
 			require.Equal(t, "project-123", projectID)
 			return []packngo.Device{
 				{Hostname: "agent-1", Tags: []string{engine.LabelPool + "=pool-7"}},
@@ -129,7 +129,7 @@ func TestRemoveAgentDeletesMatchingPoolDevice(t *testing.T) {
 		projectID: "project-123",
 		config:    &config.Config{PoolID: "pool-7"},
 		devices: &fakeDevicesService{
-			listFn: func(projectID string, opts *packngo.ListOptions) ([]packngo.Device, *packngo.Response, error) {
+			listFn: func(_ string, _ *packngo.ListOptions) ([]packngo.Device, *packngo.Response, error) {
 				return []packngo.Device{{ID: "dev-1", Hostname: "agent-1", Tags: []string{engine.LabelPool + "=pool-7"}}}, nil, nil
 			},
 			deleteFn: func(deviceID string, force bool) (*packngo.Response, error) {
@@ -150,7 +150,7 @@ func TestRemoveAgentReturnsErrorOnDuplicateHostnames(t *testing.T) {
 		name:      "equinixmetal",
 		projectID: "project-123",
 		config:    &config.Config{PoolID: "pool-7"},
-		devices: &fakeDevicesService{listFn: func(projectID string, opts *packngo.ListOptions) ([]packngo.Device, *packngo.Response, error) {
+		devices: &fakeDevicesService{listFn: func(_ string, _ *packngo.ListOptions) ([]packngo.Device, *packngo.Response, error) {
 			return []packngo.Device{
 				{ID: "dev-1", Hostname: "agent-1", Tags: []string{engine.LabelPool + "=pool-7"}},
 				{ID: "dev-2", Hostname: "agent-1", Tags: []string{engine.LabelPool + "=pool-7"}},
@@ -168,7 +168,7 @@ func TestListDeployedAgentNamesPropagatesErrors(t *testing.T) {
 		name:      "equinixmetal",
 		projectID: "project-123",
 		config:    &config.Config{PoolID: "pool-7"},
-		devices: &fakeDevicesService{listFn: func(projectID string, opts *packngo.ListOptions) ([]packngo.Device, *packngo.Response, error) {
+		devices: &fakeDevicesService{listFn: func(_ string, _ *packngo.ListOptions) ([]packngo.Device, *packngo.Response, error) {
 			return nil, nil, errors.New("boom")
 		}},
 	}
