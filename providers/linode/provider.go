@@ -25,44 +25,6 @@ var (
 	ErrInstanceTypeNotFound = errors.New("instance type not found")
 )
 
-// editorconfig-checker-disable
-var stackscriptUserDataDefault = `
-#!/bin/bash
-
-# Install Pre-requisites
-apt-get update && apt-get install -y ca-certificates \
-									 curl \
-									 gnupg
-install -m 0755 -d /etc/apt/keyrings
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-chmod a+r /etc/apt/keyrings/docker.gpg
-
-# Add Docker sources
-echo \
-  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
-  tee /etc/apt/sources.list.d/docker.list > /dev/null
-
-apt-get update && apt-get install -y docker-ce docker-compose-plugin
-
-systemctl enable --now docker
-
-cat > /root/docker-compose.yml <<'EOS'
-version: '3'
-services:
-  woodpecker-agent:
-    image: {{ .Image }}
-    restart: always
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-      {{- range $key, $value := .Environment }}
-        - {{ $key }}={{ $value }}
-      {{- end }}
-EOS
-
-cd /root && docker compose up -d`
-
 // editorconfig-checker-enable
 type provider struct {
 	name          string
