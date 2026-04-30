@@ -73,11 +73,11 @@ func resolveLocation(st *hcloud.ServerType, location string) (*hcloud.Location, 
 		}
 		// Filter out locations where this server type is being phased out.
 		if l.IsDeprecated() {
-			return nil, fmt.Errorf("%w: %s is deprecated", ErrImageNotSupported, location)
+			return nil, fmt.Errorf("%w: %s is deprecated", ErrLocationNotSupported, location)
 		}
 		return l.Location, nil
 	}
-	return nil, fmt.Errorf("%w: %q", ErrImageNotFound, location)
+	return nil, fmt.Errorf("%w: %q", ErrLocationNotSupported, location)
 }
 
 // hcloudArchToGoArch maps hcloud architecture names to Go GOARCH strings.
