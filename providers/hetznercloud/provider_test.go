@@ -54,7 +54,17 @@ func TestDeployAgent(t *testing.T) {
 		{
 			name: "ServerTypeWithLocation",
 			setupMocks: func(mockClient *mocks.MockClient) {
-				mockServerType := &hcloud.ServerType{Name: "cx11", Architecture: "x86"}
+				// The mocked server type must advertise nbg1 in its
+				// Locations list, otherwise the provider's
+				// serverTypeSupportsLocation filter throws it away
+				// before the deploy is attempted.
+				mockServerType := &hcloud.ServerType{
+					Name:         "cx11",
+					Architecture: "x86",
+					Locations: []hcloud.ServerTypeLocation{
+						{Location: &hcloud.Location{Name: "nbg1"}},
+					},
+				}
 				mockServerTypeClient := mocks.NewMockServerTypeClient(t)
 				mockServerTypeClient.On("GetByName", mock.Anything, "cx11").Return(mockServerType, nil, nil)
 				mockClient.On("ServerType").Return(mockServerTypeClient)
@@ -81,7 +91,7 @@ func TestDeployAgent(t *testing.T) {
 			mockClient := mocks.NewMockClient(t)
 			tt.setupMocks(mockClient)
 
-			p := &Provider{
+			p := &provider{
 				client:           mockClient,
 				config:           &config.Config{},
 				userDataTemplate: template.Must(template.New("").Parse(tt.userdata)),
