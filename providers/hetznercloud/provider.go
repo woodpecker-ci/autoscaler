@@ -61,7 +61,7 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 
 	for _, key := range maps.Keys(labels) {
 		if strings.HasPrefix(key, engine.LabelPrefix) {
-			return nil, fmt.Errorf("%s: %w: %s", p.name, ErrIllegalLablePrefix, engine.LabelPrefix)
+			return nil, fmt.Errorf("%s: %w: %s", p.name, ErrIllegalLabelPrefix, engine.LabelPrefix)
 		}
 	}
 	p.labels = utils.MergeMaps(defaultLabels, p.labels)
