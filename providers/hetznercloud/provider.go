@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"text/template"
 
 	"github.com/hetznercloud/hcloud-go/v2/hcloud"
 	"github.com/rs/zerolog/log"
@@ -20,13 +19,9 @@ import (
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
 
-type Provider struct {
-	name       string
-	serverType []string
-	// TODO: Deprecated remove in v2.0
-	location         string
-	userDataTemplate *template.Template
-	image            string
+type provider struct {
+	name             string
+	deployCandidates []*deployCandidate
 	sshKeys          []string
 	labels           map[string]string
 	config           *config.Config
@@ -37,13 +32,10 @@ type Provider struct {
 	client           hcapi.Client
 }
 
-func New(_ context.Context, c *cli.Command, config *config.Config) (types.Provider, error) {
-	p := &Provider{
-		name:       "hetznercloud",
-		serverType: c.StringSlice("hetznercloud-server-type"),
-		// TODO: Deprecated remove in v2.0
-		location:   c.String("hetznercloud-location"),
-		image:      c.String("hetznercloud-image"),
+func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Provider, error) {
+	p := &provider{
+		name: "hetznercloud",
+
 		sshKeys:    c.StringSlice("hetznercloud-ssh-keys"),
 		firewalls:  c.StringSlice("hetznercloud-firewalls"),
 		networks:   c.StringSlice("hetznercloud-networks"),
@@ -54,9 +46,13 @@ func New(_ context.Context, c *cli.Command, config *config.Config) (types.Provid
 
 	p.client = hcapi.NewClient(hcloud.WithToken(c.String("hetznercloud-api-token")))
 
+	if err := p.resolveServerConfigs(ctx, c.StringSlice("hetznercloud-server-type"), c.String("hetznercloud-image")); err != nil {
+		return nil, err
+	}
+
 	defaultLabels := make(map[string]string, 0)
 	defaultLabels[engine.LabelPool] = p.config.PoolID
-	defaultLabels[engine.LabelImage] = p.image
+	defaultLabels[engine.LabelImage] = p.deployCandidates[0].image.Name
 
 	labels, err := utils.SliceToMap(c.StringSlice("hetznercloud-labels"), "=")
 	if err != nil {
@@ -73,8 +69,12 @@ func New(_ context.Context, c *cli.Command, config *config.Config) (types.Provid
 	return p, nil
 }
 
-func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cb types.Capability) error {
-	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, p.userDataTemplate)
+func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cb types.Capability) error {
+	if cb.Backend != types.BackendDocker {
+		fmt.Errorf("hetzner only support docker backend")
+	}
+
+	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, nil)
 	if err != nil {
 		return fmt.Errorf("%s: cloudinit.RenderUserDataTemplate: %w", p.name, err)
 	}
@@ -133,32 +133,15 @@ func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cb 
 	// the server type. We need this list up front so that we can correctly
 	// distinguish "no last entry to error on" from "last viable entry
 	// failed".
-	candidates := make([]deployCandidate, 0, len(p.serverType))
-	for _, raw := range p.serverType {
-		rawType, location := p.parseServerTypeEntry(raw)
-
-		serverType, err := p.lookupServerType(ctx, rawType)
-		if err != nil {
-			return err
-		}
-
+	candidates := make([]*deployCandidate, 0, len(p.deployCandidates))
+	for _, c := range p.deployCandidates {
 		// Filter by requested capability (arch). cap is always one of the
 		// platforms we returned from Capabilities, so a mismatch here just
 		// means this entry is for a different arch in the fallback chain.
-		platform := "linux/" + hcloudArchToGoArch(serverType.Architecture)
-		if platform != cb.Platform {
-			continue
+		platform := "linux/" + hcloudArchToGoArch(c.serverType.Architecture)
+		if platform == cb.Platform {
+			candidates = append(candidates, c)
 		}
-
-		if !serverTypeSupportsLocation(serverType, location) {
-			log.Warn().Msgf(
-				"skipping server type %s in %s: %s",
-				rawType, location, ErrLocationNotSupported,
-			)
-			continue
-		}
-
-		candidates = append(candidates, deployCandidate{rawType, location, serverType})
 	}
 
 	if len(candidates) == 0 {
@@ -166,19 +149,11 @@ func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cb 
 	}
 
 	for i, c := range candidates {
-		image, _, err := p.client.Image().GetByNameAndArchitecture(ctx, p.image, c.serverType.Architecture)
-		if err != nil {
-			return fmt.Errorf("%s: Image.GetByNameAndArchitecture: %w", p.name, err)
-		}
-		if image == nil {
-			return fmt.Errorf("%s: %w: %s", p.name, ErrImageNotFound, p.image)
-		}
-
-		serverCreateOpts.Location = &hcloud.Location{Name: c.location}
+		serverCreateOpts.Location = c.location
 		serverCreateOpts.ServerType = c.serverType
-		serverCreateOpts.Image = image
+		serverCreateOpts.Image = c.image
 
-		log.Info().Msgf("create agent: location = %s type = %s", c.location, c.rawType)
+		log.Info().Msgf("create agent: location = %s type = %s", c.location, c.serverType.Name)
 
 		_, _, err = p.client.Server().Create(ctx, serverCreateOpts)
 		if err == nil {
@@ -191,10 +166,10 @@ func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cb 
 		}
 
 		// Only log and continue if there are more candidates left.
-		if i < len(candidates)-1 {
+		if i < len(p.deployCandidates)-1 {
 			log.Warn().Msgf(
 				"create agent failed: location = %s type = %s: %s",
-				c.location, c.rawType, err,
+				c.location, c.serverType.Name, err,
 			)
 			continue
 		}
@@ -206,7 +181,7 @@ func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cb 
 	return nil
 }
 
-func (p *Provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) error {
+func (p *provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) error {
 	server, err := p.getAgent(ctx, agent)
 	if err != nil {
 		return fmt.Errorf("%s: getAgent %w", p.name, err)
@@ -224,7 +199,7 @@ func (p *Provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) err
 	return nil
 }
 
-func (p *Provider) ListDeployedAgentNames(ctx context.Context) ([]string, error) {
+func (p *provider) ListDeployedAgentNames(ctx context.Context) ([]string, error) {
 	var names []string
 
 	servers, err := p.client.Server().AllWithOpts(ctx,
@@ -242,39 +217,12 @@ func (p *Provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 	return names, nil
 }
 
-func (p *Provider) Capabilities(ctx context.Context) ([]types.Capability, error) {
+func (p *provider) Capabilities(ctx context.Context) ([]types.Capability, error) {
 	seen := map[string]bool{}
 	var caps []types.Capability
 
-	for _, raw := range p.serverType {
-		rawType, location := p.parseServerTypeEntry(raw)
-
-		st, err := p.lookupServerType(ctx, rawType)
-		if err != nil {
-			return nil, err
-		}
-
-		// Skip entries whose location doesn't actually offer this server
-		// type (or where it's deprecated there). This prevents us from
-		// advertising a capability we can't fulfill.
-		if !serverTypeSupportsLocation(st, location) {
-			log.Warn().Msgf(
-				"skipping server type %s in %s when computing capabilities: %s",
-				rawType, location, ErrLocationNotSupported,
-			)
-			continue
-		}
-
-		image, _, err := p.client.Image().GetByNameAndArchitecture(ctx, p.image, st.Architecture)
-		if err != nil || image == nil {
-			log.Warn().Msgf(
-				"skipping server type %s in %s when computing capabilities: %s",
-				rawType, location, ErrImageNotSupported,
-			)
-			continue
-		}
-
-		platform := "linux/" + hcloudArchToGoArch(st.Architecture)
+	for _, c := range p.deployCandidates {
+		platform := "linux/" + hcloudArchToGoArch(c.serverType.Architecture)
 		if !seen[platform] {
 			seen[platform] = true
 			caps = append(caps, types.Capability{

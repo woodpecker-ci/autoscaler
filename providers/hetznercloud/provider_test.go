@@ -2,7 +2,6 @@ package hetznercloud
 
 import (
 	"testing"
-	"text/template"
 
 	"github.com/hetznercloud/hcloud-go/v2/hcloud"
 	"github.com/stretchr/testify/assert"
@@ -18,7 +17,6 @@ func TestDeployAgent(t *testing.T) {
 	tests := []struct {
 		name          string
 		setupMocks    func(*mocks.MockClient)
-		userdata      string
 		sshkeys       []string
 		expectedError string
 		serverType    []string
@@ -27,7 +25,6 @@ func TestDeployAgent(t *testing.T) {
 		{
 			name:          "InvalidUserData",
 			setupMocks:    func(_ *mocks.MockClient) {},
-			userdata:      "{{.InvalidField}}",
 			expectedError: "RenderUserDataTemplate",
 		},
 		{
@@ -95,12 +92,11 @@ func TestDeployAgent(t *testing.T) {
 			mockClient := mocks.NewMockClient(t)
 			tt.setupMocks(mockClient)
 
-			p := &Provider{
-				client:           mockClient,
-				config:           &config.Config{},
-				userDataTemplate: template.Must(template.New("").Parse(tt.userdata)),
-				sshKeys:          tt.sshkeys,
-				serverType:       []string{"cx11"},
+			p := &provider{
+				client:     mockClient,
+				config:     &config.Config{},
+				sshKeys:    tt.sshkeys,
+				serverType: []string{"cx11"},
 			}
 
 			if tt.serverType != nil {
