@@ -20,16 +20,16 @@ import (
 )
 
 type provider struct {
-	name            string
-	deployCandidate []deployCandidate
-	sshKeys         []string
-	labels          map[string]string
-	config          *config.Config
-	networks        []string
-	firewalls       []string
-	enableIPv4      bool
-	enableIPv6      bool
-	client          hcapi.Client
+	name             string
+	deployCandidates []deployCandidate
+	sshKeys          []string
+	labels           map[string]string
+	config           *config.Config
+	networks         []string
+	firewalls        []string
+	enableIPv4       bool
+	enableIPv6       bool
+	client           hcapi.Client
 }
 
 func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Provider, error) {
@@ -52,7 +52,7 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 
 	defaultLabels := make(map[string]string, 0)
 	defaultLabels[engine.LabelPool] = p.config.PoolID
-	defaultLabels[engine.LabelImage] = p.deployCandidate[0].image.Name
+	defaultLabels[engine.LabelImage] = p.deployCandidates[0].image.Name
 
 	labels, err := utils.SliceToMap(c.StringSlice("hetznercloud-labels"), "=")
 	if err != nil {
@@ -124,7 +124,7 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 		},
 	}
 
-	for i, c := range p.deployCandidate {
+	for i, c := range p.deployCandidates {
 		serverCreateOpts.Location = c.location
 		serverCreateOpts.ServerType = c.serverType
 		serverCreateOpts.Image = c.image
@@ -142,7 +142,7 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 		}
 
 		// Only log and continue if there are more candidates left.
-		if i < len(p.deployCandidate)-1 {
+		if i < len(p.deployCandidates)-1 {
 			log.Warn().Msgf(
 				"create agent failed: location = %s type = %s: %s",
 				c.location, c.serverType.Name, err,
