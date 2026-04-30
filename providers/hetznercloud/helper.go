@@ -3,10 +3,8 @@ package hetznercloud
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/hetznercloud/hcloud-go/v2/hcloud"
-	"github.com/rs/zerolog/log"
 
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
@@ -30,19 +28,6 @@ func (p *provider) getAgent(ctx context.Context, agent *woodpecker.Agent) (*hclo
 	}
 
 	return server, nil
-}
-
-// parseServerTypeEntry splits a "<type>:<location>" entry, falling back to the
-// deprecated p.location when no location is given.
-//
-// TODO: Deprecated location-fallback should be removed in v2.0.
-func (p *provider) parseServerTypeEntry(raw string) (rawType, location string) {
-	rawType, location, _ = strings.Cut(raw, ":")
-	if location == "" && p.location != "" {
-		log.Error().Msg("hetznercloud-location is deprecated, please use hetznercloud-server-type instead")
-		location = p.location
-	}
-	return rawType, location
 }
 
 // serverTypeSupportsLocation reports whether the given server type is

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"text/template"
 
 	"github.com/hetznercloud/hcloud-go/v2/hcloud"
 	"github.com/rs/zerolog/log"
@@ -23,26 +22,21 @@ import (
 type provider struct {
 	name       string
 	serverType []string
-	// TODO: Deprecated remove in v2.0
-	location         string
-	userDataTemplate *template.Template
-	image            string
-	sshKeys          []string
-	labels           map[string]string
-	config           *config.Config
-	networks         []string
-	firewalls        []string
-	enableIPv4       bool
-	enableIPv6       bool
-	client           hcapi.Client
+	image      string
+	sshKeys    []string
+	labels     map[string]string
+	config     *config.Config
+	networks   []string
+	firewalls  []string
+	enableIPv4 bool
+	enableIPv6 bool
+	client     hcapi.Client
 }
 
 func New(_ context.Context, c *cli.Command, config *config.Config) (types.Provider, error) {
 	p := &provider{
 		name:       "hetznercloud",
 		serverType: c.StringSlice("hetznercloud-server-type"),
-		// TODO: Deprecated remove in v2.0
-		location:   c.String("hetznercloud-location"),
 		image:      c.String("hetznercloud-image"),
 		sshKeys:    c.StringSlice("hetznercloud-ssh-keys"),
 		firewalls:  c.StringSlice("hetznercloud-firewalls"),
@@ -74,7 +68,7 @@ func New(_ context.Context, c *cli.Command, config *config.Config) (types.Provid
 }
 
 func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
-	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, p.userDataTemplate)
+	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, nil)
 	if err != nil {
 		return fmt.Errorf("%s: cloudinit.RenderUserDataTemplate: %w", p.name, err)
 	}
@@ -135,7 +129,7 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 	// failed".
 	candidates := make([]deployCandidate, 0, len(p.serverType))
 	for _, raw := range p.serverType {
-		rawType, location := p.parseServerTypeEntry(raw)
+		rawType, location, _ := strings.Cut(raw, ":")
 
 		serverType, err := p.lookupServerType(ctx, rawType)
 		if err != nil {
