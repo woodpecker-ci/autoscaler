@@ -8,7 +8,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/packethost/packngo"
+	metalv1 "github.com/equinix/equinix-sdk-go/services/metalv1"
 	"github.com/urfave/cli/v3"
 
 	"go.woodpecker-ci.org/autoscaler/config"
@@ -28,13 +28,38 @@ var (
 	ErrReservedTagPrefix    = errors.New("illegal tag prefix")
 )
 
-type devicesService interface {
-	Create(*packngo.DeviceCreateRequest) (*packngo.Device, *packngo.Response, error)
-	List(string, *packngo.ListOptions) ([]packngo.Device, *packngo.Response, error)
-	Delete(string, bool) (*packngo.Response, error)
+const deviceListPerPage int32 = 100
+
+type deviceCreateRequest struct {
+	Hostname       string
+	Plan           string
+	Metro          string
+	Facility       []string
+	OperatingSys   string
+	BillingCycle   string
+	UserData       string
+	Tags           []string
+	ProjectSSHKeys []string
+	SpotInstance   bool
+	SpotPriceMax   float64
 }
 
-const deviceListPerPage = 1000
+type deviceRecord struct {
+	ID       string
+	Hostname string
+	Tags     []string
+}
+
+type devicesService interface {
+	Create(context.Context, string, deviceCreateRequest) (*deviceRecord, error)
+	List(context.Context, string, string) ([]deviceRecord, error)
+	Delete(context.Context, string, bool) error
+}
+
+type metalDevicesService struct {
+	client *metalv1.APIClient
+	token  string
+}
 
 type Provider struct {
 	name             string
@@ -73,11 +98,12 @@ func New(_ context.Context, c *cli.Command, config *config.Config) (types.Provid
 		return nil, fmt.Errorf("%s: %w", p.name, err)
 	}
 
-	client, err := packngo.NewClient(packngo.WithAuth("woodpecker-autoscaler", c.String("equinixmetal-api-token")))
-	if err != nil {
-		return nil, fmt.Errorf("%s: packngo.NewClient: %w", p.name, err)
+	cfg := metalv1.NewConfiguration()
+	cfg.UserAgent = "woodpecker-autoscaler"
+	p.devices = &metalDevicesService{
+		client: metalv1.NewAPIClient(cfg),
+		token:  c.String("equinixmetal-api-token"),
 	}
-	p.devices = client.Devices
 
 	return p, nil
 }
@@ -115,28 +141,25 @@ func (p *Provider) validate() error {
 	return nil
 }
 
-func (p *Provider) DeployAgent(_ context.Context, agent *woodpecker.Agent) error {
+func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
 	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, p.userDataTemplate)
 	if err != nil {
 		return fmt.Errorf("%s: cloudinit.RenderUserDataTemplate: %w", p.name, err)
 	}
 
-	req := &packngo.DeviceCreateRequest{
+	_, err = p.devices.Create(ctx, p.projectID, deviceCreateRequest{
 		Hostname:       agent.Name,
 		Plan:           p.primaryPlan(),
 		Metro:          p.metro,
 		Facility:       slices.Clone(p.facility),
-		OS:             p.operatingSys,
+		OperatingSys:   p.operatingSys,
 		BillingCycle:   p.billingCycle,
-		ProjectID:      p.projectID,
 		UserData:       userData,
 		Tags:           p.deviceTags(),
 		ProjectSSHKeys: slices.Clone(p.projectSSHKeys),
 		SpotInstance:   p.spotInstance,
 		SpotPriceMax:   p.spotPriceMax,
-	}
-
-	_, _, err = p.devices.Create(req)
+	})
 	if err != nil {
 		return fmt.Errorf("%s: Devices.Create: %w", p.name, err)
 	}
@@ -153,8 +176,7 @@ func (p *Provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) err
 		return nil
 	}
 
-	_, err = p.devices.Delete(device.ID, false)
-	if err != nil {
+	if err := p.devices.Delete(ctx, device.ID, false); err != nil {
 		return fmt.Errorf("%s: Devices.Delete: %w", p.name, err)
 	}
 
@@ -175,13 +197,13 @@ func (p *Provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 	return names, nil
 }
 
-func (p *Provider) getAgent(ctx context.Context, hostname string) (*packngo.Device, error) {
+func (p *Provider) getAgent(ctx context.Context, hostname string) (*deviceRecord, error) {
 	devices, err := p.listPoolDevices(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	var matches []packngo.Device
+	var matches []deviceRecord
 	for _, device := range devices {
 		if device.Hostname == hostname {
 			matches = append(matches, device)
@@ -198,14 +220,14 @@ func (p *Provider) getAgent(ctx context.Context, hostname string) (*packngo.Devi
 	}
 }
 
-func (p *Provider) listPoolDevices(_ context.Context) ([]packngo.Device, error) {
-	devices, _, err := p.devices.List(p.projectID, &packngo.ListOptions{PerPage: deviceListPerPage})
+func (p *Provider) listPoolDevices(ctx context.Context) ([]deviceRecord, error) {
+	poolTag := poolTag(p.config.PoolID)
+	devices, err := p.devices.List(ctx, p.projectID, poolTag)
 	if err != nil {
 		return nil, fmt.Errorf("%s: Devices.List: %w", p.name, err)
 	}
 
-	poolTag := poolTag(p.config.PoolID)
-	filtered := make([]packngo.Device, 0, len(devices))
+	filtered := make([]deviceRecord, 0, len(devices))
 	for _, device := range devices {
 		if slices.Contains(device.Tags, poolTag) {
 			filtered = append(filtered, device)
@@ -239,4 +261,87 @@ func poolTag(poolID string) string {
 
 func imageTag(image string) string {
 	return engine.LabelImage + "=" + image
+}
+
+func (m *metalDevicesService) Create(ctx context.Context, projectID string, req deviceCreateRequest) (*deviceRecord, error) {
+	payload, err := createDevicePayload(req)
+	if err != nil {
+		return nil, err
+	}
+
+	device, _, err := m.client.DevicesApi.CreateDevice(m.withAuth(ctx), projectID).CreateDeviceRequest(payload).Execute()
+	if err != nil {
+		return nil, err
+	}
+	record := deviceRecordFromAPI(device)
+	return &record, nil
+}
+
+func (m *metalDevicesService) List(ctx context.Context, projectID, tag string) ([]deviceRecord, error) {
+	devices, err := m.client.DevicesApi.FindProjectDevices(m.withAuth(ctx), projectID).PerPage(deviceListPerPage).Tag(tag).ExecuteWithPagination()
+	if err != nil {
+		return nil, err
+	}
+
+	items := make([]deviceRecord, 0, len(devices.Devices))
+	for i := range devices.Devices {
+		items = append(items, deviceRecordFromAPI(&devices.Devices[i]))
+	}
+	return items, nil
+}
+
+func (m *metalDevicesService) Delete(ctx context.Context, id string, force bool) error {
+	_, err := m.client.DevicesApi.DeleteDevice(m.withAuth(ctx), id).ForceDelete(force).Execute()
+	return err
+}
+
+func (m *metalDevicesService) withAuth(ctx context.Context) context.Context {
+	return context.WithValue(ctx, metalv1.ContextAPIKeys, map[string]metalv1.APIKey{
+		"x_auth_token": {Key: m.token},
+	})
+}
+
+func createDevicePayload(req deviceCreateRequest) (metalv1.CreateDeviceRequest, error) {
+	billingCycle, err := metalv1.NewDeviceCreateInputBillingCycleFromValue(req.BillingCycle)
+	if err != nil {
+		return metalv1.CreateDeviceRequest{}, err
+	}
+
+	if req.Metro != "" {
+		payload := metalv1.NewDeviceCreateInMetroInput(req.Metro, req.OperatingSys, req.Plan)
+		payload.Hostname = &req.Hostname
+		payload.BillingCycle = billingCycle
+		payload.Userdata = &req.UserData
+		payload.Tags = slices.Clone(req.Tags)
+		payload.ProjectSshKeys = slices.Clone(req.ProjectSSHKeys)
+		payload.SpotInstance = &req.SpotInstance
+		payload.SpotPriceMax = float32Ptr(float32(req.SpotPriceMax))
+		return metalv1.DeviceCreateInMetroInputAsCreateDeviceRequest(payload), nil
+	}
+
+	payload := metalv1.NewDeviceCreateInFacilityInput(slices.Clone(req.Facility), req.OperatingSys, req.Plan)
+	payload.Hostname = &req.Hostname
+	payload.BillingCycle = billingCycle
+	payload.Userdata = &req.UserData
+	payload.Tags = slices.Clone(req.Tags)
+	payload.ProjectSshKeys = slices.Clone(req.ProjectSSHKeys)
+	payload.SpotInstance = &req.SpotInstance
+	payload.SpotPriceMax = float32Ptr(float32(req.SpotPriceMax))
+	return metalv1.DeviceCreateInFacilityInputAsCreateDeviceRequest(payload), nil
+}
+
+func deviceRecordFromAPI(device *metalv1.Device) deviceRecord {
+	if device == nil {
+		return deviceRecord{}
+	}
+
+	return deviceRecord{
+		ID:       device.GetId(),
+		Hostname: device.GetHostname(),
+		Tags:     slices.Clone(device.Tags),
+	}
+}
+
+func float32Ptr(v float32) *float32 {
+	return &v
 }

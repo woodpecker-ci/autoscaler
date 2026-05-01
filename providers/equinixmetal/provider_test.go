@@ -6,7 +6,6 @@ import (
 	"testing"
 	"text/template"
 
-	"github.com/packethost/packngo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -16,30 +15,30 @@ import (
 )
 
 type fakeDevicesService struct {
-	createFn func(*packngo.DeviceCreateRequest) (*packngo.Device, *packngo.Response, error)
-	listFn   func(string, *packngo.ListOptions) ([]packngo.Device, *packngo.Response, error)
-	deleteFn func(string, bool) (*packngo.Response, error)
+	createFn func(context.Context, string, deviceCreateRequest) (*deviceRecord, error)
+	listFn   func(context.Context, string, string) ([]deviceRecord, error)
+	deleteFn func(context.Context, string, bool) error
 }
 
-func (f *fakeDevicesService) Create(req *packngo.DeviceCreateRequest) (*packngo.Device, *packngo.Response, error) {
+func (f *fakeDevicesService) Create(ctx context.Context, projectID string, req deviceCreateRequest) (*deviceRecord, error) {
 	if f.createFn == nil {
-		return nil, nil, nil
-	}
-	return f.createFn(req)
-}
-
-func (f *fakeDevicesService) List(projectID string, opts *packngo.ListOptions) ([]packngo.Device, *packngo.Response, error) {
-	if f.listFn == nil {
-		return nil, nil, nil
-	}
-	return f.listFn(projectID, opts)
-}
-
-func (f *fakeDevicesService) Delete(deviceID string, force bool) (*packngo.Response, error) {
-	if f.deleteFn == nil {
 		return nil, nil
 	}
-	return f.deleteFn(deviceID, force)
+	return f.createFn(ctx, projectID, req)
+}
+
+func (f *fakeDevicesService) List(ctx context.Context, projectID, tag string) ([]deviceRecord, error) {
+	if f.listFn == nil {
+		return nil, nil
+	}
+	return f.listFn(ctx, projectID, tag)
+}
+
+func (f *fakeDevicesService) Delete(ctx context.Context, deviceID string, force bool) error {
+	if f.deleteFn == nil {
+		return nil
+	}
+	return f.deleteFn(ctx, deviceID, force)
 }
 
 func TestDeployAgentInvalidUserData(t *testing.T) {
@@ -57,7 +56,8 @@ func TestDeployAgentInvalidUserData(t *testing.T) {
 func TestDeployAgentCreatesDeviceWithExpectedFields(t *testing.T) {
 	t.Parallel()
 
-	var got *packngo.DeviceCreateRequest
+	var got deviceCreateRequest
+	var gotProjectID string
 	p := &Provider{
 		name:         "equinixmetal",
 		projectID:    "project-123",
@@ -76,19 +76,19 @@ func TestDeployAgentCreatesDeviceWithExpectedFields(t *testing.T) {
 			Image:  "woodpeckerci/woodpecker-agent:next",
 		},
 		userDataTemplate: template.Must(template.New("").Parse("#!/bin/sh\necho ready")),
-		devices: &fakeDevicesService{createFn: func(req *packngo.DeviceCreateRequest) (*packngo.Device, *packngo.Response, error) {
+		devices: &fakeDevicesService{createFn: func(_ context.Context, projectID string, req deviceCreateRequest) (*deviceRecord, error) {
+			gotProjectID = projectID
 			got = req
-			return &packngo.Device{ID: "dev-1", Hostname: req.Hostname}, nil, nil
+			return &deviceRecord{ID: "dev-1", Hostname: req.Hostname}, nil
 		}},
 	}
 
 	err := p.DeployAgent(t.Context(), &woodpecker.Agent{Name: "agent-1"})
 	require.NoError(t, err)
-	require.NotNil(t, got)
+	assert.Equal(t, "project-123", gotProjectID)
 	assert.Equal(t, "agent-1", got.Hostname)
-	assert.Equal(t, "project-123", got.ProjectID)
 	assert.Equal(t, "c3.small.x86", got.Plan)
-	assert.Equal(t, "ubuntu_24_04", got.OS)
+	assert.Equal(t, "ubuntu_24_04", got.OperatingSys)
 	assert.Equal(t, "hourly", got.BillingCycle)
 	assert.Equal(t, "sv", got.Metro)
 	assert.Empty(t, got.Facility)
@@ -106,12 +106,13 @@ func TestListDeployedAgentNamesReturnsPoolDevices(t *testing.T) {
 		name:      "equinixmetal",
 		projectID: "project-123",
 		config:    &config.Config{PoolID: "pool-7"},
-		devices: &fakeDevicesService{listFn: func(projectID string, _ *packngo.ListOptions) ([]packngo.Device, *packngo.Response, error) {
+		devices: &fakeDevicesService{listFn: func(_ context.Context, projectID, tag string) ([]deviceRecord, error) {
 			require.Equal(t, "project-123", projectID)
-			return []packngo.Device{
+			require.Equal(t, engine.LabelPool+"=pool-7", tag)
+			return []deviceRecord{
 				{Hostname: "agent-1", Tags: []string{engine.LabelPool + "=pool-7"}},
 				{Hostname: "agent-2", Tags: []string{engine.LabelPool + "=pool-7"}},
-			}, nil, nil
+			}, nil
 		}},
 	}
 
@@ -129,13 +130,13 @@ func TestRemoveAgentDeletesMatchingPoolDevice(t *testing.T) {
 		projectID: "project-123",
 		config:    &config.Config{PoolID: "pool-7"},
 		devices: &fakeDevicesService{
-			listFn: func(_ string, _ *packngo.ListOptions) ([]packngo.Device, *packngo.Response, error) {
-				return []packngo.Device{{ID: "dev-1", Hostname: "agent-1", Tags: []string{engine.LabelPool + "=pool-7"}}}, nil, nil
+			listFn: func(_ context.Context, _, _ string) ([]deviceRecord, error) {
+				return []deviceRecord{{ID: "dev-1", Hostname: "agent-1", Tags: []string{engine.LabelPool + "=pool-7"}}}, nil
 			},
-			deleteFn: func(deviceID string, force bool) (*packngo.Response, error) {
+			deleteFn: func(_ context.Context, deviceID string, force bool) error {
 				deletedID = deviceID
 				assert.False(t, force)
-				return nil, nil
+				return nil
 			},
 		},
 	}
@@ -150,11 +151,11 @@ func TestRemoveAgentReturnsErrorOnDuplicateHostnames(t *testing.T) {
 		name:      "equinixmetal",
 		projectID: "project-123",
 		config:    &config.Config{PoolID: "pool-7"},
-		devices: &fakeDevicesService{listFn: func(_ string, _ *packngo.ListOptions) ([]packngo.Device, *packngo.Response, error) {
-			return []packngo.Device{
+		devices: &fakeDevicesService{listFn: func(_ context.Context, _, _ string) ([]deviceRecord, error) {
+			return []deviceRecord{
 				{ID: "dev-1", Hostname: "agent-1", Tags: []string{engine.LabelPool + "=pool-7"}},
 				{ID: "dev-2", Hostname: "agent-1", Tags: []string{engine.LabelPool + "=pool-7"}},
-			}, nil, nil
+			}, nil
 		}},
 	}
 
@@ -168,8 +169,8 @@ func TestListDeployedAgentNamesPropagatesErrors(t *testing.T) {
 		name:      "equinixmetal",
 		projectID: "project-123",
 		config:    &config.Config{PoolID: "pool-7"},
-		devices: &fakeDevicesService{listFn: func(_ string, _ *packngo.ListOptions) ([]packngo.Device, *packngo.Response, error) {
-			return nil, nil, errors.New("boom")
+		devices: &fakeDevicesService{listFn: func(_ context.Context, _, _ string) ([]deviceRecord, error) {
+			return nil, errors.New("boom")
 		}},
 	}
 
