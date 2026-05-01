@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"testing"
-	"text/template"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -41,11 +40,21 @@ func (f *fakeDevicesService) Delete(ctx context.Context, deviceID string, force 
 	return f.deleteFn(ctx, deviceID, force)
 }
 
+type fakeResolver struct {
+	resolveFn func(context.Context, *provider) error
+}
+
+func (f fakeResolver) Resolve(ctx context.Context, p *provider) error {
+	if f.resolveFn == nil {
+		return nil
+	}
+	return f.resolveFn(ctx, p)
+}
+
 func TestDeployAgentInvalidUserData(t *testing.T) {
-	p := &Provider{
-		config:           &config.Config{},
-		userDataTemplate: template.Must(template.New("").Parse("{{.InvalidField}}")),
-		devices:          &fakeDevicesService{},
+	p := &provider{
+		config:  &config.Config{UserData: "{{.InvalidField}}"},
+		devices: &fakeDevicesService{},
 	}
 
 	err := p.DeployAgent(t.Context(), &woodpecker.Agent{Name: "agent-1"})
@@ -58,24 +67,22 @@ func TestDeployAgentCreatesDeviceWithExpectedFields(t *testing.T) {
 
 	var got deviceCreateRequest
 	var gotProjectID string
-	p := &Provider{
-		name:         "equinixmetal",
-		projectID:    "project-123",
-		metro:        "sv",
-		plans:        []string{"c3.small.x86"},
-		operatingSys: "ubuntu_24_04",
-		billingCycle: "hourly",
-		tags: []string{
-			"team=ci",
-		},
+	p := &provider{
+		name:           "equinixmetal",
+		projectID:      "project-123",
+		metro:          "sv",
+		plans:          []string{"c3.small.x86"},
+		operatingSys:   "ubuntu_24_04",
+		billingCycle:   "hourly",
+		tags:           []string{"team=ci"},
 		projectSSHKeys: []string{"ssh-key-1"},
 		spotInstance:   true,
 		spotPriceMax:   1.25,
 		config: &config.Config{
-			PoolID: "pool-7",
-			Image:  "woodpeckerci/woodpecker-agent:next",
+			PoolID:   "pool-7",
+			Image:    "woodpeckerci/woodpecker-agent:next",
+			UserData: "#!/bin/sh\necho ready",
 		},
-		userDataTemplate: template.Must(template.New("").Parse("#!/bin/sh\necho ready")),
 		devices: &fakeDevicesService{createFn: func(_ context.Context, projectID string, req deviceCreateRequest) (*deviceRecord, error) {
 			gotProjectID = projectID
 			got = req
@@ -101,8 +108,22 @@ func TestDeployAgentCreatesDeviceWithExpectedFields(t *testing.T) {
 	assert.Contains(t, got.UserData, "echo ready")
 }
 
+func TestNewResolvesConfigBeforeReturning(t *testing.T) {
+	called := false
+	p := &provider{name: "equinixmetal"}
+	p.resolver = fakeResolver{resolveFn: func(_ context.Context, got *provider) error {
+		called = true
+		require.Same(t, p, got)
+		return nil
+	}}
+
+	err := p.resolver.Resolve(t.Context(), p)
+	require.NoError(t, err)
+	assert.True(t, called)
+}
+
 func TestListDeployedAgentNamesReturnsPoolDevices(t *testing.T) {
-	p := &Provider{
+	p := &provider{
 		name:      "equinixmetal",
 		projectID: "project-123",
 		config:    &config.Config{PoolID: "pool-7"},
@@ -125,7 +146,7 @@ func TestRemoveAgentDeletesMatchingPoolDevice(t *testing.T) {
 	t.Parallel()
 
 	var deletedID string
-	p := &Provider{
+	p := &provider{
 		name:      "equinixmetal",
 		projectID: "project-123",
 		config:    &config.Config{PoolID: "pool-7"},
@@ -147,7 +168,7 @@ func TestRemoveAgentDeletesMatchingPoolDevice(t *testing.T) {
 }
 
 func TestRemoveAgentReturnsErrorOnDuplicateHostnames(t *testing.T) {
-	p := &Provider{
+	p := &provider{
 		name:      "equinixmetal",
 		projectID: "project-123",
 		config:    &config.Config{PoolID: "pool-7"},
@@ -165,7 +186,7 @@ func TestRemoveAgentReturnsErrorOnDuplicateHostnames(t *testing.T) {
 }
 
 func TestListDeployedAgentNamesPropagatesErrors(t *testing.T) {
-	p := &Provider{
+	p := &provider{
 		name:      "equinixmetal",
 		projectID: "project-123",
 		config:    &config.Config{PoolID: "pool-7"},
@@ -183,12 +204,12 @@ func TestListDeployedAgentNamesPropagatesErrors(t *testing.T) {
 func TestValidateRequiresExactlyOneLocation(t *testing.T) {
 	tests := []struct {
 		name     string
-		provider Provider
+		provider provider
 		wantErr  error
 	}{
 		{
 			name: "missing location",
-			provider: Provider{
+			provider: provider{
 				projectID:    "project-123",
 				plans:        []string{"c3.small.x86"},
 				operatingSys: "ubuntu_24_04",
@@ -197,7 +218,7 @@ func TestValidateRequiresExactlyOneLocation(t *testing.T) {
 		},
 		{
 			name: "metro and facility conflict",
-			provider: Provider{
+			provider: provider{
 				projectID:    "project-123",
 				plans:        []string{"c3.small.x86"},
 				operatingSys: "ubuntu_24_04",
@@ -217,7 +238,7 @@ func TestValidateRequiresExactlyOneLocation(t *testing.T) {
 }
 
 func TestValidateRejectsReservedTagPrefix(t *testing.T) {
-	p := Provider{
+	p := provider{
 		projectID:    "project-123",
 		plans:        []string{"c3.small.x86"},
 		operatingSys: "ubuntu_24_04",

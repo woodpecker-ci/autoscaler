@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"slices"
 	"strings"
-	"text/template"
 
 	metalv1 "github.com/equinix/equinix-sdk-go/services/metalv1"
 	"github.com/urfave/cli/v3"
@@ -15,20 +14,28 @@ import (
 	"go.woodpecker-ci.org/autoscaler/engine"
 	"go.woodpecker-ci.org/autoscaler/engine/inits/cloudinit"
 	"go.woodpecker-ci.org/autoscaler/engine/types"
+	"go.woodpecker-ci.org/autoscaler/utils"
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
 
 var (
-	ErrProjectIDRequired    = errors.New("project ID is required")
-	ErrPlanRequired         = errors.New("at least one plan is required")
-	ErrOperatingSysRequired = errors.New("operating system is required")
-	ErrLocationRequired     = errors.New("either metro or facility must be set")
-	ErrLocationConflict     = errors.New("metro and facility are mutually exclusive")
-	ErrEmptyTag             = errors.New("tags must not be empty")
-	ErrReservedTagPrefix    = errors.New("illegal tag prefix")
+	ErrProjectIDRequired     = errors.New("project ID is required")
+	ErrPlanRequired          = errors.New("at least one plan is required")
+	ErrPlanNotFound          = errors.New("plan not found")
+	ErrOperatingSysRequired  = errors.New("operating system is required")
+	ErrOperatingSysNotFound  = errors.New("operating system not found")
+	ErrOperatingSysPlanError = errors.New("operating system does not support selected plan")
+	ErrLocationRequired      = errors.New("either metro or facility must be set")
+	ErrLocationConflict      = errors.New("metro and facility are mutually exclusive")
+	ErrMetroNotFound         = errors.New("metro not found")
+	ErrFacilityNotFound      = errors.New("facility not found")
+	ErrEmptyTag              = errors.New("tags must not be empty")
+	ErrReservedTagPrefix     = errors.New("illegal tag prefix")
 )
 
 const deviceListPerPage int32 = 100
+
+const facilityLookupSlots = 2
 
 type deviceCreateRequest struct {
 	Hostname       string
@@ -56,30 +63,34 @@ type devicesService interface {
 	Delete(context.Context, string, bool) error
 }
 
+type configResolver interface {
+	Resolve(context.Context, *provider) error
+}
+
 type metalDevicesService struct {
 	client *metalv1.APIClient
 	token  string
 }
 
-type Provider struct {
-	name             string
-	projectID        string
-	metro            string
-	facility         []string
-	plans            []string
-	operatingSys     string
-	billingCycle     string
-	tags             []string
-	projectSSHKeys   []string
-	spotInstance     bool
-	spotPriceMax     float64
-	config           *config.Config
-	userDataTemplate *template.Template
-	devices          devicesService
+type provider struct {
+	name           string
+	projectID      string
+	metro          string
+	facility       []string
+	plans          []string
+	operatingSys   string
+	billingCycle   string
+	tags           []string
+	projectSSHKeys []string
+	spotInstance   bool
+	spotPriceMax   float64
+	config         *config.Config
+	devices        devicesService
+	resolver       configResolver
 }
 
-func New(_ context.Context, c *cli.Command, config *config.Config) (types.Provider, error) {
-	p := &Provider{
+func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Provider, error) {
+	p := &provider{
 		name:           "equinixmetal",
 		projectID:      c.String("equinixmetal-project-id"),
 		metro:          c.String("equinixmetal-metro"),
@@ -100,15 +111,21 @@ func New(_ context.Context, c *cli.Command, config *config.Config) (types.Provid
 
 	cfg := metalv1.NewConfiguration()
 	cfg.UserAgent = "woodpecker-autoscaler"
-	p.devices = &metalDevicesService{
+	service := &metalDevicesService{
 		client: metalv1.NewAPIClient(cfg),
 		token:  c.String("equinixmetal-api-token"),
+	}
+	p.devices = service
+	p.resolver = service
+
+	if err := p.resolver.Resolve(ctx, p); err != nil {
+		return nil, fmt.Errorf("%s: %w", p.name, err)
 	}
 
 	return p, nil
 }
 
-func (p *Provider) validate() error {
+func (p *provider) validate() error {
 	switch {
 	case p.projectID == "":
 		return ErrProjectIDRequired
@@ -141,8 +158,8 @@ func (p *Provider) validate() error {
 	return nil
 }
 
-func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
-	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, p.userDataTemplate)
+func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
+	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, nil)
 	if err != nil {
 		return fmt.Errorf("%s: cloudinit.RenderUserDataTemplate: %w", p.name, err)
 	}
@@ -167,7 +184,7 @@ func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 	return nil
 }
 
-func (p *Provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) error {
+func (p *provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) error {
 	device, err := p.getAgent(ctx, agent.Name)
 	if err != nil {
 		return err
@@ -183,7 +200,7 @@ func (p *Provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) err
 	return nil
 }
 
-func (p *Provider) ListDeployedAgentNames(ctx context.Context) ([]string, error) {
+func (p *provider) ListDeployedAgentNames(ctx context.Context) ([]string, error) {
 	devices, err := p.listPoolDevices(ctx)
 	if err != nil {
 		return nil, err
@@ -197,7 +214,7 @@ func (p *Provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 	return names, nil
 }
 
-func (p *Provider) getAgent(ctx context.Context, hostname string) (*deviceRecord, error) {
+func (p *provider) getAgent(ctx context.Context, hostname string) (*deviceRecord, error) {
 	devices, err := p.listPoolDevices(ctx)
 	if err != nil {
 		return nil, err
@@ -220,7 +237,7 @@ func (p *Provider) getAgent(ctx context.Context, hostname string) (*deviceRecord
 	}
 }
 
-func (p *Provider) listPoolDevices(ctx context.Context) ([]deviceRecord, error) {
+func (p *provider) listPoolDevices(ctx context.Context) ([]deviceRecord, error) {
 	poolTag := poolTag(p.config.PoolID)
 	devices, err := p.devices.List(ctx, p.projectID, poolTag)
 	if err != nil {
@@ -237,11 +254,11 @@ func (p *Provider) listPoolDevices(ctx context.Context) ([]deviceRecord, error) 
 	return filtered, nil
 }
 
-func (p *Provider) primaryPlan() string {
+func (p *provider) primaryPlan() string {
 	return strings.TrimSpace(p.plans[0])
 }
 
-func (p *Provider) deviceTags() []string {
+func (p *provider) deviceTags() []string {
 	tags := []string{
 		poolTag(p.config.PoolID),
 		imageTag(p.config.Image),
@@ -261,6 +278,22 @@ func poolTag(poolID string) string {
 
 func imageTag(image string) string {
 	return engine.LabelImage + "=" + image
+}
+
+func (m *metalDevicesService) Resolve(ctx context.Context, p *provider) error {
+	if err := m.resolveMetro(ctx, p.metro); err != nil {
+		return err
+	}
+	if err := m.resolveFacilities(ctx, p.facility); err != nil {
+		return err
+	}
+	if err := m.resolvePlans(ctx, p.plans); err != nil {
+		return err
+	}
+	if err := m.resolveOperatingSystem(ctx, p.operatingSys, p.primaryPlan()); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (m *metalDevicesService) Create(ctx context.Context, projectID string, req deviceCreateRequest) (*deviceRecord, error) {
@@ -295,6 +328,79 @@ func (m *metalDevicesService) Delete(ctx context.Context, id string, force bool)
 	return err
 }
 
+func (m *metalDevicesService) resolveMetro(ctx context.Context, metro string) error {
+	if metro == "" {
+		return nil
+	}
+
+	metros, _, err := m.client.MetrosApi.FindMetros(m.withAuth(ctx)).Execute()
+	if err != nil {
+		return err
+	}
+	for _, item := range metros.Metros {
+		if metro == item.GetCode() || metro == item.GetId() {
+			return nil
+		}
+	}
+	return fmt.Errorf("%w: %s", ErrMetroNotFound, metro)
+}
+
+func (m *metalDevicesService) resolveFacilities(ctx context.Context, facilities []string) error {
+	if len(facilities) == 0 {
+		return nil
+	}
+
+	facilityList, _, err := m.client.FacilitiesApi.FindFacilities(m.withAuth(ctx)).Execute()
+	if err != nil {
+		return err
+	}
+
+	known := make(map[string]struct{}, len(facilityList.Facilities)*facilityLookupSlots)
+	for _, item := range facilityList.Facilities {
+		known[item.GetCode()] = struct{}{}
+		known[item.GetId()] = struct{}{}
+	}
+
+	for _, facility := range facilities {
+		if _, ok := known[facility]; ok {
+			continue
+		}
+		return fmt.Errorf("%w: %s", ErrFacilityNotFound, facility)
+	}
+	return nil
+}
+
+func (m *metalDevicesService) resolvePlans(ctx context.Context, plans []string) error {
+	for _, plan := range plans {
+		planList, _, err := m.client.PlansApi.FindPlans(m.withAuth(ctx)).Slug(plan).Execute()
+		if err != nil {
+			return err
+		}
+		if len(planList.Plans) == 0 {
+			return fmt.Errorf("%w: %s", ErrPlanNotFound, plan)
+		}
+	}
+	return nil
+}
+
+func (m *metalDevicesService) resolveOperatingSystem(ctx context.Context, slug, plan string) error {
+	osList, _, err := m.client.OperatingSystemsApi.FindOperatingSystems(m.withAuth(ctx)).Execute()
+	if err != nil {
+		return err
+	}
+
+	for _, item := range osList.OperatingSystems {
+		if slug != item.GetSlug() && slug != item.GetId() {
+			continue
+		}
+		if len(item.ProvisionableOn) > 0 && !slices.Contains(item.ProvisionableOn, plan) {
+			return fmt.Errorf("%w: %s on %s", ErrOperatingSysPlanError, slug, plan)
+		}
+		return nil
+	}
+	return fmt.Errorf("%w: %s", ErrOperatingSysNotFound, slug)
+}
+
 func (m *metalDevicesService) withAuth(ctx context.Context) context.Context {
 	return context.WithValue(ctx, metalv1.ContextAPIKeys, map[string]metalv1.APIKey{
 		"x_auth_token": {Key: m.token},
@@ -309,24 +415,24 @@ func createDevicePayload(req deviceCreateRequest) (metalv1.CreateDeviceRequest, 
 
 	if req.Metro != "" {
 		payload := metalv1.NewDeviceCreateInMetroInput(req.Metro, req.OperatingSys, req.Plan)
-		payload.Hostname = &req.Hostname
+		payload.Hostname = utils.ToPtr(req.Hostname)
 		payload.BillingCycle = billingCycle
-		payload.Userdata = &req.UserData
+		payload.Userdata = utils.ToPtr(req.UserData)
 		payload.Tags = slices.Clone(req.Tags)
 		payload.ProjectSshKeys = slices.Clone(req.ProjectSSHKeys)
-		payload.SpotInstance = &req.SpotInstance
-		payload.SpotPriceMax = float32Ptr(float32(req.SpotPriceMax))
+		payload.SpotInstance = utils.ToPtr(req.SpotInstance)
+		payload.SpotPriceMax = utils.ToPtr(float32(req.SpotPriceMax))
 		return metalv1.DeviceCreateInMetroInputAsCreateDeviceRequest(payload), nil
 	}
 
 	payload := metalv1.NewDeviceCreateInFacilityInput(slices.Clone(req.Facility), req.OperatingSys, req.Plan)
-	payload.Hostname = &req.Hostname
+	payload.Hostname = utils.ToPtr(req.Hostname)
 	payload.BillingCycle = billingCycle
-	payload.Userdata = &req.UserData
+	payload.Userdata = utils.ToPtr(req.UserData)
 	payload.Tags = slices.Clone(req.Tags)
 	payload.ProjectSshKeys = slices.Clone(req.ProjectSSHKeys)
-	payload.SpotInstance = &req.SpotInstance
-	payload.SpotPriceMax = float32Ptr(float32(req.SpotPriceMax))
+	payload.SpotInstance = utils.ToPtr(req.SpotInstance)
+	payload.SpotPriceMax = utils.ToPtr(float32(req.SpotPriceMax))
 	return metalv1.DeviceCreateInFacilityInputAsCreateDeviceRequest(payload), nil
 }
 
@@ -340,8 +446,4 @@ func deviceRecordFromAPI(device *metalv1.Device) deviceRecord {
 		Hostname: device.GetHostname(),
 		Tags:     slices.Clone(device.Tags),
 	}
-}
-
-func float32Ptr(v float32) *float32 {
-	return &v
 }
