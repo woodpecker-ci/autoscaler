@@ -1,9 +1,10 @@
 # Changelog
 
-## [1.4.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.4.1) - 2026-05-01
+## [1.4.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.4.1) - 2026-05-02
 
 ### 📦️ Dependency
 
+- chore(deps): update docker.io/woodpeckerci/plugin-docker-buildx docker tag to v6.1.0 [[#610](https://github.com/woodpecker-ci/autoscaler/pull/610)]
 - fix(deps): update golang deps non-major [[#607](https://github.com/woodpecker-ci/autoscaler/pull/607)]
 
 ## [1.4.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.4.0) - 2026-04-29
