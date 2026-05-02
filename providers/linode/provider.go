@@ -9,12 +9,13 @@ import (
 
 	"github.com/linode/linodego"
 	"github.com/urfave/cli/v3"
+	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 	"golang.org/x/oauth2"
 
 	"go.woodpecker-ci.org/autoscaler/config"
 	"go.woodpecker-ci.org/autoscaler/engine/inits/cloudinit"
 	"go.woodpecker-ci.org/autoscaler/engine/types"
-	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
+	"go.woodpecker-ci.org/autoscaler/version"
 )
 
 var (
@@ -188,6 +189,7 @@ func newClient(apiKey string) *linodego.Client {
 
 	linodeClient := linodego.NewClient(oauth2Client)
 	linodeClient.SetDebug(false)
+	linodeClient.SetUserAgent("woodpecker-autoscaler/" + version.String())
 
 	return &linodeClient
 }
