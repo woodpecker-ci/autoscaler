@@ -3,8 +3,6 @@ package engine
 import (
 	"context"
 	"fmt"
-	"math"
-	"regexp"
 	"strings"
 	"time"
 
@@ -18,10 +16,11 @@ import (
 )
 
 type Autoscaler struct {
-	client   server.Client
-	agents   []*woodpecker.Agent
-	config   *config.Config
-	provider types.Provider
+	client               server.Client
+	agents               map[string]*woodpecker.Agent
+	config               *config.Config
+	provider             types.Provider
+	providerCapabilities []types.Capability
 }
 
 // NewAutoscaler creates a new Autoscaler instance.
@@ -32,63 +31,66 @@ func NewAutoscaler(p types.Provider, client server.Client, config *config.Config
 		provider: p,
 		client:   client,
 		config:   config,
+		agents:   make(map[string]*woodpecker.Agent),
 	}
 }
 
+func (a *Autoscaler) GetCaps(ctx context.Context) (err error) {
+	a.providerCapabilities, err = a.provider.Capabilities(ctx)
+	return err
+}
+
 func (a *Autoscaler) loadAgents(_ context.Context) error {
-	a.agents = []*woodpecker.Agent{}
+	a.agents = make(map[string]*woodpecker.Agent)
 
 	agents, err := a.client.AgentList()
 	if err != nil {
 		return fmt.Errorf("client.AgentList: %w", err)
 	}
-	r, err := regexp.Compile(fmt.Sprintf("pool-%s-agent-.*?", a.config.PoolID))
-	if err != nil {
-		return fmt.Errorf("could not create regex matcher for agent names by pool ID: %w", err)
-	}
 
+	prefix := fmt.Sprintf("pool-%s-agent-", a.config.PoolID)
 	for _, agent := range agents {
-		if r.MatchString(agent.Name) {
-			a.agents = append(a.agents, agent)
+		if strings.HasPrefix(agent.Name, prefix) {
+			a.agents[agent.Name] = agent
 		}
 	}
 
 	return nil
 }
 
-func (a *Autoscaler) getPoolAgents(excludeNoSchedule bool) []*woodpecker.Agent {
-	agents := make([]*woodpecker.Agent, 0)
+// createAgents deploys `amount` new agents into the given bucket.
+// It first tries to reactivate matching no-schedule agents
+// (which are already provisioned on the provider) before deploying new ones.
+func (a *Autoscaler) createAgents(ctx context.Context, bucket agentBucket, amount int) error {
+	const suffixLength = 4
+
+	if amount <= 0 {
+		return nil
+	}
+
+	// First, reactivate matching no-schedule agents.
+	reactivated := 0
 	for _, agent := range a.agents {
-		if excludeNoSchedule && agent.NoSchedule {
+		if reactivated >= amount {
+			break
+		}
+		if !agent.NoSchedule {
 			continue
 		}
-		agents = append(agents, agent)
-	}
-	return agents
-}
-
-func (a *Autoscaler) createAgents(ctx context.Context, amount int) error {
-	suffixLength := 4
-
-	reactivatedAgents := 0
-
-	// try to re-activate agents that are in no-schedule state
-	for i := 0; i < amount; i++ {
-		for _, agent := range a.agents {
-			if agent.NoSchedule {
-				log.Info().Str("agent", agent.Name).Msg("reactivate agent")
-				agent.NoSchedule = false
-				_, err := a.client.AgentUpdate(agent)
-				if err != nil {
-					return fmt.Errorf("client.AgentUpdate: %w", err)
-				}
-				reactivatedAgents++
-			}
+		if !agentMatchesCapability(agent, bucket.Capability) {
+			continue
 		}
+
+		log.Info().Str("agent", agent.Name).Msg("reactivate agent")
+		agent.NoSchedule = false
+		if _, err := a.client.AgentUpdate(agent); err != nil {
+			return fmt.Errorf("client.AgentUpdate: %w", err)
+		}
+		reactivated++
 	}
 
-	// create new agents
-	for i := 0; i < amount-reactivatedAgents; i++ {
+	// Deploy fresh agents for whatever's left.
+	for i := reactivated; i < amount; i++ {
 		agent, err := a.client.AgentCreate(&woodpecker.Agent{
 			Name: fmt.Sprintf("pool-%s-agent-%s", a.config.PoolID, utils.RandomString(suffixLength)),
 		})
@@ -96,45 +98,54 @@ func (a *Autoscaler) createAgents(ctx context.Context, amount int) error {
 			return fmt.Errorf("client.AgentCreate: %w", err)
 		}
 
-		log.Info().Str("agent", agent.Name).Msg("deploying agent")
+		log.Info().
+			Str("agent", agent.Name).
+			Str("platform", bucket.Capability.Platform).
+			Str("backend", string(bucket.Capability.Backend)).
+			Msg("deploying agent")
 
-		err = a.provider.DeployAgent(ctx, agent)
-		if err != nil {
+		if err := a.provider.DeployAgent(ctx, agent, bucket.Capability); err != nil {
 			return fmt.Errorf("types.DeployAgent: %w", err)
 		}
 
-		a.agents = append(a.agents, agent)
+		a.agents[agent.Name] = agent
 	}
 
 	return nil
 }
 
-func (a *Autoscaler) drainAgents(_ context.Context, amount int) error {
-	for i := 0; i < amount; i++ {
-		for _, agent := range a.agents {
-			// agent is already marked for draining
-			if agent.NoSchedule {
-				continue
-			}
-
-			// agent has recently done work => not ready for draining
-			if time.Since(time.Unix(agent.LastWork, 0)) < a.config.AgentIdleTimeout {
-				continue
-			}
-
-			// agent has never contacted the server => not ready for draining
-			if agent.LastContact == 0 {
-				continue
-			}
-
-			log.Info().Str("agent", agent.Name).Msg("drain agent")
-			agent.NoSchedule = true
-			_, err := a.client.AgentUpdate(agent)
-			if err != nil {
-				return fmt.Errorf("client.AgentUpdate: %w", err)
-			}
+// drainAgents marks up to `amount` agents in the given bucket as
+// no-schedule so woodpecker stops dispatching new tasks to them.
+// An agent is only drained if it's been idle long enough and has actually
+// connected to the server before.
+func (a *Autoscaler) drainAgents(_ context.Context, bucket agentBucket, amount int) error {
+	if amount <= 0 {
+		return nil
+	}
+	drained := 0
+	for _, agent := range a.agents {
+		if drained >= amount {
 			break
 		}
+		if agent.NoSchedule {
+			continue
+		}
+		if !agentMatchesCapability(agent, bucket.Capability) {
+			continue
+		}
+		if time.Since(time.Unix(agent.LastWork, 0)) < a.config.AgentIdleTimeout {
+			continue
+		}
+		if agent.LastContact == 0 {
+			continue
+		}
+
+		log.Info().Str("agent", agent.Name).Msg("drain agent")
+		agent.NoSchedule = true
+		if _, err := a.client.AgentUpdate(agent); err != nil {
+			return fmt.Errorf("client.AgentUpdate: %w", err)
+		}
+		drained++
 	}
 
 	return nil
@@ -181,19 +192,13 @@ func (a *Autoscaler) removeAgent(ctx context.Context, agent *woodpecker.Agent, r
 		return fmt.Errorf("client.AgentDelete: %w", err)
 	}
 
-	filteredAgents := make([]*woodpecker.Agent, 0)
-	for _, a := range a.agents {
-		if a.ID != agent.ID {
-			filteredAgents = append(filteredAgents, a)
-		}
-	}
-	a.agents = filteredAgents
+	delete(a.agents, agent.Name)
 
 	return nil
 }
 
 func (a *Autoscaler) removeDrainedAgents(ctx context.Context) error {
-	for _, agent := range a.getPoolAgents(false) {
+	for _, agent := range a.agents {
 		if !agent.NoSchedule {
 			continue
 		}
@@ -208,64 +213,39 @@ func (a *Autoscaler) removeDrainedAgents(ctx context.Context) error {
 }
 
 func (a *Autoscaler) cleanupDanglingAgents(ctx context.Context) error {
-	woodpeckerAgents := a.getPoolAgents(false)
 	providerAgentNames, err := a.provider.ListDeployedAgentNames(ctx)
 	if err != nil {
 		return err
 	}
 
-	// remove agents that are not in the woodpecker agent list anymore
-	for _, agentName := range providerAgentNames {
-		found := false
-		for _, agent := range woodpeckerAgents {
-			if agent.Name == agentName {
-				found = true
-				break
-			}
+	// Build the provider-side set up front so the two reconciliation
+	// directions below are independent of each other.
+	providerSet := make(map[string]struct{}, len(providerAgentNames))
+	for _, name := range providerAgentNames {
+		providerSet[name] = struct{}{}
+	}
+
+	// On provider but not on woodpecker → tear down on the provider.
+	for name := range providerSet {
+		if _, ok := a.agents[name]; ok {
+			continue
 		}
-
-		if !found {
-			log.Info().Str("agent", agentName).Str("reason", "not found on woodpecker").Msg("remove agent")
-			if err := a.provider.RemoveAgent(ctx, &woodpecker.Agent{Name: agentName}); err != nil {
-				return fmt.Errorf("types.RemoveAgent: %w", err)
-			}
-
-			// remove agent from providerAgentNames
-			_providerAgentNames := make([]string, 0)
-			for _, a := range providerAgentNames {
-				if a != agentName {
-					_providerAgentNames = append(_providerAgentNames, a)
-				}
-			}
-			providerAgentNames = _providerAgentNames
+		log.Info().Str("agent", name).Str("reason", "not found on woodpecker").Msg("remove agent")
+		if err := a.provider.RemoveAgent(ctx, &woodpecker.Agent{Name: name}); err != nil {
+			return fmt.Errorf("types.RemoveAgent: %w", err)
 		}
 	}
 
-	// remove agents that do not exist on the provider anymore
-	for _, agent := range woodpeckerAgents {
-		found := false
-		for _, agentName := range providerAgentNames {
-			if agent.Name == agentName {
-				found = true
-				break
-			}
+	// On woodpecker but not on provider → delete on woodpecker.
+	for name, agent := range a.agents {
+		if _, ok := providerSet[name]; ok {
+			continue
 		}
-
-		if !found {
-			log.Info().Str("agent", agent.Name).Str("reason", "not found on provider").Msg("remove agent")
-			if err = a.client.AgentDelete(agent.ID); err != nil {
-				return fmt.Errorf("client.AgentDelete: %w", err)
-			}
-
-			// remove agent from woodpeckerAgents
-			_woodpeckerAgents := make([]*woodpecker.Agent, 0)
-			for _, a := range a.agents {
-				if a.Name != agent.Name {
-					woodpeckerAgents = append(woodpeckerAgents, a)
-				}
-			}
-			a.agents = _woodpeckerAgents
+		log.Info().Str("agent", name).Str("reason", "not found on provider").Msg("remove agent")
+		if err := a.client.AgentDelete(agent.ID); err != nil {
+			return fmt.Errorf("client.AgentDelete: %w", err)
 		}
+		delete(a.agents, name)
 	}
 
 	return nil
@@ -273,7 +253,7 @@ func (a *Autoscaler) cleanupDanglingAgents(ctx context.Context) error {
 
 func (a *Autoscaler) cleanupStaleAgents(ctx context.Context) error {
 	// remove agents that haven't contacted the server for a while (including agents that never contacted the server)
-	for _, agent := range a.getPoolAgents(false) {
+	for _, agent := range a.agents {
 		if agent.NoSchedule {
 			continue
 		}
@@ -296,77 +276,41 @@ func (a *Autoscaler) cleanupStaleAgents(ctx context.Context) error {
 	return nil
 }
 
-func (a *Autoscaler) getQueueInfo(_ context.Context) (freeTasks, runningTasks, pendingTasks int, err error) {
-	queueInfo, err := a.client.QueueInfo()
-	if err != nil {
-		return 0, 0, 0, fmt.Errorf("error from QueueInfo: %s", err.Error())
-	}
-
-	if a.config.FilterLabels == "" {
-		return queueInfo.Stats.Workers, queueInfo.Stats.Running, queueInfo.Stats.Pending, nil
-	}
-
-	labelFilterKey, labelFilterValue, ok := strings.Cut(a.config.FilterLabels, "=")
-	if !ok {
-		return 0, 0, 0, fmt.Errorf("invalid labels filter: %s", a.config.FilterLabels)
-	}
-
-	running := countTasksByLabel(queueInfo.Running, labelFilterKey, labelFilterValue)
-	pending := countTasksByLabel(queueInfo.Pending, labelFilterKey, labelFilterValue)
-
-	return queueInfo.Stats.Workers, running, pending, nil
-}
-
-func (a *Autoscaler) calcAgents(ctx context.Context) (float64, error) {
-	freeTasks, runningTasks, pendingTasks, err := a.getQueueInfo(ctx)
-	if err != nil {
-		return 0, err
-	}
-
-	log.Debug().Msgf("queue info: freeTasks = %v runningTasks = %v pendingTasks = %v", freeTasks, runningTasks, pendingTasks)
-	availableAgents := math.Ceil(float64(freeTasks+runningTasks) / float64((a.config.WorkflowsPerAgent)))
-	reqAgents := math.Ceil(float64(pendingTasks+runningTasks) / float64(a.config.WorkflowsPerAgent))
-
-	availablePoolAgents := len(a.getPoolAgents(true))
-	maxUp := float64(a.config.MaxAgents - availablePoolAgents)
-	maxDown := float64(availablePoolAgents - a.config.MinAgents)
-
-	reqPoolAgents := math.Ceil(reqAgents - (availableAgents + float64(availablePoolAgents)))
-	reqPoolAgents = math.Max(reqPoolAgents, -maxDown)
-	reqPoolAgents = math.Min(reqPoolAgents, maxUp)
-
-	log.Debug().Msgf("capacity info: agents = %v/%v pool = %v/%v limits = %v/%v", availableAgents, reqAgents, availablePoolAgents, reqPoolAgents, maxUp, maxDown)
-
-	return reqPoolAgents, nil
-}
-
-// Reconcile periodically checks the status of the agent pool and adjusts it to match
-// the desired capacity based on the current queue state.
+// Reconcile periodically checks the status of the agent pool and adjusts
+// it to match the desired capacity based on the current queue state.
+//
+// The decision is per-bucket: each provider capability merged with the
+// configured ExtraAgentLabels is one bucket, and we ask the planner how
+// much each bucket needs to scale up or down. Tasks that no bucket can
+// serve are excluded from the math — spinning up agents that can't run
+// them wouldn't help.
 func (a *Autoscaler) Reconcile(ctx context.Context) error {
 	if err := a.loadAgents(ctx); err != nil {
 		return fmt.Errorf("loading agents failed: %w", err)
 	}
 
-	reqPoolAgents, err := a.calcAgents(ctx)
+	queueInfo, err := a.client.QueueInfo()
 	if err != nil {
-		return fmt.Errorf("calculating agents failed: %w", err)
+		return fmt.Errorf("loading queue info failed: %w", err)
 	}
+	log.Debug().
+		Int("pending", len(queueInfo.Pending)).
+		Int("running", len(queueInfo.Running)).
+		Msg("queue snapshot")
 
-	if reqPoolAgents > 0 {
-		num := int(math.Abs(reqPoolAgents))
-		log.Debug().Msgf("starting %d additional agents", num)
-
-		if err := a.createAgents(ctx, num); err != nil {
-			return fmt.Errorf("creating agents failed: %w", err)
+	// planScaling already logs the per-bucket plan at debug level — we
+	// just dispatch.
+	for _, d := range a.planScaling(queueInfo.Pending, queueInfo.Running) {
+		var err error
+		switch {
+		case d.Delta > 0:
+			err = a.createAgents(ctx, d.Bucket, d.Delta)
+		case d.Delta < 0:
+			err = a.drainAgents(ctx, d.Bucket, -d.Delta)
 		}
-	}
-
-	if reqPoolAgents < 0 {
-		num := int(math.Abs(reqPoolAgents))
-
-		log.Debug().Msgf("checking %d agents if ready for draining", num)
-		if err := a.drainAgents(ctx, num); err != nil {
-			return fmt.Errorf("draining agents failed: %w", err)
+		if err != nil {
+			return fmt.Errorf("scaling bucket %s/%s: %w",
+				d.Bucket.Capability.Platform, d.Bucket.Capability.Backend, err)
 		}
 	}
 
@@ -386,15 +330,4 @@ func (a *Autoscaler) Reconcile(ctx context.Context) error {
 	}
 
 	return nil
-}
-
-func countTasksByLabel(jobs []woodpecker.Task, labelKey, labelValue string) int {
-	count := 0
-	for _, job := range jobs {
-		val, exists := job.Labels[labelKey]
-		if exists && val == labelValue {
-			count++
-		}
-	}
-	return count
 }

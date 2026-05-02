@@ -3,7 +3,6 @@ package scaleway
 import (
 	"os"
 
-	"github.com/scaleway/scaleway-sdk-go/scw"
 	"github.com/urfave/cli/v3"
 )
 
@@ -16,8 +15,10 @@ var ProviderFlags = []cli.Flag{
 		Usage: "Scaleway IAM API Token Access Key",
 		Sources: cli.NewValueSourceChain(
 			cli.EnvVar("WOODPECKER_SCALEWAY_ACCESS_KEY"),
+			cli.EnvVar("SCW_ACCESS_KEY"), // scaleway official naming
 			cli.File(os.Getenv("WOODPECKER_SCALEWAY_ACCESS_KEY_FILE")),
 		),
+		Required: true,
 		Category: category,
 	},
 	&cli.StringFlag{
@@ -25,42 +26,53 @@ var ProviderFlags = []cli.Flag{
 		Usage: "Scaleway IAM API Token Secret Key",
 		Sources: cli.NewValueSourceChain(
 			cli.EnvVar("WOODPECKER_SCALEWAY_SECRET_KEY"),
+			cli.EnvVar("SCW_SECRET_KEY"), // scaleway official naming
 			cli.File(os.Getenv("WOODPECKER_SCALEWAY_SECRET_KEY_FILE")),
 		),
+		Required: true,
 		Category: category,
 	},
-	// TODO(raskyld): implement multi-AZ
-	&cli.StringFlag{
-		Name:     "scaleway-zone",
-		Usage:    "Scaleway zone where to spawn instances",
-		Sources:  cli.EnvVars("WOODPECKER_SCALEWAY_ZONE"),
+	&cli.StringSliceFlag{
+		Name: "scaleway-server-types",
+		Usage: "Ordered list of server types to deploy, in \"type:zone\" format " +
+			"(e.g. \"PRO2-XXS:fr-par-1\", \"COPARM1-2C-8G:fr-par-2\"). " +
+			"Architecture is inferred from the server type. " +
+			"On resource unavailability the next entry is tried.",
+		Sources:  cli.EnvVars("WOODPECKER_SCALEWAY_SERVER_TYPES"),
+		Required: true,
 		Category: category,
-		Value:    scw.ZoneFrPar2.String(),
+	},
+	&cli.StringSliceFlag{
+		Name: "scaleway-images",
+		Usage: "Ordered list of image names (e.g. \"ubuntu_noble\", \"ubuntu_jammy\"). " +
+			"The first image that resolves for the server type's architecture wins.",
+		Sources:  cli.EnvVars("WOODPECKER_SCALEWAY_IMAGES"),
+		Value:    []string{"ubuntu_noble"},
+		Category: category,
 	},
 	&cli.StringFlag{
-		Name:     "scaleway-instance-type",
-		Usage:    "Scaleway instance type to spawn",
-		Sources:  cli.EnvVars("WOODPECKER_SCALEWAY_INSTANCE_TYPE"),
+		Name:  "scaleway-project",
+		Usage: "Scaleway Project ID in which to spawn the instances",
+		Sources: cli.NewValueSourceChain(
+			cli.EnvVar("WOODPECKER_SCALEWAY_PROJECT"),
+			cli.EnvVar("SCW_DEFAULT_PROJECT_ID"), // scaleway official naming
+		),
+		Required: true,
 		Category: category,
 	},
 	&cli.StringSliceFlag{
 		Name:     "scaleway-tags",
 		Usage:    "Comma separated list of tags to uniquely identify the instances spawned",
 		Sources:  cli.EnvVars("WOODPECKER_SCALEWAY_TAGS"),
-		Category: category,
-	},
-	&cli.StringFlag{
-		Name:     "scaleway-project",
-		Usage:    "Scaleway Project ID in which to spawn the instances",
-		Sources:  cli.EnvVars("WOODPECKER_SCALEWAY_PROJECT"),
+		Required: true,
 		Category: category,
 	},
 	&cli.StringFlag{
 		Name:     "scaleway-prefix",
 		Usage:    "Prefix prepended before any Scaleway resource name",
 		Sources:  cli.EnvVars("WOODPECKER_SCALEWAY_PREFIX"),
+		Value:    "woodpecker-autoscaler",
 		Category: category,
-		Value:    "wip-woodpecker-ci-autoscaler",
 	},
 	&cli.BoolFlag{
 		Name:     "scaleway-enable-ipv6",
@@ -68,25 +80,18 @@ var ProviderFlags = []cli.Flag{
 		Sources:  cli.EnvVars("WOODPECKER_SCALEWAY_ENABLE_IPV6"),
 		Category: category,
 	},
-	&cli.StringFlag{
-		Name:     "scaleway-image",
-		Usage:    "The base image for your instance",
-		Sources:  cli.EnvVars("WOODPECKER_SCALEWAY_IMAGE"),
-		Category: category,
-		Value:    "ubuntu_jammy",
-	},
 	&cli.Uint64Flag{
 		Name:     "scaleway-storage-size",
 		Usage:    "How much storage to provision for your agents in GB",
 		Sources:  cli.EnvVars("WOODPECKER_SCALEWAY_STORAGE_SIZE"),
-		Category: category,
 		Value:    25,
+		Category: category,
 	},
 	&cli.StringFlag{
 		Name:     "scaleway-storage-type",
 		Usage:    "The storage type to provision",
 		Sources:  cli.EnvVars("WOODPECKER_SCALEWAY_STORAGE_TYPE"),
-		Category: category,
 		Value:    "l_ssd",
+		Category: category,
 	},
 }

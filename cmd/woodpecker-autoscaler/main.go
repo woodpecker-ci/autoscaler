@@ -94,8 +94,7 @@ func run(ctx context.Context, cmd *cli.Command) error {
 		GRPCAddress:       cmd.String("grpc-addr"),
 		GRPCSecure:        cmd.Bool("grpc-secure"),
 		Image:             cmd.String("agent-image"),
-		FilterLabels:      cmd.String("filter-labels"),
-		UserData:          cmd.String("provider-user-data"),
+		UserData:          cmd.String("cloudinit-template"),
 		ExtraAgentLabels:  agentLabels,
 		Environment:       agentEnvironment,
 	}
@@ -105,8 +104,6 @@ func run(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
-	autoscaler := engine.NewAutoscaler(provider, client, config)
-
 	config.AgentInactivityTimeout, err = time.ParseDuration(cmd.String("agent-inactivity-timeout"))
 	if err != nil {
 		return fmt.Errorf("can't parse agent-inactivity-timeout: %w", err)
@@ -115,6 +112,12 @@ func run(ctx context.Context, cmd *cli.Command) error {
 	config.AgentIdleTimeout, err = time.ParseDuration(cmd.String("agent-idle-timeout"))
 	if err != nil {
 		return fmt.Errorf("can't parse agent-idle-timeout: %w", err)
+	}
+
+	autoscaler := engine.NewAutoscaler(provider, client, config)
+
+	if err := autoscaler.GetCaps(ctx); err != nil {
+		return fmt.Errorf("could not query provider capabilities: %w", err)
 	}
 
 	reconciliationInterval, err := time.ParseDuration(cmd.String("reconciliation-interval"))

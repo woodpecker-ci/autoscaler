@@ -89,11 +89,19 @@ var flags = []cli.Flag{
 		Sources: cli.EnvVars("WOODPECKER_PROVIDER"),
 	},
 	&cli.StringFlag{
-		Name:  "provider-user-data",
-		Usage: "userdata template to setup the provider instance",
+		Name:    "cloudinit-template",
+		Aliases: []string{"provider-user-data", "aws-user-data", "hetznercloud-user-data", "vultr-user-data"}, // TODO: remove in v2.0
+		Usage:   "userdata template to setup the provider instance",
 		Sources: cli.NewValueSourceChain(
+			cli.EnvVar("WOODPECKER_CLOUDINIT_TEMPLATE"),
+			cli.File(os.Getenv("WOODPECKER_CLOUDINIT_TEMPLATE_FILE")),
+			// TODO: remove in v2.0
 			cli.EnvVar("WOODPECKER_PROVIDER_USERDATA"),
 			cli.File(os.Getenv("WOODPECKER_PROVIDER_USERDATA_FILE")),
+			cli.EnvVar("WOODPECKER_HETZNERCLOUD_USERDATA"),
+			cli.File(os.Getenv("WOODPECKER_HETZNERCLOUD_USERDATA_FILE")),
+			cli.EnvVar("WOODPECKER_VULTR_USERDATA"),
+			cli.File(os.Getenv("WOODPECKER_VULTR_USERDATA_FILE")),
 		),
 	},
 	&cli.StringFlag{
@@ -106,12 +114,6 @@ var flags = []cli.Flag{
 		Name:    "agent-env",
 		Usage:   "additional agent environment variables as list with key=value pairs",
 		Sources: cli.EnvVars("WOODPECKER_AGENT_ENV"),
-	},
-	&cli.StringFlag{
-		Name:    "filter-labels",
-		Value:   "",
-		Usage:   "filter for specific tasks using labels",
-		Sources: cli.EnvVars("WOODPECKER_FILTER_LABELS"),
 	},
 	&cli.StringSliceFlag{
 		Name:    "agent-labels",

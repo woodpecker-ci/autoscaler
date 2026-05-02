@@ -2,13 +2,13 @@ package hetznercloud
 
 import (
 	"testing"
-	"text/template"
 
 	"github.com/hetznercloud/hcloud-go/v2/hcloud"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
 	"go.woodpecker-ci.org/autoscaler/config"
+	"go.woodpecker-ci.org/autoscaler/engine/types"
 	"go.woodpecker-ci.org/autoscaler/providers/hetznercloud/hcapi/mocks"
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
@@ -17,17 +17,11 @@ func TestDeployAgent(t *testing.T) {
 	tests := []struct {
 		name          string
 		setupMocks    func(*mocks.MockClient)
-		userdata      string
 		sshkeys       []string
 		expectedError string
 		serverType    []string
+		capability    types.Capability
 	}{
-		{
-			name:          "InvalidUserData",
-			setupMocks:    func(_ *mocks.MockClient) {},
-			userdata:      "{{.InvalidField}}",
-			expectedError: "RenderUserDataTemplate",
-		},
 		{
 			name: "ServerTypeNotFound",
 			setupMocks: func(mockClient *mocks.MockClient) {
@@ -35,6 +29,7 @@ func TestDeployAgent(t *testing.T) {
 				mockServerTypeClient.On("GetByName", mock.Anything, mock.Anything).Return(nil, nil, nil)
 				mockClient.On("ServerType").Return(mockServerTypeClient)
 			},
+			serverType:    []string{"cx11"},
 			expectedError: ErrServerTypeNotFound.Error(),
 		},
 		{
@@ -49,12 +44,24 @@ func TestDeployAgent(t *testing.T) {
 				mockImageClient.On("GetByNameAndArchitecture", mock.Anything, mock.Anything, hcloud.ArchitectureX86).Return(nil, nil, nil)
 				mockClient.On("Image").Return(mockImageClient)
 			},
+			serverType:    []string{"cx11"},
 			expectedError: ErrImageNotFound.Error(),
+			capability:    types.Capability{Platform: "linux/amd64"},
 		},
 		{
 			name: "ServerTypeWithLocation",
 			setupMocks: func(mockClient *mocks.MockClient) {
-				mockServerType := &hcloud.ServerType{Name: "cx11", Architecture: "x86"}
+				// The mocked server type must advertise nbg1 in its
+				// Locations list, otherwise the provider's
+				// serverTypeSupportsLocation filter throws it away
+				// before the deploy is attempted.
+				mockServerType := &hcloud.ServerType{
+					Name:         "cx11",
+					Architecture: "x86",
+					Locations: []hcloud.ServerTypeLocation{
+						{Location: &hcloud.Location{Name: "nbg1"}},
+					},
+				}
 				mockServerTypeClient := mocks.NewMockServerTypeClient(t)
 				mockServerTypeClient.On("GetByName", mock.Anything, "cx11").Return(mockServerType, nil, nil)
 				mockClient.On("ServerType").Return(mockServerTypeClient)
@@ -73,6 +80,7 @@ func TestDeployAgent(t *testing.T) {
 				mockClient.On("Server").Return(mockServerClient)
 			},
 			serverType: []string{"cx11:nbg1"},
+			capability: types.Capability{Platform: "linux/amd64"},
 		},
 	}
 
@@ -81,20 +89,21 @@ func TestDeployAgent(t *testing.T) {
 			mockClient := mocks.NewMockClient(t)
 			tt.setupMocks(mockClient)
 
-			p := &Provider{
-				client:           mockClient,
-				config:           &config.Config{},
-				userDataTemplate: template.Must(template.New("").Parse(tt.userdata)),
-				sshKeys:          tt.sshkeys,
-				serverType:       []string{"cx11"},
+			p := &provider{
+				client:  mockClient,
+				config:  &config.Config{},
+				sshKeys: tt.sshkeys,
 			}
 
+			var err error
 			if tt.serverType != nil {
-				p.serverType = tt.serverType
+				err = p.resolveServerConfigs(t.Context(), tt.serverType, "ubuntu-24.04")
+			}
+			if err == nil {
+				agent := &woodpecker.Agent{}
+				err = p.DeployAgent(t.Context(), agent, tt.capability)
 			}
 
-			agent := &woodpecker.Agent{}
-			err := p.DeployAgent(t.Context(), agent)
 			if tt.expectedError != "" {
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), tt.expectedError)
