@@ -4,6 +4,7 @@
 
 ### 📦️ Dependency
 
+- chore(deps): update dependency golangci/golangci-lint to v2.12.0 [[#609](https://github.com/woodpecker-ci/autoscaler/pull/609)]
 - chore(deps): update docker.io/woodpeckerci/plugin-docker-buildx docker tag to v6.1.0 [[#610](https://github.com/woodpecker-ci/autoscaler/pull/610)]
 - fix(deps): update golang deps non-major [[#607](https://github.com/woodpecker-ci/autoscaler/pull/607)]
 
