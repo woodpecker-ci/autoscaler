@@ -24,6 +24,13 @@ var (
 	ErrSSHKeyNotFound     = errors.New("SSH key not found")
 )
 
+// blackhole metadata services so running steps can not extract agent token from user-data
+// https://techdocs.akamai.com/cloud-computing/docs/metadata-service-api#api-endpoints
+var blackholeMetadataAPI = []string{
+	"ip -4 route add blackhole 169.254.169.254/32",
+	"ip -6 route add blackhole fd00:a9fe:a9fe::1/64",
+}
+
 // editorconfig-checker-enable
 type Provider struct {
 	region        string
@@ -63,7 +70,9 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 }
 
 func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
-	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, nil)
+	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, nil, cloudinit.RenderOption{
+		PreExec: blackholeMetadataAPI,
+	})
 	if err != nil {
 		return fmt.Errorf("%s: cloudinit.RenderUserDataTemplate: %w", p.name, err)
 	}
