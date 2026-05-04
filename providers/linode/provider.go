@@ -29,6 +29,7 @@ var (
 var blackholeMetadataAPI = []string{
 	"ip -4 route add blackhole 169.254.169.254/32",
 	"ip -6 route add blackhole fd00:a9fe:a9fe::1/64",
+	"ip -6 route add blackhole fe80::a9fe:a9fe/64",
 }
 
 // editorconfig-checker-enable
