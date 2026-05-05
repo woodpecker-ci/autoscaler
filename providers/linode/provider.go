@@ -38,7 +38,7 @@ type Provider struct {
 	region       *linodego.Region
 	name         string
 	instanceType *linodego.LinodeType
-	image        string
+	image        *linodego.Image
 	config       *config.Config
 	sshKey       string
 	rootPass     string
@@ -49,7 +49,6 @@ type Provider struct {
 func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Provider, error) {
 	p := &Provider{
 		name:     "linode",
-		image:    c.String("linode-image"),
 		sshKey:   c.String("linode-ssh-key"),
 		rootPass: c.String("linode-root-pass"),
 		config:   config,
@@ -77,6 +76,9 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 	if err := p.resolveInstanceType(ctx, c.String("linode-instance-type")); err != nil {
 		return nil, err
 	}
+	if err := p.resolveImage(ctx, c.String("linode-image")); err != nil {
+		return nil, err
+	}
 
 	if err := p.setupKeypair(ctx); err != nil {
 		return nil, fmt.Errorf("%s: setupKeypair: %w", p.name, err)
@@ -99,7 +101,7 @@ func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 	opts := linodego.InstanceCreateOptions{
 		Type:           p.instanceType.ID,
 		Label:          agent.Name,
-		Image:          p.image,
+		Image:          p.image.ID,
 		AuthorizedKeys: []string{p.sshKey},
 		RootPass:       p.rootPass,
 		Tags:           p.tags,

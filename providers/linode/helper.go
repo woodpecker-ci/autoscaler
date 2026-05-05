@@ -60,3 +60,12 @@ func (p *Provider) resolveInstanceType(ctx context.Context, it string) error {
 	p.instanceType = lt
 	return nil
 }
+
+func (p *Provider) resolveImage(ctx context.Context, i string) error {
+	img, err := p.client.GetImage(ctx, i)
+	if err != nil {
+		return fmt.Errorf("could not resolve image %q: %w", i, err)
+	}
+	p.image = img
+	return nil
+}
