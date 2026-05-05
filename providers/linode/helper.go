@@ -23,24 +23,40 @@ func generatePassword(length int) (string, error) {
 }
 
 func (p *Provider) resolveRegion(ctx context.Context, r string) error {
+	// let linode decide
+	if r == "" {
+		return nil
+	}
+
+	// set by region id
 	region, err := p.client.GetRegion(ctx, r)
-	if err != nil {
-		// we try to resolve by name
-		list, err2 := p.client.ListRegions(ctx, nil)
-		if err2 != nil {
-			err = errors.Join(err, err2)
-		} else if len(list) != 0 {
-			for _, li := range list {
-				if strings.EqualFold(li.Country, r) {
-					log.Info().Msgf("region found by country match: %q", li.ID)
-					p.region = &li
-					return nil
-				}
+	if err == nil {
+		p.region = region
+		return nil
+	}
+
+	// of if no valid id, we try to resolve by country
+	list, err2 := p.client.ListRegions(ctx, nil)
+	if err2 != nil {
+		err = errors.Join(err, err2)
+	} else if len(list) != 0 {
+		for _, li := range list {
+			if strings.EqualFold(li.Country, r) {
+				log.Info().Msgf("region found by country match: %q", li.ID)
+				p.region = &li
+				return nil
 			}
 		}
-
-		return fmt.Errorf("could not resolve region: %w", err)
 	}
-	p.region = region
+
+	return fmt.Errorf("could not resolve region %q: %w", r, err)
+}
+
+func (p *Provider) resolveInstanceType(ctx context.Context, it string) error {
+	lt, err := p.client.GetType(ctx, it)
+	if err != nil {
+		return fmt.Errorf("could not resolve instance type %q: %w", it, err)
+	}
+	p.instanceType = lt
 	return nil
 }

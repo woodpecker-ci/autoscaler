@@ -37,7 +37,7 @@ var blackholeMetadataAPI = []string{
 type Provider struct {
 	region       *linodego.Region
 	name         string
-	instanceType string
+	instanceType *linodego.LinodeType
 	image        string
 	config       *config.Config
 	sshKey       string
@@ -48,12 +48,11 @@ type Provider struct {
 
 func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Provider, error) {
 	p := &Provider{
-		name:         "linode",
-		instanceType: c.String("linode-instance-type"),
-		image:        c.String("linode-image"),
-		sshKey:       c.String("linode-ssh-key"),
-		rootPass:     c.String("linode-root-pass"),
-		config:       config,
+		name:     "linode",
+		image:    c.String("linode-image"),
+		sshKey:   c.String("linode-ssh-key"),
+		rootPass: c.String("linode-root-pass"),
+		config:   config,
 	}
 
 	apiToken := c.String("linode-api-token")
@@ -73,6 +72,9 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 	p.client = newClient(apiToken)
 
 	if err := p.resolveRegion(ctx, c.String("linode-region")); err != nil {
+		return nil, err
+	}
+	if err := p.resolveInstanceType(ctx, c.String("linode-instance-type")); err != nil {
 		return nil, err
 	}
 
@@ -95,12 +97,13 @@ func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 	userDataString := b64.StdEncoding.EncodeToString([]byte(userData))
 
 	opts := linodego.InstanceCreateOptions{
-		Type:           p.instanceType,
+		Type:           p.instanceType.ID,
 		Label:          agent.Name,
 		Image:          p.image,
 		AuthorizedKeys: []string{p.sshKey},
 		RootPass:       p.rootPass,
 		Tags:           p.tags,
+		BackupsEnabled: false,
 		Metadata: &linodego.InstanceMetadataOptions{
 			UserData: userDataString,
 		},
