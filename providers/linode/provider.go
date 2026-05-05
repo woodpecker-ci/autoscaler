@@ -22,6 +22,7 @@ var (
 	ErrIllegalLablePrefix = errors.New("illegal label prefix")
 	ErrImageNotFound      = errors.New("image not found")
 	ErrSSHKeyNotFound     = errors.New("SSH key not found")
+	ErrAPITokenNotSet     = errors.New("no api token provided")
 )
 
 // blackhole metadata services so running steps can not extract agent token from user-data
@@ -58,7 +59,12 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 		config:        config,
 	}
 
-	p.client = newClient(c.String("linode-api-token"))
+	apiToken := c.String("linode-api-token")
+	if apiToken == "" {
+		return nil, ErrAPITokenNotSet
+	}
+
+	p.client = newClient(apiToken)
 
 	err := p.setupKeypair(ctx)
 	if err != nil {
