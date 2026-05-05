@@ -20,10 +20,9 @@ import (
 )
 
 var (
-	ErrIllegalLablePrefix = errors.New("illegal label prefix")
-	ErrImageNotFound      = errors.New("image not found")
-	ErrSSHKeyNotFound     = errors.New("SSH key not found")
-	ErrAPITokenNotSet     = errors.New("no api token provided")
+	ErrImageNotFound  = errors.New("image not found")
+	ErrSSHKeyNotFound = errors.New("SSH key not found")
+	ErrAPITokenNotSet = errors.New("no api token provided")
 )
 
 // blackhole metadata services so running steps can not extract agent token from user-data
@@ -36,28 +35,26 @@ var blackholeMetadataAPI = []string{
 
 // editorconfig-checker-enable
 type Provider struct {
-	region        string
-	name          string
-	instanceType  string
-	image         string
-	config        *config.Config
-	sshKey        string
-	rootPass      string
-	stackscriptID int
-	tags          []string
-	client        *linodego.Client
+	region       string
+	name         string
+	instanceType string
+	image        string
+	config       *config.Config
+	sshKey       string
+	rootPass     string
+	tags         []string
+	client       *linodego.Client
 }
 
 func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Provider, error) {
 	p := &Provider{
-		name:          "linode",
-		region:        c.String("linode-region"),
-		instanceType:  c.String("linode-instance-type"),
-		image:         c.String("linode-image"),
-		sshKey:        c.String("linode-ssh-key"),
-		rootPass:      c.String("linode-root-pass"),
-		stackscriptID: c.Int("linode-stackscript-id"),
-		config:        config,
+		name:         "linode",
+		region:       c.String("linode-region"),
+		instanceType: c.String("linode-instance-type"),
+		image:        c.String("linode-image"),
+		sshKey:       c.String("linode-ssh-key"),
+		rootPass:     c.String("linode-root-pass"),
+		config:       config,
 	}
 
 	apiToken := c.String("linode-api-token")
@@ -66,7 +63,7 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 	}
 
 	if p.rootPass == "" {
-		rand, err := generatePassword(30)
+		rand, err := generatePassword(30) //nolint:mnd
 		if err != nil {
 			return nil, err
 		}
