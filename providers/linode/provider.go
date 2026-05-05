@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/linode/linodego"
+	"github.com/rs/zerolog/log"
 	"github.com/urfave/cli/v3"
 	"golang.org/x/oauth2"
 
@@ -62,6 +63,15 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 	apiToken := c.String("linode-api-token")
 	if apiToken == "" {
 		return nil, ErrAPITokenNotSet
+	}
+
+	if p.rootPass == "" {
+		rand, err := generatePassword(30)
+		if err != nil {
+			return nil, err
+		}
+		log.Info().Msgf("linode-root-pass not set, use random one: %q", rand)
+		p.rootPass = rand
 	}
 
 	p.client = newClient(apiToken)
