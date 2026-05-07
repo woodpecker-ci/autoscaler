@@ -7,6 +7,7 @@ import (
 	"text/template"
 
 	"github.com/digitalocean/godo"
+	"github.com/rs/zerolog/log"
 	"github.com/urfave/cli/v3"
 
 	"go.woodpecker-ci.org/autoscaler/config"
@@ -14,6 +15,8 @@ import (
 	"go.woodpecker-ci.org/autoscaler/engine/types"
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
+
+const perPage = 200 //nolint:mnd
 
 var ErrSSHKeyNotFound = errors.New("SSH key not found")
 
@@ -70,6 +73,8 @@ func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 		return fmt.Errorf("%s: cloudinit.RenderUserDataTemplate: %w", p.name, err)
 	}
 
+	log.Debug().Msgf("%s: creating droplet %s in %s with size %s", p.name, agent.Name, p.region, p.size)
+
 	_, _, err = p.droplets.Create(ctx, &godo.DropletCreateRequest{
 		Name:     agent.Name,
 		Region:   p.region,
@@ -87,7 +92,7 @@ func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 }
 
 func (p *Provider) getAgent(ctx context.Context, agent *woodpecker.Agent) (*godo.Droplet, error) {
-	opts := &godo.ListOptions{PerPage: 200}
+	opts := &godo.ListOptions{PerPage: perPage}
 	for {
 		droplets, resp, err := p.droplets.ListByTag(ctx, p.poolTag, opts)
 		if err != nil {
@@ -98,7 +103,7 @@ func (p *Provider) getAgent(ctx context.Context, agent *woodpecker.Agent) (*godo
 				return &droplets[i], nil
 			}
 		}
-		if resp.Links == nil || resp.Links.IsLastPage() {
+		if resp == nil || resp.Links == nil || resp.Links.IsLastPage() {
 			break
 		}
 		page, err := resp.Links.CurrentPage()
@@ -120,6 +125,8 @@ func (p *Provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) err
 		return nil
 	}
 
+	log.Debug().Msgf("%s: deleting droplet %s (id=%d)", p.name, agent.Name, droplet.ID)
+
 	if _, err = p.droplets.Delete(ctx, droplet.ID); err != nil {
 		return fmt.Errorf("%s: Droplets.Delete: %w", p.name, err)
 	}
@@ -129,7 +136,7 @@ func (p *Provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) err
 
 func (p *Provider) ListDeployedAgentNames(ctx context.Context) ([]string, error) {
 	var names []string
-	opts := &godo.ListOptions{PerPage: 200}
+	opts := &godo.ListOptions{PerPage: perPage}
 	for {
 		droplets, resp, err := p.droplets.ListByTag(ctx, p.poolTag, opts)
 		if err != nil {
@@ -138,7 +145,7 @@ func (p *Provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 		for _, d := range droplets {
 			names = append(names, d.Name)
 		}
-		if resp.Links == nil || resp.Links.IsLastPage() {
+		if resp == nil || resp.Links == nil || resp.Links.IsLastPage() {
 			break
 		}
 		page, err := resp.Links.CurrentPage()
@@ -151,14 +158,24 @@ func (p *Provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 }
 
 func (p *Provider) setupKeypair(ctx context.Context, preferredName string) error {
-	keys, _, err := p.keys.List(ctx, &godo.ListOptions{PerPage: 200})
-	if err != nil {
-		return err
-	}
-
-	index := make(map[string]int, len(keys))
-	for _, key := range keys {
-		index[key.Name] = key.ID
+	index := make(map[string]int)
+	opts := &godo.ListOptions{PerPage: perPage}
+	for {
+		keys, resp, err := p.keys.List(ctx, opts)
+		if err != nil {
+			return fmt.Errorf("%s: Keys.List: %w", p.name, err)
+		}
+		for _, key := range keys {
+			index[key.Name] = key.ID
+		}
+		if resp == nil || resp.Links == nil || resp.Links.IsLastPage() {
+			break
+		}
+		page, err := resp.Links.CurrentPage()
+		if err != nil {
+			return fmt.Errorf("%s: Links.CurrentPage: %w", p.name, err)
+		}
+		opts.Page = page + 1
 	}
 
 	candidates := []string{"woodpecker", "id_rsa_woodpecker"}
@@ -173,9 +190,11 @@ func (p *Provider) setupKeypair(ctx context.Context, preferredName string) error
 		}
 	}
 
-	if len(keys) > 0 {
-		p.sshKeyID = keys[0].ID
-		return nil
+	if len(index) > 0 {
+		for _, id := range index {
+			p.sshKeyID = id
+			return nil
+		}
 	}
 
 	return ErrSSHKeyNotFound

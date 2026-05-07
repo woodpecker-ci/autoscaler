@@ -81,6 +81,7 @@ func TestDeployAgent_InvalidUserData(t *testing.T) {
 func TestDeployAgent_CreateError(t *testing.T) {
 	d := &mockDroplets{}
 	d.On("Create", mock.Anything, mock.Anything).Return(nil, lastPageResp(), errors.New("api error"))
+	t.Cleanup(func() { d.AssertExpectations(t) })
 
 	p := newProvider(d, &mockKeys{})
 	err := p.DeployAgent(t.Context(), &woodpecker.Agent{Name: "agent-1"})
@@ -91,8 +92,12 @@ func TestDeployAgent_CreateError(t *testing.T) {
 func TestDeployAgent_Success(t *testing.T) {
 	d := &mockDroplets{}
 	d.On("Create", mock.Anything, mock.MatchedBy(func(req *godo.DropletCreateRequest) bool {
-		return req.Name == "agent-1" && req.Region == "nyc3" && req.Size == "s-1vcpu-1gb"
+		return req.Name == "agent-1" &&
+			req.Region == "nyc3" &&
+			req.Size == "s-1vcpu-1gb" &&
+			len(req.Tags) == 1 && req.Tags[0] == "woodpecker-pool:test-pool"
 	})).Return(&godo.Droplet{ID: 1}, lastPageResp(), nil)
+	t.Cleanup(func() { d.AssertExpectations(t) })
 
 	p := newProvider(d, &mockKeys{})
 	err := p.DeployAgent(t.Context(), &woodpecker.Agent{Name: "agent-1"})
@@ -105,6 +110,7 @@ func TestRemoveAgent_NotFound(t *testing.T) {
 	d := &mockDroplets{}
 	d.On("ListByTag", mock.Anything, "woodpecker-pool:test-pool", mock.Anything).
 		Return([]godo.Droplet{}, lastPageResp(), nil)
+	t.Cleanup(func() { d.AssertExpectations(t) })
 
 	p := newProvider(d, &mockKeys{})
 	err := p.RemoveAgent(t.Context(), &woodpecker.Agent{Name: "agent-1"})
@@ -117,6 +123,7 @@ func TestRemoveAgent_DeleteError(t *testing.T) {
 	d.On("ListByTag", mock.Anything, "woodpecker-pool:test-pool", mock.Anything).
 		Return([]godo.Droplet{{ID: 42, Name: "agent-1"}}, lastPageResp(), nil)
 	d.On("Delete", mock.Anything, 42).Return(nil, errors.New("api error"))
+	t.Cleanup(func() { d.AssertExpectations(t) })
 
 	p := newProvider(d, &mockKeys{})
 	err := p.RemoveAgent(t.Context(), &woodpecker.Agent{Name: "agent-1"})
@@ -129,6 +136,7 @@ func TestRemoveAgent_Success(t *testing.T) {
 	d.On("ListByTag", mock.Anything, "woodpecker-pool:test-pool", mock.Anything).
 		Return([]godo.Droplet{{ID: 42, Name: "agent-1"}}, lastPageResp(), nil)
 	d.On("Delete", mock.Anything, 42).Return(lastPageResp(), nil)
+	t.Cleanup(func() { d.AssertExpectations(t) })
 
 	p := newProvider(d, &mockKeys{})
 	err := p.RemoveAgent(t.Context(), &woodpecker.Agent{Name: "agent-1"})
@@ -141,6 +149,7 @@ func TestListDeployedAgentNames_Empty(t *testing.T) {
 	d := &mockDroplets{}
 	d.On("ListByTag", mock.Anything, "woodpecker-pool:test-pool", mock.Anything).
 		Return([]godo.Droplet{}, lastPageResp(), nil)
+	t.Cleanup(func() { d.AssertExpectations(t) })
 
 	p := newProvider(d, &mockKeys{})
 	names, err := p.ListDeployedAgentNames(t.Context())
@@ -152,6 +161,22 @@ func TestListDeployedAgentNames_ReturnsNames(t *testing.T) {
 	d := &mockDroplets{}
 	d.On("ListByTag", mock.Anything, "woodpecker-pool:test-pool", mock.Anything).
 		Return([]godo.Droplet{{Name: "agent-1"}, {Name: "agent-2"}}, lastPageResp(), nil)
+	t.Cleanup(func() { d.AssertExpectations(t) })
+
+	p := newProvider(d, &mockKeys{})
+	names, err := p.ListDeployedAgentNames(t.Context())
+	assert.NoError(t, err)
+	assert.Equal(t, []string{"agent-1", "agent-2"}, names)
+}
+
+func TestListDeployedAgentNames_Pagination(t *testing.T) {
+	page1Resp := &godo.Response{Links: &godo.Links{Pages: &godo.Pages{Next: "http://example.com?page=2"}}}
+	d := &mockDroplets{}
+	d.On("ListByTag", mock.Anything, "woodpecker-pool:test-pool", &godo.ListOptions{PerPage: perPage}).
+		Return([]godo.Droplet{{Name: "agent-1"}}, page1Resp, nil)
+	d.On("ListByTag", mock.Anything, "woodpecker-pool:test-pool", &godo.ListOptions{PerPage: perPage, Page: 2}).
+		Return([]godo.Droplet{{Name: "agent-2"}}, lastPageResp(), nil)
+	t.Cleanup(func() { d.AssertExpectations(t) })
 
 	p := newProvider(d, &mockKeys{})
 	names, err := p.ListDeployedAgentNames(t.Context())
@@ -164,6 +189,7 @@ func TestListDeployedAgentNames_ReturnsNames(t *testing.T) {
 func TestSetupKeypair_NoKeys(t *testing.T) {
 	k := &mockKeys{}
 	k.On("List", mock.Anything, mock.Anything).Return([]godo.Key{}, lastPageResp(), nil)
+	t.Cleanup(func() { k.AssertExpectations(t) })
 
 	p := newProvider(&mockDroplets{}, k)
 	err := p.setupKeypair(t.Context(), "")
@@ -176,6 +202,7 @@ func TestSetupKeypair_PreferredName(t *testing.T) {
 		{ID: 1, Name: "other"},
 		{ID: 2, Name: "mykey"},
 	}, lastPageResp(), nil)
+	t.Cleanup(func() { k.AssertExpectations(t) })
 
 	p := newProvider(&mockDroplets{}, k)
 	err := p.setupKeypair(t.Context(), "mykey")
@@ -183,11 +210,26 @@ func TestSetupKeypair_PreferredName(t *testing.T) {
 	assert.Equal(t, 2, p.sshKeyID)
 }
 
+func TestSetupKeypair_DefaultCandidates(t *testing.T) {
+	k := &mockKeys{}
+	k.On("List", mock.Anything, mock.Anything).Return([]godo.Key{
+		{ID: 5, Name: "some-other-key"},
+		{ID: 7, Name: "woodpecker"},
+	}, lastPageResp(), nil)
+	t.Cleanup(func() { k.AssertExpectations(t) })
+
+	p := newProvider(&mockDroplets{}, k)
+	err := p.setupKeypair(t.Context(), "")
+	assert.NoError(t, err)
+	assert.Equal(t, 7, p.sshKeyID)
+}
+
 func TestSetupKeypair_FallbackToFirst(t *testing.T) {
 	k := &mockKeys{}
 	k.On("List", mock.Anything, mock.Anything).Return([]godo.Key{
 		{ID: 7, Name: "some-key"},
 	}, lastPageResp(), nil)
+	t.Cleanup(func() { k.AssertExpectations(t) })
 
 	p := newProvider(&mockDroplets{}, k)
 	err := p.setupKeypair(t.Context(), "")
