@@ -17,6 +17,16 @@ import (
 
 var ErrSSHKeyNotFound = errors.New("SSH key not found")
 
+type dropletsService interface {
+	Create(ctx context.Context, createRequest *godo.DropletCreateRequest) (*godo.Droplet, *godo.Response, error)
+	Delete(ctx context.Context, dropletID int) (*godo.Response, error)
+	ListByTag(ctx context.Context, tag string, opts *godo.ListOptions) ([]godo.Droplet, *godo.Response, error)
+}
+
+type keysService interface {
+	List(ctx context.Context, opts *godo.ListOptions) ([]godo.Key, *godo.Response, error)
+}
+
 type Provider struct {
 	name             string
 	region           string
@@ -27,20 +37,23 @@ type Provider struct {
 	poolTag          string
 	config           *config.Config
 	userDataTemplate *template.Template
-	client           *godo.Client
+	droplets         dropletsService
+	keys             keysService
 }
 
 func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Provider, error) {
-	p := &Provider{
-		name:    "digitalocean",
-		region:  c.String("digitalocean-region"),
-		size:    c.String("digitalocean-size"),
-		image:   c.String("digitalocean-image"),
-		config:  config,
-		poolTag: "woodpecker-pool:" + config.PoolID,
-	}
+	client := godo.NewFromToken(c.String("digitalocean-api-token"))
 
-	p.client = godo.NewFromToken(c.String("digitalocean-api-token"))
+	p := &Provider{
+		name:     "digitalocean",
+		region:   c.String("digitalocean-region"),
+		size:     c.String("digitalocean-size"),
+		image:    c.String("digitalocean-image"),
+		config:   config,
+		poolTag:  "woodpecker-pool:" + config.PoolID,
+		droplets: client.Droplets,
+		keys:     client.Keys,
+	}
 
 	if err := p.setupKeypair(ctx, c.String("digitalocean-ssh-key")); err != nil {
 		return nil, fmt.Errorf("%s: setupKeypair: %w", p.name, err)
@@ -57,7 +70,7 @@ func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 		return fmt.Errorf("%s: cloudinit.RenderUserDataTemplate: %w", p.name, err)
 	}
 
-	_, _, err = p.client.Droplets.Create(ctx, &godo.DropletCreateRequest{
+	_, _, err = p.droplets.Create(ctx, &godo.DropletCreateRequest{
 		Name:     agent.Name,
 		Region:   p.region,
 		Size:     p.size,
@@ -76,7 +89,7 @@ func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 func (p *Provider) getAgent(ctx context.Context, agent *woodpecker.Agent) (*godo.Droplet, error) {
 	opts := &godo.ListOptions{PerPage: 200}
 	for {
-		droplets, resp, err := p.client.Droplets.ListByTag(ctx, p.poolTag, opts)
+		droplets, resp, err := p.droplets.ListByTag(ctx, p.poolTag, opts)
 		if err != nil {
 			return nil, fmt.Errorf("%s: Droplets.ListByTag: %w", p.name, err)
 		}
@@ -107,7 +120,7 @@ func (p *Provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) err
 		return nil
 	}
 
-	if _, err = p.client.Droplets.Delete(ctx, droplet.ID); err != nil {
+	if _, err = p.droplets.Delete(ctx, droplet.ID); err != nil {
 		return fmt.Errorf("%s: Droplets.Delete: %w", p.name, err)
 	}
 
@@ -118,7 +131,7 @@ func (p *Provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 	var names []string
 	opts := &godo.ListOptions{PerPage: 200}
 	for {
-		droplets, resp, err := p.client.Droplets.ListByTag(ctx, p.poolTag, opts)
+		droplets, resp, err := p.droplets.ListByTag(ctx, p.poolTag, opts)
 		if err != nil {
 			return nil, fmt.Errorf("%s: Droplets.ListByTag: %w", p.name, err)
 		}
@@ -138,7 +151,7 @@ func (p *Provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 }
 
 func (p *Provider) setupKeypair(ctx context.Context, preferredName string) error {
-	keys, _, err := p.client.Keys.List(ctx, &godo.ListOptions{PerPage: 200})
+	keys, _, err := p.keys.List(ctx, &godo.ListOptions{PerPage: 200})
 	if err != nil {
 		return err
 	}
