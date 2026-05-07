@@ -16,6 +16,7 @@ import (
 	"go.woodpecker-ci.org/autoscaler/engine"
 	"go.woodpecker-ci.org/autoscaler/engine/types"
 	"go.woodpecker-ci.org/autoscaler/providers/aws"
+	"go.woodpecker-ci.org/autoscaler/providers/digitalocean"
 	"go.woodpecker-ci.org/autoscaler/providers/hetznercloud"
 	"go.woodpecker-ci.org/autoscaler/providers/scaleway"
 	"go.woodpecker-ci.org/autoscaler/providers/vultr"
@@ -33,6 +34,8 @@ func setupProvider(ctx context.Context, cmd *cli.Command, config *config.Config)
 	// Enable it again when the issue is fixed.
 	// case "linode":
 	// 	return linode.New(ctx, config)
+	case "digitalocean":
+		return digitalocean.New(ctx, cmd, config)
 	case "vultr":
 		return vultr.New(ctx, cmd, config)
 	case "scaleway":
@@ -162,6 +165,7 @@ func main() {
 		Action: run,
 	}
 
+	app.Flags = append(app.Flags, digitalocean.ProviderFlags...)
 	app.Flags = append(app.Flags, hetznercloud.ProviderFlags...)
 	app.Flags = append(app.Flags, scaleway.ProviderFlags...)
 	// TODO: Temp disabled due to the security issue https://github.com/woodpecker-ci/autoscaler/issues/91
