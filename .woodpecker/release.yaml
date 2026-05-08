@@ -5,7 +5,7 @@ when:
       - ${CI_REPO_DEFAULT_BRANCH}
 
 variables:
-  - &buildx_plugin 'docker.io/woodpeckerci/plugin-docker-buildx:6.0.4'
+  - &buildx_plugin 'docker.io/woodpeckerci/plugin-docker-buildx:6.1.0'
   - &buildx_settings
     buildkit_oci_max_parallelism: 1
     dockerfile: docker/Dockerfile
