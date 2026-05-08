@@ -16,7 +16,7 @@ import (
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
 
-const perPage = 200 //nolint:mnd
+const perPage = 200
 
 var ErrSSHKeyNotFound = errors.New("SSH key not found")
 
