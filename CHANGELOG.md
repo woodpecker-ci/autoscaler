@@ -4,6 +4,7 @@
 
 ### 📦️ Dependency
 
+- chore(deps): update dependency mvdan/gofumpt to v0.10.0 [[#620](https://github.com/woodpecker-ci/autoscaler/pull/620)]
 - chore(deps): update pre-commit non-major [[#619](https://github.com/woodpecker-ci/autoscaler/pull/619)]
 - chore(deps): update dependency golangci/golangci-lint to v2.12.2 [[#618](https://github.com/woodpecker-ci/autoscaler/pull/618)]
 - fix(deps): update golang.org/x/exp digest to 74f9aab [[#617](https://github.com/woodpecker-ci/autoscaler/pull/617)]
