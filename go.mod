@@ -11,13 +11,13 @@ require (
 	github.com/docker/go-units v0.5.0
 	github.com/hetznercloud/hcloud-go/v2 v2.40.0
 	github.com/joho/godotenv v1.5.1
-	github.com/linode/linodego v1.69.0
+	github.com/linode/linodego v1.69.1
 	github.com/rs/zerolog v1.35.1
 	github.com/scaleway/scaleway-sdk-go v1.0.0-beta.36
 	github.com/stretchr/testify v1.11.1
-	github.com/urfave/cli/v3 v3.8.0
-	github.com/vultr/govultr/v3 v3.31.1
-	go.woodpecker-ci.org/woodpecker/v3 v3.14.0
+	github.com/urfave/cli/v3 v3.9.0
+	github.com/vultr/govultr/v3 v3.31.2
+	go.woodpecker-ci.org/woodpecker/v3 v3.14.1
 	golang.org/x/exp v0.0.0-20260508232706-74f9aab9d74a
 	golang.org/x/net v0.54.0
 	golang.org/x/oauth2 v0.36.0
