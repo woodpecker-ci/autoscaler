@@ -1,9 +1,10 @@
 # Changelog
 
-## [1.4.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.4.1) - 2026-05-10
+## [1.4.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.4.1) - 2026-05-13
 
 ### 📦️ Dependency
 
+- fix(deps): update golang deps non-major [[#622](https://github.com/woodpecker-ci/autoscaler/pull/622)]
 - fix(deps): update golang deps non-major [[#621](https://github.com/woodpecker-ci/autoscaler/pull/621)]
 - chore(deps): update dependency mvdan/gofumpt to v0.10.0 [[#620](https://github.com/woodpecker-ci/autoscaler/pull/620)]
 - chore(deps): update pre-commit non-major [[#619](https://github.com/woodpecker-ci/autoscaler/pull/619)]
