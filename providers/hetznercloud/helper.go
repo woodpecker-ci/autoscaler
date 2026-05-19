@@ -39,7 +39,7 @@ func (p *provider) resolveServerConfigs(ctx context.Context, serverType []string
 			return fmt.Errorf("%s: %w: %s", p.name, ErrImageNotFound, rawImage)
 		}
 
-		p.deployCandidates = append(p.deployCandidates, &deployCandidate{
+		p.deployCandidates = append(p.deployCandidates, deployCandidate{
 			location:   location,
 			serverType: serverType,
 			image:      image,

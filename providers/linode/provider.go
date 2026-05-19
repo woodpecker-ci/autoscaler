@@ -15,57 +15,73 @@ import (
 	"go.woodpecker-ci.org/autoscaler/config"
 	"go.woodpecker-ci.org/autoscaler/engine/inits/cloudinit"
 	"go.woodpecker-ci.org/autoscaler/engine/types"
+	"go.woodpecker-ci.org/autoscaler/version"
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
 
 var (
-	ErrIllegalLabelPrefix   = errors.New("illegal label prefix")
-	ErrImageNotFound        = errors.New("image not found")
-	ErrSSHKeyNotFound       = errors.New("SSH key not found")
-	ErrInstanceTypeNotFound = errors.New("instance type not found")
+	ErrImageNotFound  = errors.New("image not found")
+	ErrSSHKeyNotFound = errors.New("SSH key not found")
+	ErrAPITokenNotSet = errors.New("no api token provided")
 )
+
+// blackhole metadata services so running steps can not extract agent token from user-data
+// https://techdocs.akamai.com/cloud-computing/docs/metadata-service-api#api-endpoints
+var blackholeMetadataAPI = []string{
+	"ip -4 route add blackhole 169.254.169.254/32",
+	"ip -6 route add blackhole fd00:a9fe:a9fe::1/64",
+	"ip -6 route add blackhole fe80::a9fe:a9fe/64",
+}
 
 // editorconfig-checker-enable
 type provider struct {
-	name          string
-	config        *config.Config
-	sshKey        string
-	rootPass      string
-	stackscriptID int
-	tags          []string
-	client        *linodego.Client
-	// resolved config
-	region       linodego.Region
-	instanceType linodego.LinodeType
-	image        string
+	region       *linodego.Region
+	name         string
+	instanceType *linodego.LinodeType
+	image        *linodego.Image
+	config       *config.Config
+	sshKey       string
+	rootPass     string
+	tags         []string
+	client       *linodego.Client
 }
 
-func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Provider, error) {
+func New(ctx context.Context, c *cli.Command, config *config.Config) (types.provider, error) {
 	p := &provider{
-		name:          "linode",
-		image:         c.String("linode-image"),
-		sshKey:        c.String("linode-ssh-key"),
-		rootPass:      c.String("linode-root-pass"),
-		stackscriptID: c.Int("linode-stackscript-id"),
-		config:        config,
+		name:     "linode",
+		sshKey:   c.String("linode-ssh-key"),
+		rootPass: c.String("linode-root-pass"),
+		config:   config,
 	}
 
-	p.client = newClient(c.String("linode-api-token"))
+	apiToken := c.String("linode-api-token")
+	if apiToken == "" {
+		return nil, ErrAPITokenNotSet
+	}
 
-	// Resolve region first — instance type availability is per-region.
+	if p.rootPass == "" {
+		rand, err := generatePassword(30) //nolint:mnd
+		if err != nil {
+			return nil, err
+		}
+		log.Info().Msgf("linode-root-pass not set, use random one: %q", rand)
+		p.rootPass = rand
+	}
+
+	p.client = newClient(apiToken)
+
 	if err := p.resolveRegion(ctx, c.String("linode-region")); err != nil {
 		return nil, err
 	}
-
-	// Then resolve the instance type, confirming it exists.
 	if err := p.resolveInstanceType(ctx, c.String("linode-instance-type")); err != nil {
 		return nil, err
 	}
+	if err := p.resolveImage(ctx, c.String("linode-image")); err != nil {
+		return nil, err
+	}
 
-	p.printResolvedConfig()
-
-	if err := p.setupKeyPair(ctx); err != nil {
-		return nil, fmt.Errorf("%s: setupKeyPair: %w", p.name, err)
+	if err := p.setupKeypair(ctx); err != nil {
+		return nil, fmt.Errorf("%s: setupKeypair: %w", p.name, err)
 	}
 
 	p.tags = c.StringSlice("linode-tags")
@@ -73,79 +89,31 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 	return p, nil
 }
 
-func (p *provider) resolveRegion(ctx context.Context, regionID string) error {
-	region, err := p.client.GetRegion(ctx, regionID)
-	if err != nil {
-		return fmt.Errorf("%s: GetRegion %q: %w", p.name, regionID, err)
-	}
-	p.region = *region
-	return nil
-}
-
-func (p *provider) resolveInstanceType(ctx context.Context, typeID string) error {
-	linodeType, err := p.client.GetType(ctx, typeID)
-	if err != nil {
-		return fmt.Errorf("%s: GetType %q: %w", p.name, typeID, err)
-	}
-	if linodeType == nil {
-		return fmt.Errorf("%w: %s", ErrInstanceTypeNotFound, typeID)
-	}
-	p.instanceType = *linodeType
-	return nil
-}
-
-func (p *provider) printResolvedConfig() {
-	log.Info().
-		Str("region", p.region.ID).
-		Str("label", p.region.Label).
-		Str("country", p.region.Country).
-		Msg("deploy region")
-
-	log.Info().
-		Str("type", p.instanceType.ID).
-		Str("label", p.instanceType.Label).
-		Str("class", string(p.instanceType.Class)).
-		Int("vcpus", p.instanceType.VCPUs).
-		Int("memory_mb", p.instanceType.Memory).
-		Msg("deploy with instance type")
-}
-
-func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cb types.Capability) error {
-	if err := p.validateCapability(cb); err != nil {
-		return err
-	}
-
-	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, nil)
+func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
+	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, nil, cloudinit.RenderOption{
+		PreExec: blackholeMetadataAPI,
+	})
 	if err != nil {
 		return fmt.Errorf("%s: cloudinit.RenderUserDataTemplate: %w", p.name, err)
 	}
 	userDataString := b64.StdEncoding.EncodeToString([]byte(userData))
 
-	userdataMap := make(map[string]string)
-
-	var metadata *linodego.InstanceMetadataOptions
-
-	// TODO: remove once linode user-data is out of beta
-	if p.stackscriptID == -1 {
-		metadata = &linodego.InstanceMetadataOptions{
+	opts := linodego.InstanceCreateOptions{
+		Type:           p.instanceType.ID,
+		Label:          agent.Name,
+		Image:          p.image.ID,
+		AuthorizedKeys: []string{p.sshKey},
+		RootPass:       p.rootPass,
+		Tags:           p.tags,
+		BackupsEnabled: false,
+		Metadata: &linodego.InstanceMetadataOptions{
 			UserData: userDataString,
-		}
-	} else {
-		userdataMap["userdata"] = userDataString
+		},
 	}
-
-	_, err = p.client.CreateInstance(ctx, linodego.InstanceCreateOptions{
-		Region:          p.region.ID,
-		Type:            p.instanceType.ID,
-		Label:           agent.Name,
-		Image:           p.image,
-		StackScriptID:   p.stackscriptID,
-		StackScriptData: userdataMap,
-		AuthorizedKeys:  []string{p.sshKey},
-		RootPass:        p.rootPass,
-		Tags:            p.tags,
-		Metadata:        metadata,
-	})
+	if p.region != nil {
+		opts.Region = p.region.ID
+	}
+	_, err = p.client.CreateInstance(ctx, opts)
 	if err != nil {
 		return fmt.Errorf("%s: CreateInstance: %w", p.name, err)
 	}
@@ -271,6 +239,7 @@ func newClient(apiKey string) *linodego.Client {
 
 	linodeClient := linodego.NewClient(oauth2Client)
 	linodeClient.SetDebug(false)
+	linodeClient.SetUserAgent("woodpecker-autoscaler/" + version.String())
 
 	return &linodeClient
 }

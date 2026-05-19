@@ -10,13 +10,19 @@ import (
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
 
+type RenderOption struct {
+	PreExec  []string
+	PostExec []string
+}
+
 // RenderUserDataTemplate renders the user data template for an Agent
 // using the provided configuration.
-func RenderUserDataTemplate(config *config.Config, agent *woodpecker.Agent, tmpl *template.Template) (string, error) {
+func RenderUserDataTemplate(config *config.Config, agent *woodpecker.Agent, tmpl *template.Template, r RenderOption) (string, error) {
 	var err error
 
 	switch {
 	case tmpl != nil:
+		// we use injected template (deprecated)
 	case config.UserData != "":
 		tmpl, err = template.New("user-data").Parse(config.UserData)
 	default:
@@ -30,6 +36,8 @@ func RenderUserDataTemplate(config *config.Config, agent *woodpecker.Agent, tmpl
 	params := struct {
 		Image       string
 		Environment map[string]string
+		PreExec     []string
+		PostExec    []string
 	}{
 		Image: config.Image,
 		Environment: map[string]string{
@@ -37,6 +45,8 @@ func RenderUserDataTemplate(config *config.Config, agent *woodpecker.Agent, tmpl
 			"WOODPECKER_AGENT_SECRET":  agent.Token,
 			"WOODPECKER_MAX_WORKFLOWS": fmt.Sprintf("%d", config.WorkflowsPerAgent),
 		},
+		PreExec:  r.PreExec,
+		PostExec: r.PostExec,
 	}
 
 	if config.GRPCSecure {
@@ -110,7 +120,13 @@ write_files:
           {{- end }}
 
 runcmd:
+  {{- range .PreExec }}
+  - {{ . }}
+  {{- end }}
   - sh -xc "cd /root; docker compose up -d"
+  {{- range .PostExec }}
+  - {{ . }}
+  {{- end }}
 
 final_message: "The system is finally up, after $UPTIME seconds"
 ` // editorconfig-checker-enable

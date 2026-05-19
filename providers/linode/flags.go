@@ -6,7 +6,6 @@ import (
 
 const category = "Linode"
 
-//nolint:mnd
 var ProviderFlags = []cli.Flag{
 	&cli.StringFlag{
 		Name:     "linode-api-token",
@@ -27,13 +26,6 @@ var ProviderFlags = []cli.Flag{
 		Value:    "g6-nanode-1",
 		Usage:    "linode instance type",
 		Sources:  cli.EnvVars("WOODPECKER_LINODE_INSTANCE_TYPE"),
-		Category: category,
-	},
-	&cli.IntFlag{
-		Name:     "linode-stackscript-id",
-		Value:    1227924,
-		Usage:    "Linode Stackscript ID (set to -1 to use the beta user-data feature instead)",
-		Sources:  cli.EnvVars("WOODPECKER_LINODE_STACKSCRIPT_ID"),
 		Category: category,
 	},
 	&cli.StringFlag{

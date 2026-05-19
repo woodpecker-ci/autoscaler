@@ -21,7 +21,7 @@ import (
 
 type provider struct {
 	name             string
-	deployCandidates []*deployCandidate
+	deployCandidates []deployCandidate
 	sshKeys          []string
 	labels           map[string]string
 	config           *config.Config
@@ -74,7 +74,7 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cb 
 		fmt.Errorf("hetzner only support docker backend")
 	}
 
-	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, nil)
+	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, nil, cloudinit.RenderOption{})
 	if err != nil {
 		return fmt.Errorf("%s: cloudinit.RenderUserDataTemplate: %w", p.name, err)
 	}
@@ -133,7 +133,7 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cb 
 	// the server type. We need this list up front so that we can correctly
 	// distinguish "no last entry to error on" from "last viable entry
 	// failed".
-	candidates := make([]*deployCandidate, 0, len(p.deployCandidates))
+	candidates := make([]deployCandidate, 0, len(p.deployCandidates))
 	for _, c := range p.deployCandidates {
 		// Filter by requested capability (arch). cap is always one of the
 		// platforms we returned from Capabilities, so a mismatch here just

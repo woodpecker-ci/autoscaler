@@ -360,7 +360,7 @@ func (p *provider) createInstance(ctx context.Context, agent *woodpecker.Agent, 
 }
 
 func (p *provider) setCloudInit(ctx context.Context, agent *woodpecker.Agent, inst *instance.Server) error {
-	ud, err := cloudinit.RenderUserDataTemplate(p.config, agent, nil)
+	ud, err := cloudinit.RenderUserDataTemplate(p.config, agent, nil, cloudinit.RenderOption{})
 	if err != nil {
 		return err
 	}
