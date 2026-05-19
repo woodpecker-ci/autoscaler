@@ -46,7 +46,7 @@ type provider struct {
 	client       *linodego.Client
 }
 
-func New(ctx context.Context, c *cli.Command, config *config.Config) (types.provider, error) {
+func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Provider, error) {
 	p := &provider{
 		name:     "linode",
 		sshKey:   c.String("linode-ssh-key"),
@@ -80,7 +80,7 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.prov
 		return nil, err
 	}
 
-	if err := p.setupKeypair(ctx); err != nil {
+	if err := p.setupKeyPair(ctx); err != nil {
 		return nil, fmt.Errorf("%s: setupKeypair: %w", p.name, err)
 	}
 
@@ -89,7 +89,7 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.prov
 	return p, nil
 }
 
-func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
+func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cb types.Capability) error {
 	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, nil, cloudinit.RenderOption{
 		PreExec: blackholeMetadataAPI,
 	})
