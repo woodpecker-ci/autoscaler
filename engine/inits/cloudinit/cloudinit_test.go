@@ -34,7 +34,7 @@ func TestRenderUserDataTemplate(t *testing.T) {
 		Token: "test-token",
 	}
 
-	userData, err := cloudinit.RenderUserDataTemplate(config, agent, testUserDataTmpl)
+	userData, err := cloudinit.RenderUserDataTemplate(config, agent, testUserDataTmpl, cloudinit.RenderOption{})
 
 	assert.NoError(t, err)
 	assert.Contains(t, userData, "test-image")
@@ -49,7 +49,7 @@ func TestRenderUserDataTemplate_Secure(t *testing.T) {
 	}
 	agent := &woodpecker.Agent{}
 
-	userData, err := cloudinit.RenderUserDataTemplate(config, agent, testUserDataTmpl)
+	userData, err := cloudinit.RenderUserDataTemplate(config, agent, testUserDataTmpl, cloudinit.RenderOption{})
 
 	assert.NoError(t, err)
 	assert.Contains(t, userData, "WOODPECKER_GRPC_SECURE=true")
@@ -60,6 +60,73 @@ func TestRenderUserDataTemplate_Error(t *testing.T) {
 	agent := &woodpecker.Agent{}
 	tmpl := template.Must(template.New("test").Parse("{{.Missing}}"))
 
-	_, err := cloudinit.RenderUserDataTemplate(config, agent, tmpl)
+	_, err := cloudinit.RenderUserDataTemplate(config, agent, tmpl, cloudinit.RenderOption{})
 	assert.Error(t, err)
+}
+
+func TestRenderUserDataTemplate_CustomCommands(t *testing.T) {
+	config := &config.Config{
+		GRPCAddress:       "ci.woodpecker.example:9000",
+		WorkflowsPerAgent: 2,
+		Image:             "docker.io/woodpeckerci/woodpecker-agent:latest",
+	}
+	agent := &woodpecker.Agent{Token: "geheim"}
+	conf, err := cloudinit.RenderUserDataTemplate(config, agent, nil, cloudinit.RenderOption{
+		PreExec:  []string{"echo exec before docker up"},
+		PostExec: []string{"echo exec after docker up"},
+	})
+	assert.NoError(t, err)
+	// editorconfig-checker-disable
+	assert.EqualValues(t, `
+#cloud-config
+
+package_reboot_if_required: false
+package_update: true
+package_upgrade: false
+
+groups:
+  - docker
+
+system_info:
+  default_user:
+    groups: [ docker ]
+
+apt:
+  sources:
+    docker.list:
+      keyid: 9DC858229FC7DD38854AE2D88D81803C0EBFCD88
+      keyserver: https://download.docker.com/linux/ubuntu/gpg
+      source: deb [signed-by=$KEY_FILE] https://download.docker.com/linux/ubuntu $RELEASE stable
+
+packages:
+  - docker-ce
+  - docker-compose-plugin
+  - binfmt-support
+  - qemu-user-static
+
+write_files:
+- path: /root/docker-compose.yml
+  content: |
+    # docker-compose.yml
+    version: '3'
+    services:
+      woodpecker-agent:
+        image: docker.io/woodpeckerci/woodpecker-agent:latest
+        restart: always
+        volumes:
+          - /var/run/docker.sock:/var/run/docker.sock
+        environment:
+          - WOODPECKER_AGENT_LABELS=
+          - WOODPECKER_AGENT_SECRET=geheim
+          - WOODPECKER_MAX_WORKFLOWS=2
+          - WOODPECKER_SERVER=ci.woodpecker.example:9000
+
+runcmd:
+  - echo exec before docker up
+  - sh -xc "cd /root; docker compose up -d"
+  - echo exec after docker up
+
+final_message: "The system is finally up, after $UPTIME seconds"
+`, conf)
+	// editorconfig-checker-enable
 }
