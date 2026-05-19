@@ -13,20 +13,15 @@
 ### 📦️ Dependency
 
 - fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.303.0 [[#626](https://github.com/woodpecker-ci/autoscaler/pull/626)]
-- fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.302.0 [[#623](https://github.com/woodpecker-ci/autoscaler/pull/623)]
 - fix(deps): update golang deps non-major [[#622](https://github.com/woodpecker-ci/autoscaler/pull/622)]
-- fix(deps): update golang deps non-major [[#621](https://github.com/woodpecker-ci/autoscaler/pull/621)]
 - chore(deps): update dependency mvdan/gofumpt to v0.10.0 [[#620](https://github.com/woodpecker-ci/autoscaler/pull/620)]
 - chore(deps): update pre-commit non-major [[#619](https://github.com/woodpecker-ci/autoscaler/pull/619)]
 - chore(deps): update dependency golangci/golangci-lint to v2.12.2 [[#618](https://github.com/woodpecker-ci/autoscaler/pull/618)]
 - fix(deps): update golang.org/x/exp digest to 74f9aab [[#617](https://github.com/woodpecker-ci/autoscaler/pull/617)]
-- fix(deps): update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.300.0 [[#615](https://github.com/woodpecker-ci/autoscaler/pull/615)]
 - fix(deps): update module go.woodpecker-ci.org/woodpecker/v3 to v3.14.0 [[#613](https://github.com/woodpecker-ci/autoscaler/pull/613)]
 - chore(deps): update dependency golangci/golangci-lint to v2.12.1 [[#612](https://github.com/woodpecker-ci/autoscaler/pull/612)]
 - chore(deps): update pre-commit hook golangci/golangci-lint to v2.12.1 [[#611](https://github.com/woodpecker-ci/autoscaler/pull/611)]
-- chore(deps): update dependency golangci/golangci-lint to v2.12.0 [[#609](https://github.com/woodpecker-ci/autoscaler/pull/609)]
 - chore(deps): update docker.io/woodpeckerci/plugin-docker-buildx docker tag to v6.1.0 [[#610](https://github.com/woodpecker-ci/autoscaler/pull/610)]
-- fix(deps): update golang deps non-major [[#607](https://github.com/woodpecker-ci/autoscaler/pull/607)]
 
 ## [1.4.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.4.0) - 2026-04-29
 
