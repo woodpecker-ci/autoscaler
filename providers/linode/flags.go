@@ -1,6 +1,8 @@
 package linode
 
 import (
+	"os"
+
 	"github.com/urfave/cli/v3"
 )
 
@@ -8,10 +10,12 @@ const category = "Linode"
 
 var ProviderFlags = []cli.Flag{
 	&cli.StringFlag{
-		Name:     "linode-api-token",
-		Usage:    "Linode api token",
-		Sources:  cli.EnvVars("WOODPECKER_LINODE_API_TOKEN"),
-		Required: true,
+		Name:  "linode-api-token",
+		Usage: "Linode api token",
+		Sources: cli.NewValueSourceChain(
+			cli.EnvVar("WOODPECKER_LINODE_API_TOKEN"),
+			cli.File(os.Getenv("WOODPECKER_LINODE_API_TOKEN_FILE")),
+		),
 		Category: category,
 	},
 	&cli.StringFlag{
