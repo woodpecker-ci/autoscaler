@@ -1,6 +1,14 @@
 # Changelog
 
-## [1.4.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.4.1) - 2026-05-19
+## [1.5.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.5.0) - 2026-05-19
+
+### ❤️ Thanks to all contributors! ❤️
+
+@6543
+
+### ✨ Features
+
+- Linode re-enable [[#606](https://github.com/woodpecker-ci/autoscaler/pull/606)]
 
 ### 📦️ Dependency
 
