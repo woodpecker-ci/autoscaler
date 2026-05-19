@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"text/template"
 
 	"github.com/linode/linodego"
 	"github.com/rs/zerolog/log"
@@ -16,104 +15,73 @@ import (
 	"go.woodpecker-ci.org/autoscaler/config"
 	"go.woodpecker-ci.org/autoscaler/engine/inits/cloudinit"
 	"go.woodpecker-ci.org/autoscaler/engine/types"
+	"go.woodpecker-ci.org/autoscaler/version"
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
 
 var (
-	ErrIllegalLablePrefix = errors.New("illegal label prefix")
-	ErrImageNotFound      = errors.New("image not found")
-	ErrSSHKeyNotFound     = errors.New("SSH key not found")
+	ErrImageNotFound  = errors.New("image not found")
+	ErrSSHKeyNotFound = errors.New("SSH key not found")
+	ErrAPITokenNotSet = errors.New("no api token provided")
 )
 
-// editorconfig-checker-disable
-var stackscriptUserDataDefault = `
-#!/bin/bash
-
-# Install Pre-requisites
-apt-get update && apt-get install -y ca-certificates \
-									 curl \
-									 gnupg
-install -m 0755 -d /etc/apt/keyrings
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-chmod a+r /etc/apt/keyrings/docker.gpg
-
-# Add Docker sources
-echo \
-  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
-  tee /etc/apt/sources.list.d/docker.list > /dev/null
-
-apt-get update && apt-get install -y docker-ce docker-compose-plugin
-
-systemctl enable --now docker
-
-cat > /root/docker-compose.yml <<'EOS'
-version: '3'
-services:
-  woodpecker-agent:
-    image: {{ .Image }}
-    restart: always
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-      {{- range $key, $value := .Environment }}
-        - {{ $key }}={{ $value }}
-      {{- end }}
-EOS
-
-cd /root && docker compose up -d`
+// blackhole metadata services so running steps can not extract agent token from user-data
+// https://techdocs.akamai.com/cloud-computing/docs/metadata-service-api#api-endpoints
+var blackholeMetadataAPI = []string{
+	"ip -4 route add blackhole 169.254.169.254/32",
+	"ip -6 route add blackhole fd00:a9fe:a9fe::1/64",
+	"ip -6 route add blackhole fe80::a9fe:a9fe/64",
+}
 
 // editorconfig-checker-enable
 type Provider struct {
-	region           string
-	name             string
-	instanceType     string
-	image            string
-	config           *config.Config
-	sshKey           string
-	rootPass         string
-	stackscriptID    int
-	userDataTemplate *template.Template
-	tags             []string
-	client           *linodego.Client
+	region       *linodego.Region
+	name         string
+	instanceType *linodego.LinodeType
+	image        *linodego.Image
+	config       *config.Config
+	sshKey       string
+	rootPass     string
+	tags         []string
+	client       *linodego.Client
 }
 
 func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Provider, error) {
 	p := &Provider{
-		name:          "linode",
-		region:        c.String("linode-region"),
-		instanceType:  c.String("linode-instance-type"),
-		image:         c.String("linode-image"),
-		sshKey:        c.String("linode-ssh-key"),
-		rootPass:      c.String("linode-root-pass"),
-		stackscriptID: c.Int("linode-stackscript-id"),
-		config:        config,
+		name:     "linode",
+		sshKey:   c.String("linode-ssh-key"),
+		rootPass: c.String("linode-root-pass"),
+		config:   config,
 	}
 
-	p.client = newClient(c.String("linode-api-token"))
-
-	err := p.setupKeypair(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("%s: setupKeypair: %w", p.name, err)
+	apiToken := c.String("linode-api-token")
+	if apiToken == "" {
+		return nil, ErrAPITokenNotSet
 	}
 
-	var userDataStr string
-
-	// TODO: remove once linode user-data feature is out of beta
-	if p.stackscriptID != -1 {
-		userDataStr = stackscriptUserDataDefault
-	}
-	// # TODO: Deprecated remove in v2.0
-	if u := c.String("linode-user-data"); u != "" {
-		log.Warn().Msg("linode-user-data is deprecated, please use provider-user-data instead")
-		userDataStr = u
-	}
-	if userDataStr != "" {
-		userDataTmpl, err := template.New("user-data").Parse(userDataStr)
+	if p.rootPass == "" {
+		rand, err := generatePassword(30) //nolint:mnd
 		if err != nil {
-			return nil, fmt.Errorf("%s: template.New.Parse %w", p.name, err)
+			return nil, err
 		}
-		p.userDataTemplate = userDataTmpl
+		log.Info().Msgf("linode-root-pass not set, use random one: %q", rand)
+		p.rootPass = rand
+	}
+
+	p.client = newClient(apiToken)
+
+	if err := p.resolveRegion(ctx, c.String("linode-region")); err != nil {
+		return nil, err
+	}
+	if err := p.resolveInstanceType(ctx, c.String("linode-instance-type")); err != nil {
+		return nil, err
+	}
+	if err := p.resolveImage(ctx, c.String("linode-image")); err != nil {
+		return nil, err
+	}
+
+	if err := p.setupKeypair(ctx); err != nil {
+		return nil, fmt.Errorf("%s: setupKeypair: %w", p.name, err)
 	}
 
 	p.tags = c.StringSlice("linode-tags")
@@ -122,37 +90,30 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 }
 
 func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
-	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, p.userDataTemplate)
+	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, nil, cloudinit.RenderOption{
+		PreExec: blackholeMetadataAPI,
+	})
 	if err != nil {
 		return fmt.Errorf("%s: cloudinit.RenderUserDataTemplate: %w", p.name, err)
 	}
 	userDataString := b64.StdEncoding.EncodeToString([]byte(userData))
 
-	userdataMap := make(map[string]string)
-
-	var metadata *linodego.InstanceMetadataOptions
-
-	// TODO: remove once linode user-data is out of beta
-	if p.stackscriptID == -1 {
-		metadata = &linodego.InstanceMetadataOptions{
+	opts := linodego.InstanceCreateOptions{
+		Type:           p.instanceType.ID,
+		Label:          agent.Name,
+		Image:          p.image.ID,
+		AuthorizedKeys: []string{p.sshKey},
+		RootPass:       p.rootPass,
+		Tags:           p.tags,
+		BackupsEnabled: false,
+		Metadata: &linodego.InstanceMetadataOptions{
 			UserData: userDataString,
-		}
-	} else {
-		userdataMap["userdata"] = userDataString
+		},
 	}
-
-	_, err = p.client.CreateInstance(ctx, linodego.InstanceCreateOptions{
-		Region:          p.region,
-		Type:            p.instanceType,
-		Label:           agent.Name,
-		Image:           p.image,
-		StackScriptID:   p.stackscriptID,
-		StackScriptData: userdataMap,
-		AuthorizedKeys:  []string{p.sshKey},
-		RootPass:        p.rootPass,
-		Tags:            p.tags,
-		Metadata:        metadata,
-	})
+	if p.region != nil {
+		opts.Region = p.region.ID
+	}
+	_, err = p.client.CreateInstance(ctx, opts)
 	if err != nil {
 		return fmt.Errorf("%s: CreateInstance: %w", p.name, err)
 	}
@@ -261,6 +222,7 @@ func newClient(apiKey string) *linodego.Client {
 
 	linodeClient := linodego.NewClient(oauth2Client)
 	linodeClient.SetDebug(false)
+	linodeClient.SetUserAgent("woodpecker-autoscaler/" + version.String())
 
 	return &linodeClient
 }

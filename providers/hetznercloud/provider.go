@@ -70,7 +70,7 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 }
 
 func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
-	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, nil)
+	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, nil, cloudinit.RenderOption{})
 	if err != nil {
 		return fmt.Errorf("%s: cloudinit.RenderUserDataTemplate: %w", p.name, err)
 	}
