@@ -90,6 +90,10 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 }
 
 func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cb types.Capability) error {
+	if cb.Platform != "linux/amd64" || cb.Backend != types.BackendDocker {
+		return fmt.Errorf("linode only supports linux/amd64 and docker, we got requested capability platform=%s backend=%s", cb.Platform, cb.Backend)
+	}
+
 	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, nil, cloudinit.RenderOption{
 		PreExec: blackholeMetadataAPI,
 	})
@@ -119,16 +123,6 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cb 
 	}
 
 	return nil
-}
-
-// validateCapability checks that the requested capability is satisfiable.
-// Linode is an x86-64 only platform so only linux/amd64 + docker is valid.
-func (p *provider) validateCapability(cb types.Capability) error {
-	if cb.Platform == "linux/amd64" && cb.Backend == types.BackendDocker {
-		return nil
-	}
-	return fmt.Errorf("%s: instance type %s does not support requested capability platform=%s backend=%s",
-		p.name, p.instanceType.ID, cb.Platform, cb.Backend)
 }
 
 func (p *provider) Capabilities(_ context.Context) ([]types.Capability, error) {
