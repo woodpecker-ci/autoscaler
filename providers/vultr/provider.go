@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"text/template"
 	"time"
 
 	"github.com/rs/zerolog/log"
@@ -30,13 +29,12 @@ var (
 )
 
 type provider struct {
-	userDataTemplate *template.Template
-	sshKeys          []string
-	labels           map[string]string
-	config           *config.Config
-	enableIPv6       bool
-	name             string
-	client           *govultr.Client
+	sshKeys    []string
+	labels     map[string]string
+	config     *config.Config
+	enableIPv6 bool
+	name       string
+	client     *govultr.Client
 	// resolved config
 	region govultr.Region
 	plan   govultr.Plan
@@ -90,7 +88,7 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 }
 
 func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
-	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, p.userDataTemplate, cloudinit.RenderOption{})
+	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, nil, cloudinit.RenderOption{})
 	if err != nil {
 		return fmt.Errorf("%s: cloudinit.RenderUserDataTemplate: %w", p.name, err)
 	}
