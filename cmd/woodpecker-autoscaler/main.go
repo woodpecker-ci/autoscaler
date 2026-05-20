@@ -93,7 +93,6 @@ func run(ctx context.Context, cmd *cli.Command) error {
 		GRPCAddress:       cmd.String("grpc-addr"),
 		GRPCSecure:        cmd.Bool("grpc-secure"),
 		Image:             cmd.String("agent-image"),
-		FilterLabels:      cmd.String("filter-labels"),
 		UserData:          cmd.String("provider-user-data"),
 		ExtraAgentLabels:  agentLabels,
 		Environment:       agentEnvironment,
