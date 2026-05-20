@@ -1,5 +1,15 @@
 # Changelog
 
+## [2.0.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.0) - 2026-05-20
+
+### ❤️ Thanks to all contributors! ❤️
+
+@6543
+
+### 💥 Breaking changes
+
+- Resolve Hetzner config on startup and remove deprecated flags [[#605](https://github.com/woodpecker-ci/autoscaler/pull/605)]
+
 ## [1.5.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.5.0) - 2026-05-19
 
 ### ❤️ Thanks to all contributors! ❤️
