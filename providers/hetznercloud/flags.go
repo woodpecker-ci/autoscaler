@@ -25,33 +25,15 @@ var ProviderFlags = []cli.Flag{
 		Sources:  cli.EnvVars("WOODPECKER_HETZNERCLOUD_SERVER_TYPE"),
 		Category: category,
 	},
-	// TODO: Deprecated remove in v2.0
-	&cli.StringFlag{
-		Name:     "hetznercloud-location",
-		Value:    "nbg1",
-		Usage:    "hetzner cloud location (deprecated)",
-		Sources:  cli.EnvVars("WOODPECKER_HETZNERCLOUD_LOCATION"),
-		Category: category,
-	},
 	&cli.StringSliceFlag{
 		Name:     "hetznercloud-ssh-keys",
 		Usage:    "names of hetzner cloud ssh keys",
 		Sources:  cli.EnvVars("WOODPECKER_HETZNERCLOUD_SSH_KEYS"),
 		Category: category,
 	},
-	// TODO: Deprecated remove in v2.0
-	&cli.StringFlag{
-		Name:  "hetznercloud-user-data",
-		Usage: "hetzner cloud userdata template (deprecated)",
-		Sources: cli.NewValueSourceChain(
-			cli.EnvVar("WOODPECKER_HETZNERCLOUD_USERDATA"),
-			cli.File(os.Getenv("WOODPECKER_HETZNERCLOUD_USERDATA_FILE")),
-		),
-		Category: category,
-	},
 	&cli.StringFlag{
 		Name:     "hetznercloud-image",
-		Value:    "ubuntu-22.04",
+		Value:    "ubuntu-24.04",
 		Usage:    "hetzner cloud image",
 		Sources:  cli.EnvVars("WOODPECKER_HETZNERCLOUD_IMAGE"),
 		Category: category,

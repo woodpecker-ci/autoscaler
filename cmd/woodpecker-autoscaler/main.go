@@ -18,6 +18,7 @@ import (
 	"go.woodpecker-ci.org/autoscaler/providers/aws"
 	"go.woodpecker-ci.org/autoscaler/providers/digitalocean"
 	"go.woodpecker-ci.org/autoscaler/providers/hetznercloud"
+	"go.woodpecker-ci.org/autoscaler/providers/linode"
 	"go.woodpecker-ci.org/autoscaler/providers/scaleway"
 	"go.woodpecker-ci.org/autoscaler/providers/vultr"
 	"go.woodpecker-ci.org/autoscaler/server"
@@ -30,12 +31,10 @@ func setupProvider(ctx context.Context, cmd *cli.Command, config *config.Config)
 		return aws.New(ctx, cmd, config)
 	case "hetznercloud":
 		return hetznercloud.New(ctx, cmd, config)
-	// TODO: Temp disabled due to the security issue https://github.com/woodpecker-ci/autoscaler/issues/91
-	// Enable it again when the issue is fixed.
-	// case "linode":
-	// 	return linode.New(ctx, config)
 	case "digitalocean":
 		return digitalocean.New(ctx, cmd, config)
+	case "linode":
+		return linode.New(ctx, cmd, config)
 	case "vultr":
 		return vultr.New(ctx, cmd, config)
 	case "scaleway":
@@ -168,9 +167,7 @@ func main() {
 	app.Flags = append(app.Flags, digitalocean.ProviderFlags...)
 	app.Flags = append(app.Flags, hetznercloud.ProviderFlags...)
 	app.Flags = append(app.Flags, scaleway.ProviderFlags...)
-	// TODO: Temp disabled due to the security issue https://github.com/woodpecker-ci/autoscaler/issues/91
-	// Enable it again when the issue is fixed.
-	// app.Flags = append(app.Flags, linode.ProviderFlags...)
+	app.Flags = append(app.Flags, linode.ProviderFlags...)
 	app.Flags = append(app.Flags, aws.ProviderFlags...)
 	app.Flags = append(app.Flags, vultr.ProviderFlags...)
 
