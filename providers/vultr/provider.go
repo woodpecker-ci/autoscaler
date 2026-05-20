@@ -26,6 +26,9 @@ var (
 	ErrIllegalLabelPrefix = errors.New("illegal label prefix")
 	ErrImageNotFound      = errors.New("image not found")
 	ErrSSHKeyNotFound     = errors.New("SSH key not found")
+	ErrInvalidRegion      = errors.New("no valid region set")
+	ErrInvalidPlan        = errors.New("no valid plan set")
+	ErrInvalidImage       = errors.New("no valid image set")
 )
 
 type provider struct {
