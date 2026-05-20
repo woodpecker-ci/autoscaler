@@ -374,14 +374,3 @@ func (a *Autoscaler) Reconcile(ctx context.Context) error {
 
 	return nil
 }
-
-func countTasksByLabel(jobs []woodpecker.Task, labelKey, labelValue string) int {
-	count := 0
-	for _, job := range jobs {
-		val, exists := job.Labels[labelKey]
-		if exists && val == labelValue {
-			count++
-		}
-	}
-	return count
-}
