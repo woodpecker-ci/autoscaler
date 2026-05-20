@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"text/template"
 	"time"
 
 	"github.com/rs/zerolog/log"
@@ -27,16 +26,18 @@ var (
 	ErrIllegalLabelPrefix = errors.New("illegal label prefix")
 	ErrImageNotFound      = errors.New("image not found")
 	ErrSSHKeyNotFound     = errors.New("SSH key not found")
+	ErrInvalidRegion      = errors.New("no valid region set")
+	ErrInvalidPlan        = errors.New("no valid plan set")
+	ErrInvalidImage       = errors.New("no valid image set")
 )
 
 type provider struct {
-	userDataTemplate *template.Template
-	sshKeys          []string
-	labels           map[string]string
-	config           *config.Config
-	enableIPv6       bool
-	name             string
-	client           *govultr.Client
+	sshKeys    []string
+	labels     map[string]string
+	config     *config.Config
+	enableIPv6 bool
+	name       string
+	client     *govultr.Client
 	// resolved config
 	region govultr.Region
 	plan   govultr.Plan
@@ -95,7 +96,7 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cb 
 		return fmt.Errorf("we only support docker on linux/amd64 but %#v was requested", cb)
 	}
 
-	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, p.userDataTemplate, cloudinit.RenderOption{})
+	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, nil, cloudinit.RenderOption{})
 	if err != nil {
 		return fmt.Errorf("%s: cloudinit.RenderUserDataTemplate: %w", p.name, err)
 	}
