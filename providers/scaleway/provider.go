@@ -60,6 +60,9 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 	if !c.IsSet("scaleway-project") {
 		return nil, fmt.Errorf("WOODPECKER_SCALEWAY_PROJECT is missing")
 	}
+	if !c.IsSet("scaleway-tags") {
+		log.Warn().Msg("\"WOODPECKER_SCALEWAY_TAGS\" is not set, all scaleway instances are managed by autoscaler!")
+	}
 
 	var err error
 	p.client, err = scw.NewClient(
