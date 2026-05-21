@@ -1,6 +1,6 @@
 # Changelog
 
-## [2.0.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.0) - 2026-05-20
+## [2.0.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.0) - 2026-05-21
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -10,6 +10,10 @@
 
 - Check Vultr config on startup [[#600](https://github.com/woodpecker-ci/autoscaler/pull/600)]
 - Resolve Hetzner config on startup and remove deprecated flags [[#605](https://github.com/woodpecker-ci/autoscaler/pull/605)]
+
+### 📦️ Dependency
+
+- fix(deps): update module github.com/hetznercloud/hcloud-go/v2 to v2.41.1 [[#631](https://github.com/woodpecker-ci/autoscaler/pull/631)]
 
 ## [1.5.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.5.0) - 2026-05-19
 
