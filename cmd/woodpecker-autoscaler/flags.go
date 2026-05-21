@@ -89,7 +89,7 @@ var flags = []cli.Flag{
 		Sources: cli.EnvVars("WOODPECKER_PROVIDER"),
 	},
 	&cli.StringFlag{
-		Name:  "provider-user-data",
+		Name:  "cloudinit-template",
 		Usage: "userdata template to setup the provider instance",
 		Sources: cli.NewValueSourceChain(
 			cli.EnvVar("WOODPECKER_PROVIDER_USERDATA"),

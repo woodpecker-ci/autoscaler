@@ -13,6 +13,6 @@ type Config struct {
 	GRPCSecure             bool
 	AgentInactivityTimeout time.Duration
 	AgentIdleTimeout       time.Duration
-	UserData               string
+	UserData               string // cloudinit template
 	ExtraAgentLabels       map[string]string
 }
