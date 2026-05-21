@@ -31,7 +31,6 @@ type provider struct {
 	config           *config.Config
 	client           *scw.Client
 	// candidates holds all resolved (serverType, image) pairs, in config order.
-	// Built once in New(); DeployAgent filters by requested capability at call time.
 	candidates []deployCandidate
 }
 
