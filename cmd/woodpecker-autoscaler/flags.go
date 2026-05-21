@@ -90,10 +90,10 @@ var flags = []cli.Flag{
 	},
 	&cli.StringFlag{
 		Name:  "cloudinit-template",
-		Usage: "userdata template to setup the provider instance",
+		Usage: "cloudinit userdata template to setup the provider instance",
 		Sources: cli.NewValueSourceChain(
-			cli.EnvVar("WOODPECKER_PROVIDER_USERDATA"),
-			cli.File(os.Getenv("WOODPECKER_PROVIDER_USERDATA_FILE")),
+			cli.EnvVar("WOODPECKER_CLOUDINIT_TEMPLATE"),
+			cli.File(os.Getenv("WOODPECKER_CLOUDINIT_TEMPLATE_FILE")),
 		),
 	},
 	&cli.StringFlag{
