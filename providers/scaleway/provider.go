@@ -20,16 +20,15 @@ import (
 )
 
 type provider struct {
-	defaultProjectID string
-	projectID        *string
-	prefix           string
-	tags             []string
-	images           []string
-	enableIPv6       bool
-	storage          scw.Size
-	storageType      instance.VolumeVolumeType
-	config           *config.Config
-	client           *scw.Client
+	projectID   *string
+	prefix      string
+	tags        []string
+	images      []string
+	enableIPv6  bool
+	storage     scw.Size
+	storageType instance.VolumeVolumeType
+	config      *config.Config
+	client      *scw.Client
 	// candidates holds all resolved (serverType, image) pairs, in config order.
 	candidates []deployCandidate
 }
@@ -52,22 +51,23 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 		log.Warn().Msg("\"WOODPECKER_SCALEWAY_TAGS\" is not set, all scaleway instances are managed by autoscaler!")
 	}
 
+	defaultProjectID := c.String("scaleway-project")
+
 	// load config
 	p := &provider{
-		defaultProjectID: c.String("scaleway-project"),
-		projectID:        scw.StringPtr(c.String("scaleway-project")),
-		prefix:           c.String("scaleway-prefix"),
-		tags:             c.StringSlice("scaleway-tags"),
-		images:           c.StringSlice("scaleway-images"),
-		enableIPv6:       c.Bool("scaleway-enable-ipv6"),
-		storage:          scw.Size(c.Uint64("scaleway-storage-size") * units.GB),
-		storageType:      instance.VolumeVolumeType(c.String("scaleway-storage-type")),
-		config:           config,
+		projectID:   scw.StringPtr(defaultProjectID),
+		prefix:      c.String("scaleway-prefix"),
+		tags:        c.StringSlice("scaleway-tags"),
+		images:      c.StringSlice("scaleway-images"),
+		enableIPv6:  c.Bool("scaleway-enable-ipv6"),
+		storage:     scw.Size(c.Uint64("scaleway-storage-size") * units.GB),
+		storageType: instance.VolumeVolumeType(c.String("scaleway-storage-type")),
+		config:      config,
 	}
 
 	var err error
 	p.client, err = scw.NewClient(
-		scw.WithDefaultProjectID(p.defaultProjectID),
+		scw.WithDefaultProjectID(defaultProjectID),
 		scw.WithAuth(c.String("scaleway-access-key"), c.String("scaleway-secret-key")),
 	)
 	if err != nil {
@@ -82,6 +82,10 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 }
 
 func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
+	if len(p.candidates) == 0 {
+		return fmt.Errorf("scaleway: no candidates to deploy from")
+	}
+
 	for i, c := range p.candidates {
 		err := p.createAndBoot(ctx, agent, c)
 		if err == nil {
@@ -118,6 +122,10 @@ func (p *provider) createAndBoot(ctx context.Context, agent *woodpecker.Agent, c
 func (p *provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) error {
 	inst, err := p.getInstance(ctx, agent.Name)
 	if err != nil {
+		if errors.Is(err, ErrInstanceNotFound) {
+			log.Warn().Str("agent", agent.Name).Msg("scaleway: instance not found, nothing to remove")
+			return nil
+		}
 		return err
 	}
 	return p.deleteInstance(ctx, inst)
@@ -137,14 +145,10 @@ func (p *provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 
 func (p *provider) getInstance(ctx context.Context, name string) (*instance.Server, error) {
 	api := instance.NewAPI(p.client)
-	project := p.projectID
-	if project == nil {
-		project = &p.defaultProjectID
-	}
 	for _, zone := range p.candidateZones() {
 		resp, err := api.ListServers(&instance.ListServersRequest{
 			Zone:    zone,
-			Project: project,
+			Project: p.projectID,
 			Name:    scw.StringPtr(name),
 			Tags:    p.tags,
 		}, scw.WithContext(ctx))
@@ -158,7 +162,7 @@ func (p *provider) getInstance(ctx context.Context, name string) (*instance.Serv
 			return resp.Servers[0], nil
 		}
 	}
-	return nil, nil
+	return nil, fmt.Errorf("%w: %s", ErrInstanceNotFound, name)
 }
 
 func (p *provider) getAllInstances(ctx context.Context) ([]*instance.Server, error) {
