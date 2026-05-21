@@ -31,9 +31,9 @@ func (p *provider) resolveServerConfigs(ctx context.Context, serverType []string
 			return err
 		}
 
-		image, _, err := p.client.Image().GetByNameAndArchitecture(ctx, rawImage, serverType.Architecture)
+		image, _, err := p.client.Image().GetForArchitecture(ctx, rawImage, serverType.Architecture)
 		if err != nil {
-			return fmt.Errorf("%s: Image.GetByNameAndArchitecture: %w", p.name, err)
+			return fmt.Errorf("%s: Image.GetForArchitecture: %w", p.name, err)
 		}
 		if image == nil {
 			return fmt.Errorf("%s: %w: %s", p.name, ErrImageNotFound, rawImage)
