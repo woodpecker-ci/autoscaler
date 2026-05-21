@@ -2,7 +2,6 @@ package cloudinit_test
 
 import (
 	"testing"
-	"text/template"
 
 	"github.com/stretchr/testify/assert"
 
@@ -18,8 +17,6 @@ environment:
 	- {{ $key }}={{ $value }}
 	{{- end }}
 `
-
-var testUserDataTmpl = template.Must(template.New("test").Parse(testUserDataStr))
 
 func TestRenderUserDataTemplate(t *testing.T) {
 	config := &config.Config{
