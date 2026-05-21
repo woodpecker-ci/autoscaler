@@ -104,6 +104,51 @@ func (p *provider) resolveImage(ctx context.Context, api *instance.API, zone scw
 	return "", "", fmt.Errorf("%w: tried %v for arch=%s zone=%s", ErrImageNotFound, p.images, arch, zone)
 }
 
+// getInstance looks up a single managed instance by name across all Scaleway
+// zones. Returns ErrInstanceNotFound if no matching instance exists.
+func (p *provider) getInstance(ctx context.Context, name string) (*instance.Server, error) {
+	api := instance.NewAPI(p.client)
+	for _, zone := range scw.AllZones {
+		resp, err := api.ListServers(&instance.ListServersRequest{
+			Zone:    zone,
+			Project: p.projectID,
+			Name:    scw.StringPtr(name),
+			Tags:    p.tags,
+		}, scw.WithContext(ctx))
+		if err != nil {
+			return nil, err
+		}
+		if resp.TotalCount > 0 {
+			if resp.TotalCount > 1 {
+				log.Warn().Msg("scaleway: found multiple instances with the same name, this may indicate orphaned resources")
+			}
+			return resp.Servers[0], nil
+		}
+	}
+	return nil, fmt.Errorf("%w: %s", ErrInstanceNotFound, name)
+}
+
+// getAllInstances returns every managed instance across all Scaleway zones.
+func (p *provider) getAllInstances(ctx context.Context) ([]*instance.Server, error) {
+	api := instance.NewAPI(p.client)
+	var instances []*instance.Server
+	for _, zone := range scw.AllZones {
+		resp, err := api.ListServers(&instance.ListServersRequest{
+			Zone:    zone,
+			Project: p.projectID,
+			Tags:    p.tags,
+			PerPage: scw.Uint32Ptr(100), //nolint:mnd
+		}, scw.WithContext(ctx), scw.WithAllPages())
+		if err != nil {
+			return nil, err
+		}
+		if resp.TotalCount > 0 {
+			instances = append(instances, resp.Servers...)
+		}
+	}
+	return instances, nil
+}
+
 // isResourceUnavailable reports whether the error indicates the requested
 // server type has no capacity in the zone (soft error, try next candidate).
 func isResourceUnavailable(err error) bool {

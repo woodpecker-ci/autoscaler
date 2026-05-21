@@ -105,20 +105,6 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 	return nil
 }
 
-func (p *provider) createAndBoot(ctx context.Context, agent *woodpecker.Agent, c deployCandidate) error {
-	inst, err := p.createInstance(ctx, agent, c)
-	if err != nil {
-		return err
-	}
-	if err := p.setCloudInit(ctx, agent, inst); err != nil {
-		return err
-	}
-	log.Info().Str("type", c.rawType).Str("zone", c.zone.String()).
-		Str("image", c.imageName).Msgf("scaleway: create agent %s", agent.Name)
-	_, err = p.bootInstance(ctx, inst)
-	return err
-}
-
 func (p *provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) error {
 	inst, err := p.getInstance(ctx, agent.Name)
 	if err != nil {
@@ -143,46 +129,18 @@ func (p *provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 	return names, nil
 }
 
-func (p *provider) getInstance(ctx context.Context, name string) (*instance.Server, error) {
-	api := instance.NewAPI(p.client)
-	for _, zone := range scw.AllZones {
-		resp, err := api.ListServers(&instance.ListServersRequest{
-			Zone:    zone,
-			Project: p.projectID,
-			Name:    scw.StringPtr(name),
-			Tags:    p.tags,
-		}, scw.WithContext(ctx))
-		if err != nil {
-			return nil, err
-		}
-		if resp.TotalCount > 0 {
-			if resp.TotalCount > 1 {
-				log.Warn().Msg("scaleway: found multiple instances with the same name, this may indicate orphaned resources")
-			}
-			return resp.Servers[0], nil
-		}
+func (p *provider) createAndBoot(ctx context.Context, agent *woodpecker.Agent, c deployCandidate) error {
+	inst, err := p.createInstance(ctx, agent, c)
+	if err != nil {
+		return err
 	}
-	return nil, fmt.Errorf("%w: %s", ErrInstanceNotFound, name)
-}
-
-func (p *provider) getAllInstances(ctx context.Context) ([]*instance.Server, error) {
-	api := instance.NewAPI(p.client)
-	var instances []*instance.Server
-	for _, zone := range scw.AllZones {
-		resp, err := api.ListServers(&instance.ListServersRequest{
-			Zone:    zone,
-			Project: p.projectID,
-			Tags:    p.tags,
-			PerPage: scw.Uint32Ptr(100), //nolint:mnd
-		}, scw.WithContext(ctx), scw.WithAllPages())
-		if err != nil {
-			return nil, err
-		}
-		if resp.TotalCount > 0 {
-			instances = append(instances, resp.Servers...)
-		}
+	if err := p.setCloudInit(ctx, agent, inst); err != nil {
+		return err
 	}
-	return instances, nil
+	log.Info().Str("type", c.rawType).Str("zone", c.zone.String()).
+		Str("image", c.imageName).Msgf("scaleway: create agent %s", agent.Name)
+	_, err = p.bootInstance(ctx, inst)
+	return err
 }
 
 func (p *provider) createInstance(ctx context.Context, agent *woodpecker.Agent, c deployCandidate) (*instance.Server, error) {
@@ -221,6 +179,15 @@ func (p *provider) setCloudInit(ctx context.Context, agent *woodpecker.Agent, in
 		ServerID: inst.ID,
 		Key:      "cloud-init",
 		Content:  bytes.NewBufferString(ud),
+	}, scw.WithContext(ctx))
+}
+
+func (p *provider) bootInstance(ctx context.Context, inst *instance.Server) (*instance.ServerActionResponse, error) {
+	api := instance.NewAPI(p.client)
+	return api.ServerAction(&instance.ServerActionRequest{
+		Zone:     inst.Zone,
+		ServerID: inst.ID,
+		Action:   instance.ServerActionPoweron,
 	}, scw.WithContext(ctx))
 }
 
@@ -280,15 +247,6 @@ func (p *provider) deleteInstance(ctx context.Context, inst *instance.Server) er
 	}
 
 	return errors.Join(errs...)
-}
-
-func (p *provider) bootInstance(ctx context.Context, inst *instance.Server) (*instance.ServerActionResponse, error) {
-	api := instance.NewAPI(p.client)
-	return api.ServerAction(&instance.ServerActionRequest{
-		Zone:     inst.Zone,
-		ServerID: inst.ID,
-		Action:   instance.ServerActionPoweron,
-	}, scw.WithContext(ctx))
 }
 
 func (p *provider) haltInstance(ctx context.Context, inst *instance.Server) error {
