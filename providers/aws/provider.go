@@ -23,7 +23,7 @@ import (
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
 
-type Provider struct {
+type provider struct {
 	name                  string
 	config                *config.Config
 	instanceType          string
@@ -45,7 +45,7 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 	if len(c.StringSlice("aws-subnets")) == 0 {
 		return nil, fmt.Errorf("aws-subnets must be set")
 	}
-	p := &Provider{
+	p := &provider{
 		name:                  "aws",
 		config:                config,
 		instanceType:          c.String("aws-instance-type"),
@@ -77,7 +77,7 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 	return p, nil
 }
 
-func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
+func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
 	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, p.userDataTemplate, cloudinit.RenderOption{})
 	if err != nil {
 		return fmt.Errorf("%s: cloudinit.RenderUserDataTemplate: %w", p.name, err)
@@ -181,7 +181,7 @@ func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 	return fmt.Errorf("instance did not resolve in agent list: %s", *result.Instances[0].InstanceId)
 }
 
-func (p *Provider) getAgent(ctx context.Context, agent *woodpecker.Agent) (*ec2_types.Instance, error) {
+func (p *provider) getAgent(ctx context.Context, agent *woodpecker.Agent) (*ec2_types.Instance, error) {
 	instances, err := p.client.DescribeInstances(ctx, &ec2.DescribeInstancesInput{
 		Filters: []ec2_types.Filter{
 			{
@@ -202,7 +202,7 @@ func (p *Provider) getAgent(ctx context.Context, agent *woodpecker.Agent) (*ec2_
 	return &instances.Reservations[0].Instances[0], nil
 }
 
-func (p *Provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) error {
+func (p *provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) error {
 	instance, err := p.getAgent(ctx, agent)
 	if err != nil {
 		return err
@@ -214,7 +214,7 @@ func (p *Provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) err
 	return err
 }
 
-func (p *Provider) ListDeployedAgentNames(ctx context.Context) ([]string, error) {
+func (p *provider) ListDeployedAgentNames(ctx context.Context) ([]string, error) {
 	log.Debug().Msgf("list deployed agent names")
 
 	var names []string

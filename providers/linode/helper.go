@@ -22,7 +22,7 @@ func generatePassword(length int) (string, error) {
 	return string(b), nil
 }
 
-func (p *Provider) resolveRegion(ctx context.Context, r string) error {
+func (p *provider) resolveRegion(ctx context.Context, r string) error {
 	// let linode decide
 	if r == "" {
 		return nil
@@ -52,7 +52,7 @@ func (p *Provider) resolveRegion(ctx context.Context, r string) error {
 	return fmt.Errorf("could not resolve region %q: %w", r, err)
 }
 
-func (p *Provider) resolveInstanceType(ctx context.Context, it string) error {
+func (p *provider) resolveInstanceType(ctx context.Context, it string) error {
 	lt, err := p.client.GetType(ctx, it)
 	if err != nil {
 		return fmt.Errorf("could not resolve instance type %q: %w", it, err)
@@ -61,7 +61,7 @@ func (p *Provider) resolveInstanceType(ctx context.Context, it string) error {
 	return nil
 }
 
-func (p *Provider) resolveImage(ctx context.Context, i string) error {
+func (p *provider) resolveImage(ctx context.Context, i string) error {
 	img, err := p.client.GetImage(ctx, i)
 	if err != nil {
 		return fmt.Errorf("could not resolve image %q: %w", i, err)
