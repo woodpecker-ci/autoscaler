@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strings"
 	"sync"
-	"text/template"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -38,7 +37,6 @@ type Provider struct {
 	lock                  sync.Mutex
 	subnetRR              int
 	sshKeyName            string
-	userDataTemplate      *template.Template
 }
 
 func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Provider, error) {
@@ -64,21 +62,11 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 	}
 	p.client = ec2.NewFromConfig(cfg)
 
-	// # TODO: Deprecated remove in v2.0
-	if u := c.String("aws-user-data"); u != "" {
-		log.Warn().Msg("aws-user-data is deprecated, please use provider-user-data instead")
-		userDataTmpl, err := template.New("user-data").Parse(u)
-		if err != nil {
-			return nil, fmt.Errorf("%s: template.New.Parse %w", p.name, err)
-		}
-		p.userDataTemplate = userDataTmpl
-	}
-
 	return p, nil
 }
 
 func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
-	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, p.userDataTemplate, cloudinit.RenderOption{})
+	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, cloudinit.RenderOption{})
 	if err != nil {
 		return fmt.Errorf("%s: cloudinit.RenderUserDataTemplate: %w", p.name, err)
 	}

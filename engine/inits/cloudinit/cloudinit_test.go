@@ -29,12 +29,13 @@ func TestRenderUserDataTemplate(t *testing.T) {
 		Environment: map[string]string{
 			"FOO": "bar",
 		},
+		UserData: testUserDataStr,
 	}
 	agent := &woodpecker.Agent{
 		Token: "test-token",
 	}
 
-	userData, err := cloudinit.RenderUserDataTemplate(config, agent, testUserDataTmpl, cloudinit.RenderOption{})
+	userData, err := cloudinit.RenderUserDataTemplate(config, agent, cloudinit.RenderOption{})
 
 	assert.NoError(t, err)
 	assert.Contains(t, userData, "test-image")
@@ -46,21 +47,23 @@ func TestRenderUserDataTemplate(t *testing.T) {
 func TestRenderUserDataTemplate_Secure(t *testing.T) {
 	config := &config.Config{
 		GRPCSecure: true,
+		UserData:   testUserDataStr,
 	}
 	agent := &woodpecker.Agent{}
 
-	userData, err := cloudinit.RenderUserDataTemplate(config, agent, testUserDataTmpl, cloudinit.RenderOption{})
+	userData, err := cloudinit.RenderUserDataTemplate(config, agent, cloudinit.RenderOption{})
 
 	assert.NoError(t, err)
 	assert.Contains(t, userData, "WOODPECKER_GRPC_SECURE=true")
 }
 
 func TestRenderUserDataTemplate_Error(t *testing.T) {
-	config := &config.Config{}
+	config := &config.Config{
+		UserData: "{{.Missing}}",
+	}
 	agent := &woodpecker.Agent{}
-	tmpl := template.Must(template.New("test").Parse("{{.Missing}}"))
 
-	_, err := cloudinit.RenderUserDataTemplate(config, agent, tmpl, cloudinit.RenderOption{})
+	_, err := cloudinit.RenderUserDataTemplate(config, agent, cloudinit.RenderOption{})
 	assert.Error(t, err)
 }
 
@@ -71,7 +74,7 @@ func TestRenderUserDataTemplate_CustomCommands(t *testing.T) {
 		Image:             "docker.io/woodpeckerci/woodpecker-agent:latest",
 	}
 	agent := &woodpecker.Agent{Token: "geheim"}
-	conf, err := cloudinit.RenderUserDataTemplate(config, agent, nil, cloudinit.RenderOption{
+	conf, err := cloudinit.RenderUserDataTemplate(config, agent, cloudinit.RenderOption{
 		PreExec:  []string{"echo exec before docker up"},
 		PostExec: []string{"echo exec after docker up"},
 	})
