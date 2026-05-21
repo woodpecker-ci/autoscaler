@@ -145,7 +145,7 @@ func (p *provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 
 func (p *provider) getInstance(ctx context.Context, name string) (*instance.Server, error) {
 	api := instance.NewAPI(p.client)
-	for _, zone := range p.candidateZones() {
+	for _, zone := range scw.AllZones {
 		resp, err := api.ListServers(&instance.ListServersRequest{
 			Zone:    zone,
 			Project: p.projectID,
@@ -168,7 +168,7 @@ func (p *provider) getInstance(ctx context.Context, name string) (*instance.Serv
 func (p *provider) getAllInstances(ctx context.Context) ([]*instance.Server, error) {
 	api := instance.NewAPI(p.client)
 	var instances []*instance.Server
-	for _, zone := range p.candidateZones() {
+	for _, zone := range scw.AllZones {
 		resp, err := api.ListServers(&instance.ListServersRequest{
 			Zone:    zone,
 			Project: p.projectID,
@@ -183,20 +183,6 @@ func (p *provider) getAllInstances(ctx context.Context) ([]*instance.Server, err
 		}
 	}
 	return instances, nil
-}
-
-// candidateZones returns the deduplicated set of zones across all candidates,
-// preserving config order.
-func (p *provider) candidateZones() []scw.Zone {
-	seen := make(map[scw.Zone]struct{})
-	var zones []scw.Zone
-	for _, c := range p.candidates {
-		if _, ok := seen[c.zone]; !ok {
-			seen[c.zone] = struct{}{}
-			zones = append(zones, c.zone)
-		}
-	}
-	return zones
 }
 
 func (p *provider) createInstance(ctx context.Context, agent *woodpecker.Agent, c deployCandidate) (*instance.Server, error) {
