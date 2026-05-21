@@ -6,9 +6,9 @@ const Category = "AWS"
 
 var ProviderFlags = []cli.Flag{
 	// aws
-	&cli.StringFlag{
+	&cli.StringSliceFlag{
 		Name:     "aws-instance-type",
-		Usage:    "EC2 instance type",
+		Usage:    "EC2 instance types, optionally with region as 'type:region' (e.g. 't3.micro:us-east-1'); tried in order as deploy fallbacks. Omit the region to let AWS decide",
 		Sources:  cli.EnvVars("WOODPECKER_AWS_INSTANCE_TYPE"),
 		Category: Category,
 	},
