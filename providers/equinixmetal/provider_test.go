@@ -201,6 +201,17 @@ func TestListDeployedAgentNamesPropagatesErrors(t *testing.T) {
 	assert.Contains(t, err.Error(), "boom")
 }
 
+func TestValidateRequiresAPIToken(t *testing.T) {
+	p := provider{
+		projectID:    "project-123",
+		plans:        []string{"c3.small.x86"},
+		operatingSys: "ubuntu_24_04",
+		metro:        "sv",
+	}
+
+	require.ErrorIs(t, p.validate(), ErrAPITokenRequired)
+}
+
 func TestValidateRequiresExactlyOneLocation(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -210,6 +221,7 @@ func TestValidateRequiresExactlyOneLocation(t *testing.T) {
 		{
 			name: "missing location",
 			provider: provider{
+				apiToken:     "token-123",
 				projectID:    "project-123",
 				plans:        []string{"c3.small.x86"},
 				operatingSys: "ubuntu_24_04",
@@ -219,6 +231,7 @@ func TestValidateRequiresExactlyOneLocation(t *testing.T) {
 		{
 			name: "metro and facility conflict",
 			provider: provider{
+				apiToken:     "token-123",
 				projectID:    "project-123",
 				plans:        []string{"c3.small.x86"},
 				operatingSys: "ubuntu_24_04",
@@ -239,6 +252,7 @@ func TestValidateRequiresExactlyOneLocation(t *testing.T) {
 
 func TestValidateRejectsReservedTagPrefix(t *testing.T) {
 	p := provider{
+		apiToken:     "token-123",
 		projectID:    "project-123",
 		plans:        []string{"c3.small.x86"},
 		operatingSys: "ubuntu_24_04",

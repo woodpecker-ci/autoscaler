@@ -19,6 +19,7 @@ import (
 )
 
 var (
+	ErrAPITokenRequired      = errors.New("API token is required")
 	ErrProjectIDRequired     = errors.New("project ID is required")
 	ErrPlanRequired          = errors.New("at least one plan is required")
 	ErrPlanNotFound          = errors.New("plan not found")
@@ -74,6 +75,7 @@ type metalDevicesService struct {
 
 type provider struct {
 	name           string
+	apiToken       string
 	projectID      string
 	metro          string
 	facility       []string
@@ -92,6 +94,7 @@ type provider struct {
 func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Provider, error) {
 	p := &provider{
 		name:           "equinixmetal",
+		apiToken:       strings.TrimSpace(c.String("equinixmetal-api-token")),
 		projectID:      c.String("equinixmetal-project-id"),
 		metro:          c.String("equinixmetal-metro"),
 		facility:       c.StringSlice("equinixmetal-facility"),
@@ -113,7 +116,7 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 	cfg.UserAgent = "woodpecker-autoscaler"
 	service := &metalDevicesService{
 		client: metalv1.NewAPIClient(cfg),
-		token:  c.String("equinixmetal-api-token"),
+		token:  p.apiToken,
 	}
 	p.devices = service
 	p.resolver = service
@@ -127,6 +130,8 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 
 func (p *provider) validate() error {
 	switch {
+	case p.apiToken == "":
+		return ErrAPITokenRequired
 	case p.projectID == "":
 		return ErrProjectIDRequired
 	case len(p.plans) == 0:
