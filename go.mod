@@ -8,6 +8,7 @@ require (
 	github.com/aws/aws-sdk-go-v2 v1.41.7
 	github.com/aws/aws-sdk-go-v2/config v1.32.18
 	github.com/aws/aws-sdk-go-v2/service/ec2 v1.304.0
+	github.com/digitalocean/godo v1.192.0
 	github.com/docker/go-units v0.5.0
 	github.com/hetznercloud/hcloud-go/v2 v2.41.2
 	github.com/joho/godotenv v1.5.1
@@ -55,6 +56,7 @@ require (
 	go.yaml.in/yaml/v2 v2.4.3 // indirect
 	golang.org/x/sys v0.45.0 // indirect
 	golang.org/x/text v0.37.0 // indirect
+	golang.org/x/time v0.14.0 // indirect
 	google.golang.org/protobuf v1.36.12-0.20260120151049-f2248ac996af // indirect
 	gopkg.in/ini.v1 v1.67.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
