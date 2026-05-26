@@ -3,10 +3,10 @@ package aws
 import (
 	"context"
 	b64 "encoding/base64"
+	"errors"
 	"fmt"
 	"strings"
 	"sync"
-	"text/template"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -23,11 +23,25 @@ import (
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
 
+var (
+	ErrInstanceTypeNotFound = errors.New("instance type not found")
+	ErrAMINotFound          = errors.New("AMI not found")
+	ErrSubnetsNotSet        = errors.New("aws-subnets must be set")
+	ErrArchMismatch         = errors.New("instance type architecture not supported by AMI")
+	ErrTypeNotInRegion      = errors.New("instance type not offered in region")
+	ErrNoDeployCandidates   = errors.New("no deploy candidates resolved")
+)
+
+// deployCandidate is one resolved instance-type/region pair the provider will
+// try, in order, when deploying an agent. An empty region lets AWS decide.
+type deployCandidate struct {
+	instanceType ec2_types.InstanceTypeInfo
+	region       string
+}
+
 type provider struct {
 	name                  string
 	config                *config.Config
-	instanceType          string
-	amiID                 string
 	tags                  []string
 	region                string
 	subnets               []string
@@ -38,18 +52,18 @@ type provider struct {
 	lock                  sync.Mutex
 	subnetRR              int
 	sshKeyName            string
-	userDataTemplate      *template.Template
+	// resolved config
+	deployCandidates []deployCandidate
+	image            ec2_types.Image
 }
 
 func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Provider, error) {
 	if len(c.StringSlice("aws-subnets")) == 0 {
-		return nil, fmt.Errorf("aws-subnets must be set")
+		return nil, ErrSubnetsNotSet
 	}
 	p := &provider{
 		name:                  "aws",
 		config:                config,
-		instanceType:          c.String("aws-instance-type"),
-		amiID:                 c.String("aws-ami-id"),
 		tags:                  c.StringSlice("aws-tags"),
 		region:                c.String("aws-region"),
 		subnets:               c.StringSlice("aws-subnets"),
@@ -64,21 +78,40 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 	}
 	p.client = ec2.NewFromConfig(cfg)
 
-	// # TODO: Deprecated remove in v2.0
-	if u := c.String("aws-user-data"); u != "" {
-		log.Warn().Msg("aws-user-data is deprecated, please use provider-user-data instead")
-		userDataTmpl, err := template.New("user-data").Parse(u)
-		if err != nil {
-			return nil, fmt.Errorf("%s: template.New.Parse %w", p.name, err)
-		}
-		p.userDataTemplate = userDataTmpl
+	// AMI must be resolved first: its architecture constrains which instance
+	// types are valid deploy candidates.
+	if err := p.resolveImage(ctx, c.String("aws-ami-id")); err != nil {
+		return nil, err
 	}
+	if err := p.resolveDeployCandidates(ctx, c.StringSlice("aws-instance-type")); err != nil {
+		return nil, err
+	}
+
+	p.printResolvedConfig()
 
 	return p, nil
 }
 
+func (p *provider) printResolvedConfig() {
+	log.Info().
+		Str("ami", aws.ToString(p.image.ImageId)).
+		Str("ami_arch", string(p.image.Architecture)).
+		Msg("resolved AMI")
+	for _, c := range p.deployCandidates {
+		region := c.region
+		if region == "" {
+			region = "<aws-decides>"
+		}
+		log.Info().
+			Str("type", string(c.instanceType.InstanceType)).
+			Str("region", region).
+			Bool("current_gen", aws.ToBool(c.instanceType.CurrentGeneration)).
+			Msg("deploy candidate")
+	}
+}
+
 func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
-	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, p.userDataTemplate, cloudinit.RenderOption{})
+	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, nil, cloudinit.RenderOption{})
 	if err != nil {
 		return fmt.Errorf("%s: cloudinit.RenderUserDataTemplate: %w", p.name, err)
 	}
@@ -115,8 +148,7 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 		IamInstanceProfile: &ec2_types.IamInstanceProfileSpecification{
 			Arn: aws.String(p.iamInstanceProfileArn),
 		},
-		ImageId:      aws.String(p.amiID),
-		InstanceType: ec2_types.InstanceType(p.instanceType),
+		ImageId: p.image.ImageId,
 		MetadataOptions: &ec2_types.InstanceMetadataOptionsRequest{
 			HttpEndpoint:            ec2_types.InstanceMetadataEndpointStateEnabled,
 			HttpPutResponseHopLimit: aws.Int32(1),
@@ -154,8 +186,43 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 	}
 
 	runInstancesInput.UserData = aws.String(b64.StdEncoding.EncodeToString([]byte(userData)))
-	result, err := p.client.RunInstances(ctx, &runInstancesInput)
-	if err != nil {
+
+	var result *ec2.RunInstancesOutput
+	for i, c := range p.deployCandidates {
+		runInstancesInput.InstanceType = c.instanceType.InstanceType
+
+		// An empty region keeps the client's default region.
+		var optFns []func(*ec2.Options)
+		if c.region != "" {
+			region := c.region
+			optFns = append(optFns, func(o *ec2.Options) { o.Region = region })
+		}
+
+		log.Info().
+			Str("type", string(c.instanceType.InstanceType)).
+			Str("region", c.region).
+			Msg("create agent")
+
+		result, err = p.client.RunInstances(ctx, &runInstancesInput, optFns...)
+		if err == nil {
+			break
+		}
+
+		// Continue to next fallback entry only if capacity is unavailable.
+		if !isInsufficientCapacity(err) {
+			return fmt.Errorf("%s: RunInstances: %w", p.name, err)
+		}
+
+		// Only log and continue if there are more candidates left.
+		if i < len(p.deployCandidates)-1 {
+			log.Warn().Msgf(
+				"create agent failed: type = %s region = %s: %s",
+				c.instanceType.InstanceType, c.region, err,
+			)
+			continue
+		}
+
+		// Last candidate failed.
 		return fmt.Errorf("%s: RunInstances: %w", p.name, err)
 	}
 
@@ -179,27 +246,6 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 	}
 
 	return fmt.Errorf("instance did not resolve in agent list: %s", *result.Instances[0].InstanceId)
-}
-
-func (p *provider) getAgent(ctx context.Context, agent *woodpecker.Agent) (*ec2_types.Instance, error) {
-	instances, err := p.client.DescribeInstances(ctx, &ec2.DescribeInstancesInput{
-		Filters: []ec2_types.Filter{
-			{
-				Name:   aws.String("tag:Name"),
-				Values: []string{agent.Name},
-			},
-		},
-	})
-	if err != nil {
-		return nil, err
-	}
-	if len(instances.Reservations) != 1 {
-		return nil, fmt.Errorf("expected 1 reservation with tag:Name=%s, got %d", agent.Name, len(instances.Reservations))
-	}
-	if len(instances.Reservations[0].Instances) != 1 {
-		return nil, fmt.Errorf("expected 1 instance with tag:Name=%s, got %d", agent.Name, len(instances.Reservations[0].Instances))
-	}
-	return &instances.Reservations[0].Instances[0], nil
 }
 
 func (p *provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) error {
