@@ -4,7 +4,7 @@
 
 ### ❤️ Thanks to all contributors! ❤️
 
-@6543
+@6543, @btriller
 
 ### 💥 Breaking changes
 
@@ -12,6 +12,10 @@
 - Forbidd to set WOODPECKER_AGENT_LABELS via WOODPECKER_AGENT_ENV [[#630](https://github.com/woodpecker-ci/autoscaler/pull/630)]
 - Check Vultr config on startup [[#600](https://github.com/woodpecker-ci/autoscaler/pull/600)]
 - Resolve Hetzner config on startup and remove deprecated flags [[#605](https://github.com/woodpecker-ci/autoscaler/pull/605)]
+
+### 📈 Enhancement
+
+- Support custom images on Hetzner [[#638](https://github.com/woodpecker-ci/autoscaler/pull/638)]
 
 ### 📦️ Dependency
 
