@@ -17,7 +17,7 @@ import (
 // resolveDeployCandidates parses the aws-instance-type entries (each in
 // "type" or "type:region" form) into ordered deploy candidates. An entry
 // without a region lets AWS pick one at deploy time.
-func (p *Provider) resolveDeployCandidates(ctx context.Context, instanceTypes []string) error {
+func (p *provider) resolveDeployCandidates(ctx context.Context, instanceTypes []string) error {
 	for _, raw := range instanceTypes {
 		rawType, region, _ := strings.Cut(raw, ":")
 
@@ -53,7 +53,7 @@ func (p *Provider) resolveDeployCandidates(ctx context.Context, instanceTypes []
 	return nil
 }
 
-func (p *Provider) resolveInstanceType(ctx context.Context, instanceType string) (ec2_types.InstanceTypeInfo, error) {
+func (p *provider) resolveInstanceType(ctx context.Context, instanceType string) (ec2_types.InstanceTypeInfo, error) {
 	out, err := p.client.DescribeInstanceTypes(ctx, &ec2.DescribeInstanceTypesInput{
 		InstanceTypes: []ec2_types.InstanceType{ec2_types.InstanceType(instanceType)},
 	})
@@ -68,7 +68,7 @@ func (p *Provider) resolveInstanceType(ctx context.Context, instanceType string)
 
 // checkTypeOfferedInRegion verifies the instance type is actually offered in
 // the requested region, querying that region directly.
-func (p *Provider) checkTypeOfferedInRegion(ctx context.Context, instanceType, region string) error {
+func (p *provider) checkTypeOfferedInRegion(ctx context.Context, instanceType, region string) error {
 	out, err := p.client.DescribeInstanceTypeOfferings(ctx, &ec2.DescribeInstanceTypeOfferingsInput{
 		LocationType: ec2_types.LocationTypeRegion,
 		Filters: []ec2_types.Filter{
@@ -97,7 +97,7 @@ func instanceTypeSupportsArch(it ec2_types.InstanceTypeInfo, arch ec2_types.Arch
 	return false
 }
 
-func (p *Provider) resolveImage(ctx context.Context, amiID string) error {
+func (p *provider) resolveImage(ctx context.Context, amiID string) error {
 	out, err := p.client.DescribeImages(ctx, &ec2.DescribeImagesInput{
 		ImageIds: []string{amiID},
 	})
@@ -111,7 +111,7 @@ func (p *Provider) resolveImage(ctx context.Context, amiID string) error {
 	return nil
 }
 
-func (p *Provider) getAgent(ctx context.Context, agent *woodpecker.Agent) (*ec2_types.Instance, error) {
+func (p *provider) getAgent(ctx context.Context, agent *woodpecker.Agent) (*ec2_types.Instance, error) {
 	instances, err := p.client.DescribeInstances(ctx, &ec2.DescribeInstancesInput{
 		Filters: []ec2_types.Filter{
 			{

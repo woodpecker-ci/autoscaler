@@ -39,7 +39,7 @@ type deployCandidate struct {
 	region       string
 }
 
-type Provider struct {
+type provider struct {
 	name                  string
 	config                *config.Config
 	tags                  []string
@@ -61,7 +61,7 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 	if len(c.StringSlice("aws-subnets")) == 0 {
 		return nil, ErrSubnetsNotSet
 	}
-	p := &Provider{
+	p := &provider{
 		name:                  "aws",
 		config:                config,
 		tags:                  c.StringSlice("aws-tags"),
@@ -92,7 +92,7 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 	return p, nil
 }
 
-func (p *Provider) printResolvedConfig() {
+func (p *provider) printResolvedConfig() {
 	log.Info().
 		Str("ami", aws.ToString(p.image.ImageId)).
 		Str("ami_arch", string(p.image.Architecture)).
@@ -110,7 +110,7 @@ func (p *Provider) printResolvedConfig() {
 	}
 }
 
-func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
+func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
 	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, nil, cloudinit.RenderOption{})
 	if err != nil {
 		return fmt.Errorf("%s: cloudinit.RenderUserDataTemplate: %w", p.name, err)
@@ -248,7 +248,7 @@ func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 	return fmt.Errorf("instance did not resolve in agent list: %s", *result.Instances[0].InstanceId)
 }
 
-func (p *Provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) error {
+func (p *provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) error {
 	instance, err := p.getAgent(ctx, agent)
 	if err != nil {
 		return err
@@ -260,7 +260,7 @@ func (p *Provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) err
 	return err
 }
 
-func (p *Provider) ListDeployedAgentNames(ctx context.Context) ([]string, error) {
+func (p *provider) ListDeployedAgentNames(ctx context.Context) ([]string, error) {
 	log.Debug().Msgf("list deployed agent names")
 
 	var names []string
