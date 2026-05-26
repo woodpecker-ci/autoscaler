@@ -21,13 +21,6 @@ import (
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
 
-var (
-	ErrInvalidZone          = errors.New("invalid zone")
-	ErrServerTypeNotFound   = errors.New("server type not found")
-	ErrImageNotFound        = errors.New("no configured image resolves for server type arch")
-	ErrNoMatchingServerType = errors.New("no configured server type matches requested capability")
-)
-
 type provider struct {
 	defaultProjectID string
 	projectID        *string

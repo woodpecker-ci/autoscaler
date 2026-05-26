@@ -1,8 +1,17 @@
 package scaleway
 
 import (
+	"errors"
+
 	"github.com/scaleway/scaleway-sdk-go/api/instance/v1"
 	"github.com/scaleway/scaleway-sdk-go/scw"
+)
+
+var (
+	ErrInvalidZone          = errors.New("invalid zone")
+	ErrServerTypeNotFound   = errors.New("server type not found")
+	ErrImageNotFound        = errors.New("no configured image resolves for server type arch")
+	ErrNoMatchingServerType = errors.New("no configured server type matches requested capability")
 )
 
 // deployCandidate is a fully-resolved server type + image pair ready for use
