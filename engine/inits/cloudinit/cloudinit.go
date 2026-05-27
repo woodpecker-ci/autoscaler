@@ -17,18 +17,15 @@ type RenderOption struct {
 
 // RenderUserDataTemplate renders the user data template for an Agent
 // using the provided configuration.
-func RenderUserDataTemplate(config *config.Config, agent *woodpecker.Agent, tmpl *template.Template, r RenderOption) (string, error) {
+func RenderUserDataTemplate(config *config.Config, agent *woodpecker.Agent, r RenderOption) (string, error) {
 	var err error
+	var tmpl *template.Template
 
-	switch {
-	case tmpl != nil:
-		// we use injected template (deprecated)
-	case config.UserData != "":
+	if config.UserData != "" {
 		tmpl, err = template.New("user-data").Parse(config.UserData)
-	default:
+	} else {
 		tmpl, err = template.New("user-data").Parse(CloudInitUserDataUbuntuDefault)
 	}
-
 	if err != nil {
 		return "", fmt.Errorf("template.New.Parse %w", err)
 	}

@@ -82,7 +82,7 @@ func run(ctx context.Context, cmd *cli.Command) error {
 		GRPCAddress:       cmd.String("grpc-addr"),
 		GRPCSecure:        cmd.Bool("grpc-secure"),
 		Image:             cmd.String("agent-image"),
-		UserData:          cmd.String("provider-user-data"),
+		UserData:          cmd.String("cloudinit-template"),
 		ExtraAgentLabels:  agentLabels,
 		Environment:       agentEnvironment,
 	}
