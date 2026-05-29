@@ -28,7 +28,7 @@ var (
 	ErrRegionOrZoneNotSet = errors.New("region or zone not set")
 )
 
-type Provider struct {
+type provider struct {
 	secretKey        string
 	accessKey        string
 	defaultProjectID string
@@ -67,7 +67,7 @@ func New(_ context.Context, c *cli.Command, config *config.Config) (types.Provid
 		return nil, fmt.Errorf("%w: scaleway-access-key", ErrParameterNotSet)
 	}
 
-	p := &Provider{
+	p := &provider{
 		secretKey:        c.String("scaleway-secret-key"),
 		accessKey:        c.String("scaleway-access-key"),
 		defaultProjectID: c.String("scaleway-project"),
@@ -94,7 +94,7 @@ func New(_ context.Context, c *cli.Command, config *config.Config) (types.Provid
 	return p, err
 }
 
-func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
+func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
 	_, err := p.getInstance(ctx, agent.Name)
 	if err != nil {
 		return err
@@ -115,7 +115,7 @@ func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 	return err
 }
 
-func (p *Provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) error {
+func (p *provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) error {
 	inst, err := p.getInstance(ctx, agent.Name)
 	if err != nil {
 		return err
@@ -124,7 +124,7 @@ func (p *Provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) err
 	return p.deleteInstance(ctx, inst)
 }
 
-func (p *Provider) ListDeployedAgentNames(ctx context.Context) ([]string, error) {
+func (p *provider) ListDeployedAgentNames(ctx context.Context) ([]string, error) {
 	instances, err := p.getAllInstances(ctx)
 	if err != nil {
 		return nil, err
@@ -138,7 +138,7 @@ func (p *Provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 	return names, nil
 }
 
-func (p *Provider) getInstance(ctx context.Context, name string) (*instance.Server, error) {
+func (p *provider) getInstance(ctx context.Context, name string) (*instance.Server, error) {
 	if err := p.resolveZones(); err != nil {
 		return nil, err
 	}
@@ -174,7 +174,7 @@ func (p *Provider) getInstance(ctx context.Context, name string) (*instance.Serv
 	return nil, nil
 }
 
-func (p *Provider) getAllInstances(ctx context.Context) ([]*instance.Server, error) {
+func (p *provider) getAllInstances(ctx context.Context) ([]*instance.Server, error) {
 	if err := p.resolveZones(); err != nil {
 		return nil, err
 	}
@@ -203,7 +203,7 @@ func (p *Provider) getAllInstances(ctx context.Context) ([]*instance.Server, err
 	return instances, nil
 }
 
-func (p *Provider) createInstance(ctx context.Context, agent *woodpecker.Agent) (*instance.Server, error) {
+func (p *provider) createInstance(ctx context.Context, agent *woodpecker.Agent) (*instance.Server, error) {
 	if err := p.resolveZones(); err != nil {
 		return nil, err
 	}
@@ -241,8 +241,8 @@ func (p *Provider) createInstance(ctx context.Context, agent *woodpecker.Agent) 
 	return res.Server, nil
 }
 
-func (p *Provider) setCloudInit(ctx context.Context, agent *woodpecker.Agent, inst *instance.Server) error {
-	ud, err := cloudinit.RenderUserDataTemplate(p.config, agent, nil, cloudinit.RenderOption{})
+func (p *provider) setCloudInit(ctx context.Context, agent *woodpecker.Agent, inst *instance.Server) error {
+	ud, err := cloudinit.RenderUserDataTemplate(p.config, agent, cloudinit.RenderOption{})
 	if err != nil {
 		return err
 	}
@@ -264,7 +264,7 @@ func (p *Provider) setCloudInit(ctx context.Context, agent *woodpecker.Agent, in
 	return nil
 }
 
-func (p *Provider) deleteInstance(ctx context.Context, inst *instance.Server) error {
+func (p *provider) deleteInstance(ctx context.Context, inst *instance.Server) error {
 	err := p.haltInstance(ctx, inst)
 	if err != nil {
 		return err
@@ -325,7 +325,7 @@ func (p *Provider) deleteInstance(ctx context.Context, inst *instance.Server) er
 	return errors.Join(errs...)
 }
 
-func (p *Provider) bootInstance(ctx context.Context, inst *instance.Server) (*instance.ServerActionResponse, error) {
+func (p *provider) bootInstance(ctx context.Context, inst *instance.Server) (*instance.ServerActionResponse, error) {
 	api := instance.NewAPI(p.client)
 
 	return api.ServerAction(&instance.ServerActionRequest{
@@ -335,7 +335,7 @@ func (p *Provider) bootInstance(ctx context.Context, inst *instance.Server) (*in
 	}, scw.WithContext(ctx))
 }
 
-func (p *Provider) haltInstance(ctx context.Context, inst *instance.Server) error {
+func (p *provider) haltInstance(ctx context.Context, inst *instance.Server) error {
 	api := instance.NewAPI(p.client)
 
 	return api.ServerActionAndWait(&instance.ServerActionAndWaitRequest{
@@ -345,7 +345,7 @@ func (p *Provider) haltInstance(ctx context.Context, inst *instance.Server) erro
 	}, scw.WithContext(ctx))
 }
 
-func (p *Provider) resolveZones() error {
+func (p *provider) resolveZones() error {
 	if p.region != nil {
 		if !p.region.Exists() {
 			return fmt.Errorf("%w: %s", ErrInvalidRegion, p.region.String())

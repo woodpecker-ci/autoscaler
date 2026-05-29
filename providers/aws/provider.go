@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strings"
 	"sync"
-	"text/template"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -23,7 +22,7 @@ import (
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
 
-type Provider struct {
+type provider struct {
 	name                  string
 	config                *config.Config
 	instanceType          string
@@ -38,14 +37,13 @@ type Provider struct {
 	lock                  sync.Mutex
 	subnetRR              int
 	sshKeyName            string
-	userDataTemplate      *template.Template
 }
 
 func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Provider, error) {
 	if len(c.StringSlice("aws-subnets")) == 0 {
 		return nil, fmt.Errorf("aws-subnets must be set")
 	}
-	p := &Provider{
+	p := &provider{
 		name:                  "aws",
 		config:                config,
 		instanceType:          c.String("aws-instance-type"),
@@ -64,21 +62,11 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 	}
 	p.client = ec2.NewFromConfig(cfg)
 
-	// # TODO: Deprecated remove in v2.0
-	if u := c.String("aws-user-data"); u != "" {
-		log.Warn().Msg("aws-user-data is deprecated, please use provider-user-data instead")
-		userDataTmpl, err := template.New("user-data").Parse(u)
-		if err != nil {
-			return nil, fmt.Errorf("%s: template.New.Parse %w", p.name, err)
-		}
-		p.userDataTemplate = userDataTmpl
-	}
-
 	return p, nil
 }
 
-func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
-	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, p.userDataTemplate, cloudinit.RenderOption{})
+func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
+	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, cloudinit.RenderOption{})
 	if err != nil {
 		return fmt.Errorf("%s: cloudinit.RenderUserDataTemplate: %w", p.name, err)
 	}
@@ -181,7 +169,7 @@ func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 	return fmt.Errorf("instance did not resolve in agent list: %s", *result.Instances[0].InstanceId)
 }
 
-func (p *Provider) getAgent(ctx context.Context, agent *woodpecker.Agent) (*ec2_types.Instance, error) {
+func (p *provider) getAgent(ctx context.Context, agent *woodpecker.Agent) (*ec2_types.Instance, error) {
 	instances, err := p.client.DescribeInstances(ctx, &ec2.DescribeInstancesInput{
 		Filters: []ec2_types.Filter{
 			{
@@ -202,7 +190,7 @@ func (p *Provider) getAgent(ctx context.Context, agent *woodpecker.Agent) (*ec2_
 	return &instances.Reservations[0].Instances[0], nil
 }
 
-func (p *Provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) error {
+func (p *provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) error {
 	instance, err := p.getAgent(ctx, agent)
 	if err != nil {
 		return err
@@ -214,7 +202,7 @@ func (p *Provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) err
 	return err
 }
 
-func (p *Provider) ListDeployedAgentNames(ctx context.Context) ([]string, error) {
+func (p *provider) ListDeployedAgentNames(ctx context.Context) ([]string, error) {
 	log.Debug().Msgf("list deployed agent names")
 
 	var names []string

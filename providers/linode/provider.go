@@ -34,7 +34,7 @@ var blackholeMetadataAPI = []string{
 }
 
 // editorconfig-checker-enable
-type Provider struct {
+type provider struct {
 	region       *linodego.Region
 	name         string
 	instanceType *linodego.LinodeType
@@ -47,7 +47,7 @@ type Provider struct {
 }
 
 func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Provider, error) {
-	p := &Provider{
+	p := &provider{
 		name:     "linode",
 		sshKey:   c.String("linode-ssh-key"),
 		rootPass: c.String("linode-root-pass"),
@@ -89,8 +89,8 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 	return p, nil
 }
 
-func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
-	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, nil, cloudinit.RenderOption{
+func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
+	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, cloudinit.RenderOption{
 		PreExec: blackholeMetadataAPI,
 	})
 	if err != nil {
@@ -121,7 +121,7 @@ func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 	return nil
 }
 
-func (p *Provider) getAgent(ctx context.Context, agent *woodpecker.Agent) (*linodego.Instance, error) {
+func (p *provider) getAgent(ctx context.Context, agent *woodpecker.Agent) (*linodego.Instance, error) {
 	f := linodego.Filter{}
 	f.AddField(linodego.Eq, "label", agent.Name)
 	fStr, err := f.MarshalJSON()
@@ -137,7 +137,7 @@ func (p *Provider) getAgent(ctx context.Context, agent *woodpecker.Agent) (*lino
 	return &server[0], nil
 }
 
-func (p *Provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) error {
+func (p *provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) error {
 	server, err := p.getAgent(ctx, agent)
 	if err != nil {
 		return fmt.Errorf("%s: getAgent %w", p.name, err)
@@ -155,7 +155,7 @@ func (p *Provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) err
 	return nil
 }
 
-func (p *Provider) ListDeployedAgentNames(ctx context.Context) ([]string, error) {
+func (p *provider) ListDeployedAgentNames(ctx context.Context) ([]string, error) {
 	var names []string
 
 	f := linodego.Filter{}
@@ -177,7 +177,7 @@ func (p *Provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 	return names, nil
 }
 
-func (p *Provider) setupKeypair(ctx context.Context) error {
+func (p *provider) setupKeypair(ctx context.Context) error {
 	res, err := p.client.ListSSHKeys(ctx, nil)
 	if err != nil {
 		return err

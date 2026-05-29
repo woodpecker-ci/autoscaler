@@ -63,7 +63,7 @@ Useful optional settings:
   - [ ] Google Cloud
   - [ ] Azure
   - [ ] Digital Ocean
-  - [x] Linode (temp disabled until the [security issue](https://github.com/woodpecker-ci/autoscaler/issues/91) was addressed)
+  - [x] Linode
   - [ ] Oracle Cloud
   - [x] Equinix Metal
   - [x] Vultr
