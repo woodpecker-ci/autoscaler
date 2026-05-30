@@ -20,6 +20,7 @@
 
 ### 📦️ Dependency
 
+- Update golang.org/x/exp digest to c761662 [[#643](https://github.com/woodpecker-ci/autoscaler/pull/643)]
 - Update golang deps non-major [[#644](https://github.com/woodpecker-ci/autoscaler/pull/644)]
 - Update golang deps non-major [[#642](https://github.com/woodpecker-ci/autoscaler/pull/642)]
 - fix(deps): update golang deps non-major [[#639](https://github.com/woodpecker-ci/autoscaler/pull/639)]
