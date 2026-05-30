@@ -211,5 +211,5 @@ func (p *provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 }
 
 func (p *provider) BillingModel() types.BillingModel {
-	return types.BillingPerSecond
+	return types.BillingHourlyRoundUp
 }
