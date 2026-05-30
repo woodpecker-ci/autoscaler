@@ -368,3 +368,7 @@ func (p *provider) resolveZones() error {
 
 	return nil
 }
+
+func (p *provider) BillingModel() types.BillingModel {
+	return types.BillingPerSecond
+}

@@ -50,6 +50,12 @@ var flags = []cli.Flag{
 		Usage:   "time an agent is allowed to be idle before it can be terminated as duration string like 2h45m (https://pkg.go.dev/time#ParseDuration)",
 		Sources: cli.EnvVars("WOODPECKER_AGENT_IDLE_TIMEOUT"),
 	},
+	&cli.StringFlag{
+		Name:    "agent-billing-teardown-margin",
+		Value:   "2m",
+		Usage:   "for providers billed by the rounded-up hour (e.g. linode, hetznercloud), how long before each paid-hour boundary an idle agent becomes eligible for teardown as duration string like 2m45s (https://pkg.go.dev/time#ParseDuration); the reconciliation interval is added to this so the window is never skipped",
+		Sources: cli.EnvVars("WOODPECKER_AGENT_BILLING_TEARDOWN_MARGIN"),
+	},
 	&cli.IntFlag{
 		Name:    "workflows-per-agent",
 		Value:   2,

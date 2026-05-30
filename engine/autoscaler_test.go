@@ -9,10 +9,17 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"go.woodpecker-ci.org/autoscaler/config"
+	"go.woodpecker-ci.org/autoscaler/engine/types"
 	mocks_provider "go.woodpecker-ci.org/autoscaler/engine/types/mocks"
 	mocks_server "go.woodpecker-ci.org/autoscaler/server/mocks"
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
+
+// fixedClock returns a clock function pinned to t for deterministic
+// billing-window tests.
+func fixedClock(t time.Time) func() time.Time {
+	return func() time.Time { return t }
+}
 
 type MockClient struct {
 	workers       int
@@ -502,6 +509,7 @@ func Test_removeDrainedAgents(t *testing.T) {
 			},
 			provider: provider,
 			client:   client,
+			config:   &config.Config{},
 		}
 
 		client.On("AgentTasksList", int64(2)).Return([]*woodpecker.Task{
@@ -510,5 +518,172 @@ func Test_removeDrainedAgents(t *testing.T) {
 
 		err := autoscaler.removeDrainedAgents(ctx)
 		assert.NoError(t, err)
+	})
+}
+
+func Test_inTeardownWindow(t *testing.T) {
+	now := time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)
+	// margin 2m + reconciliation interval 1m => 3m window at the end of each hour
+	cfg := &config.Config{
+		AgentBillingTeardownMargin: 2 * time.Minute,
+		ReconciliationInterval:     time.Minute,
+	}
+	autoscaler := Autoscaler{config: cfg, clock: fixedClock(now)}
+
+	createdAgo := func(d time.Duration) *woodpecker.Agent {
+		return &woodpecker.Agent{Created: now.Add(-d).Unix()}
+	}
+
+	t.Run("inside the window of the first paid hour", func(t *testing.T) {
+		assert.True(t, autoscaler.inTeardownWindow(createdAgo(58*time.Minute)))
+	})
+
+	t.Run("just before the window opens", func(t *testing.T) {
+		assert.False(t, autoscaler.inTeardownWindow(createdAgo(56*time.Minute)))
+	})
+
+	t.Run("early in the paid hour stays warm", func(t *testing.T) {
+		assert.False(t, autoscaler.inTeardownWindow(createdAgo(5*time.Minute)))
+	})
+
+	t.Run("window recurs every hour", func(t *testing.T) {
+		assert.True(t, autoscaler.inTeardownWindow(createdAgo(118*time.Minute)))
+		assert.False(t, autoscaler.inTeardownWindow(createdAgo(90*time.Minute)))
+	})
+
+	t.Run("agent without a creation time is never in the window", func(t *testing.T) {
+		assert.False(t, autoscaler.inTeardownWindow(&woodpecker.Agent{Created: 0}))
+	})
+
+	t.Run("clock skew (negative age) is never in the window", func(t *testing.T) {
+		assert.False(t, autoscaler.inTeardownWindow(createdAgo(-5*time.Minute)))
+	})
+}
+
+func Test_drainAgents_hourlyRoundUp(t *testing.T) {
+	zerolog.SetGlobalLevel(zerolog.ErrorLevel)
+	now := time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)
+
+	t.Run("only drains agents inside their teardown window", func(t *testing.T) {
+		ctx := t.Context()
+		client := mocks_server.NewMockClient(t)
+		provider := mocks_provider.NewMockProvider(t)
+		autoscaler := Autoscaler{
+			clock: fixedClock(now),
+			agents: []*woodpecker.Agent{
+				// idle but mid-hour => kept warm, even though it has no recent work
+				{ID: 1, Name: "pool-1-agent-1", LastContact: now.Add(-time.Minute).Unix(), LastWork: now.Add(-30 * time.Minute).Unix(), Created: now.Add(-30 * time.Minute).Unix()},
+				// in the teardown window => eligible to drain
+				{ID: 2, Name: "pool-1-agent-2", LastContact: now.Add(-time.Minute).Unix(), LastWork: now.Add(-time.Minute).Unix(), Created: now.Add(-58 * time.Minute).Unix()},
+			},
+			provider: provider,
+			client:   client,
+			config: &config.Config{
+				BillingModel:               types.BillingHourlyRoundUp,
+				AgentBillingTeardownMargin: 2 * time.Minute,
+				ReconciliationInterval:     time.Minute,
+			},
+		}
+
+		client.On("AgentUpdate", mock.MatchedBy(func(agent *woodpecker.Agent) bool {
+			return agent.ID == 2 && agent.NoSchedule
+		})).Return(nil, nil)
+
+		err := autoscaler.drainAgents(ctx, 2)
+		assert.NoError(t, err)
+		assert.False(t, autoscaler.agents[0].NoSchedule)
+		assert.True(t, autoscaler.agents[1].NoSchedule)
+	})
+}
+
+func Test_removeDrainedAgents_hourlyRoundUp(t *testing.T) {
+	zerolog.SetGlobalLevel(zerolog.ErrorLevel)
+	now := time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)
+	cfg := func() *config.Config {
+		return &config.Config{
+			BillingModel:               types.BillingHourlyRoundUp,
+			AgentBillingTeardownMargin: 2 * time.Minute,
+			ReconciliationInterval:     time.Minute,
+		}
+	}
+
+	t.Run("removes a drained agent inside its teardown window even if it just worked", func(t *testing.T) {
+		ctx := t.Context()
+		client := mocks_server.NewMockClient(t)
+		provider := mocks_provider.NewMockProvider(t)
+		autoscaler := Autoscaler{
+			clock: fixedClock(now),
+			agents: []*woodpecker.Agent{
+				{ID: 2, Name: "pool-1-agent-2", NoSchedule: true, LastWork: now.Add(-time.Minute).Unix(), Created: now.Add(-58 * time.Minute).Unix()},
+			},
+			provider: provider,
+			client:   client,
+			config:   cfg(),
+		}
+
+		client.On("AgentTasksList", int64(2)).Return(nil, nil)
+		provider.On("RemoveAgent", mock.Anything, mock.MatchedBy(func(agent *woodpecker.Agent) bool {
+			return agent.ID == 2
+		})).Return(nil)
+		client.On("AgentDelete", int64(2)).Return(nil)
+
+		err := autoscaler.removeDrainedAgents(ctx)
+		assert.NoError(t, err)
+	})
+
+	t.Run("keeps a drained agent that rolled into a fresh paid hour", func(t *testing.T) {
+		ctx := t.Context()
+		client := mocks_server.NewMockClient(t)
+		provider := mocks_provider.NewMockProvider(t)
+		autoscaler := Autoscaler{
+			clock: fixedClock(now),
+			agents: []*woodpecker.Agent{
+				// drained while busy near the boundary; now idle 5m into a new paid hour
+				{ID: 2, Name: "pool-1-agent-2", NoSchedule: true, LastWork: now.Add(-time.Minute).Unix(), Created: now.Add(-65 * time.Minute).Unix()},
+			},
+			provider: provider,
+			client:   client,
+			config:   cfg(),
+		}
+
+		err := autoscaler.removeDrainedAgents(ctx)
+		assert.NoError(t, err)
+	})
+}
+
+func Test_isAgentIdle_hourlyRoundUp(t *testing.T) {
+	t.Run("recent work does not keep an hourly agent busy", func(t *testing.T) {
+		client := mocks_server.NewMockClient(t)
+		autoscaler := Autoscaler{
+			client: client,
+			config: &config.Config{
+				BillingModel:     types.BillingHourlyRoundUp,
+				AgentIdleTimeout: time.Minute * 15,
+			},
+		}
+
+		client.On("AgentTasksList", int64(1)).Return(nil, nil) // no tasks
+
+		idle, err := autoscaler.isAgentIdle(&woodpecker.Agent{
+			ID:       1,
+			Name:     "pool-1-agent-1",
+			LastWork: time.Now().Add(-time.Minute).Unix(), // worked one minute ago
+		})
+		assert.NoError(t, err)
+		assert.True(t, idle)
+	})
+
+	t.Run("an hourly agent with an in-flight task is still busy", func(t *testing.T) {
+		client := mocks_server.NewMockClient(t)
+		autoscaler := Autoscaler{
+			client: client,
+			config: &config.Config{BillingModel: types.BillingHourlyRoundUp},
+		}
+
+		client.On("AgentTasksList", int64(1)).Return([]*woodpecker.Task{{ID: "1"}}, nil)
+
+		idle, err := autoscaler.isAgentIdle(&woodpecker.Agent{ID: 1, Name: "pool-1-agent-1"})
+		assert.NoError(t, err)
+		assert.False(t, idle)
 	})
 }
