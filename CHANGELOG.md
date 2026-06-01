@@ -1,6 +1,6 @@
 # Changelog
 
-## [2.0.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.0) - 2026-05-30
+## [2.0.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.0) - 2026-06-01
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -8,6 +8,7 @@
 
 ### 💥 Breaking changes
 
+- Scaleway resolve config on startup [[#636](https://github.com/woodpecker-ci/autoscaler/pull/636)]
 - Remove provider injected userdata and global provider userdata, use `WOODPECKER_CLOUDINIT_TEMPLATE` [[#633](https://github.com/woodpecker-ci/autoscaler/pull/633)]
 - Remove "WOODPECKER_FILTER_LABELS", use WOODPECKER_AGENT_LABELS [[#629](https://github.com/woodpecker-ci/autoscaler/pull/629)]
 - Forbidd to set WOODPECKER_AGENT_LABELS via WOODPECKER_AGENT_ENV [[#630](https://github.com/woodpecker-ci/autoscaler/pull/630)]
