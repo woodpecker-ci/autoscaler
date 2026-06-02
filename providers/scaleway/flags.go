@@ -18,7 +18,6 @@ var ProviderFlags = []cli.Flag{
 			cli.EnvVar("SCW_ACCESS_KEY"), // scaleway official naming
 			cli.File(os.Getenv("WOODPECKER_SCALEWAY_ACCESS_KEY_FILE")),
 		),
-		Required: true,
 		Category: category,
 	},
 	&cli.StringFlag{
@@ -29,7 +28,6 @@ var ProviderFlags = []cli.Flag{
 			cli.EnvVar("SCW_SECRET_KEY"), // scaleway official naming
 			cli.File(os.Getenv("WOODPECKER_SCALEWAY_SECRET_KEY_FILE")),
 		),
-		Required: true,
 		Category: category,
 	},
 	&cli.StringSliceFlag{
