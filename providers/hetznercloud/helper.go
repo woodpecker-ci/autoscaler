@@ -31,12 +31,22 @@ func (p *provider) resolveServerConfigs(ctx context.Context, serverType []string
 			return err
 		}
 
-		image, _, err := p.client.Image().GetByNameAndArchitecture(ctx, rawImage, serverType.Architecture)
+		image, _, err := p.client.Image().GetForArchitecture(ctx, rawImage, serverType.Architecture)
 		if err != nil {
-			return fmt.Errorf("%s: Image.GetByNameAndArchitecture: %w", p.name, err)
+			return fmt.Errorf("%s: Image.GetForArchitecture: %w", p.name, err)
 		}
 		if image == nil {
 			return fmt.Errorf("%s: %w: %s", p.name, ErrImageNotFound, rawImage)
+		}
+
+		if image.IsDeprecated() {
+			log.Warn().Msgf("your image %q is deprecated", image.Name)
+		}
+
+		// As GetForArchitecture allows images by ID we need to check if architecture is still correct.
+		if image.Architecture != serverType.Architecture {
+			return fmt.Errorf("image %q, found by %q, has different architecture than server type (%s != %s)",
+				image.Name, rawImage, image.Architecture, serverType.Architecture)
 		}
 
 		p.deployCandidates = append(p.deployCandidates, deployCandidate{

@@ -39,7 +39,6 @@ var ProviderFlags = []cli.Flag{
 			"Architecture is inferred from the server type. " +
 			"On resource unavailability the next entry is tried.",
 		Sources:  cli.EnvVars("WOODPECKER_SCALEWAY_SERVER_TYPES"),
-		Required: true,
 		Category: category,
 	},
 	&cli.StringSliceFlag{
@@ -57,14 +56,12 @@ var ProviderFlags = []cli.Flag{
 			cli.EnvVar("WOODPECKER_SCALEWAY_PROJECT"),
 			cli.EnvVar("SCW_DEFAULT_PROJECT_ID"), // scaleway official naming
 		),
-		Required: true,
 		Category: category,
 	},
 	&cli.StringSliceFlag{
 		Name:     "scaleway-tags",
 		Usage:    "Comma separated list of tags to uniquely identify the instances spawned",
 		Sources:  cli.EnvVars("WOODPECKER_SCALEWAY_TAGS"),
-		Required: true,
 		Category: category,
 	},
 	&cli.StringFlag{

@@ -96,7 +96,7 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cb 
 		return fmt.Errorf("we only support docker on linux/amd64 but %#v was requested", cb)
 	}
 
-	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, nil, cloudinit.RenderOption{})
+	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, cloudinit.RenderOption{})
 	if err != nil {
 		return fmt.Errorf("%s: cloudinit.RenderUserDataTemplate: %w", p.name, err)
 	}

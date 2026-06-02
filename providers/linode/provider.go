@@ -94,7 +94,7 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cb 
 		return fmt.Errorf("linode only supports linux/amd64 and docker, we got requested capability platform=%s backend=%s", cb.Platform, cb.Backend)
 	}
 
-	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, nil, cloudinit.RenderOption{
+	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, cloudinit.RenderOption{
 		PreExec: blackholeMetadataAPI,
 	})
 	if err != nil {

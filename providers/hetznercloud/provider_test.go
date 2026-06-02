@@ -14,6 +14,8 @@ import (
 )
 
 func TestDeployAgent(t *testing.T) {
+	mockImage := &hcloud.Image{Architecture: hcloud.ArchitectureX86, Name: "mock-image"}
+
 	tests := []struct {
 		name          string
 		setupMocks    func(*mocks.MockClient)
@@ -41,7 +43,7 @@ func TestDeployAgent(t *testing.T) {
 				mockClient.On("ServerType").Return(mockServerTypeClient)
 
 				mockImageClient := mocks.NewMockImageClient(t)
-				mockImageClient.On("GetByNameAndArchitecture", mock.Anything, mock.Anything, hcloud.ArchitectureX86).Return(nil, nil, nil)
+				mockImageClient.On("GetForArchitecture", mock.Anything, mock.Anything, hcloud.ArchitectureX86).Return(nil, nil, nil)
 				mockClient.On("Image").Return(mockImageClient)
 			},
 			serverType:    []string{"cx11"},
@@ -66,9 +68,8 @@ func TestDeployAgent(t *testing.T) {
 				mockServerTypeClient.On("GetByName", mock.Anything, "cx11").Return(mockServerType, nil, nil)
 				mockClient.On("ServerType").Return(mockServerTypeClient)
 
-				mockImage := &hcloud.Image{}
 				mockImageClient := mocks.NewMockImageClient(t)
-				mockImageClient.On("GetByNameAndArchitecture", mock.Anything, mock.Anything, hcloud.ArchitectureX86).Return(mockImage, nil, nil)
+				mockImageClient.On("GetForArchitecture", mock.Anything, mock.Anything, hcloud.ArchitectureX86).Return(mockImage, nil, nil)
 				mockClient.On("Image").Return(mockImageClient)
 
 				mockServerClient := mocks.NewMockServerClient(t)
@@ -143,7 +144,7 @@ func TestDeployAgent(t *testing.T) {
 				mockClient.On("ServerType").Return(mockServerTypeClient)
 
 				mockImageClient := mocks.NewMockImageClient(t)
-				mockImageClient.On("GetByNameAndArchitecture", mock.Anything, mock.Anything, hcloud.ArchitectureX86).Return(&hcloud.Image{}, nil, nil)
+				mockImageClient.On("GetForArchitecture", mock.Anything, mock.Anything, hcloud.ArchitectureX86).Return(mockImage, nil, nil)
 				mockClient.On("Image").Return(mockImageClient)
 
 				unavailable := hcloud.Error{Code: hcloud.ErrorCodeResourceUnavailable, Message: "unavailable"}
