@@ -247,6 +247,8 @@ func (p *provider) deleteInstance(ctx context.Context, inst *instance.Server) er
 
 	api := instance.NewAPI(p.client)
 	blockAPI := block.NewAPI(p.client)
+
+	// Capture volumes before deletion (server deletion detaches them)
 	volumes := inst.Volumes
 
 	// Delete server first
@@ -257,10 +259,12 @@ func (p *provider) deleteInstance(ctx context.Context, inst *instance.Server) er
 		return err
 	}
 
+	// Delete volumes - collect all errors
 	var errs []error
 	for _, volume := range volumes {
 		switch volume.VolumeType {
 		case instance.VolumeServerVolumeTypeLSSD:
+			// Local SSD - delete via instance API
 			if err := api.DeleteVolume(&instance.DeleteVolumeRequest{
 				VolumeID: volume.ID,
 				Zone:     inst.Zone,
@@ -269,6 +273,7 @@ func (p *provider) deleteInstance(ctx context.Context, inst *instance.Server) er
 			}
 
 		case instance.VolumeServerVolumeTypeSbsVolume:
+			// Block storage - wait for available status, then delete via block API
 			terminalStatus := block.VolumeStatusAvailable
 			if _, err := blockAPI.WaitForVolume(&block.WaitForVolumeRequest{
 				VolumeID:       volume.ID,
