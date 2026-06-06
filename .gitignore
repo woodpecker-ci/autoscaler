@@ -14,7 +14,7 @@
 *.dylib
 vendor/
 __debug_bin
-woodpecker-autoscaler
+/dist/woodpecker-autoscaler
 
 # Test binary, built with `go test -c`
 *.test
