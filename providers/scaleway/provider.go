@@ -5,8 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math/rand"
-	"time"
 
 	"github.com/docker/go-units"
 	"github.com/rs/zerolog/log"
@@ -21,106 +19,101 @@ import (
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
 
-var (
-	ErrInvalidZone        = errors.New("invalid zone")
-	ErrInvalidRegion      = errors.New("invalid region")
-	ErrParameterNotSet    = errors.New("required parameter not set")
-	ErrRegionOrZoneNotSet = errors.New("region or zone not set")
-)
-
 type provider struct {
-	secretKey        string
-	accessKey        string
-	defaultProjectID string
-	zones            []scw.Zone
-	region           *scw.Region
-	projectID        *string
-	prefix           string
-	tags             []string
-	commercialType   string
-	image            string
-	enableIPv6       bool
-	storage          scw.Size
-	storageType      instance.VolumeVolumeType
-	config           *config.Config
-	client           *scw.Client
+	projectID   *string
+	prefix      string
+	tags        []string
+	images      []string
+	enableIPv6  bool
+	storage     scw.Size
+	storageType instance.VolumeVolumeType
+	config      *config.Config
+	client      *scw.Client
+	// candidates holds all resolved (serverType, image) pairs, in config order.
+	candidates []deployCandidate
 }
 
-func New(_ context.Context, c *cli.Command, config *config.Config) (types.Provider, error) {
-	if !c.IsSet("scaleway-instance-type") {
-		return nil, fmt.Errorf("%w: scaleway-instance-type", ErrParameterNotSet)
-	}
-
-	if !c.IsSet("scaleway-tags") {
-		return nil, fmt.Errorf("%w: scaleway-tags", ErrParameterNotSet)
-	}
-
-	if !c.IsSet("scaleway-project") {
-		return nil, fmt.Errorf("%w: scaleway-project", ErrParameterNotSet)
-	}
-
-	if !c.IsSet("scaleway-secret-key") {
-		return nil, fmt.Errorf("%w: scaleway-secret-key", ErrParameterNotSet)
-	}
-
+func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Provider, error) {
+	// make sure required configs are set
 	if !c.IsSet("scaleway-access-key") {
-		return nil, fmt.Errorf("%w: scaleway-access-key", ErrParameterNotSet)
+		return nil, fmt.Errorf("WOODPECKER_SCALEWAY_ACCESS_KEY is missing")
+	}
+	if !c.IsSet("scaleway-secret-key") {
+		return nil, fmt.Errorf("WOODPECKER_SCALEWAY_SECRET_KEY is missing")
+	}
+	if !c.IsSet("scaleway-server-types") {
+		return nil, fmt.Errorf("WOODPECKER_SCALEWAY_SERVER_TYPES is missing")
+	}
+	if !c.IsSet("scaleway-project") {
+		return nil, fmt.Errorf("WOODPECKER_SCALEWAY_PROJECT is missing")
+	}
+	if !c.IsSet("scaleway-tags") {
+		log.Warn().Msg("\"WOODPECKER_SCALEWAY_TAGS\" is not set, all scaleway instances are managed by autoscaler!")
 	}
 
+	defaultProjectID := c.String("scaleway-project")
+
+	// load config
 	p := &provider{
-		secretKey:        c.String("scaleway-secret-key"),
-		accessKey:        c.String("scaleway-access-key"),
-		defaultProjectID: c.String("scaleway-project"),
-		projectID:        scw.StringPtr(c.String("scaleway-project")),
-		prefix:           c.String("scaleway-prefix"),
-		tags:             c.StringSlice("scaleway-tags"),
-		commercialType:   c.String("scaleway-instance-type"),
-		image:            c.String("scaleway-image"),
-		enableIPv6:       c.Bool("scaleway-enable-ipv6"),
-		storage:          scw.Size(c.Uint64("scaleway-storage-size") * units.GB),
-		storageType:      instance.VolumeVolumeType(c.String("scaleway-storage-type")),
-		config:           config,
+		projectID:   scw.StringPtr(defaultProjectID),
+		prefix:      c.String("scaleway-prefix"),
+		tags:        c.StringSlice("scaleway-tags"),
+		images:      c.StringSlice("scaleway-images"),
+		enableIPv6:  c.Bool("scaleway-enable-ipv6"),
+		storage:     scw.Size(c.Uint64("scaleway-storage-size") * units.GB),
+		storageType: instance.VolumeVolumeType(c.String("scaleway-storage-type")),
+		config:      config,
 	}
-
-	zone := scw.Zone(c.String("scaleway-zone"))
-	if !zone.Exists() {
-		return nil, fmt.Errorf("%w: %s", ErrInvalidZone, zone.String())
-	}
-	p.zones = []scw.Zone{zone}
 
 	var err error
-	p.client, err = scw.NewClient(scw.WithDefaultProjectID(p.defaultProjectID), scw.WithAuth(p.accessKey, p.secretKey))
+	p.client, err = scw.NewClient(
+		scw.WithDefaultProjectID(defaultProjectID),
+		scw.WithAuth(c.String("scaleway-access-key"), c.String("scaleway-secret-key")),
+	)
+	if err != nil {
+		return nil, err
+	}
 
-	return p, err
+	if err := p.resolveCandidates(ctx, c.StringSlice("scaleway-server-types")); err != nil {
+		return nil, err
+	}
+
+	return p, nil
 }
 
 func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
-	_, err := p.getInstance(ctx, agent.Name)
-	if err != nil {
-		return err
+	if len(p.candidates) == 0 {
+		return fmt.Errorf("scaleway: no candidates to deploy from")
 	}
 
-	inst, err := p.createInstance(ctx, agent)
-	if err != nil {
-		return err
+	for i, c := range p.candidates {
+		err := p.createAndBoot(ctx, agent, c)
+		if err == nil {
+			return nil
+		}
+		if !isResourceUnavailable(err) {
+			return err
+		}
+		if i < len(p.candidates)-1 {
+			log.Warn().Str("type", c.rawType).Str("zone", c.zone.String()).
+				Msgf("scaleway: create failed (resource unavailable), trying next candidate: %s", err)
+			continue
+		}
+		return fmt.Errorf("scaleway: all candidates exhausted: %w", err)
 	}
 
-	err = p.setCloudInit(ctx, agent, inst)
-	if err != nil {
-		return err
-	}
-
-	// NB(raskyld): use the value for logging purpose once we implement slog
-	_, err = p.bootInstance(ctx, inst)
-	return err
+	return nil
 }
 
 func (p *provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) error {
 	inst, err := p.getInstance(ctx, agent.Name)
 	if err != nil {
+		if errors.Is(err, ErrInstanceNotFound) {
+			log.Warn().Str("agent", agent.Name).Msg("scaleway: instance not found, nothing to remove")
+			return nil
+		}
 		return err
 	}
-
 	return p.deleteInstance(ctx, inst)
 }
 
@@ -129,98 +122,35 @@ func (p *provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 	if err != nil {
 		return nil, err
 	}
-
 	names := make([]string, 0, len(instances))
 	for _, inst := range instances {
 		names = append(names, inst.Name)
 	}
-
 	return names, nil
 }
 
-func (p *provider) getInstance(ctx context.Context, name string) (*instance.Server, error) {
-	if err := p.resolveZones(); err != nil {
-		return nil, err
+func (p *provider) createAndBoot(ctx context.Context, agent *woodpecker.Agent, c deployCandidate) error {
+	inst, err := p.createInstance(ctx, agent, c)
+	if err != nil {
+		return err
 	}
-
-	api := instance.NewAPI(p.client)
-	project := p.projectID
-
-	if project == nil {
-		project = &p.defaultProjectID
+	if err := p.setCloudInit(ctx, agent, inst); err != nil {
+		return err
 	}
-
-	for _, zone := range p.zones {
-		req := instance.ListServersRequest{
-			Zone:    zone,
-			Project: project,
-			Name:    scw.StringPtr(name),
-			Tags:    p.tags,
-		}
-
-		resp, err := api.ListServers(&req, scw.WithContext(ctx))
-		if err != nil {
-			return nil, err
-		}
-
-		if resp.TotalCount > 0 {
-			if resp.TotalCount > 1 {
-				log.Warn().Msg("found multiple instances with the same name, this may indicate orphaned resources")
-			}
-			return resp.Servers[0], nil
-		}
-	}
-
-	return nil, nil
+	log.Info().Str("type", c.rawType).Str("zone", c.zone.String()).
+		Str("image", c.imageName).Msgf("scaleway: create agent %s", agent.Name)
+	_, err = p.bootInstance(ctx, inst)
+	return err
 }
 
-func (p *provider) getAllInstances(ctx context.Context) ([]*instance.Server, error) {
-	if err := p.resolveZones(); err != nil {
-		return nil, err
-	}
-
+func (p *provider) createInstance(ctx context.Context, agent *woodpecker.Agent, c deployCandidate) (*instance.Server, error) {
 	api := instance.NewAPI(p.client)
-	instances := make([]*instance.Server, 0)
-
-	for _, zone := range p.zones {
-		req := instance.ListServersRequest{
-			Zone:    zone,
-			Project: p.projectID,
-			Tags:    p.tags,
-			PerPage: scw.Uint32Ptr(100), //nolint:mnd
-		}
-
-		resp, err := api.ListServers(&req, scw.WithContext(ctx), scw.WithAllPages())
-		if err != nil {
-			return nil, err
-		}
-
-		if resp.TotalCount > 0 {
-			instances = append(instances, resp.Servers...)
-		}
-	}
-
-	return instances, nil
-}
-
-func (p *provider) createInstance(ctx context.Context, agent *woodpecker.Agent) (*instance.Server, error) {
-	if err := p.resolveZones(); err != nil {
-		return nil, err
-	}
-
-	// TODO(raskyld): Implement a well-balanced zone anti-affinity to spread instance
-	// 								evenly among zones for greater resilience.
-	random := rand.New(rand.NewSource(time.Now().Unix()))
-	zone := p.zones[random.Intn(len(p.zones))]
-
-	api := instance.NewAPI(p.client)
-
-	req := instance.CreateServerRequest{
-		Zone:              zone,
+	res, err := api.CreateServer(&instance.CreateServerRequest{
+		Zone:              c.zone,
 		Name:              agent.Name,
 		DynamicIPRequired: scw.BoolPtr(true),
-		CommercialType:    p.commercialType,
-		Image:             scw.StringPtr(p.image),
+		CommercialType:    c.rawType,
+		Image:             scw.StringPtr(c.imageID),
 		Volumes: map[string]*instance.VolumeServerTemplate{
 			"0": {
 				Boot:       scw.BoolPtr(true),
@@ -231,13 +161,10 @@ func (p *provider) createInstance(ctx context.Context, agent *woodpecker.Agent) 
 		EnableIPv6: &p.enableIPv6,
 		Project:    p.projectID,
 		Tags:       p.tags,
-	}
-
-	res, err := api.CreateServer(&req, scw.WithContext(ctx))
+	}, scw.WithContext(ctx))
 	if err != nil {
 		return nil, err
 	}
-
 	return res.Server, nil
 }
 
@@ -246,27 +173,26 @@ func (p *provider) setCloudInit(ctx context.Context, agent *woodpecker.Agent, in
 	if err != nil {
 		return err
 	}
-
 	api := instance.NewAPI(p.client)
-
-	req := instance.SetServerUserDataRequest{
+	return api.SetServerUserData(&instance.SetServerUserDataRequest{
 		Zone:     inst.Zone,
 		ServerID: inst.ID,
 		Key:      "cloud-init",
 		Content:  bytes.NewBufferString(ud),
-	}
+	}, scw.WithContext(ctx))
+}
 
-	err = api.SetServerUserData(&req, scw.WithContext(ctx))
-	if err != nil {
-		return err
-	}
-
-	return nil
+func (p *provider) bootInstance(ctx context.Context, inst *instance.Server) (*instance.ServerActionResponse, error) {
+	api := instance.NewAPI(p.client)
+	return api.ServerAction(&instance.ServerActionRequest{
+		Zone:     inst.Zone,
+		ServerID: inst.ID,
+		Action:   instance.ServerActionPoweron,
+	}, scw.WithContext(ctx))
 }
 
 func (p *provider) deleteInstance(ctx context.Context, inst *instance.Server) error {
-	err := p.haltInstance(ctx, inst)
-	if err != nil {
+	if err := p.haltInstance(ctx, inst); err != nil {
 		return err
 	}
 
@@ -277,11 +203,10 @@ func (p *provider) deleteInstance(ctx context.Context, inst *instance.Server) er
 	volumes := inst.Volumes
 
 	// Delete server first
-	err = api.DeleteServer(&instance.DeleteServerRequest{
+	if err := api.DeleteServer(&instance.DeleteServerRequest{
 		Zone:     inst.Zone,
 		ServerID: inst.ID,
-	}, scw.WithContext(ctx))
-	if err != nil {
+	}, scw.WithContext(ctx)); err != nil {
 		return err
 	}
 
@@ -309,7 +234,6 @@ func (p *provider) deleteInstance(ctx context.Context, inst *instance.Server) er
 				errs = append(errs, fmt.Errorf("wait for SBS volume %s: %w", volume.ID, err))
 				continue
 			}
-
 			if err := blockAPI.DeleteVolume(&block.DeleteVolumeRequest{
 				VolumeID: volume.ID,
 				Zone:     inst.Zone,
@@ -318,55 +242,20 @@ func (p *provider) deleteInstance(ctx context.Context, inst *instance.Server) er
 			}
 
 		case instance.VolumeServerVolumeTypeScratch:
-			// Scratch volumes are automatically deleted with the server
+			// deleted automatically with server
 		}
 	}
 
 	return errors.Join(errs...)
 }
 
-func (p *provider) bootInstance(ctx context.Context, inst *instance.Server) (*instance.ServerActionResponse, error) {
-	api := instance.NewAPI(p.client)
-
-	return api.ServerAction(&instance.ServerActionRequest{
-		Zone:     inst.Zone,
-		ServerID: inst.ID,
-		Action:   instance.ServerActionPoweron,
-	}, scw.WithContext(ctx))
-}
-
 func (p *provider) haltInstance(ctx context.Context, inst *instance.Server) error {
 	api := instance.NewAPI(p.client)
-
 	return api.ServerActionAndWait(&instance.ServerActionAndWaitRequest{
 		Zone:     inst.Zone,
 		ServerID: inst.ID,
 		Action:   instance.ServerActionPoweroff,
 	}, scw.WithContext(ctx))
-}
-
-func (p *provider) resolveZones() error {
-	if p.region != nil {
-		if !p.region.Exists() {
-			return fmt.Errorf("%w: %s", ErrInvalidRegion, p.region.String())
-		}
-
-		p.zones = p.region.GetZones()
-
-		return nil
-	}
-
-	if len(p.zones) == 0 {
-		return ErrRegionOrZoneNotSet
-	}
-
-	for _, zone := range p.zones {
-		if !zone.Exists() {
-			return fmt.Errorf("%w: %s", ErrInvalidZone, zone.String())
-		}
-	}
-
-	return nil
 }
 
 func (p *provider) BillingModel() types.BillingModel {

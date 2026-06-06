@@ -373,7 +373,7 @@ func (a *Autoscaler) calcAgents(ctx context.Context) (float64, error) {
 	}
 
 	log.Debug().Msgf("queue info: freeTasks = %v runningTasks = %v pendingTasks = %v", freeTasks, runningTasks, pendingTasks)
-	availableAgents := math.Ceil(float64(freeTasks+runningTasks) / float64((a.config.WorkflowsPerAgent)))
+	availableAgents := math.Ceil(float64(freeTasks+runningTasks) / float64(a.config.WorkflowsPerAgent))
 	reqAgents := math.Ceil(float64(pendingTasks+runningTasks) / float64(a.config.WorkflowsPerAgent))
 
 	availablePoolAgents := len(a.getPoolAgents(true))
