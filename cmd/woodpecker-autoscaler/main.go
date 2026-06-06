@@ -92,8 +92,6 @@ func run(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
-	autoscaler := engine.NewAutoscaler(provider, client, config)
-
 	config.AgentInactivityTimeout, err = time.ParseDuration(cmd.String("agent-inactivity-timeout"))
 	if err != nil {
 		return fmt.Errorf("can't parse agent-inactivity-timeout: %w", err)
@@ -102,6 +100,12 @@ func run(ctx context.Context, cmd *cli.Command) error {
 	config.AgentIdleTimeout, err = time.ParseDuration(cmd.String("agent-idle-timeout"))
 	if err != nil {
 		return fmt.Errorf("can't parse agent-idle-timeout: %w", err)
+	}
+
+	autoscaler := engine.NewAutoscaler(provider, client, config)
+
+	if err := autoscaler.GetCaps(ctx); err != nil {
+		return fmt.Errorf("could not query provider capabilities: %w", err)
 	}
 
 	reconciliationInterval, err := time.ParseDuration(cmd.String("reconciliation-interval"))

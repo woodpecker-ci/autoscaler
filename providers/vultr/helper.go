@@ -132,3 +132,13 @@ func (p *provider) setupKeyPair(ctx context.Context) error {
 
 	return ErrSSHKeyNotFound
 }
+
+// imageToGoArch maps architecture based on image to Go GOARCH strings.
+func imageToGoArch(i govultr.OS) string {
+	switch i.Arch {
+	case "x64":
+		return "arm64"
+	default:
+		return i.Arch
+	}
+}

@@ -80,7 +80,7 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 		return nil, err
 	}
 
-	if err := p.setupKeypair(ctx); err != nil {
+	if err := p.setupKeyPair(ctx); err != nil {
 		return nil, fmt.Errorf("%s: setupKeypair: %w", p.name, err)
 	}
 
@@ -89,7 +89,11 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 	return p, nil
 }
 
-func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
+func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cb types.Capability) error {
+	if cb.Platform != "linux/amd64" || cb.Backend != types.BackendDocker {
+		return fmt.Errorf("linode only supports linux/amd64 and docker, we got requested capability platform=%s backend=%s", cb.Platform, cb.Backend)
+	}
+
 	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, cloudinit.RenderOption{
 		PreExec: blackholeMetadataAPI,
 	})
@@ -119,6 +123,14 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 	}
 
 	return nil
+}
+
+func (p *provider) Capabilities(_ context.Context) ([]types.Capability, error) {
+	// Linode is an x86-64 only platform; the resolved instanceType confirms it exists.
+	return []types.Capability{{
+		Platform: "linux/amd64",
+		Backend:  types.BackendDocker,
+	}}, nil
 }
 
 func (p *provider) getAgent(ctx context.Context, agent *woodpecker.Agent) (*linodego.Instance, error) {
@@ -177,7 +189,7 @@ func (p *provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 	return names, nil
 }
 
-func (p *provider) setupKeypair(ctx context.Context) error {
+func (p *provider) setupKeyPair(ctx context.Context) error {
 	res, err := p.client.ListSSHKeys(ctx, nil)
 	if err != nil {
 		return err
@@ -191,17 +203,16 @@ func (p *provider) setupKeypair(ctx context.Context) error {
 	// if the account has multiple keys configured try to
 	// use an existing key based on naming convention.
 	for _, name := range []string{"woodpecker", "id_rsa_woodpecker"} {
-		fingerprint, ok := index[name]
+		key, ok := index[name]
 		if !ok {
 			continue
 		}
-		p.sshKey = fingerprint
-
+		p.sshKey = key
 		return nil
 	}
 
 	// if there were no matches but the account has at least
-	// one keypair already created we will select the first
+	// one key-pair already created we will select the first
 	// in the list.
 	if len(res) > 0 {
 		p.sshKey = res[0].SSHKey
