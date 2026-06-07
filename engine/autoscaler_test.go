@@ -15,12 +15,6 @@ import (
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
 
-// fixedClock returns a clock function pinned to t for deterministic
-// billing-window tests.
-func fixedClock(t time.Time) func() time.Time {
-	return func() time.Time { return t }
-}
-
 type MockClient struct {
 	workers       int
 	running       int
@@ -522,16 +516,17 @@ func Test_removeDrainedAgents(t *testing.T) {
 }
 
 func Test_inTeardownWindow(t *testing.T) {
-	now := time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)
 	// margin 2m + reconciliation interval 1m => 3m window at the end of each hour
 	cfg := &config.Config{
 		AgentBillingTeardownMargin: 2 * time.Minute,
 		ReconciliationInterval:     time.Minute,
 	}
-	autoscaler := Autoscaler{config: cfg, clock: fixedClock(now)}
+	autoscaler := Autoscaler{config: cfg}
 
+	// Offsets are anchored at time.Now() and stay at least a minute clear of the
+	// 57-minute window edge, so wall-clock drift during the test is irrelevant.
 	createdAgo := func(d time.Duration) *woodpecker.Agent {
-		return &woodpecker.Agent{Created: now.Add(-d).Unix()}
+		return &woodpecker.Agent{Created: time.Now().Add(-d).Unix()}
 	}
 
 	t.Run("inside the window of the first paid hour", func(t *testing.T) {
@@ -555,21 +550,20 @@ func Test_inTeardownWindow(t *testing.T) {
 		assert.False(t, autoscaler.inTeardownWindow(&woodpecker.Agent{Created: 0}))
 	})
 
-	t.Run("clock skew (negative age) is never in the window", func(t *testing.T) {
+	t.Run("creation time in the future (negative age) is never in the window", func(t *testing.T) {
 		assert.False(t, autoscaler.inTeardownWindow(createdAgo(-5*time.Minute)))
 	})
 }
 
 func Test_drainAgents_hourlyRoundUp(t *testing.T) {
 	zerolog.SetGlobalLevel(zerolog.ErrorLevel)
-	now := time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)
+	now := time.Now()
 
 	t.Run("only drains agents inside their teardown window", func(t *testing.T) {
 		ctx := t.Context()
 		client := mocks_server.NewMockClient(t)
 		provider := mocks_provider.NewMockProvider(t)
 		autoscaler := Autoscaler{
-			clock: fixedClock(now),
 			agents: []*woodpecker.Agent{
 				// idle but mid-hour => kept warm, even though it has no recent work
 				{ID: 1, Name: "pool-1-agent-1", LastContact: now.Add(-time.Minute).Unix(), LastWork: now.Add(-30 * time.Minute).Unix(), Created: now.Add(-30 * time.Minute).Unix()},
@@ -598,7 +592,7 @@ func Test_drainAgents_hourlyRoundUp(t *testing.T) {
 
 func Test_removeDrainedAgents_hourlyRoundUp(t *testing.T) {
 	zerolog.SetGlobalLevel(zerolog.ErrorLevel)
-	now := time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)
+	now := time.Now()
 	cfg := func() *config.Config {
 		return &config.Config{
 			BillingModel:               types.BillingHourlyRoundUp,
@@ -612,7 +606,6 @@ func Test_removeDrainedAgents_hourlyRoundUp(t *testing.T) {
 		client := mocks_server.NewMockClient(t)
 		provider := mocks_provider.NewMockProvider(t)
 		autoscaler := Autoscaler{
-			clock: fixedClock(now),
 			agents: []*woodpecker.Agent{
 				{ID: 2, Name: "pool-1-agent-2", NoSchedule: true, LastWork: now.Add(-time.Minute).Unix(), Created: now.Add(-58 * time.Minute).Unix()},
 			},
@@ -636,7 +629,6 @@ func Test_removeDrainedAgents_hourlyRoundUp(t *testing.T) {
 		client := mocks_server.NewMockClient(t)
 		provider := mocks_provider.NewMockProvider(t)
 		autoscaler := Autoscaler{
-			clock: fixedClock(now),
 			agents: []*woodpecker.Agent{
 				// drained while busy near the boundary; now idle 5m into a new paid hour
 				{ID: 2, Name: "pool-1-agent-2", NoSchedule: true, LastWork: now.Add(-time.Minute).Unix(), Created: now.Add(-65 * time.Minute).Unix()},

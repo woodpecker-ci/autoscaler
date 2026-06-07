@@ -21,9 +21,6 @@ type Autoscaler struct {
 	agents   []*woodpecker.Agent
 	config   *config.Config
 	provider types.Provider
-	// clock returns the current time. It is nil in production (now() falls back
-	// to time.Now) and set by tests to make billing-window decisions deterministic.
-	clock func() time.Time
 }
 
 // NewAutoscaler creates a new Autoscaler instance.
@@ -35,14 +32,6 @@ func NewAutoscaler(p types.Provider, client server.Client, config *config.Config
 		client:   client,
 		config:   config,
 	}
-}
-
-// now returns the current time, honoring an injected clock when set.
-func (a *Autoscaler) now() time.Time {
-	if a.clock != nil {
-		return a.clock()
-	}
-	return time.Now()
 }
 
 // billingTeardownWindow is the slice at the end of each paid hour during which
@@ -61,7 +50,7 @@ func (a *Autoscaler) inTeardownWindow(agent *woodpecker.Agent) bool {
 		return false
 	}
 
-	age := a.now().Sub(time.Unix(agent.Created, 0))
+	age := time.Since(time.Unix(agent.Created, 0))
 	if age < 0 {
 		return false
 	}
@@ -169,7 +158,7 @@ func (a *Autoscaler) drainAgents(_ context.Context, amount int) error {
 				if !a.inTeardownWindow(agent) {
 					continue
 				}
-			} else if a.now().Sub(time.Unix(agent.LastWork, 0)) < a.config.AgentIdleTimeout {
+			} else if time.Since(time.Unix(agent.LastWork, 0)) < a.config.AgentIdleTimeout {
 				// agent has recently done work => not ready for draining
 				continue
 			}
@@ -206,7 +195,7 @@ func (a *Autoscaler) isAgentIdle(agent *woodpecker.Agent) (bool, error) {
 	}
 
 	// agent has done work recently => not idle
-	if a.now().Sub(time.Unix(agent.LastWork, 0)) < a.config.AgentIdleTimeout {
+	if time.Since(time.Unix(agent.LastWork, 0)) < a.config.AgentIdleTimeout {
 		return false, nil
 	}
 
