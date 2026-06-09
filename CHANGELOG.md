@@ -1,10 +1,10 @@
 # Changelog
 
-## [2.0.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.0) - 2026-06-06
+## [2.0.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.0) - 2026-06-09
 
 ### ❤️ Thanks to all contributors! ❤️
 
-@6543, @btriller
+@6543, @btriller, @hstern
 
 ### 💥 Breaking changes
 
@@ -17,6 +17,7 @@
 
 ### 📈 Enhancement
 
+- Make agent teardown billing-aware [[#645](https://github.com/woodpecker-ci/autoscaler/pull/645)]
 - Support custom images on Hetzner [[#638](https://github.com/woodpecker-ci/autoscaler/pull/638)]
 
 ### 📦️ Dependency
