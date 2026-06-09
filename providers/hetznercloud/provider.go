@@ -196,3 +196,7 @@ func (p *provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 
 	return names, nil
 }
+
+func (p *provider) BillingModel() types.BillingModel {
+	return types.BillingHourlyRoundUp
+}

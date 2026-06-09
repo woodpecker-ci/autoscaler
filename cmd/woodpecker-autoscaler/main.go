@@ -91,6 +91,7 @@ func run(ctx context.Context, cmd *cli.Command) error {
 	if err != nil {
 		return err
 	}
+	config.BillingModel = provider.BillingModel()
 
 	autoscaler := engine.NewAutoscaler(provider, client, config)
 
@@ -104,9 +105,22 @@ func run(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("can't parse agent-idle-timeout: %w", err)
 	}
 
+	config.AgentBillingTeardownMargin, err = time.ParseDuration(cmd.String("agent-billing-teardown-margin"))
+	if err != nil {
+		return fmt.Errorf("can't parse agent-billing-teardown-margin: %w", err)
+	}
+
 	reconciliationInterval, err := time.ParseDuration(cmd.String("reconciliation-interval"))
 	if err != nil {
 		return fmt.Errorf("can't parse reconciliation-interval: %w", err)
+	}
+	config.ReconciliationInterval = reconciliationInterval
+
+	if config.BillingModel == types.BillingHourlyRoundUp {
+		log.Info().
+			Str("provider", cmd.String("provider")).
+			Str("teardown-window", (config.AgentBillingTeardownMargin + reconciliationInterval).String()).
+			Msg("hourly-round-up billing: idle agents are kept warm until just before each paid-hour boundary")
 	}
 
 	for {
