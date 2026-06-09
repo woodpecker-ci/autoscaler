@@ -34,14 +34,6 @@ func NewAutoscaler(p types.Provider, client server.Client, config *config.Config
 	}
 }
 
-// billingTeardownWindow is the slice at the end of each paid hour during which
-// an idle hourly-billed agent may be torn down. The reconciliation interval is
-// added to the configured margin so a reconciliation can never tick straight
-// past the window.
-func (a *Autoscaler) billingTeardownWindow() time.Duration {
-	return a.config.AgentBillingTeardownMargin + a.config.ReconciliationInterval
-}
-
 // inTeardownWindow reports whether the agent is currently within the teardown
 // window before one of its paid-hour boundaries (anchored at its creation
 // time). Agents that have not reported a creation time are never in the window.
@@ -55,7 +47,7 @@ func (a *Autoscaler) inTeardownWindow(agent *woodpecker.Agent) bool {
 		return false
 	}
 
-	window := a.billingTeardownWindow()
+	window := a.config.AgentBillingTeardownMargin + a.config.ReconciliationInterval
 	// A window covering a whole hour (or more) means every moment qualifies.
 	if window >= time.Hour {
 		return true
