@@ -257,3 +257,7 @@ func (p *provider) haltInstance(ctx context.Context, inst *instance.Server) erro
 		Action:   instance.ServerActionPoweroff,
 	}, scw.WithContext(ctx))
 }
+
+func (p *provider) BillingModel() types.BillingModel {
+	return types.BillingPerSecond
+}

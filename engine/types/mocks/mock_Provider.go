@@ -8,6 +8,7 @@ import (
 	"context"
 
 	mock "github.com/stretchr/testify/mock"
+	"go.woodpecker-ci.org/autoscaler/engine/types"
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
 
@@ -36,6 +37,50 @@ type MockProvider_Expecter struct {
 
 func (_m *MockProvider) EXPECT() *MockProvider_Expecter {
 	return &MockProvider_Expecter{mock: &_m.Mock}
+}
+
+// BillingModel provides a mock function for the type MockProvider
+func (_mock *MockProvider) BillingModel() types.BillingModel {
+	ret := _mock.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for BillingModel")
+	}
+
+	var r0 types.BillingModel
+	if returnFunc, ok := ret.Get(0).(func() types.BillingModel); ok {
+		r0 = returnFunc()
+	} else {
+		r0 = ret.Get(0).(types.BillingModel)
+	}
+	return r0
+}
+
+// MockProvider_BillingModel_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'BillingModel'
+type MockProvider_BillingModel_Call struct {
+	*mock.Call
+}
+
+// BillingModel is a helper method to define mock.On call
+func (_e *MockProvider_Expecter) BillingModel() *MockProvider_BillingModel_Call {
+	return &MockProvider_BillingModel_Call{Call: _e.mock.On("BillingModel")}
+}
+
+func (_c *MockProvider_BillingModel_Call) Run(run func()) *MockProvider_BillingModel_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *MockProvider_BillingModel_Call) Return(billingModel types.BillingModel) *MockProvider_BillingModel_Call {
+	_c.Call.Return(billingModel)
+	return _c
+}
+
+func (_c *MockProvider_BillingModel_Call) RunAndReturn(run func() types.BillingModel) *MockProvider_BillingModel_Call {
+	_c.Call.Return(run)
+	return _c
 }
 
 // DeployAgent provides a mock function for the type MockProvider
