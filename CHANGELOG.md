@@ -1,6 +1,6 @@
 # Changelog
 
-## [2.0.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.0) - 2026-06-09
+## [2.0.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.0) - 2026-06-10
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -22,6 +22,7 @@
 
 ### 📦️ Dependency
 
+- Update golang deps non-major [[#656](https://github.com/woodpecker-ci/autoscaler/pull/656)]
 - Update golang.org/x/exp digest to 055de63 [[#652](https://github.com/woodpecker-ci/autoscaler/pull/652)]
 - Update golang deps non-major [[#651](https://github.com/woodpecker-ci/autoscaler/pull/651)]
 - Update golang deps non-major [[#650](https://github.com/woodpecker-ci/autoscaler/pull/650)]
