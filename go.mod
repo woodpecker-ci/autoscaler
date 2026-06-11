@@ -6,8 +6,8 @@ toolchain go1.26.4
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.42.0
-	github.com/aws/aws-sdk-go-v2/config v1.32.24
-	github.com/aws/aws-sdk-go-v2/service/ec2 v1.306.0
+	github.com/aws/aws-sdk-go-v2/config v1.32.25
+	github.com/aws/aws-sdk-go-v2/service/ec2 v1.307.0
 	github.com/docker/go-units v0.5.0
 	github.com/hetznercloud/hcloud-go/v2 v2.42.0
 	github.com/joho/godotenv v1.5.1
@@ -15,23 +15,23 @@ require (
 	github.com/rs/zerolog v1.35.1
 	github.com/scaleway/scaleway-sdk-go v1.0.0-beta.36
 	github.com/stretchr/testify v1.11.1
-	github.com/urfave/cli/v3 v3.9.0
+	github.com/urfave/cli/v3 v3.9.1
 	github.com/vultr/govultr/v3 v3.31.2
 	go.woodpecker-ci.org/woodpecker/v3 v3.15.0
 	golang.org/x/exp v0.0.0-20260603202125-055de637280b
-	golang.org/x/net v0.55.0
+	golang.org/x/net v0.56.0
 	golang.org/x/oauth2 v0.36.0
 )
 
 require (
-	github.com/aws/aws-sdk-go-v2/credentials v1.19.23 // indirect
+	github.com/aws/aws-sdk-go-v2/credentials v1.19.24 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.18.29 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/configsources v1.4.29 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.7.29 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/v4a v1.4.30 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.13.12 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.13.29 // indirect
-	github.com/aws/aws-sdk-go-v2/service/signin v1.1.5 // indirect
+	github.com/aws/aws-sdk-go-v2/service/signin v1.2.0 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sso v1.31.3 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.36.6 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.43.3 // indirect
@@ -53,8 +53,8 @@ require (
 	github.com/prometheus/procfs v0.17.0 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	go.yaml.in/yaml/v2 v2.4.3 // indirect
-	golang.org/x/sys v0.45.0 // indirect
-	golang.org/x/text v0.37.0 // indirect
+	golang.org/x/sys v0.46.0 // indirect
+	golang.org/x/text v0.38.0 // indirect
 	google.golang.org/protobuf v1.36.12-0.20260120151049-f2248ac996af // indirect
 	gopkg.in/ini.v1 v1.67.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
