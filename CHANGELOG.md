@@ -22,6 +22,7 @@
 
 ### 📦️ Dependency
 
+- Update golang deps non-major to v2.43.0 [[#659](https://github.com/woodpecker-ci/autoscaler/pull/659)]
 - Update golang.org/x/exp digest to c48552f [[#658](https://github.com/woodpecker-ci/autoscaler/pull/658)]
 - Update golang deps non-major [[#657](https://github.com/woodpecker-ci/autoscaler/pull/657)]
 - Update golang deps non-major [[#656](https://github.com/woodpecker-ci/autoscaler/pull/656)]
