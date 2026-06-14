@@ -55,6 +55,17 @@ Useful optional settings:
 - `WOODPECKER_EQUINIXMETAL_SPOT_INSTANCE`
 - `WOODPECKER_EQUINIXMETAL_SPOT_PRICE_MAX`
 
+## Teardown policy
+
+How idle agents are torn down depends on how the selected provider bills:
+
+- **Per-second billing** (e.g. AWS, Scaleway): an idle agent is drained and removed once it has been idle for `WOODPECKER_AGENT_IDLE_TIMEOUT`. Holding an idle agent open buys nothing.
+- **Hourly-rounded-up billing** (e.g. Linode, Hetzner Cloud, Vultr): a partial hour costs the same as a full one, so an idle agent is kept schedulable for the rest of the hour that has already been paid for and is only torn down just before its next hour boundary (anchored at its creation time). A busy agent simply rolls into the next paid hour; you never pay for an idle hour.
+
+  The teardown window is `WOODPECKER_AGENT_BILLING_TEARDOWN_MARGIN` (default `2m`) plus `WOODPECKER_RECONCILIATION_INTERVAL`, so a reconciliation can never tick straight past the boundary. With the defaults (`2m` margin, `1m` interval) an idle agent becomes eligible for teardown in the last 3 minutes of each paid hour.
+
+The billing model is selected automatically by the provider, so no extra configuration is required to benefit from this.
+
 ## Roadmap
 
 - [ ] Add support for multiple providers

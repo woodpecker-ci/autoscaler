@@ -10,6 +10,7 @@ import (
 
 	"go.woodpecker-ci.org/autoscaler/config"
 	"go.woodpecker-ci.org/autoscaler/engine"
+	"go.woodpecker-ci.org/autoscaler/engine/types"
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
 
@@ -140,6 +141,12 @@ func TestListDeployedAgentNamesReturnsPoolDevices(t *testing.T) {
 	names, err := p.ListDeployedAgentNames(context.Background())
 	require.NoError(t, err)
 	assert.Equal(t, []string{"agent-1", "agent-2"}, names)
+}
+
+func TestBillingModelIsHourlyRoundUp(t *testing.T) {
+	p := &provider{}
+
+	assert.Equal(t, types.BillingHourlyRoundUp, p.BillingModel())
 }
 
 func TestRemoveAgentDeletesMatchingPoolDevice(t *testing.T) {

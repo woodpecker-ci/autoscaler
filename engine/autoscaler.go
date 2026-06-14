@@ -34,6 +34,28 @@ func NewAutoscaler(p types.Provider, client server.Client, config *config.Config
 	}
 }
 
+// inTeardownWindow reports whether the agent is currently within the teardown
+// window before one of its paid-hour boundaries (anchored at its creation
+// time). Agents that have not reported a creation time are never in the window.
+func (a *Autoscaler) inTeardownWindow(agent *woodpecker.Agent) bool {
+	if agent.Created == 0 {
+		return false
+	}
+
+	age := time.Since(time.Unix(agent.Created, 0))
+	if age < 0 {
+		return false
+	}
+
+	window := a.config.AgentBillingTeardownMargin + a.config.ReconciliationInterval
+	// A window covering a whole hour (or more) means every moment qualifies.
+	if window >= time.Hour {
+		return true
+	}
+
+	return age%time.Hour >= time.Hour-window
+}
+
 func (a *Autoscaler) loadAgents(_ context.Context) error {
 	a.agents = []*woodpecker.Agent{}
 
@@ -116,13 +138,20 @@ func (a *Autoscaler) drainAgents(_ context.Context, amount int) error {
 				continue
 			}
 
-			// agent has recently done work => not ready for draining
-			if time.Since(time.Unix(agent.LastWork, 0)) < a.config.AgentIdleTimeout {
+			// agent has never contacted the server => not ready for draining
+			if agent.LastContact == 0 {
 				continue
 			}
 
-			// agent has never contacted the server => not ready for draining
-			if agent.LastContact == 0 {
+			if a.config.BillingModel == types.BillingHourlyRoundUp {
+				// hourly-round-up: the hour is already paid for, so keep the
+				// agent schedulable until just before its hour boundary even
+				// while idle, then drain it inside the teardown window.
+				if !a.inTeardownWindow(agent) {
+					continue
+				}
+			} else if time.Since(time.Unix(agent.LastWork, 0)) < a.config.AgentIdleTimeout {
+				// agent has recently done work => not ready for draining
 				continue
 			}
 
@@ -148,6 +177,13 @@ func (a *Autoscaler) isAgentIdle(agent *woodpecker.Agent) (bool, error) {
 	// agent still has tasks => not idle
 	if len(tasks) > 0 {
 		return false, nil
+	}
+
+	// hourly-round-up: recency of work does not gate removal. The paid hour is
+	// kept warm by the drain stage; once an agent is eligible for removal the
+	// only thing that protects it is an in-flight task (checked above).
+	if a.config.BillingModel == types.BillingHourlyRoundUp {
+		return true, nil
 	}
 
 	// agent has done work recently => not idle
@@ -194,6 +230,13 @@ func (a *Autoscaler) removeAgent(ctx context.Context, agent *woodpecker.Agent, r
 func (a *Autoscaler) removeDrainedAgents(ctx context.Context) error {
 	for _, agent := range a.getPoolAgents(false) {
 		if !agent.NoSchedule {
+			continue
+		}
+
+		// hourly-round-up: a drained agent that rolled into a fresh paid hour
+		// (e.g. it was busy at the boundary) stays up until its next teardown
+		// window rather than wasting the hour just bought.
+		if a.config.BillingModel == types.BillingHourlyRoundUp && !a.inTeardownWindow(agent) {
 			continue
 		}
 
@@ -311,7 +354,7 @@ func (a *Autoscaler) calcAgents(ctx context.Context) (float64, error) {
 	}
 
 	log.Debug().Msgf("queue info: freeTasks = %v runningTasks = %v pendingTasks = %v", freeTasks, runningTasks, pendingTasks)
-	availableAgents := math.Ceil(float64(freeTasks+runningTasks) / float64((a.config.WorkflowsPerAgent)))
+	availableAgents := math.Ceil(float64(freeTasks+runningTasks) / float64(a.config.WorkflowsPerAgent))
 	reqAgents := math.Ceil(float64(pendingTasks+runningTasks) / float64(a.config.WorkflowsPerAgent))
 
 	availablePoolAgents := len(a.getPoolAgents(true))

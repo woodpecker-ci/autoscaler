@@ -219,6 +219,10 @@ func (p *provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 	return names, nil
 }
 
+func (p *provider) BillingModel() types.BillingModel {
+	return types.BillingHourlyRoundUp
+}
+
 func (p *provider) getAgent(ctx context.Context, hostname string) (*deviceRecord, error) {
 	devices, err := p.listPoolDevices(ctx)
 	if err != nil {

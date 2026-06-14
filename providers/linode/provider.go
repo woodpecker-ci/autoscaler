@@ -226,3 +226,7 @@ func newClient(apiKey string) *linodego.Client {
 
 	return &linodeClient
 }
+
+func (p *provider) BillingModel() types.BillingModel {
+	return types.BillingHourlyRoundUp
+}
