@@ -53,7 +53,7 @@ The billing model is selected automatically by the provider, so no extra configu
   - [x] Amazon AWS
   - [ ] Google Cloud
   - [ ] Azure
-  - [ ] Digital Ocean
+  - [x] Digital Ocean
   - [x] Linode
   - [ ] Oracle Cloud
   - [ ] Equinix Metal
