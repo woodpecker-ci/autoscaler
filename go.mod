@@ -9,6 +9,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.32.25
 	github.com/aws/aws-sdk-go-v2/service/ec2 v1.307.1
 	github.com/docker/go-units v0.5.0
+	github.com/equinix/equinix-sdk-go v0.64.0
 	github.com/hetznercloud/hcloud-go/v2 v2.44.0
 	github.com/joho/godotenv v1.5.1
 	github.com/linode/linodego v1.69.1
@@ -57,6 +58,7 @@ require (
 	golang.org/x/text v0.38.0 // indirect
 	google.golang.org/protobuf v1.36.12-0.20260120151049-f2248ac996af // indirect
 	gopkg.in/ini.v1 v1.67.2 // indirect
+	gopkg.in/validator.v2 v2.0.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
