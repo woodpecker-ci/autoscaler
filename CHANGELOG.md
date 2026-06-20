@@ -4,7 +4,7 @@
 
 ### ❤️ Thanks to all contributors! ❤️
 
-@6543, @btriller, @hstern
+@6543, @bcornish1797, @btriller, @hstern
 
 ### 💥 Breaking changes
 
@@ -38,6 +38,10 @@
 - Update golang deps non-major [[#642](https://github.com/woodpecker-ci/autoscaler/pull/642)]
 - fix(deps): update golang deps non-major [[#639](https://github.com/woodpecker-ci/autoscaler/pull/639)]
 - fix(deps): update module github.com/hetznercloud/hcloud-go/v2 to v2.41.1 [[#631](https://github.com/woodpecker-ci/autoscaler/pull/631)]
+
+### Misc
+
+- Add beta support for Equinix Metal provider [[#604](https://github.com/woodpecker-ci/autoscaler/pull/604)]
 
 ## [1.5.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.5.0) - 2026-05-19
 
