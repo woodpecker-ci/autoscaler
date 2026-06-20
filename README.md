@@ -44,6 +44,7 @@ Set `WOODPECKER_PROVIDER=equinixmetal` and configure at least:
 - `WOODPECKER_EQUINIXMETAL_PLAN`
 - exactly one of `WOODPECKER_EQUINIXMETAL_METRO` or `WOODPECKER_EQUINIXMETAL_FACILITY`
 
+Equinix Metal support is currently beta: it has unit coverage, but still needs validation against a live Equinix Metal-backed Woodpecker installation.
 
 Useful optional settings:
 
