@@ -9,7 +9,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.32.25
 	github.com/aws/aws-sdk-go-v2/service/ec2 v1.308.0
 	github.com/docker/go-units v0.5.0
-	github.com/equinix/equinix-sdk-go v0.64.2
+	github.com/equinix/equinix-sdk-go v0.66.0
 	github.com/hetznercloud/hcloud-go/v2 v2.44.0
 	github.com/joho/godotenv v1.5.1
 	github.com/linode/linodego v1.69.1
