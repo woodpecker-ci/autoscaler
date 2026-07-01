@@ -3,42 +3,62 @@ package openstack
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
-	"text/template"
 
 	"github.com/gophercloud/gophercloud/v2"
 	"github.com/gophercloud/gophercloud/v2/openstack"
+	"github.com/gophercloud/gophercloud/v2/openstack/compute/v2/flavors"
 	"github.com/gophercloud/gophercloud/v2/openstack/compute/v2/keypairs"
 	"github.com/gophercloud/gophercloud/v2/openstack/compute/v2/servers"
-	"github.com/rs/zerolog/log"
+	"github.com/gophercloud/gophercloud/v2/openstack/image/v2/images"
 	"github.com/urfave/cli/v3"
 
 	"go.woodpecker-ci.org/autoscaler/config"
-	"go.woodpecker-ci.org/autoscaler/engine"
+	"go.woodpecker-ci.org/autoscaler/engine/inits/cloudinit"
+	"go.woodpecker-ci.org/autoscaler/engine/types"
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
 
-type Provider struct {
-	name             string
-	region           string
-	flavor           string
-	image            string
-	network          string
-	securityGroups   []string
-	keypair          string
-	floatingIPPool   string
-	metadata         map[string]string
-	userDataTemplate *template.Template
-	config           *config.Config
-	computeClient    *gophercloud.ServiceClient
+const (
+	labelPool = "wp.autoscaler-pool" // Override because OpenStack does not allow "/"
+)
+
+type provider struct {
+	name           string
+	region         string
+	flavorRef      string
+	flavorName     string
+	imageRef       string
+	imageName      string
+	volumeSize     int
+	network        string
+	securityGroups []string
+	keypair        string
+	floatingIPPool string
+	metadata       map[string]string
+	config         *config.Config
+	computeClient  *gophercloud.ServiceClient
 }
 
-func New(ctx context.Context, c *cli.Command, cfg *config.Config) (engine.Provider, error) {
-	p := &Provider{
+func New(ctx context.Context, c *cli.Command, cfg *config.Config) (types.Provider, error) {
+	numericVolumeSize := 0
+	if c.String("openstack-volume-size") != "" {
+		parsedVolumeSize, err := strconv.Atoi(c.String("openstack-volume-size"))
+		if err != nil {
+			return nil, fmt.Errorf("openstack: Unable to interprete Volume Size as an integer value: %w", err)
+		}
+		numericVolumeSize = parsedVolumeSize
+	}
+
+	p := &provider{
 		name:           "openstack",
 		region:         c.String("openstack-region"),
-		flavor:         c.String("openstack-flavor"),
-		image:          c.String("openstack-image"),
+		flavorRef:      c.String("openstack-flavor-ref"),
+		flavorName:     c.String("openstack-flavor-name"),
+		imageRef:       c.String("openstack-image-ref"),
+		imageName:      c.String("openstack-image-name"),
+		volumeSize:     numericVolumeSize,
 		network:        c.String("openstack-network"),
 		securityGroups: c.StringSlice("openstack-security-groups"),
 		keypair:        c.String("openstack-keypair"),
@@ -46,9 +66,16 @@ func New(ctx context.Context, c *cli.Command, cfg *config.Config) (engine.Provid
 		config:         cfg,
 	}
 
+	if p.flavorName != "" && p.flavorRef != "" {
+		return nil, fmt.Errorf("You must set either Flavor Name or Flavor Ref")
+	}
+	if p.imageName != "" && p.imageRef != "" {
+		return nil, fmt.Errorf("You must set either Image Name or Image Ref")
+	}
+
 	// Parse metadata
 	p.metadata = map[string]string{
-		engine.LabelPool: cfg.PoolID,
+		labelPool: cfg.PoolID,
 	}
 	for _, m := range c.StringSlice("openstack-metadata") {
 		key, value, ok := strings.Cut(m, "=")
@@ -57,23 +84,16 @@ func New(ctx context.Context, c *cli.Command, cfg *config.Config) (engine.Provid
 		}
 	}
 
-	// # TODO: Deprecated remove in v2.0
-	if u := c.String("openstack-user-data"); u != "" {
-		log.Warn().Msg("openstack-user-data is deprecated, please use provider-user-data instead")
-		userDataTmpl, err := template.New("user-data").Parse(u)
-		if err != nil {
-			return nil, fmt.Errorf("%s: template.New.Parse %w", p.name, err)
-		}
-		p.userDataTemplate = userDataTmpl
-	}
-
 	// Authenticate with OpenStack
 	opts := gophercloud.AuthOptions{
-		IdentityEndpoint: c.String("openstack-auth-url"),
-		Username:         c.String("openstack-username"),
-		Password:         c.String("openstack-password"),
-		TenantName:       c.String("openstack-tenant-name"),
-		DomainName:       c.String("openstack-domain-name"),
+		IdentityEndpoint:            c.String("openstack-auth-url"),
+		Username:                    c.String("openstack-username"),
+		Password:                    c.String("openstack-password"),
+		ApplicationCredentialID:     c.String("openstack-application-credential-id"),
+		ApplicationCredentialName:   c.String("openstack-application-credential-name"),
+		ApplicationCredentialSecret: c.String("openstack-application-credential-secret"),
+		TenantName:                  c.String("openstack-tenant-name"),
+		DomainName:                  c.String("openstack-domain-name"),
 	}
 
 	provider, err := openstack.AuthenticatedClient(ctx, opts)
@@ -92,10 +112,10 @@ func New(ctx context.Context, c *cli.Command, cfg *config.Config) (engine.Provid
 	return p, nil
 }
 
-func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
-	userData, err := engine.RenderUserDataTemplate(p.config, agent, p.userDataTemplate)
+func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
+	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, cloudinit.RenderOption{})
 	if err != nil {
-		return fmt.Errorf("%s: engine.RenderUserDataTemplate: %w", p.name, err)
+		return fmt.Errorf("%s: cloudinit.RenderUserDataTemplate: %w", p.name, err)
 	}
 
 	var networks []servers.Network
@@ -105,14 +125,73 @@ func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 		}
 	}
 
+	if p.flavorRef == "" {
+		allPages, err := flavors.ListDetail(p.computeClient, nil).AllPages(ctx)
+		if err != nil {
+			return fmt.Errorf("%s: Error in flavors.ListDetail: %w", p.name, err)
+		}
+
+		allFlavors, err := flavors.ExtractFlavors(allPages)
+		if err != nil {
+			return fmt.Errorf("%s: Error in flavors.ExtractFlavors: %w", p.name, err)
+		}
+
+		for _, f := range allFlavors {
+			if f.Name == p.flavorName {
+				p.flavorRef = f.ID
+				break
+			}
+		}
+
+		if p.flavorRef == "" {
+			return fmt.Errorf("%s: No flavor ID found for flavor name: %s", p.name, p.flavorName)
+		}
+	}
+
+	if p.imageRef == "" {
+		listOpts := images.ListOpts{
+			Name: p.imageName,
+			Sort: "created_at:desc",
+		}
+
+		allPages, err := images.List(p.computeClient, listOpts).AllPages(ctx)
+		if err != nil {
+			return fmt.Errorf("%s: Error in images.List: %w", p.name, err)
+		}
+
+		allImages, err := images.ExtractImages(allPages)
+		if err != nil {
+			return fmt.Errorf("%s: Error in images.ExtractImages: %w", p.name, err)
+		}
+
+		if len(allImages) == 0 {
+			return fmt.Errorf("%s: No image ID found for image name: %s", p.name, p.imageName)
+		}
+
+		p.imageRef = allImages[0].ID
+	}
+
 	createOpts := servers.CreateOpts{
 		Name:           agent.Name,
-		FlavorRef:      p.flavor,
-		ImageRef:       p.image,
+		FlavorRef:      p.flavorRef,
 		Networks:       networks,
 		SecurityGroups: p.securityGroups,
 		Metadata:       p.metadata,
 		UserData:       []byte(userData),
+	}
+
+	if p.volumeSize != 0 {
+		blockDevice := servers.BlockDevice{
+			SourceType:          servers.SourceImage,
+			UUID:                p.imageRef,
+			DeleteOnTermination: true,
+			DestinationType:     servers.DestinationVolume,
+			VolumeSize:          p.volumeSize,
+		}
+		createOpts.BlockDevice = append(createOpts.BlockDevice, blockDevice)
+	} else {
+		// Implicitly use ephemeral storage - I was not able to make this work with DestinationLocal on my cloud
+		createOpts.ImageRef = p.imageRef
 	}
 
 	// Wrap with keypair extension if a keypair is configured
@@ -137,7 +216,7 @@ func (p *Provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 	return nil
 }
 
-func (p *Provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) error {
+func (p *provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) error {
 	// Find the server by name
 	serverID, err := p.findServerIDByName(ctx, agent.Name)
 	if err != nil {
@@ -156,7 +235,7 @@ func (p *Provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) err
 	return nil
 }
 
-func (p *Provider) ListDeployedAgentNames(ctx context.Context) ([]string, error) {
+func (p *provider) ListDeployedAgentNames(ctx context.Context) ([]string, error) {
 	var names []string
 
 	allPages, err := servers.List(p.computeClient, servers.ListOpts{}).AllPages(ctx)
@@ -170,7 +249,7 @@ func (p *Provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 	}
 
 	for _, s := range allServers {
-		poolValue, ok := s.Metadata[engine.LabelPool]
+		poolValue, ok := s.Metadata[labelPool]
 		if !ok || poolValue != p.config.PoolID {
 			continue
 		}
@@ -180,7 +259,7 @@ func (p *Provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 	return names, nil
 }
 
-func (p *Provider) findServerIDByName(ctx context.Context, name string) (string, error) {
+func (p *provider) findServerIDByName(ctx context.Context, name string) (string, error) {
 	allPages, err := servers.List(p.computeClient, servers.ListOpts{
 		Name: fmt.Sprintf("^%s$", name),
 	}).AllPages(ctx)
@@ -200,4 +279,8 @@ func (p *Provider) findServerIDByName(ctx context.Context, name string) (string,
 	}
 
 	return "", nil
+}
+
+func (p *provider) BillingModel() types.BillingModel {
+	return types.BillingPerSecond
 }

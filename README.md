@@ -55,6 +55,20 @@ Useful optional settings:
 - `WOODPECKER_EQUINIXMETAL_SPOT_INSTANCE`
 - `WOODPECKER_EQUINIXMETAL_SPOT_PRICE_MAX`
 
+## OpenStack
+
+Set `WOODPECKER_PROVIDER=openstack`. The prefix for all the following environment variables is `WOODPECKER_OPENSTACK_`.
+
+You have to supply the `AUTH_URL` pointing to your Keystone. If necessary, you can also specifiy the `DOMAIN_NAME`, `REGION` and `PROJECT_NAME`.
+
+Both `USERNAME`/`PASSWORD` authentication and application credentials via `APPLICATION_CREDENTIAL_ID` and `APPLICATION_CREDENTIAL_SECRET` are supported.
+Credentials can also be read from files, to do so append `_FILE` to the appropriate variable name and set it to the file path.
+
+You can select the flavor and image for the agent instances via `FLAVOR/IMAGE_NAME` or UUID reference (`FLAVOR/IMAGE_REF`).
+If you set `VOLUME_SIZE`, block storage volumes are used.
+
+You can add your OpenStack SSH keypair via `KEYPAIR`.
+
 ## Teardown policy
 
 How idle agents are torn down depends on how the selected provider bills:
