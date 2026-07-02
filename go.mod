@@ -12,7 +12,7 @@ require (
 	github.com/equinix/equinix-sdk-go v0.66.0
 	github.com/hetznercloud/hcloud-go/v2 v2.44.0
 	github.com/joho/godotenv v1.5.1
-	github.com/linode/linodego v1.69.1
+	github.com/linode/linodego/v2 v2.3.0
 	github.com/rs/zerolog v1.35.1
 	github.com/scaleway/scaleway-sdk-go v1.0.0-beta.36
 	github.com/stretchr/testify v1.11.1
@@ -40,7 +40,6 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
-	github.com/go-resty/resty/v2 v2.17.2 // indirect
 	github.com/google/go-querystring v1.2.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-retryablehttp v0.7.8 // indirect
