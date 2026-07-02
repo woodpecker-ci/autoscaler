@@ -1,6 +1,6 @@
 # Changelog
 
-## [2.0.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.0) - 2026-07-01
+## [2.0.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.0) - 2026-07-02
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -22,6 +22,7 @@
 
 ### 📦️ Dependency
 
+- Update module github.com/linode/linodego to v2 [[#653](https://github.com/woodpecker-ci/autoscaler/pull/653)]
 - Update golang deps non-major [[#668](https://github.com/woodpecker-ci/autoscaler/pull/668)]
 - Update golang deps non-major [[#667](https://github.com/woodpecker-ci/autoscaler/pull/667)]
 - Update module github.com/equinix/equinix-sdk-go to v0.66.0 [[#666](https://github.com/woodpecker-ci/autoscaler/pull/666)]
