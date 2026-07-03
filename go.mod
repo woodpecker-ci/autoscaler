@@ -12,7 +12,7 @@ require (
 	github.com/equinix/equinix-sdk-go v0.66.0
 	github.com/hetznercloud/hcloud-go/v2 v2.44.0
 	github.com/joho/godotenv v1.5.1
-	github.com/linode/linodego/v2 v2.3.0
+	github.com/linode/linodego/v2 v2.4.0
 	github.com/rs/zerolog v1.35.1
 	github.com/scaleway/scaleway-sdk-go v1.0.0-beta.36
 	github.com/stretchr/testify v1.11.1
