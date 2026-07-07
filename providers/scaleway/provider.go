@@ -83,7 +83,7 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 
 func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cb types.Capability) error {
 	if cb.Backend != types.BackendDocker {
-		fmt.Errorf("scaleway only support docker backend")
+		return fmt.Errorf("scaleway only support docker backend")
 	}
 
 	if len(p.candidates) == 0 {
