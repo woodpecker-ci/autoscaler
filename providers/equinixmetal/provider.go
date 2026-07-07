@@ -163,7 +163,12 @@ func (p *provider) validate() error {
 	return nil
 }
 
-func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
+func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cb types.Capability) error {
+	plan, err := p.planForCapability(cb)
+	if err != nil {
+		return err
+	}
+
 	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, cloudinit.RenderOption{})
 	if err != nil {
 		return fmt.Errorf("%s: cloudinit.RenderUserDataTemplate: %w", p.name, err)
@@ -171,7 +176,7 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 
 	_, err = p.devices.Create(ctx, p.projectID, deviceCreateRequest{
 		Hostname:       agent.Name,
-		Plan:           p.primaryPlan(),
+		Plan:           plan,
 		Metro:          p.metro,
 		Facility:       slices.Clone(p.facility),
 		OperatingSys:   p.operatingSys,
@@ -221,6 +226,56 @@ func (p *provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 
 func (p *provider) BillingModel() types.BillingModel {
 	return types.BillingHourlyRoundUp
+}
+
+// Capabilities derives the supported (platform, backend) pairs from the
+// architecture suffix of the configured plan slugs.
+func (p *provider) Capabilities(_ context.Context) ([]types.Capability, error) {
+	seen := map[string]bool{}
+	var caps []types.Capability
+	for _, plan := range p.plans {
+		goarch := planToGoArch(strings.TrimSpace(plan))
+		if goarch == "" {
+			continue
+		}
+		platform := "linux/" + goarch
+		if !seen[platform] {
+			seen[platform] = true
+			caps = append(caps, types.Capability{
+				Platform: platform,
+				Backend:  types.BackendDocker,
+			})
+		}
+	}
+	return caps, nil
+}
+
+// planForCapability returns the first configured plan that matches the
+// requested capability.
+func (p *provider) planForCapability(cb types.Capability) (string, error) {
+	if cb.Backend != types.BackendDocker {
+		return "", fmt.Errorf("%s: unsupported backend: %s", p.name, cb.Backend)
+	}
+	for _, plan := range p.plans {
+		plan = strings.TrimSpace(plan)
+		if goarch := planToGoArch(plan); goarch != "" && "linux/"+goarch == cb.Platform {
+			return plan, nil
+		}
+	}
+	return "", fmt.Errorf("%s: no configured plan supports platform %s", p.name, cb.Platform)
+}
+
+// planToGoArch maps an Equinix Metal plan slug to a Go GOARCH string via its
+// architecture suffix (e.g. "c3.small.x86" -> amd64, "c3.large.arm64" -> arm64).
+func planToGoArch(plan string) string {
+	switch {
+	case strings.HasSuffix(plan, ".x86"):
+		return "amd64"
+	case strings.HasSuffix(plan, ".arm64"), strings.HasSuffix(plan, ".arm"):
+		return "arm64"
+	default:
+		return ""
+	}
 }
 
 func (p *provider) getAgent(ctx context.Context, hostname string) (*deviceRecord, error) {
