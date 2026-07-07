@@ -15,6 +15,10 @@
 - Check Vultr config on startup [[#600](https://github.com/woodpecker-ci/autoscaler/pull/600)]
 - Resolve Hetzner config on startup and remove deprecated flags [[#605](https://github.com/woodpecker-ci/autoscaler/pull/605)]
 
+### ✨ Features
+
+- Add experimental support for Equinix Metal [[#604](https://github.com/woodpecker-ci/autoscaler/pull/604)]
+
 ### 📈 Enhancement
 
 - Make agent teardown billing-aware [[#645](https://github.com/woodpecker-ci/autoscaler/pull/645)]
@@ -23,33 +27,12 @@
 ### 📦️ Dependency
 
 - Update module github.com/linode/linodego/v2 to v2.4.0 [[#669](https://github.com/woodpecker-ci/autoscaler/pull/669)]
-- Update module github.com/linode/linodego to v2 [[#653](https://github.com/woodpecker-ci/autoscaler/pull/653)]
-- Update golang deps non-major [[#668](https://github.com/woodpecker-ci/autoscaler/pull/668)]
-- Update golang deps non-major [[#667](https://github.com/woodpecker-ci/autoscaler/pull/667)]
 - Update module github.com/equinix/equinix-sdk-go to v0.66.0 [[#666](https://github.com/woodpecker-ci/autoscaler/pull/666)]
-- Update golang deps non-major [[#665](https://github.com/woodpecker-ci/autoscaler/pull/665)]
-- Update golang deps non-major to v0.64.2 [[#664](https://github.com/woodpecker-ci/autoscaler/pull/664)]
-- Update pre-commit non-major to v0.49.0 [[#663](https://github.com/woodpecker-ci/autoscaler/pull/663)]
-- Update golang deps non-major [[#662](https://github.com/woodpecker-ci/autoscaler/pull/662)]
-- Update golang deps non-major to v3.10.0 [[#660](https://github.com/woodpecker-ci/autoscaler/pull/660)]
-- Update golang deps non-major to v2.43.0 [[#659](https://github.com/woodpecker-ci/autoscaler/pull/659)]
-- Update golang.org/x/exp digest to c48552f [[#658](https://github.com/woodpecker-ci/autoscaler/pull/658)]
-- Update golang deps non-major [[#657](https://github.com/woodpecker-ci/autoscaler/pull/657)]
-- Update golang deps non-major [[#656](https://github.com/woodpecker-ci/autoscaler/pull/656)]
-- Update golang.org/x/exp digest to 055de63 [[#652](https://github.com/woodpecker-ci/autoscaler/pull/652)]
-- Update golang deps non-major [[#651](https://github.com/woodpecker-ci/autoscaler/pull/651)]
-- Update golang deps non-major [[#650](https://github.com/woodpecker-ci/autoscaler/pull/650)]
-- Update golang deps non-major [[#649](https://github.com/woodpecker-ci/autoscaler/pull/649)]
-- Update golang.org/x/exp digest to c761662 [[#643](https://github.com/woodpecker-ci/autoscaler/pull/643)]
-- Update golang deps non-major [[#644](https://github.com/woodpecker-ci/autoscaler/pull/644)]
-- Update golang deps non-major [[#642](https://github.com/woodpecker-ci/autoscaler/pull/642)]
-- fix(deps): update golang deps non-major [[#639](https://github.com/woodpecker-ci/autoscaler/pull/639)]
 - fix(deps): update module github.com/hetznercloud/hcloud-go/v2 to v2.41.1 [[#631](https://github.com/woodpecker-ci/autoscaler/pull/631)]
 
 ### Misc
 
 - Add flake.nix for dev environment [[#672](https://github.com/woodpecker-ci/autoscaler/pull/672)]
-- Add beta support for Equinix Metal [[#604](https://github.com/woodpecker-ci/autoscaler/pull/604)]
 
 ## [1.5.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.5.0) - 2026-05-19
 
