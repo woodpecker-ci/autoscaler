@@ -14,6 +14,7 @@ var (
 	ErrFirewallNotFound     = errors.New("firewall not found")
 	ErrServerTypeNotFound   = errors.New("server type not found")
 	ErrLocationNotSupported = errors.New("location not available for server type")
+	ErrNoMatchingServerType = errors.New("no configured server type matches requested capability")
 )
 
 type deployCandidate struct {

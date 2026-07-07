@@ -90,7 +90,12 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 	return p, nil
 }
 
-func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
+func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cb types.Capability) error {
+	if cb.Backend != types.BackendDocker ||
+		cb.Platform != "linux/amd64" {
+		return fmt.Errorf("we only support docker on linux/amd64 but %#v was requested", cb)
+	}
+
 	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, cloudinit.RenderOption{})
 	if err != nil {
 		return fmt.Errorf("%s: cloudinit.RenderUserDataTemplate: %w", p.name, err)
@@ -212,4 +217,12 @@ func (p *provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 
 func (p *provider) BillingModel() types.BillingModel {
 	return types.BillingHourlyRoundUp
+}
+
+func (p *provider) Capabilities(_ context.Context) ([]types.Capability, error) {
+	// TODO: add native k8s and local backend (with FreeBSD) support
+	return []types.Capability{{
+		Platform: "linux/" + imageToGoArch(p.image),
+		Backend:  types.BackendDocker,
+	}}, nil
 }
