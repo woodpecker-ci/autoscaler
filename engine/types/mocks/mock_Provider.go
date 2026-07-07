@@ -83,6 +83,68 @@ func (_c *MockProvider_BillingModel_Call) RunAndReturn(run func() types.BillingM
 	return _c
 }
 
+// Capabilities provides a mock function for the type MockProvider
+func (_mock *MockProvider) Capabilities(ctx context.Context) ([]types.Capability, error) {
+	ret := _mock.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Capabilities")
+	}
+
+	var r0 []types.Capability
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context) ([]types.Capability, error)); ok {
+		return returnFunc(ctx)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context) []types.Capability); ok {
+		r0 = returnFunc(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]types.Capability)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = returnFunc(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockProvider_Capabilities_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Capabilities'
+type MockProvider_Capabilities_Call struct {
+	*mock.Call
+}
+
+// Capabilities is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *MockProvider_Expecter) Capabilities(ctx interface{}) *MockProvider_Capabilities_Call {
+	return &MockProvider_Capabilities_Call{Call: _e.mock.On("Capabilities", ctx)}
+}
+
+func (_c *MockProvider_Capabilities_Call) Run(run func(ctx context.Context)) *MockProvider_Capabilities_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		run(
+			arg0,
+		)
+	})
+	return _c
+}
+
+func (_c *MockProvider_Capabilities_Call) Return(capabilitys []types.Capability, err error) *MockProvider_Capabilities_Call {
+	_c.Call.Return(capabilitys, err)
+	return _c
+}
+
+func (_c *MockProvider_Capabilities_Call) RunAndReturn(run func(ctx context.Context) ([]types.Capability, error)) *MockProvider_Capabilities_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // DeployAgent provides a mock function for the type MockProvider
 func (_mock *MockProvider) DeployAgent(context1 context.Context, agent *woodpecker.Agent, capability types.Capability) error {
 	ret := _mock.Called(context1, agent, capability)
