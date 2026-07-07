@@ -136,49 +136,37 @@ func (a *Autoscaler) createAgents(ctx context.Context, bucket agentBucket, amoun
 	return nil
 }
 
-func (a *Autoscaler) drainAgents(_ context.Context, amount int) error {
-	for i := 0; i < amount; i++ {
-		for _, agent := range a.agents {
-			// agent is already marked for draining
-			if agent.NoSchedule {
-				continue
-			}
-
-			// agent has never contacted the server => not ready for draining
-			if agent.LastContact == 0 {
-				continue
-			}
-
-			if a.config.BillingModel == types.BillingHourlyRoundUp {
-				// hourly-round-up: the hour is already paid for, so keep the
-				// agent schedulable until just before its hour boundary even
-				// while idle, then drain it inside the teardown window.
-				if !a.inTeardownWindow(agent) {
-					continue
-				}
-			} else if time.Since(time.Unix(agent.LastWork, 0)) < a.config.AgentIdleTimeout {
-				// agent has recently done work => not ready for draining
-				continue
-			}
-
-			log.Info().Str("agent", agent.Name).Msg("drain agent")
-			agent.NoSchedule = true
-			_, err := a.client.AgentUpdate(agent)
-			if err != nil {
-				return fmt.Errorf("client.AgentUpdate: %w", err)
-			}
+func (a *Autoscaler) drainAgents(_ context.Context, bucket agentBucket, amount int) error {
+	if amount <= 0 {
+		return nil
+	}
+	drained := 0
+	for _, agent := range a.agents {
+		if drained >= amount {
 			break
 		}
+		// agent is already marked for draining
 		if agent.NoSchedule {
 			continue
 		}
+		// only drain agents that belong to this bucket
 		if !agentMatchesCapability(agent, bucket.Capability) {
 			continue
 		}
-		if time.Since(time.Unix(agent.LastWork, 0)) < a.config.AgentIdleTimeout {
+		// agent has never contacted the server => not ready for draining
+		if agent.LastContact == 0 {
 			continue
 		}
-		if agent.LastContact == 0 {
+
+		if a.config.BillingModel == types.BillingHourlyRoundUp {
+			// hourly-round-up: the hour is already paid for, so keep the
+			// agent schedulable until just before its hour boundary even
+			// while idle, then drain it inside the teardown window.
+			if !a.inTeardownWindow(agent) {
+				continue
+			}
+		} else if time.Since(time.Unix(agent.LastWork, 0)) < a.config.AgentIdleTimeout {
+			// agent has recently done work => not ready for draining
 			continue
 		}
 
