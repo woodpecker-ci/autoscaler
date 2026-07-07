@@ -106,7 +106,7 @@ func TestDeployAgent(t *testing.T) {
 				mockClient.On("ServerType").Return(mockServerTypeClient)
 
 				mockImageClient := mocks.NewMockImageClient(t)
-				mockImageClient.On("GetByNameAndArchitecture", mock.Anything, mock.Anything, hcloud.ArchitectureX86).Return(&hcloud.Image{}, nil, nil)
+				mockImageClient.On("GetForArchitecture", mock.Anything, mock.Anything, hcloud.ArchitectureX86).Return(&hcloud.Image{Architecture: hcloud.ArchitectureX86}, nil, nil)
 				mockClient.On("Image").Return(mockImageClient)
 
 				unavailable := hcloud.Error{Code: hcloud.ErrorCodeResourceUnavailable, Message: "unavailable"}
