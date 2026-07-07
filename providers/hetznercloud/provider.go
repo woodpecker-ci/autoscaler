@@ -71,7 +71,7 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 
 func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, capability types.Capability) error {
 	if capability.Backend != types.BackendDocker {
-		fmt.Errorf("hetzner only support docker backend")
+		return fmt.Errorf("hetzner only support docker backend")
 	}
 
 	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, cloudinit.RenderOption{})

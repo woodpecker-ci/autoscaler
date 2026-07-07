@@ -48,7 +48,7 @@ func TestDeployAgent(t *testing.T) {
 			},
 			serverType:    []string{"cx11"},
 			expectedError: ErrImageNotFound.Error(),
-			capability:    types.Capability{Platform: "linux/amd64"},
+			capability:    types.Capability{Platform: "linux/amd64", Backend: types.BackendDocker},
 		},
 		{
 			name: "ServerTypeWithLocation",
@@ -81,7 +81,7 @@ func TestDeployAgent(t *testing.T) {
 				mockClient.On("Server").Return(mockServerClient)
 			},
 			serverType: []string{"cx11:nbg1"},
-			capability: types.Capability{Platform: "linux/amd64"},
+			capability: types.Capability{Platform: "linux/amd64", Backend: types.BackendDocker},
 		},
 		{
 			// First candidate's location is unavailable; provider should
@@ -120,6 +120,7 @@ func TestDeployAgent(t *testing.T) {
 				mockClient.On("Server").Return(mockServerClient)
 			},
 			serverType: []string{"cx11:nbg1", "cx21:fsn1"},
+			capability: types.Capability{Platform: "linux/amd64", Backend: types.BackendDocker},
 		},
 		{
 			// First candidate's location is unavailable; provider should
@@ -158,6 +159,7 @@ func TestDeployAgent(t *testing.T) {
 				mockClient.On("Server").Return(mockServerClient)
 			},
 			serverType: []string{"cx11:nbg1", "cx21:fsn1"},
+			capability: types.Capability{Platform: "linux/amd64", Backend: types.BackendDocker},
 		},
 	}
 
