@@ -1,6 +1,6 @@
 # Changelog
 
-## [2.0.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.0) - 2026-07-03
+## [2.0.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.0) - 2026-07-07
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -48,7 +48,8 @@
 
 ### Misc
 
-- Add beta support for Equinix Metal provider [[#604](https://github.com/woodpecker-ci/autoscaler/pull/604)]
+- Add flake.nix for dev environment [[#672](https://github.com/woodpecker-ci/autoscaler/pull/672)]
+- Add beta support for Equinix Metal [[#604](https://github.com/woodpecker-ci/autoscaler/pull/604)]
 
 ## [1.5.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.5.0) - 2026-05-19
 
