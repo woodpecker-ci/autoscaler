@@ -76,7 +76,7 @@ The billing model is selected automatically by the provider, so no extra configu
   - [ ] Digital Ocean
   - [x] Linode
   - [ ] Oracle Cloud
-  - [x] Equinix Metal
+  - [x] Equinix Metal **[beta]**
   - [x] Vultr
   - [x] Scaleway
 - [ ] Cleanup agents
