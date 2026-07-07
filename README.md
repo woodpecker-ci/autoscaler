@@ -44,7 +44,7 @@ Set `WOODPECKER_PROVIDER=equinixmetal` and configure at least:
 - `WOODPECKER_EQUINIXMETAL_PLAN`
 - exactly one of `WOODPECKER_EQUINIXMETAL_METRO` or `WOODPECKER_EQUINIXMETAL_FACILITY`
 
-Equinix Metal support is currently beta: it has unit coverage, but still needs validation against a live Equinix Metal-backed Woodpecker installation.
+Equinix Metal support is currently experimental: it has unit coverage, but has not been tested by the project maintainers against a live Equinix Metal-backed Woodpecker installation, as none of them have real provider access.
 
 Useful optional settings:
 
@@ -76,7 +76,7 @@ The billing model is selected automatically by the provider, so no extra configu
   - [ ] Digital Ocean
   - [x] Linode
   - [ ] Oracle Cloud
-  - [x] Equinix Metal **[beta]**
+  - [x] Equinix Metal **[experimental]** (untested by the maintainers against real provider access, see [above](#equinix-metal))
   - [x] Vultr
   - [x] Scaleway
 - [ ] Cleanup agents
