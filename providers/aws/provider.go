@@ -100,8 +100,8 @@ func (p *provider) printResolvedConfig() {
 		Msg("deploy with instance type")
 }
 
-func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cb types.Capability) error {
-	if err := p.validateCapability(cb); err != nil {
+func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, capability types.Capability) error {
+	if err := p.validateCapability(capability); err != nil {
 		return err
 	}
 
@@ -209,14 +209,14 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cb 
 
 // validateCapability checks the requested (platform, backend) against the
 // architectures reported by DescribeInstanceTypes for the configured type.
-func (p *provider) validateCapability(cb types.Capability) error {
+func (p *provider) validateCapability(capability types.Capability) error {
 	for _, c := range p.capabilities() {
-		if c.Platform == cb.Platform && c.Backend == cb.Backend {
+		if c.Platform == capability.Platform && c.Backend == capability.Backend {
 			return nil
 		}
 	}
 	return fmt.Errorf("%s: instance type %s does not support requested capability platform=%s backend=%s",
-		p.name, p.instanceType.InstanceType, cb.Platform, cb.Backend)
+		p.name, p.instanceType.InstanceType, capability.Platform, capability.Backend)
 }
 
 func (p *provider) Capabilities(_ context.Context) ([]types.Capability, error) {

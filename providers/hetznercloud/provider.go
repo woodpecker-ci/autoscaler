@@ -69,8 +69,8 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 	return p, nil
 }
 
-func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cb types.Capability) error {
-	if cb.Backend != types.BackendDocker {
+func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, capability types.Capability) error {
+	if capability.Backend != types.BackendDocker {
 		fmt.Errorf("hetzner only support docker backend")
 	}
 
@@ -139,13 +139,13 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cb 
 		// platforms we returned from Capabilities, so a mismatch here just
 		// means this entry is for a different arch in the fallback chain.
 		platform := "linux/" + hcloudArchToGoArch(c.serverType.Architecture)
-		if platform == cb.Platform {
+		if platform == capability.Platform {
 			candidates = append(candidates, c)
 		}
 	}
 
 	if len(candidates) == 0 {
-		return fmt.Errorf("%s: %w: %s", p.name, ErrNoMatchingServerType, cb.Platform)
+		return fmt.Errorf("%s: %w: %s", p.name, ErrNoMatchingServerType, capability.Platform)
 	}
 
 	for i, c := range candidates {

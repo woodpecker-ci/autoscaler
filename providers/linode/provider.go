@@ -93,9 +93,9 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 	return p, nil
 }
 
-func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cb types.Capability) error {
-	if cb.Platform != "linux/amd64" || cb.Backend != types.BackendDocker {
-		return fmt.Errorf("linode only supports linux/amd64 and docker, we got requested capability platform=%s backend=%s", cb.Platform, cb.Backend)
+func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, capability types.Capability) error {
+	if capability.Platform != "linux/amd64" || capability.Backend != types.BackendDocker {
+		return fmt.Errorf("linode only supports linux/amd64 and docker, we got requested capability platform=%s backend=%s", capability.Platform, capability.Backend)
 	}
 
 	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, cloudinit.RenderOption{

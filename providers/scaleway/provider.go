@@ -81,8 +81,8 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 	return p, nil
 }
 
-func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cb types.Capability) error {
-	if cb.Backend != types.BackendDocker {
+func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, capability types.Capability) error {
+	if capability.Backend != types.BackendDocker {
 		return fmt.Errorf("scaleway only support docker backend")
 	}
 
@@ -92,12 +92,12 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cb 
 
 	var matched []deployCandidate
 	for _, c := range p.candidates {
-		if "linux/"+scwArchToGoArch(c.serverType.Arch) == cb.Platform {
+		if "linux/"+scwArchToGoArch(c.serverType.Arch) == capability.Platform {
 			matched = append(matched, c)
 		}
 	}
 	if len(matched) == 0 {
-		return fmt.Errorf("scaleway: %w: %s", ErrNoMatchingServerType, cb.Platform)
+		return fmt.Errorf("scaleway: %w: %s", ErrNoMatchingServerType, capability.Platform)
 	}
 
 	for i, c := range matched {

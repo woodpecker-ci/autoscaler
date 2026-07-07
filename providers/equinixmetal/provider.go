@@ -163,8 +163,8 @@ func (p *provider) validate() error {
 	return nil
 }
 
-func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cb types.Capability) error {
-	plan, err := p.planForCapability(cb)
+func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, capability types.Capability) error {
+	plan, err := p.planForCapability(capability)
 	if err != nil {
 		return err
 	}
@@ -252,17 +252,17 @@ func (p *provider) Capabilities(_ context.Context) ([]types.Capability, error) {
 
 // planForCapability returns the first configured plan that matches the
 // requested capability.
-func (p *provider) planForCapability(cb types.Capability) (string, error) {
-	if cb.Backend != types.BackendDocker {
-		return "", fmt.Errorf("%s: unsupported backend: %s", p.name, cb.Backend)
+func (p *provider) planForCapability(capability types.Capability) (string, error) {
+	if capability.Backend != types.BackendDocker {
+		return "", fmt.Errorf("%s: unsupported backend: %s", p.name, capability.Backend)
 	}
 	for _, plan := range p.plans {
 		plan = strings.TrimSpace(plan)
-		if goarch := planToGoArch(plan); goarch != "" && "linux/"+goarch == cb.Platform {
+		if goarch := planToGoArch(plan); goarch != "" && "linux/"+goarch == capability.Platform {
 			return plan, nil
 		}
 	}
-	return "", fmt.Errorf("%s: no configured plan supports platform %s", p.name, cb.Platform)
+	return "", fmt.Errorf("%s: no configured plan supports platform %s", p.name, capability.Platform)
 }
 
 // planToGoArch maps an Equinix Metal plan slug to a Go GOARCH string via its

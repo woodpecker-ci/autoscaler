@@ -90,10 +90,10 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 	return p, nil
 }
 
-func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cb types.Capability) error {
-	if cb.Backend != types.BackendDocker ||
-		cb.Platform != "linux/amd64" {
-		return fmt.Errorf("we only support docker on linux/amd64 but %#v was requested", cb)
+func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, capability types.Capability) error {
+	if capability.Backend != types.BackendDocker ||
+		capability.Platform != "linux/amd64" {
+		return fmt.Errorf("we only support docker on linux/amd64 but %#v was requested", capability)
 	}
 
 	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, cloudinit.RenderOption{})
