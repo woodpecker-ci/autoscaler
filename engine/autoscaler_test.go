@@ -696,11 +696,11 @@ func Test_drainAgents_hourlyRoundUp(t *testing.T) {
 		client := mocks_server.NewMockClient(t)
 		provider := mocks_provider.NewMockProvider(t)
 		autoscaler := Autoscaler{
-			agents: []*woodpecker.Agent{
+			agents: map[string]*woodpecker.Agent{
 				// idle but mid-hour => kept warm, even though it has no recent work
-				{ID: 1, Name: "pool-1-agent-1", LastContact: now.Add(-time.Minute).Unix(), LastWork: now.Add(-30 * time.Minute).Unix(), Created: now.Add(-30 * time.Minute).Unix()},
+				"pool-1-agent-1": {ID: 1, Name: "pool-1-agent-1", LastContact: now.Add(-time.Minute).Unix(), LastWork: now.Add(-30 * time.Minute).Unix(), Created: now.Add(-30 * time.Minute).Unix()},
 				// in the teardown window => eligible to drain
-				{ID: 2, Name: "pool-1-agent-2", LastContact: now.Add(-time.Minute).Unix(), LastWork: now.Add(-time.Minute).Unix(), Created: now.Add(-58 * time.Minute).Unix()},
+				"pool-1-agent-2": {ID: 2, Name: "pool-1-agent-2", LastContact: now.Add(-time.Minute).Unix(), LastWork: now.Add(-time.Minute).Unix(), Created: now.Add(-58 * time.Minute).Unix()},
 			},
 			provider: provider,
 			client:   client,
@@ -715,10 +715,10 @@ func Test_drainAgents_hourlyRoundUp(t *testing.T) {
 			return agent.ID == 2 && agent.NoSchedule
 		})).Return(nil, nil)
 
-		err := autoscaler.drainAgents(ctx, 2)
+		err := autoscaler.drainAgents(ctx, agentBucket{}, 2)
 		assert.NoError(t, err)
-		assert.False(t, autoscaler.agents[0].NoSchedule)
-		assert.True(t, autoscaler.agents[1].NoSchedule)
+		assert.False(t, autoscaler.agents["pool-1-agent-1"].NoSchedule)
+		assert.True(t, autoscaler.agents["pool-1-agent-2"].NoSchedule)
 	})
 }
 
@@ -738,8 +738,8 @@ func Test_removeDrainedAgents_hourlyRoundUp(t *testing.T) {
 		client := mocks_server.NewMockClient(t)
 		provider := mocks_provider.NewMockProvider(t)
 		autoscaler := Autoscaler{
-			agents: []*woodpecker.Agent{
-				{ID: 2, Name: "pool-1-agent-2", NoSchedule: true, LastWork: now.Add(-time.Minute).Unix(), Created: now.Add(-58 * time.Minute).Unix()},
+			agents: map[string]*woodpecker.Agent{
+				"pool-1-agent-2": {ID: 2, Name: "pool-1-agent-2", NoSchedule: true, LastWork: now.Add(-time.Minute).Unix(), Created: now.Add(-58 * time.Minute).Unix()},
 			},
 			provider: provider,
 			client:   client,
@@ -761,9 +761,9 @@ func Test_removeDrainedAgents_hourlyRoundUp(t *testing.T) {
 		client := mocks_server.NewMockClient(t)
 		provider := mocks_provider.NewMockProvider(t)
 		autoscaler := Autoscaler{
-			agents: []*woodpecker.Agent{
+			agents: map[string]*woodpecker.Agent{
 				// drained while busy near the boundary; now idle 5m into a new paid hour
-				{ID: 2, Name: "pool-1-agent-2", NoSchedule: true, LastWork: now.Add(-time.Minute).Unix(), Created: now.Add(-65 * time.Minute).Unix()},
+				"pool-1-agent-2": {ID: 2, Name: "pool-1-agent-2", NoSchedule: true, LastWork: now.Add(-time.Minute).Unix(), Created: now.Add(-65 * time.Minute).Unix()},
 			},
 			provider: provider,
 			client:   client,
