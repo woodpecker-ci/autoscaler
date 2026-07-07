@@ -40,6 +40,28 @@ func (a *Autoscaler) GetCaps(ctx context.Context) (err error) {
 	return err
 }
 
+// inTeardownWindow reports whether the agent is currently within the teardown
+// window before one of its paid-hour boundaries (anchored at its creation
+// time). Agents that have not reported a creation time are never in the window.
+func (a *Autoscaler) inTeardownWindow(agent *woodpecker.Agent) bool {
+	if agent.Created == 0 {
+		return false
+	}
+
+	age := time.Since(time.Unix(agent.Created, 0))
+	if age < 0 {
+		return false
+	}
+
+	window := a.config.AgentBillingTeardownMargin + a.config.ReconciliationInterval
+	// A window covering a whole hour (or more) means every moment qualifies.
+	if window >= time.Hour {
+		return true
+	}
+
+	return age%time.Hour >= time.Hour-window
+}
+
 func (a *Autoscaler) loadAgents(_ context.Context) error {
 	a.agents = make(map[string]*woodpecker.Agent)
 
@@ -114,17 +136,37 @@ func (a *Autoscaler) createAgents(ctx context.Context, bucket agentBucket, amoun
 	return nil
 }
 
-// drainAgents marks up to `amount` agents in the given bucket as
-// no-schedule so woodpecker stops dispatching new tasks to them.
-// An agent is only drained if it's been idle long enough and has actually
-// connected to the server before.
-func (a *Autoscaler) drainAgents(_ context.Context, bucket agentBucket, amount int) error {
-	if amount <= 0 {
-		return nil
-	}
-	drained := 0
-	for _, agent := range a.agents {
-		if drained >= amount {
+func (a *Autoscaler) drainAgents(_ context.Context, amount int) error {
+	for i := 0; i < amount; i++ {
+		for _, agent := range a.agents {
+			// agent is already marked for draining
+			if agent.NoSchedule {
+				continue
+			}
+
+			// agent has never contacted the server => not ready for draining
+			if agent.LastContact == 0 {
+				continue
+			}
+
+			if a.config.BillingModel == types.BillingHourlyRoundUp {
+				// hourly-round-up: the hour is already paid for, so keep the
+				// agent schedulable until just before its hour boundary even
+				// while idle, then drain it inside the teardown window.
+				if !a.inTeardownWindow(agent) {
+					continue
+				}
+			} else if time.Since(time.Unix(agent.LastWork, 0)) < a.config.AgentIdleTimeout {
+				// agent has recently done work => not ready for draining
+				continue
+			}
+
+			log.Info().Str("agent", agent.Name).Msg("drain agent")
+			agent.NoSchedule = true
+			_, err := a.client.AgentUpdate(agent)
+			if err != nil {
+				return fmt.Errorf("client.AgentUpdate: %w", err)
+			}
 			break
 		}
 		if agent.NoSchedule {
@@ -160,6 +202,13 @@ func (a *Autoscaler) isAgentIdle(agent *woodpecker.Agent) (bool, error) {
 	// agent still has tasks => not idle
 	if len(tasks) > 0 {
 		return false, nil
+	}
+
+	// hourly-round-up: recency of work does not gate removal. The paid hour is
+	// kept warm by the drain stage; once an agent is eligible for removal the
+	// only thing that protects it is an in-flight task (checked above).
+	if a.config.BillingModel == types.BillingHourlyRoundUp {
+		return true, nil
 	}
 
 	// agent has done work recently => not idle
@@ -200,6 +249,13 @@ func (a *Autoscaler) removeAgent(ctx context.Context, agent *woodpecker.Agent, r
 func (a *Autoscaler) removeDrainedAgents(ctx context.Context) error {
 	for _, agent := range a.agents {
 		if !agent.NoSchedule {
+			continue
+		}
+
+		// hourly-round-up: a drained agent that rolled into a fresh paid hour
+		// (e.g. it was busy at the boundary) stays up until its next teardown
+		// window rather than wasting the hour just bought.
+		if a.config.BillingModel == types.BillingHourlyRoundUp && !a.inTeardownWindow(agent) {
 			continue
 		}
 

@@ -47,11 +47,13 @@ func (a *Autoscaler) planScaling(pending, running []woodpecker.Task) []bucketDec
 
 	if unmatchedPending > 0 {
 		log.Warn().Int("count", unmatchedPending).Msg(
-			"pending tasks have labels no configured agent can satisfy; not scaling for them")
+			"pending tasks have labels no configured agent can satisfy; not scaling for them",
+		)
 	}
 	if unmatchedRunning > 0 {
 		log.Debug().Int("count", unmatchedRunning).Msg(
-			"running tasks didn't match any configured bucket")
+			"running tasks didn't match any configured bucket",
+		)
 	}
 
 	rawDeltas := make([]int, len(states))

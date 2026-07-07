@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"go.woodpecker-ci.org/autoscaler/config"
-	"go.woodpecker-ci.org/autoscaler/engine/types"
 	"go.woodpecker-ci.org/autoscaler/providers/hetznercloud/hcapi/mocks"
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
@@ -22,7 +21,6 @@ func TestDeployAgent(t *testing.T) {
 		sshkeys       []string
 		expectedError string
 		serverType    []string
-		capability    types.Capability
 	}{
 		{
 			name: "ServerTypeNotFound",
@@ -48,7 +46,6 @@ func TestDeployAgent(t *testing.T) {
 			},
 			serverType:    []string{"cx11"},
 			expectedError: ErrImageNotFound.Error(),
-			capability:    types.Capability{Platform: "linux/amd64"},
 		},
 		{
 			name: "ServerTypeWithLocation",
@@ -81,45 +78,6 @@ func TestDeployAgent(t *testing.T) {
 				mockClient.On("Server").Return(mockServerClient)
 			},
 			serverType: []string{"cx11:nbg1"},
-			capability: types.Capability{Platform: "linux/amd64"},
-		},
-		{
-			// First candidate's location is unavailable; provider should
-			// log and fall through to the second candidate, which succeeds.
-			name: "FallbackOnUnavailable",
-			setupMocks: func(mockClient *mocks.MockClient) {
-				st1 := &hcloud.ServerType{
-					Name: "cx11", Architecture: "x86",
-					Locations: []hcloud.ServerTypeLocation{
-						{Location: &hcloud.Location{Name: "nbg1"}},
-					},
-				}
-				st2 := &hcloud.ServerType{
-					Name: "cx21", Architecture: "x86",
-					Locations: []hcloud.ServerTypeLocation{
-						{Location: &hcloud.Location{Name: "fsn1"}},
-					},
-				}
-				mockServerTypeClient := mocks.NewMockServerTypeClient(t)
-				mockServerTypeClient.On("GetByName", mock.Anything, "cx11").Return(st1, nil, nil)
-				mockServerTypeClient.On("GetByName", mock.Anything, "cx21").Return(st2, nil, nil)
-				mockClient.On("ServerType").Return(mockServerTypeClient)
-
-				mockImageClient := mocks.NewMockImageClient(t)
-				mockImageClient.On("GetByNameAndArchitecture", mock.Anything, mock.Anything, hcloud.ArchitectureX86).Return(&hcloud.Image{}, nil, nil)
-				mockClient.On("Image").Return(mockImageClient)
-
-				unavailable := hcloud.Error{Code: hcloud.ErrorCodeResourceUnavailable, Message: "unavailable"}
-				mockServerClient := mocks.NewMockServerClient(t)
-				mockServerClient.On("Create", mock.Anything, mock.MatchedBy(func(opts hcloud.ServerCreateOpts) bool {
-					return opts.ServerType.Name == "cx11"
-				})).Return(hcloud.ServerCreateResult{}, &hcloud.Response{}, unavailable).Once()
-				mockServerClient.On("Create", mock.Anything, mock.MatchedBy(func(opts hcloud.ServerCreateOpts) bool {
-					return opts.ServerType.Name == "cx21"
-				})).Return(hcloud.ServerCreateResult{Server: &hcloud.Server{}}, &hcloud.Response{}, nil).Once()
-				mockClient.On("Server").Return(mockServerClient)
-			},
-			serverType: []string{"cx11:nbg1", "cx21:fsn1"},
 		},
 		{
 			// First candidate's location is unavailable; provider should
@@ -178,7 +136,7 @@ func TestDeployAgent(t *testing.T) {
 			}
 			if err == nil {
 				agent := &woodpecker.Agent{}
-				err = p.DeployAgent(t.Context(), agent, tt.capability)
+				err = p.DeployAgent(t.Context(), agent)
 			}
 
 			if tt.expectedError != "" {

@@ -22,11 +22,10 @@ import (
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
 
-var ErrInstanceTypeNotFound = fmt.Errorf("instance type not found")
-
 type provider struct {
 	name                  string
 	config                *config.Config
+	instanceType          string
 	amiID                 string
 	tags                  []string
 	region                string
@@ -38,8 +37,6 @@ type provider struct {
 	lock                  sync.Mutex
 	subnetRR              int
 	sshKeyName            string
-	// resolved config
-	instanceType ec2_types.InstanceTypeInfo
 }
 
 func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Provider, error) {
@@ -49,6 +46,7 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 	p := &provider{
 		name:                  "aws",
 		config:                config,
+		instanceType:          c.String("aws-instance-type"),
 		amiID:                 c.String("aws-ami-id"),
 		tags:                  c.StringSlice("aws-tags"),
 		region:                c.String("aws-region"),
@@ -58,53 +56,16 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 		useSpotInstances:      c.Bool("aws-use-spot-instances"),
 		sshKeyName:            c.String("aws-ssh-key-name"),
 	}
-
 	cfg, err := awsconfig.LoadDefaultConfig(ctx, awsconfig.WithRegion(p.region))
 	if err != nil {
 		return nil, fmt.Errorf("failed to load configuration, %w", err)
 	}
 	p.client = ec2.NewFromConfig(cfg)
 
-	if err := p.resolveInstanceType(ctx, c.String("aws-instance-type")); err != nil {
-		return nil, err
-	}
-
-	p.printResolvedConfig()
-
 	return p, nil
 }
 
-func (p *provider) resolveInstanceType(ctx context.Context, instanceType string) error {
-	out, err := p.client.DescribeInstanceTypes(ctx, &ec2.DescribeInstanceTypesInput{
-		InstanceTypes: []ec2_types.InstanceType{ec2_types.InstanceType(instanceType)},
-	})
-	if err != nil {
-		return fmt.Errorf("%s: DescribeInstanceTypes %q: %w", p.name, instanceType, err)
-	}
-	if len(out.InstanceTypes) == 0 {
-		return fmt.Errorf("%w: %s", ErrInstanceTypeNotFound, instanceType)
-	}
-	p.instanceType = out.InstanceTypes[0]
-	return nil
-}
-
-func (p *provider) printResolvedConfig() {
-	archs := make([]string, 0, len(p.instanceType.ProcessorInfo.SupportedArchitectures))
-	for _, a := range p.instanceType.ProcessorInfo.SupportedArchitectures {
-		archs = append(archs, string(a))
-	}
-	log.Info().
-		Str("type", string(p.instanceType.InstanceType)).
-		Strs("architectures", archs).
-		Bool("current_gen", aws.ToBool(p.instanceType.CurrentGeneration)).
-		Msg("deploy with instance type")
-}
-
-func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cb types.Capability) error {
-	if err := p.validateCapability(cb); err != nil {
-		return err
-	}
-
+func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
 	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, cloudinit.RenderOption{})
 	if err != nil {
 		return fmt.Errorf("%s: cloudinit.RenderUserDataTemplate: %w", p.name, err)
@@ -134,6 +95,7 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cb 
 				Key: aws.String(parts[0]),
 			}
 		}
+
 		tags = append(tags, rt)
 	}
 
@@ -142,7 +104,7 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cb 
 			Arn: aws.String(p.iamInstanceProfileArn),
 		},
 		ImageId:      aws.String(p.amiID),
-		InstanceType: p.instanceType.InstanceType,
+		InstanceType: ec2_types.InstanceType(p.instanceType),
 		MetadataOptions: &ec2_types.InstanceMetadataOptionsRequest{
 			HttpEndpoint:            ec2_types.InstanceMetadataEndpointStateEnabled,
 			HttpPutResponseHopLimit: aws.Int32(1),
@@ -205,51 +167,6 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cb 
 	}
 
 	return fmt.Errorf("instance did not resolve in agent list: %s", *result.Instances[0].InstanceId)
-}
-
-// validateCapability checks the requested (platform, backend) against the
-// architectures reported by DescribeInstanceTypes for the configured type.
-func (p *provider) validateCapability(cb types.Capability) error {
-	for _, c := range p.capabilities() {
-		if c.Platform == cb.Platform && c.Backend == cb.Backend {
-			return nil
-		}
-	}
-	return fmt.Errorf("%s: instance type %s does not support requested capability platform=%s backend=%s",
-		p.name, p.instanceType.InstanceType, cb.Platform, cb.Backend)
-}
-
-func (p *provider) Capabilities(_ context.Context) ([]types.Capability, error) {
-	return p.capabilities(), nil
-}
-
-// capabilities derives the supported (platform, backend) pairs from the
-// resolved InstanceTypeInfo.ProcessorInfo.SupportedArchitectures.
-func (p *provider) capabilities() []types.Capability {
-	var caps []types.Capability
-	for _, arch := range p.instanceType.ProcessorInfo.SupportedArchitectures {
-		goarch := ec2ArchToGoArch(arch)
-		if goarch == "" {
-			continue
-		}
-		caps = append(caps, types.Capability{
-			Platform: "linux/" + goarch,
-			Backend:  types.BackendDocker,
-		})
-	}
-	return caps
-}
-
-// ec2ArchToGoArch maps EC2 ArchitectureType values to Go GOARCH strings.
-func ec2ArchToGoArch(a ec2_types.ArchitectureType) string {
-	switch a {
-	case ec2_types.ArchitectureTypeX8664:
-		return "amd64"
-	case ec2_types.ArchitectureTypeArm64:
-		return "arm64"
-	default:
-		return ""
-	}
 }
 
 func (p *provider) getAgent(ctx context.Context, agent *woodpecker.Agent) (*ec2_types.Instance, error) {
@@ -315,4 +232,8 @@ func (p *provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 		}
 	}
 	return names, nil
+}
+
+func (p *provider) BillingModel() types.BillingModel {
+	return types.BillingPerSecond
 }

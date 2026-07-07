@@ -16,6 +16,7 @@ import (
 	"go.woodpecker-ci.org/autoscaler/engine"
 	"go.woodpecker-ci.org/autoscaler/engine/types"
 	"go.woodpecker-ci.org/autoscaler/providers/aws"
+	"go.woodpecker-ci.org/autoscaler/providers/equinixmetal"
 	"go.woodpecker-ci.org/autoscaler/providers/hetznercloud"
 	"go.woodpecker-ci.org/autoscaler/providers/linode"
 	"go.woodpecker-ci.org/autoscaler/providers/scaleway"
@@ -30,6 +31,8 @@ func setupProvider(ctx context.Context, cmd *cli.Command, config *config.Config)
 		return aws.New(ctx, cmd, config)
 	case "hetznercloud":
 		return hetznercloud.New(ctx, cmd, config)
+	case "equinixmetal":
+		return equinixmetal.New(ctx, cmd, config)
 	case "linode":
 		return linode.New(ctx, cmd, config)
 	case "vultr":
@@ -91,6 +94,7 @@ func run(ctx context.Context, cmd *cli.Command) error {
 	if err != nil {
 		return err
 	}
+	config.BillingModel = provider.BillingModel()
 
 	config.AgentInactivityTimeout, err = time.ParseDuration(cmd.String("agent-inactivity-timeout"))
 	if err != nil {
@@ -108,9 +112,22 @@ func run(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("could not query provider capabilities: %w", err)
 	}
 
+	config.AgentBillingTeardownMargin, err = time.ParseDuration(cmd.String("agent-billing-teardown-margin"))
+	if err != nil {
+		return fmt.Errorf("can't parse agent-billing-teardown-margin: %w", err)
+	}
+
 	reconciliationInterval, err := time.ParseDuration(cmd.String("reconciliation-interval"))
 	if err != nil {
 		return fmt.Errorf("can't parse reconciliation-interval: %w", err)
+	}
+	config.ReconciliationInterval = reconciliationInterval
+
+	if config.BillingModel == types.BillingHourlyRoundUp {
+		log.Info().
+			Str("provider", cmd.String("provider")).
+			Str("teardown-window", (config.AgentBillingTeardownMargin + reconciliationInterval).String()).
+			Msg("hourly-round-up billing: idle agents are kept warm until just before each paid-hour boundary")
 	}
 
 	for {
@@ -154,6 +171,7 @@ func main() {
 	}
 
 	app.Flags = append(app.Flags, hetznercloud.ProviderFlags...)
+	app.Flags = append(app.Flags, equinixmetal.ProviderFlags...)
 	app.Flags = append(app.Flags, scaleway.ProviderFlags...)
 	app.Flags = append(app.Flags, linode.ProviderFlags...)
 	app.Flags = append(app.Flags, aws.ProviderFlags...)

@@ -81,26 +81,12 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 	return p, nil
 }
 
-func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cb types.Capability) error {
-	if cb.Backend != types.BackendDocker {
-		fmt.Errorf("scaleway only support docker backend")
-	}
-
+func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
 	if len(p.candidates) == 0 {
 		return fmt.Errorf("scaleway: no candidates to deploy from")
 	}
 
-	var matched []deployCandidate
-	for _, c := range p.candidates {
-		if "linux/"+scwArchToGoArch(c.serverType.Arch) == cb.Platform {
-			matched = append(matched, c)
-		}
-	}
-	if len(matched) == 0 {
-		return fmt.Errorf("scaleway: %w: %s", ErrNoMatchingServerType, cb.Platform)
-	}
-
-	for i, c := range matched {
+	for i, c := range p.candidates {
 		err := p.createAndBoot(ctx, agent, c)
 		if err == nil {
 			return nil
@@ -117,41 +103,6 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cb 
 	}
 
 	return nil
-}
-
-func (p *provider) Capabilities(_ context.Context) ([]types.Capability, error) {
-	seen := make(map[string]struct{})
-	var caps []types.Capability
-	for _, c := range p.candidates {
-		goarch := scwArchToGoArch(c.serverType.Arch)
-		if goarch == "" {
-			continue
-		}
-		platform := "linux/" + goarch
-		if _, exists := seen[platform]; exists {
-			continue
-		}
-		seen[platform] = struct{}{}
-		caps = append(caps, types.Capability{
-			Platform: platform,
-			Backend:  types.BackendDocker,
-		})
-	}
-	return caps, nil
-}
-
-// scwArchToGoArch maps Scaleway Arch values to Go GOARCH strings.
-func scwArchToGoArch(a instance.Arch) string {
-	switch a {
-	case instance.ArchX86_64:
-		return "amd64"
-	case instance.ArchArm64:
-		return "arm64"
-	case instance.ArchArm:
-		return "arm"
-	default:
-		return ""
-	}
 }
 
 func (p *provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) error {
@@ -305,4 +256,8 @@ func (p *provider) haltInstance(ctx context.Context, inst *instance.Server) erro
 		ServerID: inst.ID,
 		Action:   instance.ServerActionPoweroff,
 	}, scw.WithContext(ctx))
+}
+
+func (p *provider) BillingModel() types.BillingModel {
+	return types.BillingPerSecond
 }

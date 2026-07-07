@@ -89,15 +89,3 @@ func resolveLocation(st *hcloud.ServerType, location string) (*hcloud.Location, 
 	}
 	return nil, fmt.Errorf("%w: %q", ErrLocationNotSupported, location)
 }
-
-// hcloudArchToGoArch maps hcloud architecture names to Go GOARCH strings.
-func hcloudArchToGoArch(a hcloud.Architecture) string {
-	switch a {
-	case hcloud.ArchitectureARM:
-		return "arm64"
-	case hcloud.ArchitectureX86:
-		return "amd64"
-	default:
-		return string(a)
-	}
-}
