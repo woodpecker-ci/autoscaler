@@ -85,4 +85,4 @@ The billing model is selected automatically by the provider, so no extra configu
   - [ ] Remove agents which have not connected for a long time
 - [x] Release as container image
 - [x] Add docs
-- [ ] Support agent deployment with specific attributes (e.g. platforms, architectures, etc.)
+- [x] Support agent deployment with specific attributes (e.g. platforms, architectures, etc.)
