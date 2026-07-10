@@ -4,7 +4,7 @@
 
 ### ❤️ Thanks to all contributors! ❤️
 
-@6543, @bcornish1797, @btriller, @hstern
+@6543, @bcornish1797, @btriller, @hstern, @toothstone
 
 ### 💥 Breaking changes
 
@@ -21,6 +21,7 @@
 
 ### 📈 Enhancement
 
+- Clarify WOODPECKER_TOKEN setting and agent token usage [[#676](https://github.com/woodpecker-ci/autoscaler/pull/676)]
 - Make agent teardown billing-aware [[#645](https://github.com/woodpecker-ci/autoscaler/pull/645)]
 - Support custom images on Hetzner [[#638](https://github.com/woodpecker-ci/autoscaler/pull/638)]
 
