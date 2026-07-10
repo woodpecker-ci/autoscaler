@@ -1,6 +1,6 @@
 # Changelog
 
-## [2.0.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.0) - 2026-07-09
+## [2.0.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.0) - 2026-07-10
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -26,6 +26,7 @@
 
 ### 📦️ Dependency
 
+- Update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.315.0 [[#677](https://github.com/woodpecker-ci/autoscaler/pull/677)]
 - Update golang deps non-major [[#675](https://github.com/woodpecker-ci/autoscaler/pull/675)]
 - Update golang deps non-major [[#673](https://github.com/woodpecker-ci/autoscaler/pull/673)]
 - Update module github.com/linode/linodego/v2 to v2.4.0 [[#669](https://github.com/woodpecker-ci/autoscaler/pull/669)]
