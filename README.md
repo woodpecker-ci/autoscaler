@@ -33,7 +33,7 @@ services:
       - WOODPECKER_HETZNERCLOUD_API_TOKEN=${WOODPECKER_HETZNERCLOUD_API_TOKEN} # your api token for the Hetzner cloud
 ```
 
-The agents will use `WOODPECKER_GRPC_ADDR` and an agent token automatically fetched by the autoscaler to connect to the server. Therefore the `WOODPECKER_GRPC_ADDR` has to be publicly accessible from the newly created agents. Check for example how you could use [caddy](https://woodpecker-ci.org/docs/administration/configuration/server#caddy) to expose the grpc connection.
+The agents will use `WOODPECKER_GRPC_ADDR` and an agent token automatically created on the server by the autoscaler to connect to the server. Therefore the `WOODPECKER_GRPC_ADDR` has to be publicly accessible from the newly created agents. Check for example how you could use [caddy](https://woodpecker-ci.org/docs/administration/configuration/server#caddy) to expose the grpc connection.
 
 ## Equinix Metal
 
