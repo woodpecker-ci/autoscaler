@@ -32,6 +32,15 @@ func Test_rawDelta(t *testing.T) {
 		// 1 running + 1 pending = 2 tasks, WPA=1, no pool -> need 2.
 		assert.Equal(t, 2, rawDelta(bucketState{Pending: 1, Running: 1}, 1))
 	})
+
+	t.Run("scales up when pool is fully busy with a backlog", func(t *testing.T) {
+		// All 3 existing pool agents are busy (running=3) and 2 more
+		// workflows are queued. Regression test for 3b14c05: the legacy
+		// calcAgents double-subtracted the pool size, which made it
+		// return a negative value here (wanting to drain agents)
+		// instead of scaling up.
+		assert.Equal(t, 2, rawDelta(bucketState{Pending: 2, Running: 3, PoolAgents: 3}, 1))
+	})
 }
 
 func Test_allocateBudget(t *testing.T) {
