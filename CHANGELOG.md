@@ -31,6 +31,7 @@
 
 ### 📦️ Dependency
 
+- Update golang.org/x/exp digest to 9ea1abe [[#678](https://github.com/woodpecker-ci/autoscaler/pull/678)]
 - Update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.315.0 [[#677](https://github.com/woodpecker-ci/autoscaler/pull/677)]
 - Update golang deps non-major [[#675](https://github.com/woodpecker-ci/autoscaler/pull/675)]
 - Update golang deps non-major [[#673](https://github.com/woodpecker-ci/autoscaler/pull/673)]
