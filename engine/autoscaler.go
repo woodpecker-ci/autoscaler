@@ -361,7 +361,7 @@ func (a *Autoscaler) calcAgents(ctx context.Context) (float64, error) {
 	maxUp := float64(a.config.MaxAgents - availablePoolAgents)
 	maxDown := float64(availablePoolAgents - a.config.MinAgents)
 
-	reqPoolAgents := math.Ceil(reqAgents - (availableAgents + float64(availablePoolAgents)))
+	reqPoolAgents := math.Ceil(reqAgents - availableAgents)
 	reqPoolAgents = math.Max(reqPoolAgents, -maxDown)
 	reqPoolAgents = math.Min(reqPoolAgents, maxUp)
 
