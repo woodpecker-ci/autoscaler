@@ -1,10 +1,10 @@
 # Changelog
 
-## [2.0.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.0) - 2026-07-10
+## [2.0.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.0) - 2026-07-11
 
 ### ❤️ Thanks to all contributors! ❤️
 
-@6543, @bcornish1797, @btriller, @hstern, @toothstone
+@6543, @LaGrunge, @bcornish1797, @btriller, @hstern, @toothstone
 
 ### 💥 Breaking changes
 
@@ -24,6 +24,10 @@
 - Clarify WOODPECKER_TOKEN setting and agent token usage [[#676](https://github.com/woodpecker-ci/autoscaler/pull/676)]
 - Make agent teardown billing-aware [[#645](https://github.com/woodpecker-ci/autoscaler/pull/645)]
 - Support custom images on Hetzner [[#638](https://github.com/woodpecker-ci/autoscaler/pull/638)]
+
+### 🐛 Bug Fixes
+
+- fix(engine): stop double-subtracting pool size in calcAgents [[#674](https://github.com/woodpecker-ci/autoscaler/pull/674)]
 
 ### 📦️ Dependency
 
