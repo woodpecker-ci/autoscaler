@@ -17,6 +17,7 @@
 
 ### ✨ Features
 
+- Add  experimental OpenStack provider [[#682](https://github.com/woodpecker-ci/autoscaler/pull/682)]
 - Add experimental support for Equinix Metal [[#604](https://github.com/woodpecker-ci/autoscaler/pull/604)]
 
 ### 📈 Enhancement
