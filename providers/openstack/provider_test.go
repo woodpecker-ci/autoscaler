@@ -349,7 +349,11 @@ func TestDeployAgentOnVolume(t *testing.T) {
 
 	err := p.DeployAgent(t.Context(), &woodpecker.Agent{Name: "agent-1"})
 	require.NoError(t, err)
-	bdm := got["block_device_mapping_v2"].([]any)[0].(map[string]any)
+	bdms, ok := got["block_device_mapping_v2"].([]any)
+	require.True(t, ok)
+	require.Len(t, bdms, 1)
+	bdm, ok := bdms[0].(map[string]any)
+	require.True(t, ok)
 	assert.Equal(t, true, bdm["delete_on_termination"])
 	assert.Equal(t, "volume", bdm["destination_type"])
 	assert.Equal(t, "image-123", bdm["uuid"])
