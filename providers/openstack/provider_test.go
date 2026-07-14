@@ -73,7 +73,7 @@ func writeJSON(w http.ResponseWriter, status int, body string) {
 
 // handleWaitActive registers a GET handler for the server so that
 // servers.WaitForStatus observes an ACTIVE server immediately.
-func handleWaitActive(mux *http.ServeMux, id string) {
+func handleWaitActive(mux *http.ServeMux, id string) { //nolint:unparam
 	mux.HandleFunc("GET /servers/"+id, func(w http.ResponseWriter, _ *http.Request) {
 		writeJSON(w, http.StatusOK, `{"server":{"id":"`+id+`","status":"ACTIVE"}}`)
 	})
@@ -88,6 +88,7 @@ func TestNewRejectsFlavorRefAndName(t *testing.T) {
 	c := newTestCommand(t, map[string]string{
 		"openstack-flavor-ref":  "f-1",
 		"openstack-flavor-name": "m1.small",
+		"openstack-auth-url":    "https://example.com",
 	})
 
 	_, err := New(t.Context(), c, &config.Config{})
@@ -161,13 +162,13 @@ func TestDeployAgentWithRefs(t *testing.T) {
 	networks, ok := got["networks"].([]any)
 	require.True(t, ok, "networks should be present")
 	require.Len(t, networks, 1)
-	assert.Equal(t, "net-789", networks[0].(map[string]any)["uuid"])
+	assert.Equal(t, "net-789", networks[0].(map[string]any)["uuid"]) //nolint:forcetypeassert
 
 	sgs, ok := got["security_groups"].([]any)
 	require.True(t, ok, "security groups should be present")
 	require.Len(t, sgs, 2)
-	assert.Equal(t, "default", sgs[0].(map[string]any)["name"])
-	assert.Equal(t, "web", sgs[1].(map[string]any)["name"])
+	assert.Equal(t, "default", sgs[0].(map[string]any)["name"]) //nolint:forcetypeassert
+	assert.Equal(t, "web", sgs[1].(map[string]any)["name"])     //nolint:forcetypeassert
 
 	_, hasKey := got["key_name"]
 	assert.False(t, hasKey, "no keypair configured, key_name must be absent")
