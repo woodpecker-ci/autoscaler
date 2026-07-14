@@ -18,7 +18,7 @@
 ### ✨ Features
 
 - Add  experimental OpenStack provider [[#682](https://github.com/woodpecker-ci/autoscaler/pull/682)]
-- Add experimental support for Equinix Metal [[#604](https://github.com/woodpecker-ci/autoscaler/pull/604)]
+- Add experimental Equinix Metal provider [[#604](https://github.com/woodpecker-ci/autoscaler/pull/604)]
 
 ### 📈 Enhancement
 
@@ -36,9 +36,7 @@
 - Update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.316.0 [[#680](https://github.com/woodpecker-ci/autoscaler/pull/680)]
 - Update docker.io/woodpeckerci/plugin-docker-buildx Docker tag to v6.1.1 [[#679](https://github.com/woodpecker-ci/autoscaler/pull/679)]
 - Update golang.org/x/exp digest to 9ea1abe [[#678](https://github.com/woodpecker-ci/autoscaler/pull/678)]
-- Update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.315.0 [[#677](https://github.com/woodpecker-ci/autoscaler/pull/677)]
 - Update golang deps non-major [[#675](https://github.com/woodpecker-ci/autoscaler/pull/675)]
-- Update golang deps non-major [[#673](https://github.com/woodpecker-ci/autoscaler/pull/673)]
 - Update module github.com/linode/linodego/v2 to v2.4.0 [[#669](https://github.com/woodpecker-ci/autoscaler/pull/669)]
 - Update module github.com/equinix/equinix-sdk-go to v0.66.0 [[#666](https://github.com/woodpecker-ci/autoscaler/pull/666)]
 - fix(deps): update module github.com/hetznercloud/hcloud-go/v2 to v2.41.1 [[#631](https://github.com/woodpecker-ci/autoscaler/pull/631)]
