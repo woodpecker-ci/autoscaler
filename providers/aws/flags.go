@@ -46,7 +46,7 @@ var ProviderFlags = []cli.Flag{
 	},
 	&cli.StringSliceFlag{
 		Name:     "aws-subnets",
-		Usage:    "VPC subnet IDs, optionally with region as 'subnet:region'",
+		Usage:    "VPC subnet IDs, optionally with region as 'subnet:region'; default subnets are used when omitted",
 		Sources:  cli.EnvVars("WOODPECKER_AWS_SUBNETS"),
 		Category: Category,
 	},

@@ -1,6 +1,7 @@
 package aws
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"testing"
@@ -9,6 +10,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	ec2_types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/aws/smithy-go"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -16,6 +19,63 @@ import (
 	"go.woodpecker-ci.org/autoscaler/providers/aws/ec2api/mocks"
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
+
+func TestResolveSubnets(t *testing.T) {
+	t.Run("configured subnets", func(t *testing.T) {
+		client := mocks.NewMockClient(t)
+		client.On("DescribeSubnets", mock.Anything, mock.MatchedBy(func(input *ec2.DescribeSubnetsInput) bool {
+			return assert.ObjectsAreEqual([]string{"subnet-2", "subnet-1"}, input.SubnetIds) && len(input.Filters) == 0
+		}), mock.MatchedBy(regionOptions("eu-central-1"))).
+			Return(&ec2.DescribeSubnetsOutput{Subnets: []ec2_types.Subnet{{}, {}}}, nil).Once()
+
+		p := newTestProvider(client)
+		subnets, err := p.resolveSubnets(t.Context(), "eu-central-1", []string{"subnet-2", "subnet-1"})
+		require.NoError(t, err)
+		assert.Equal(t, []string{"subnet-2", "subnet-1"}, subnets)
+	})
+
+	t.Run("default subnets", func(t *testing.T) {
+		var output bytes.Buffer
+		originalLogger := log.Logger
+		log.Logger = zerolog.New(&output)
+		t.Cleanup(func() {
+			log.Logger = originalLogger
+		})
+
+		client := mocks.NewMockClient(t)
+		client.On("DescribeSubnets", mock.Anything, mock.MatchedBy(func(input *ec2.DescribeSubnetsInput) bool {
+			return len(input.SubnetIds) == 0 &&
+				assert.ObjectsAreEqual([]string{"true"}, filterValues(input.Filters, "default-for-az")) &&
+				assert.ObjectsAreEqual([]string{"available"}, filterValues(input.Filters, "state"))
+		}), mock.MatchedBy(regionOptions("us-east-1"))).
+			Return(&ec2.DescribeSubnetsOutput{Subnets: []ec2_types.Subnet{
+				{SubnetId: aws.String("subnet-z")},
+				{SubnetId: aws.String("subnet-a")},
+			}}, nil).Once()
+
+		p := newTestProvider(client)
+		subnets, err := p.resolveSubnets(t.Context(), "us-east-1", nil)
+		require.NoError(t, err)
+		assert.Equal(t, []string{"subnet-a", "subnet-z"}, subnets)
+		assert.JSONEq(t, `{
+			"level":"info",
+			"region":"us-east-1",
+			"subnets":["subnet-a","subnet-z"],
+			"message":"resolved default AWS subnets"
+		}`, output.String())
+	})
+
+	t.Run("no default subnets", func(t *testing.T) {
+		client := mocks.NewMockClient(t)
+		client.On("DescribeSubnets", mock.Anything, mock.Anything, mock.MatchedBy(regionOptions("us-east-1"))).
+			Return(&ec2.DescribeSubnetsOutput{}, nil).Once()
+
+		p := newTestProvider(client)
+		_, err := p.resolveSubnets(t.Context(), "us-east-1", nil)
+		assert.ErrorIs(t, err, ErrSubnetsNotSet)
+		assert.ErrorContains(t, err, "no default subnets")
+	})
+}
 
 var (
 	testImage = ec2_types.Image{

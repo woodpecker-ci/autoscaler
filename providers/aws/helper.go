@@ -5,12 +5,14 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"sort"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	ec2_types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/aws/smithy-go"
+	"github.com/rs/zerolog/log"
 
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
@@ -117,24 +119,14 @@ func (p *provider) valueRegion(option, raw string) (string, string, error) {
 }
 
 func (p *provider) resolveRegionConfig(ctx context.Context, region, image string, architecture ec2_types.ArchitectureValues, subnetIDs, securityGroupIDs []string) (regionConfig, error) {
-	if len(subnetIDs) == 0 {
-		return regionConfig{}, fmt.Errorf("%s: %w: region %q", p.name, ErrSubnetsNotSet, region)
-	}
-
 	resolvedImage, err := p.resolveImage(ctx, image, region, architecture)
 	if err != nil {
 		return regionConfig{}, err
 	}
 
-	resolvedSubnets, err := p.client.DescribeSubnets(ctx, &ec2.DescribeSubnetsInput{
-		SubnetIds: subnetIDs,
-	}, regionOpt(region))
+	subnetIDs, err = p.resolveSubnets(ctx, region, subnetIDs)
 	if err != nil {
-		return regionConfig{}, fmt.Errorf("%s: DescribeSubnets %v in %q: %w", p.name, subnetIDs, region, err)
-	}
-	if len(resolvedSubnets.Subnets) != len(subnetIDs) {
-		return regionConfig{}, fmt.Errorf("%s: %w: got %d of %d subnets in %q",
-			p.name, ErrSubnetNotFound, len(resolvedSubnets.Subnets), len(subnetIDs), region)
+		return regionConfig{}, err
 	}
 
 	if len(securityGroupIDs) > 0 {
@@ -157,6 +149,44 @@ func (p *provider) resolveRegionConfig(ctx context.Context, region, image string
 		subnets:        subnetIDs,
 		securityGroups: securityGroupIDs,
 	}, nil
+}
+
+func (p *provider) resolveSubnets(ctx context.Context, region string, subnetIDs []string) ([]string, error) {
+	input := &ec2.DescribeSubnetsInput{SubnetIds: subnetIDs}
+	useDefault := len(subnetIDs) == 0
+	if useDefault {
+		input.Filters = []ec2_types.Filter{
+			{Name: aws.String("default-for-az"), Values: []string{"true"}},
+			{Name: aws.String("state"), Values: []string{"available"}},
+		}
+	}
+
+	resolved, err := p.client.DescribeSubnets(ctx, input, regionOpt(region))
+	if err != nil {
+		return nil, fmt.Errorf("%s: DescribeSubnets %v in %q: %w", p.name, subnetIDs, region, err)
+	}
+	if !useDefault {
+		if len(resolved.Subnets) != len(subnetIDs) {
+			return nil, fmt.Errorf("%s: %w: got %d of %d subnets in %q",
+				p.name, ErrSubnetNotFound, len(resolved.Subnets), len(subnetIDs), region)
+		}
+		return subnetIDs, nil
+	}
+
+	for _, subnet := range resolved.Subnets {
+		if subnet.SubnetId != nil && *subnet.SubnetId != "" {
+			subnetIDs = append(subnetIDs, *subnet.SubnetId)
+		}
+	}
+	if len(subnetIDs) == 0 {
+		return nil, fmt.Errorf("%s: %w: no default subnets in region %q", p.name, ErrSubnetsNotSet, region)
+	}
+	sort.Strings(subnetIDs)
+	log.Info().
+		Str("region", region).
+		Strs("subnets", subnetIDs).
+		Msg("resolved default AWS subnets")
+	return subnetIDs, nil
 }
 
 func regionOpt(region string) func(*ec2.Options) {
