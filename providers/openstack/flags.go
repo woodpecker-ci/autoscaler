@@ -130,12 +130,6 @@ var ProviderFlags = []cli.Flag{
 		Sources:  cli.EnvVars("WOODPECKER_OPENSTACK_KEYPAIR"),
 		Category: category,
 	},
-	&cli.StringFlag{
-		Name:     "openstack-floating-ip-pool",
-		Usage:    "OpenStack floating IP pool name (optional, assigns a public IP if set)",
-		Sources:  cli.EnvVars("WOODPECKER_OPENSTACK_FLOATING_IP_POOL"),
-		Category: category,
-	},
 	&cli.StringSliceFlag{
 		Name:     "openstack-metadata",
 		Usage:    "OpenStack server metadata (key=value) (optional)",

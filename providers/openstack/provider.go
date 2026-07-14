@@ -35,7 +35,6 @@ type provider struct {
 	network        string
 	securityGroups []string
 	keypair        string
-	floatingIPPool string
 	metadata       map[string]string
 	config         *config.Config
 	computeClient  *gophercloud.ServiceClient
@@ -62,7 +61,6 @@ func New(ctx context.Context, c *cli.Command, cfg *config.Config) (types.Provide
 		network:        c.String("openstack-network"),
 		securityGroups: c.StringSlice("openstack-security-groups"),
 		keypair:        c.String("openstack-keypair"),
-		floatingIPPool: c.String("openstack-floating-ip-pool"),
 		config:         cfg,
 	}
 
