@@ -83,7 +83,7 @@ func New(ctx context.Context, c *cli.Command, cfg *config.Config) (types.Provide
 		ApplicationCredentialID:     c.String("openstack-application-credential-id"),
 		ApplicationCredentialName:   c.String("openstack-application-credential-name"),
 		ApplicationCredentialSecret: c.String("openstack-application-credential-secret"),
-		TenantName:                  c.String("openstack-tenant-name"),
+		TenantName:                  c.String("openstack-project-name"),
 		DomainName:                  c.String("openstack-domain-name"),
 	}
 
