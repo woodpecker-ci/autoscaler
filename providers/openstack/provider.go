@@ -202,7 +202,7 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 	// Wait for server to become active
 	if err := servers.WaitForStatus(ctx, p.computeClient, server.ID, "ACTIVE"); err != nil {
 		if deleteErr := servers.Delete(context.WithoutCancel(ctx), p.computeClient, server.ID).ExtractErr(); deleteErr != nil {
-			return fmt.Errorf("%s: servers.WaitForStatus: %w; servers.Delete: %v", p.name, err, deleteErr)
+			return fmt.Errorf("%s: servers.WaitForStatus: %w; servers.Delete: %w", p.name, err, deleteErr)
 		}
 		return fmt.Errorf("%s: servers.WaitForStatus: %w", p.name, err)
 	}
