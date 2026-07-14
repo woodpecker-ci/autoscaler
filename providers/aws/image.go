@@ -25,21 +25,13 @@ func validateImageReference(reference string) error {
 }
 
 func isImageAlias(reference string) bool {
-	version, found := strings.CutPrefix(reference, "debian-")
-	if !found || version == "" {
-		return false
-	}
-	for _, char := range version {
-		if char < '0' || char > '9' {
-			return false
-		}
-	}
-	return true
+	_, found, _ := imageAliasQuery(reference, ec2_types.ArchitectureValuesX8664)
+	return found
 }
 
 func (p *provider) resolveImage(ctx context.Context, reference, region string, architecture ec2_types.ArchitectureValues) (ec2_types.Image, error) {
 	if isImageAlias(reference) {
-		return p.resolveDebianImage(ctx, reference, region, architecture)
+		return p.resolveImageAlias(ctx, reference, region, architecture)
 	}
 
 	images, err := p.client.DescribeImages(ctx, &ec2.DescribeImagesInput{
@@ -54,17 +46,24 @@ func (p *provider) resolveImage(ctx context.Context, reference, region string, a
 	return images.Images[0], nil
 }
 
-func (p *provider) resolveDebianImage(ctx context.Context, alias, region string, architecture ec2_types.ArchitectureValues) (ec2_types.Image, error) {
-	nameArchitecture, err := debianArchitecture(architecture)
+type aliasQuery struct {
+	namePattern string
+	matchesName func(string) bool
+}
+
+func (p *provider) resolveImageAlias(ctx context.Context, alias, region string, architecture ec2_types.ArchitectureValues) (ec2_types.Image, error) {
+	query, found, err := imageAliasQuery(alias, architecture)
 	if err != nil {
 		return ec2_types.Image{}, fmt.Errorf("%s: %w", p.name, err)
 	}
-	namePrefix := alias + "-" + nameArchitecture + "-"
+	if !found {
+		return ec2_types.Image{}, fmt.Errorf("%s: unsupported aws-ami-id alias: %s", p.name, alias)
+	}
 	images, err := p.client.DescribeImages(ctx, &ec2.DescribeImagesInput{
 		Filters: []ec2_types.Filter{
 			{Name: aws.String("architecture"), Values: []string{string(architecture)}},
 			{Name: aws.String("is-public"), Values: []string{"true"}},
-			{Name: aws.String("name"), Values: []string{namePrefix + "*"}},
+			{Name: aws.String("name"), Values: []string{query.namePattern}},
 			{Name: aws.String("owner-alias"), Values: []string{"amazon"}},
 			{Name: aws.String("root-device-type"), Values: []string{string(ec2_types.DeviceTypeEbs)}},
 			{Name: aws.String("state"), Values: []string{string(ec2_types.ImageStateAvailable)}},
@@ -77,7 +76,7 @@ func (p *provider) resolveDebianImage(ctx context.Context, alias, region string,
 
 	var newest ec2_types.Image
 	for _, image := range images.Images {
-		if !isVerifiedDebianImage(image, namePrefix, architecture) {
+		if !isVerifiedAliasImage(image, architecture, query.matchesName) {
 			continue
 		}
 		if newest.ImageId == nil || newerImage(image, newest) {
@@ -97,9 +96,9 @@ func (p *provider) resolveDebianImage(ctx context.Context, alias, region string,
 	return newest, nil
 }
 
-func isVerifiedDebianImage(image ec2_types.Image, namePrefix string, architecture ec2_types.ArchitectureValues) bool {
+func isVerifiedAliasImage(image ec2_types.Image, architecture ec2_types.ArchitectureValues, matchesName func(string) bool) bool {
 	return image.Architecture == architecture &&
-		strings.HasPrefix(aws.ToString(image.Name), namePrefix) &&
+		matchesName(aws.ToString(image.Name)) &&
 		aws.ToString(image.ImageOwnerAlias) == "amazon" &&
 		aws.ToBool(image.Public) &&
 		image.RootDeviceType == ec2_types.DeviceTypeEbs &&
@@ -116,13 +115,123 @@ func newerImage(left, right ec2_types.Image) bool {
 	return aws.ToString(left.ImageId) > aws.ToString(right.ImageId)
 }
 
-func debianArchitecture(architecture ec2_types.ArchitectureValues) (string, error) {
+func imageAliasQuery(alias string, architecture ec2_types.ArchitectureValues) (aliasQuery, bool, error) {
+	debianArch, awsArch, err := imageArchitectures(architecture)
+	if err != nil {
+		return aliasQuery{}, true, err
+	}
+
+	if version, found := strings.CutPrefix(alias, "debian-"); found && onlyDigits(version) {
+		prefix := alias + "-" + debianArch + "-"
+		return aliasQuery{
+			namePattern: prefix + "*",
+			matchesName: func(name string) bool { return strings.HasPrefix(name, prefix) },
+		}, true, nil
+	}
+
+	if version, found := strings.CutPrefix(alias, "ubuntu-"); found {
+		version, found = strings.CutSuffix(version, "-server")
+		if found && numericVersion(version) {
+			// hvm-ssd covers both the hvm-ssd and hvm-ssd-gp3 storage generations
+			prefix := "ubuntu/images/hvm-ssd"
+			marker := "-" + version + "-" + debianArch + "-server-"
+			return aliasQuery{
+				namePattern: prefix + "*/ubuntu-*" + marker + "*",
+				matchesName: func(name string) bool {
+					return strings.HasPrefix(name, prefix) && strings.Contains(name, "/ubuntu-") && strings.Contains(name, marker)
+				},
+			}, true, nil
+		}
+	}
+
+	if alias == "amazon" || alias == "amazon_linux" || alias == "amazon-linux" {
+		// pinned to the current major release; bump when a new one ships
+		alias = "amazon-linux-2023"
+	}
+	if version, found := strings.CutPrefix(alias, "amazon-linux-"); found && onlyDigits(version) {
+		prefix := "al" + version + "-ami-" + version + "."
+		suffix := "-" + awsArch
+		return aliasQuery{
+			namePattern: prefix + "*-kernel-*" + suffix,
+			matchesName: func(name string) bool {
+				return strings.HasPrefix(name, prefix) && strings.Contains(name, "-kernel-") && strings.HasSuffix(name, suffix)
+			},
+		}, true, nil
+	}
+
+	if alias == "suse" {
+		// pinned to the current major release; bump when a new one ships
+		alias = "suse-16"
+	}
+	if version, found := strings.CutPrefix(alias, "suse-"); found && onlyDigits(version) {
+		prefix := "suse-sles-" + version + "-"
+		suffix := "-hvm-ssd-" + awsArch
+		return aliasQuery{
+			namePattern: prefix + "*" + suffix,
+			matchesName: func(name string) bool {
+				middle, found := strings.CutPrefix(name, prefix)
+				if !found {
+					return false
+				}
+				middle, found = strings.CutSuffix(middle, suffix)
+				// vDATE for 15.x service packs (sp7-v20260630) and 16.x
+				// minor releases (0-v20260625); anything else is a vendor
+				// variant such as sapcal, chost-byos or ecs.
+				return found && suseVersion(middle)
+			},
+		}, true, nil
+	}
+
+	return aliasQuery{}, false, nil
+}
+
+// suseVersion reports whether the middle part of a SLES image name is a plain
+// release, i.e. an optional service pack or minor release followed by the
+// vDATE stamp, without any vendor variant in between.
+func suseVersion(middle string) bool {
+	release, rest, found := strings.Cut(middle, "-")
+	if found {
+		release = strings.TrimPrefix(release, "sp")
+		if !onlyDigits(release) {
+			return false
+		}
+		middle = rest
+	}
+	date, found := strings.CutPrefix(middle, "v")
+	return found && onlyDigits(date)
+}
+
+func imageArchitectures(architecture ec2_types.ArchitectureValues) (string, string, error) {
 	switch architecture {
 	case ec2_types.ArchitectureValuesX8664:
-		return "amd64", nil
+		return "amd64", "x86_64", nil
 	case ec2_types.ArchitectureValuesArm64:
-		return "arm64", nil
+		return "arm64", "arm64", nil
 	default:
-		return "", fmt.Errorf("unsupported Debian architecture: %s", architecture)
+		return "", "", fmt.Errorf("unsupported image alias architecture: %s", architecture)
 	}
+}
+
+func numericVersion(version string) bool {
+	if version == "" || strings.HasPrefix(version, ".") || strings.HasSuffix(version, ".") {
+		return false
+	}
+	for part := range strings.SplitSeq(version, ".") {
+		if !onlyDigits(part) {
+			return false
+		}
+	}
+	return true
+}
+
+func onlyDigits(value string) bool {
+	if value == "" {
+		return false
+	}
+	for _, char := range value {
+		if char < '0' || char > '9' {
+			return false
+		}
+	}
+	return true
 }

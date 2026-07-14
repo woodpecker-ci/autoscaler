@@ -14,7 +14,7 @@ var ProviderFlags = []cli.Flag{
 	},
 	&cli.StringFlag{
 		Name:     "aws-ami-id",
-		Usage:    "AMI ID or versioned Debian alias such as debian-13; architecture and region come from the instance type",
+		Usage:    "AMI ID or alias (ubuntu-<version>-server, amazon, suse[-<version>], debian-<version>); architecture and region come from the instance type",
 		Value:    "ubuntu-26.04-server",
 		Sources:  cli.EnvVars("WOODPECKER_AWS_AMI_ID"),
 		Category: Category,
