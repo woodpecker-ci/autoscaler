@@ -298,6 +298,8 @@ var capacityErrorCodes = map[string]bool{
 	"SpotMaxPriceTooLow":           true,
 	// Not enough spare capacity to fulfill the Spot request right now.
 	"UnfulfillableCapacity": true,
+	// Instance type rejected for the account, e.g. not Free Tier eligible.
+	"InvalidParameterCombination": true,
 }
 
 // isCapacityError reports whether err is an AWS capacity error, for which

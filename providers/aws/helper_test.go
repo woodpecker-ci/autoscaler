@@ -371,6 +371,7 @@ func TestIsCapacityError(t *testing.T) {
 		"MaxSpotInstanceCountExceeded",
 		"SpotMaxPriceTooLow",
 		"UnfulfillableCapacity",
+		"InvalidParameterCombination",
 	} {
 		assert.True(t, isCapacityError(fmt.Errorf("wrapped: %w", &apiError{code: code})), code)
 	}
