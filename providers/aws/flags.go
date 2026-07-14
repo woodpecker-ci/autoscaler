@@ -6,15 +6,16 @@ const Category = "AWS"
 
 var ProviderFlags = []cli.Flag{
 	// aws
-	&cli.StringFlag{
+	&cli.StringSliceFlag{
 		Name:     "aws-instance-type",
-		Usage:    "EC2 instance type",
+		Usage:    "EC2 instance types, optionally with region as 'type:region'; tried in order as deploy fallbacks",
 		Sources:  cli.EnvVars("WOODPECKER_AWS_INSTANCE_TYPE"),
 		Category: Category,
 	},
 	&cli.StringFlag{
 		Name:     "aws-ami-id",
-		Usage:    "AMI id",
+		Usage:    "AMI ID or versioned Debian alias such as debian-13; architecture and region come from the instance type",
+		Value:    "ubuntu-26.04-server",
 		Sources:  cli.EnvVars("WOODPECKER_AWS_AMI_ID"),
 		Category: Category,
 	},
@@ -25,14 +26,27 @@ var ProviderFlags = []cli.Flag{
 		Category: Category,
 	},
 	&cli.StringFlag{
+		Name:     "aws-access-key-id",
+		Usage:    "AWS access key ID",
+		Sources:  cli.EnvVars("WOODPECKER_AWS_ACCESS_KEY_ID", "AWS_ACCESS_KEY_ID"),
+		Category: Category,
+	},
+	&cli.StringFlag{
+		Name:     "aws-secret-access-key",
+		Usage:    "AWS secret access key",
+		Sources:  cli.EnvVars("WOODPECKER_AWS_SECRET_ACCESS_KEY", "AWS_SECRET_ACCESS_KEY"),
+		Category: Category,
+	},
+	&cli.StringFlag{
 		Name:     "aws-region",
-		Usage:    "AWS region",
+		Usage:    "default AWS region for unqualified instance types and resources",
+		Value:    "us-east-1",
 		Sources:  cli.EnvVars("WOODPECKER_AWS_REGION"),
 		Category: Category,
 	},
 	&cli.StringSliceFlag{
 		Name:     "aws-subnets",
-		Usage:    "VPC subnets IDs, e.g. subnet-0987a87c8b37348ef",
+		Usage:    "VPC subnet IDs, optionally with region as 'subnet:region'",
 		Sources:  cli.EnvVars("WOODPECKER_AWS_SUBNETS"),
 		Category: Category,
 	},
@@ -44,7 +58,7 @@ var ProviderFlags = []cli.Flag{
 	},
 	&cli.StringSliceFlag{
 		Name:     "aws-security-groups",
-		Usage:    "security groups attached to EC2 instances",
+		Usage:    "security group IDs, optionally with region as 'group:region'",
 		Sources:  cli.EnvVars("WOODPECKER_AWS_SECURITY_GROUPS"),
 		Category: Category,
 	},
