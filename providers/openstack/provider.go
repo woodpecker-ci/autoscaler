@@ -65,10 +65,10 @@ func New(ctx context.Context, c *cli.Command, cfg *config.Config) (types.Provide
 	}
 
 	if p.flavorName != "" && p.flavorRef != "" {
-		return nil, fmt.Errorf("You must set either Flavor Name or Flavor Ref")
+		return nil, fmt.Errorf("you must set either Flavor Name or Flavor Ref")
 	}
 	if p.imageName != "" && p.imageRef != "" {
-		return nil, fmt.Errorf("You must set either Image Name or Image Ref")
+		return nil, fmt.Errorf("you must set either Image Name or Image Ref")
 	}
 
 	// Parse metadata
