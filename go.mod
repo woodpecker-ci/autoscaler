@@ -10,8 +10,8 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ec2 v1.316.1
 	github.com/docker/go-units v0.5.0
 	github.com/equinix/equinix-sdk-go v0.66.0
+	github.com/gophercloud/gophercloud/v2 v2.13.0
 	github.com/hetznercloud/hcloud-go/v2 v2.44.0
-	github.com/gophercloud/gophercloud/v2 v2.12.0
 	github.com/joho/godotenv v1.5.1
 	github.com/linode/linodego/v2 v2.4.1
 	github.com/rs/zerolog v1.35.1
