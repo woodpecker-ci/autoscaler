@@ -130,10 +130,4 @@ var ProviderFlags = []cli.Flag{
 		Sources:  cli.EnvVars("WOODPECKER_OPENSTACK_KEYPAIR"),
 		Category: category,
 	},
-	&cli.StringSliceFlag{
-		Name:     "openstack-metadata",
-		Usage:    "OpenStack server metadata (key=value) (optional)",
-		Sources:  cli.EnvVars("WOODPECKER_OPENSTACK_METADATA"),
-		Category: category,
-	},
 }

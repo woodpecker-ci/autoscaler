@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strconv"
-	"strings"
 
 	"github.com/gophercloud/gophercloud/v2"
 	"github.com/gophercloud/gophercloud/v2/openstack"
@@ -71,15 +70,9 @@ func New(ctx context.Context, c *cli.Command, cfg *config.Config) (types.Provide
 		return nil, fmt.Errorf("you must set either Image Name or Image Ref")
 	}
 
-	// Parse metadata
+	// Prepare metadata
 	p.metadata = map[string]string{
 		labelPool: cfg.PoolID,
-	}
-	for _, m := range c.StringSlice("openstack-metadata") {
-		key, value, ok := strings.Cut(m, "=")
-		if ok {
-			p.metadata[key] = value
-		}
 	}
 
 	// Authenticate with OpenStack
