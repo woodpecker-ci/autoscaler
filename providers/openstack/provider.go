@@ -263,13 +263,18 @@ func (p *provider) findServerIDByName(ctx context.Context, name string) (string,
 		return "", fmt.Errorf("servers.ExtractServers: %w", err)
 	}
 
+	serverID := ""
 	for _, s := range allServers {
-		if s.Name == name {
-			return s.ID, nil
+		if s.Name != name || s.Metadata[labelPool] != p.config.PoolID {
+			continue
 		}
+		if serverID != "" {
+			return "", fmt.Errorf("multiple servers found with name %q in pool %q", name, p.config.PoolID)
+		}
+		serverID = s.ID
 	}
 
-	return "", nil
+	return serverID, nil
 }
 
 func (p *provider) BillingModel() types.BillingModel {

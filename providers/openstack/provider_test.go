@@ -425,7 +425,7 @@ func TestRemoveAgent(t *testing.T) {
 		// requested server back so the client-side match succeeds too.
 		assert.Equal(t, "^agent-1$", r.URL.Query().Get("name"))
 		writeJSON(w, http.StatusOK, `{"servers":[
-			{"id":"srv-1","name":"agent-1","status":"ACTIVE","metadata":{}}
+			{"id":"srv-1","name":"agent-1","status":"ACTIVE","metadata":{"wp.autoscaler-pool":"pool-7"}}
 		]}`)
 	})
 
@@ -438,6 +438,34 @@ func TestRemoveAgent(t *testing.T) {
 	err := p.RemoveAgent(t.Context(), &woodpecker.Agent{Name: "agent-1"})
 	require.NoError(t, err)
 	assert.True(t, deleted, "the matching server should be deleted")
+}
+
+func TestRemoveAgentIgnoresServerFromOtherPool(t *testing.T) {
+	p, mux := newTestProvider(t)
+
+	mux.HandleFunc("GET /servers/detail", func(w http.ResponseWriter, _ *http.Request) {
+		writeJSON(w, http.StatusOK, `{"servers":[
+			{"id":"srv-1","name":"agent-1","status":"ACTIVE","metadata":{"wp.autoscaler-pool":"pool-99"}}
+		]}`)
+	})
+
+	err := p.RemoveAgent(t.Context(), &woodpecker.Agent{Name: "agent-1"})
+	require.NoError(t, err)
+}
+
+func TestRemoveAgentRejectsAmbiguousServers(t *testing.T) {
+	p, mux := newTestProvider(t)
+
+	mux.HandleFunc("GET /servers/detail", func(w http.ResponseWriter, _ *http.Request) {
+		writeJSON(w, http.StatusOK, `{"servers":[
+			{"id":"srv-1","name":"agent-1","status":"ACTIVE","metadata":{"wp.autoscaler-pool":"pool-7"}},
+			{"id":"srv-2","name":"agent-1","status":"ACTIVE","metadata":{"wp.autoscaler-pool":"pool-7"}}
+		]}`)
+	})
+
+	err := p.RemoveAgent(t.Context(), &woodpecker.Agent{Name: "agent-1"})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "multiple servers")
 }
 
 func TestRemoveAgentNotFound(t *testing.T) {
