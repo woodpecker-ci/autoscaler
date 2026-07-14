@@ -375,6 +375,30 @@ func TestDeployAgentCreateError(t *testing.T) {
 	assert.Contains(t, err.Error(), "servers.Create")
 }
 
+func TestDeployAgentRemovesServerWhenWaitFails(t *testing.T) {
+	p, mux := newTestProvider(t)
+	p.flavorRef = "flavor-123"
+	p.imageRef = "image-456"
+
+	mux.HandleFunc("POST /servers", func(w http.ResponseWriter, _ *http.Request) {
+		writeJSON(w, http.StatusAccepted, `{"server":{"id":"srv-1","status":"BUILD"}}`)
+	})
+	mux.HandleFunc("GET /servers/srv-1", func(w http.ResponseWriter, _ *http.Request) {
+		writeJSON(w, http.StatusInternalServerError, `{"error":"boom"}`)
+	})
+
+	deleted := false
+	mux.HandleFunc("DELETE /servers/srv-1", func(w http.ResponseWriter, _ *http.Request) {
+		deleted = true
+		w.WriteHeader(http.StatusNoContent)
+	})
+
+	err := p.DeployAgent(t.Context(), &woodpecker.Agent{Name: "agent-1"})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "servers.WaitForStatus")
+	assert.True(t, deleted, "server should be deleted after waiting for ACTIVE fails")
+}
+
 func TestListDeployedAgentNames(t *testing.T) {
 	p, mux := newTestProvider(t)
 
