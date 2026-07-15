@@ -130,3 +130,21 @@ func TestDeployAgentFallback(t *testing.T) {
 		assert.ErrorContains(t, err, "all 2 deploy candidates out of capacity")
 	})
 }
+
+func TestRemoveAgentSkipsOSShutdown(t *testing.T) {
+	agent := &woodpecker.Agent{Name: "pool-1-agent-abcd"}
+
+	client := mocks.NewMockClient(t)
+	mockAgentVisible(client, agent.Name)
+	client.On("TerminateInstances", mock.Anything,
+		mock.MatchedBy(func(in *ec2.TerminateInstancesInput) bool {
+			return assert.ObjectsAreEqual([]string{"i-1"}, in.InstanceIds) &&
+				aws.ToBool(in.SkipOsShutdown)
+		}),
+		mock.Anything).
+		Return(&ec2.TerminateInstancesOutput{}, nil).Once()
+
+	p := newTestProvider(client)
+	p.regions = []string{"eu-central-1"}
+	assert.NoError(t, p.RemoveAgent(t.Context(), agent))
+}

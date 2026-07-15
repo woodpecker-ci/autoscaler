@@ -304,6 +304,9 @@ func (p *provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) err
 
 	_, err = p.client.TerminateInstances(ctx, &ec2.TerminateInstancesInput{
 		InstanceIds: []string{*instance.InstanceId},
+		// Skip the graceful OS shutdown so an unresponsive or hung guest
+		// cannot block termination and leave a dangling instance behind.
+		SkipOsShutdown: aws.Bool(true),
 	}, regionOpt(region))
 	return err
 }
