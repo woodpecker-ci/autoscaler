@@ -32,6 +32,7 @@
 
 ### 📦️ Dependency
 
+- Update golang.org/x/exp digest to 764159d [[#685](https://github.com/woodpecker-ci/autoscaler/pull/685)]
 - Update docker.io/woodpeckerci/plugin-ready-release-go Docker tag to v4.1.2 [[#683](https://github.com/woodpecker-ci/autoscaler/pull/683)]
 - Update pre-commit hook igorshubovych/markdownlint-cli to v0.49.1 [[#684](https://github.com/woodpecker-ci/autoscaler/pull/684)]
 - Update golang deps non-major [[#681](https://github.com/woodpecker-ci/autoscaler/pull/681)]
