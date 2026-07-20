@@ -33,6 +33,20 @@ func (a *Autoscaler) loadAgents(_ context.Context) error {
 		}
 	}
 
+	// Attribute agents that have not connected yet to the capability they
+	// were deployed for, so the planner counts them as capacity while they
+	// boot. Once an agent reports its own identity — or is gone — the
+	// deploy record has served its purpose and is dropped.
+	for name, capability := range a.pendingDeploys {
+		agent, ok := a.agents[name]
+		if !ok || agent.Platform != "" || agent.Backend != "" {
+			delete(a.pendingDeploys, name)
+			continue
+		}
+		agent.Platform = capability.Platform
+		agent.Backend = string(capability.Backend)
+	}
+
 	return nil
 }
 
@@ -85,6 +99,16 @@ func (a *Autoscaler) createAgents(ctx context.Context, bucket agentBucket, amoun
 		if err := a.provider.DeployAgent(ctx, agent, bucket.Capability); err != nil {
 			return fmt.Errorf("types.DeployAgent: %w", err)
 		}
+
+		// Remember what this agent was deployed for; until it connects and
+		// reports its own identity, the planner attributes it to this bucket
+		// (see loadAgents) instead of re-provisioning the same demand.
+		if a.pendingDeploys == nil {
+			a.pendingDeploys = make(map[string]types.Capability)
+		}
+		a.pendingDeploys[agent.Name] = bucket.Capability
+		agent.Platform = bucket.Capability.Platform
+		agent.Backend = string(bucket.Capability.Backend)
 
 		a.agents[agent.Name] = agent
 	}

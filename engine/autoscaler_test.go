@@ -341,6 +341,10 @@ func Test_createAgents(t *testing.T) {
 
 		err := autoscaler.createAgents(ctx, bucket, 1)
 		assert.NoError(t, err)
+
+		// The deploy capability is recorded so the planner can attribute
+		// the agent to its bucket before it first connects.
+		assert.Equal(t, dockerAmd64Cap, autoscaler.pendingDeploys["pool-1-agent-1"])
 	})
 
 	t.Run("reactivates a matching no-schedule agent before creating new ones", func(t *testing.T) {
@@ -401,6 +405,42 @@ func Test_createAgents(t *testing.T) {
 		err := autoscaler.createAgents(ctx, bucket, 1)
 		assert.NoError(t, err)
 	})
+}
+
+func Test_loadAgents_attributesPendingDeploys(t *testing.T) {
+	zerolog.SetGlobalLevel(zerolog.ErrorLevel)
+	client := mocks_server.NewMockClient(t)
+	client.On("AgentList").Return([]*woodpecker.Agent{
+		// still booting: registered but never connected, reports no identity
+		{ID: 1, Name: "pool-1-agent-boot"},
+		// connected since last cycle: self-reported identity wins
+		{ID: 2, Name: "pool-1-agent-up", Platform: "linux/arm64", Backend: "docker", LastContact: 1},
+	}, nil)
+
+	autoscaler := Autoscaler{
+		client: client,
+		config: &config.Config{PoolID: "1"},
+		pendingDeploys: map[string]types.Capability{
+			"pool-1-agent-boot": dockerAmd64Cap,
+			"pool-1-agent-up":   dockerAmd64Cap, // stale: agent connected as arm64
+			"pool-1-agent-gone": dockerAmd64Cap, // stale: agent no longer exists
+		},
+	}
+
+	assert.NoError(t, autoscaler.loadAgents(t.Context()))
+
+	// The booting agent is attributed to its deploy capability so the planner
+	// counts it as bucket capacity while startup outlasts the interval.
+	assert.Equal(t, "linux/amd64", autoscaler.agents["pool-1-agent-boot"].Platform)
+	assert.Equal(t, "docker", autoscaler.agents["pool-1-agent-boot"].Backend)
+
+	// A connected agent keeps its self-reported identity.
+	assert.Equal(t, "linux/arm64", autoscaler.agents["pool-1-agent-up"].Platform)
+
+	// Records for connected or vanished agents are pruned; the booting one stays.
+	assert.Equal(t, map[string]types.Capability{
+		"pool-1-agent-boot": dockerAmd64Cap,
+	}, autoscaler.pendingDeploys)
 }
 
 func Test_drainUnmatchedAgents(t *testing.T) {

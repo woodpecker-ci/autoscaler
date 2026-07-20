@@ -29,6 +29,18 @@ type Autoscaler struct {
 	provider             types.Provider
 	providerCapabilities []types.Capability
 	scope                poolScope
+
+	// pendingDeploys remembers, by agent name, the capability each agent was
+	// deployed for until it first connects. A freshly deployed agent reports
+	// no platform or backend before its first contact, so without this record
+	// it would match no bucket and the planner would re-provision the same
+	// demand every cycle while startup takes longer than the reconciliation
+	// interval. Entries are pruned once the agent connects (its self-reported
+	// identity wins from then on) or disappears. The record is in-memory
+	// only — after an autoscaler restart, agents still booting are
+	// unattributed until they connect, and scale-up in that window is bounded
+	// by the MaxAgents footprint as before.
+	pendingDeploys map[string]types.Capability
 }
 
 // NewAutoscaler creates a new Autoscaler instance.
@@ -45,6 +57,7 @@ func NewAutoscaler(ctx context.Context, p types.Provider, client server.Client, 
 		client:               client,
 		config:               config,
 		agents:               make(map[string]*woodpecker.Agent),
+		pendingDeploys:       make(map[string]types.Capability),
 		providerCapabilities: caps,
 		scope:                instanceAdminPoolScope(),
 	}, nil
