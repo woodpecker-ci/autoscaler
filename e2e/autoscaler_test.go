@@ -261,3 +261,18 @@ func TestAutoscalerReconcilesProviderServerDrift(t *testing.T) {
 	require.Empty(t, h.provider.deployed, "the provider-only ghost is torn down")
 	require.Empty(t, h.woodpecker.agents, "the server-only orphan is deregistered")
 }
+
+// When the provider reports no capabilities (e.g. its API call failed) the
+// planner has no safe basis to act: it must not scale for queued work and must
+// not drain the agents already running, treating "unknown" as "hold".
+func TestAutoscalerHoldsSteadyWithoutProviderCapabilities(t *testing.T) {
+	h := newHarness(t, testConfig(1, 3)) // no capabilities offered
+	h.addConnectedAgent(t, "pool-e2e-agent-standing", dockerAMD64)
+	h.woodpecker.queue.Pending = []woodpecker.Task{
+		realWorkflowTask("build-amd64", "linux/amd64"),
+	}
+
+	h.reconcile(t)
+	require.Len(t, h.provider.deployed, 1, "unknown capabilities must not drain the fleet")
+	require.Len(t, h.woodpecker.agents, 1, "and must not scale for demand it cannot place")
+}
