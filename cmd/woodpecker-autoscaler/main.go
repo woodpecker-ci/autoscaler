@@ -109,10 +109,9 @@ func run(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("can't parse agent-idle-timeout: %w", err)
 	}
 
-	autoscaler := engine.NewAutoscaler(provider, client, config)
-
-	if err := autoscaler.GetCaps(ctx); err != nil {
-		return fmt.Errorf("could not query provider capabilities: %w", err)
+	autoscaler, err := engine.NewAutoscaler(provider, client, config)
+	if err != nil {
+		return fmt.Errorf("could not create autoscaler: %w", err)
 	}
 
 	config.AgentBillingTeardownMargin, err = time.ParseDuration(cmd.String("agent-billing-teardown-margin"))

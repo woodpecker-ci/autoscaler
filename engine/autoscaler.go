@@ -26,18 +26,19 @@ type Autoscaler struct {
 // NewAutoscaler creates a new Autoscaler instance.
 // It takes in a Provider, Client and Config, and returns a configured
 // Autoscaler struct.
-func NewAutoscaler(p types.Provider, client server.Client, config *config.Config) Autoscaler {
-	return Autoscaler{
-		provider: p,
-		client:   client,
-		config:   config,
-		agents:   make(map[string]*woodpecker.Agent),
+func NewAutoscaler(p types.Provider, client server.Client, config *config.Config) (Autoscaler, error) {
+	caps, err := p.Capabilities(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("could not query provider capabilities: %w", err)
 	}
-}
 
-func (a *Autoscaler) GetCaps(ctx context.Context) (err error) {
-	a.providerCapabilities, err = a.provider.Capabilities(ctx)
-	return err
+	return Autoscaler{
+		provider:             p,
+		client:               client,
+		config:               config,
+		agents:               make(map[string]*woodpecker.Agent),
+		providerCapabilities: caps,
+	}, nil
 }
 
 // inTeardownWindow reports whether the agent is currently within the teardown
