@@ -101,39 +101,67 @@ func (a *Autoscaler) drainAgents(_ context.Context, bucket agentBucket, amount i
 		if drained >= amount {
 			break
 		}
-		// agent is already marked for draining
-		if agent.NoSchedule {
-			continue
-		}
 		// only drain agents that belong to this bucket
 		if !agentMatchesCapability(agent, bucket.Capability) {
 			continue
 		}
-		// agent has never contacted the server => not ready for draining
-		if agent.LastContact == 0 {
+		if !a.agentReadyForDrain(agent) {
 			continue
 		}
-
-		if a.config.BillingModel == types.BillingHourlyRoundUp {
-			// hourly-round-up: the hour is already paid for, so keep the
-			// agent schedulable until just before its hour boundary even
-			// while idle, then drain it inside the teardown window.
-			if !a.inTeardownWindow(agent) {
-				continue
-			}
-		} else if !a.idleLongEnough(agent) {
-			// agent has recently done work => not ready for draining
-			continue
-		}
-
-		log.Info().Str("agent", agent.Name).Msg("drain agent")
-		agent.NoSchedule = true
-		if _, err := a.client.AgentUpdate(agent); err != nil {
-			return fmt.Errorf("client.AgentUpdate: %w", err)
+		if err := a.markAgentForDrain(agent); err != nil {
+			return err
 		}
 		drained++
 	}
 
+	return nil
+}
+
+// agentReadyForDrain reports whether an idle agent may be drained now: it must
+// be schedulable, have contacted the server at least once, and — depending on
+// the billing model — be idle past the timeout or inside its teardown window.
+func (a *Autoscaler) agentReadyForDrain(agent *woodpecker.Agent) bool {
+	// never contacted the server, or already draining => not ready
+	if agent.NoSchedule || agent.LastContact == 0 {
+		return false
+	}
+	if a.config.BillingModel == types.BillingHourlyRoundUp {
+		// hourly-round-up: the hour is already paid for, so keep the agent
+		// schedulable until just before its hour boundary even while idle,
+		// then drain it inside the teardown window.
+		return a.inTeardownWindow(agent)
+	}
+	return a.idleLongEnough(agent)
+}
+
+// markAgentForDrain flags an agent NoSchedule on the woodpecker server so it
+// stops picking up work and can later be removed.
+func (a *Autoscaler) markAgentForDrain(agent *woodpecker.Agent) error {
+	log.Info().Str("agent", agent.Name).Msg("drain agent")
+	agent.NoSchedule = true
+	if _, err := a.client.AgentUpdate(agent); err != nil {
+		return fmt.Errorf("client.AgentUpdate: %w", err)
+	}
+	return nil
+}
+
+// drainUnmatchedAgents drains idle agents whose capability no longer maps to
+// any current bucket (e.g. a provider config change). Such agents would
+// otherwise hold a provider slot against MaxAgents and block a replacement
+// with a needed capability. An empty bucket list — no known capabilities, e.g.
+// a failed provider query — is treated as "unknown", not "drain everything".
+func (a *Autoscaler) drainUnmatchedAgents(buckets []agentBucket) error {
+	if len(buckets) == 0 {
+		return nil
+	}
+	for _, agent := range a.agents {
+		if matchAgentToBucket(agent, buckets) >= 0 || !a.agentReadyForDrain(agent) {
+			continue
+		}
+		if err := a.markAgentForDrain(agent); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

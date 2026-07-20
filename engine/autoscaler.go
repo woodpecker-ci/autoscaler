@@ -62,6 +62,9 @@ func (a *Autoscaler) Reconcile(ctx context.Context) error {
 	if err := a.loadAgents(ctx); err != nil {
 		return fmt.Errorf("loading agents failed: %w", err)
 	}
+	if err := a.drainUnmatchedAgents(a.agentBuckets()); err != nil {
+		return fmt.Errorf("draining agents with unavailable capabilities failed: %w", err)
+	}
 
 	queueInfo, err := a.client.QueueInfo()
 	if err != nil {

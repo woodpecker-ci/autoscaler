@@ -376,6 +376,59 @@ func Test_createAgents(t *testing.T) {
 	})
 }
 
+func Test_drainUnmatchedAgents(t *testing.T) {
+	client := mocks_server.NewMockClient(t)
+	autoscaler := Autoscaler{
+		client: client,
+		agents: map[string]*woodpecker.Agent{
+			// idle, connected, capability no longer offered by the provider
+			"pool-1-agent-old": {
+				ID:          1,
+				Name:        "pool-1-agent-old",
+				Platform:    "linux/arm64",
+				Backend:     "docker",
+				LastContact: time.Now().Unix(),
+				LastWork:    time.Now().Add(-2 * time.Minute).Unix(),
+			},
+			// still starting: no platform/backend and never contacted server
+			"pool-1-agent-starting": {
+				ID:   2,
+				Name: "pool-1-agent-starting",
+			},
+		},
+		config: &config.Config{AgentIdleTimeout: time.Minute},
+	}
+	buckets := bucketsForTest([]types.Capability{dockerAmd64Cap}, nil)
+
+	client.On("AgentUpdate", mock.MatchedBy(func(agent *woodpecker.Agent) bool {
+		return agent.ID == 1 && agent.NoSchedule
+	})).Return(nil, nil)
+
+	assert.NoError(t, autoscaler.drainUnmatchedAgents(buckets))
+	assert.True(t, autoscaler.agents["pool-1-agent-old"].NoSchedule, "drifted idle agent is drained")
+	assert.False(t, autoscaler.agents["pool-1-agent-starting"].NoSchedule, "unconnected agent is protected")
+}
+
+func Test_drainUnmatchedAgents_withoutCapabilities(t *testing.T) {
+	// An empty capability snapshot must not drain the whole pool.
+	autoscaler := Autoscaler{
+		agents: map[string]*woodpecker.Agent{
+			"pool-1-agent-1": {
+				ID:          1,
+				Name:        "pool-1-agent-1",
+				Platform:    "linux/amd64",
+				Backend:     "docker",
+				LastContact: time.Now().Unix(),
+				LastWork:    time.Now().Add(-2 * time.Minute).Unix(),
+			},
+		},
+		config: &config.Config{AgentIdleTimeout: time.Minute},
+	}
+
+	assert.NoError(t, autoscaler.drainUnmatchedAgents(nil))
+	assert.False(t, autoscaler.agents["pool-1-agent-1"].NoSchedule)
+}
+
 func Test_cleanupDanglingAgents(t *testing.T) {
 	t.Run("should remove agent that is only present on woodpecker (not provider)", func(t *testing.T) {
 		ctx := t.Context()
