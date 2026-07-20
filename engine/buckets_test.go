@@ -13,8 +13,9 @@ func bucketsForTest(caps []types.Capability, extra map[string]string) []agentBuc
 	out := make([]agentBucket, 0, len(caps))
 	for _, c := range caps {
 		out = append(out, agentBucket{
-			Capability: c,
-			Labels:     agentLabelsFor(c, extra),
+			Capability:       c,
+			Labels:           agentLabelsFor(c, extra),
+			ConfiguredLabels: extra,
 		})
 	}
 	return out
@@ -72,18 +73,18 @@ func Test_matchAgentToBucket(t *testing.T) {
 		assert.Equal(t, -1, idx)
 	})
 
-	t.Run("ignores custom labels — match is on (platform, backend) only", func(t *testing.T) {
-		// Even if the operator changes ExtraAgentLabels between reconciles
-		// and the agent's CustomLabels drift, we still find the right
-		// bucket because (platform, backend) is stable.
+	t.Run("rejects a connected agent whose configured labels drifted", func(t *testing.T) {
+		// Platform/backend remain the agent's stable machine identity, but
+		// stale custom labels mean it cannot serve the bucket's current tasks.
 		idx := matchAgentToBucket(&woodpecker.Agent{
-			Platform: "linux/amd64",
-			Backend:  "docker",
+			Platform:    "linux/amd64",
+			Backend:     "docker",
+			LastContact: 1,
 			CustomLabels: map[string]string{
-				"region": "europe", // not in bucket extras
+				"region": "europe",
 			},
 		}, buckets)
-		assert.Equal(t, 0, idx)
+		assert.Equal(t, -1, idx)
 	})
 }
 

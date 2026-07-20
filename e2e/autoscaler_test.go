@@ -114,6 +114,31 @@ func TestAutoscalerRetiresAgentsWithUnavailableCapabilities(t *testing.T) {
 	require.Empty(t, h.woodpecker.agents)
 }
 
+// A config edit can leave a connected agent advertising stale custom labels.
+// It still has the right machine capability, but cannot run work requiring the
+// replacement labels and must not be counted or reactivated for that bucket.
+func TestAutoscalerReplacesAgentsWithStaleCustomLabels(t *testing.T) {
+	cfg := testConfig(0, 1)
+	cfg.ExtraAgentLabels = map[string]string{"region": "us"}
+	h := newHarness(t, cfg, dockerAMD64)
+	h.addConnectedAgent(t, "pool-e2e-agent-old-labels", dockerAMD64)
+
+	old := h.woodpecker.agentByName(t, "pool-e2e-agent-old-labels")
+	old.CustomLabels = map[string]string{"region": "eu"}
+	h.woodpecker.put(old)
+	h.woodpecker.queue.Pending = []woodpecker.Task{
+		realWorkflowTask("build-us", "linux/amd64"),
+	}
+	h.woodpecker.queue.Pending[0].Labels["region"] = "us"
+
+	h.reconcile(t)
+	require.Empty(t, h.provider.deployed, "stale-label agent is retired before replacement at MaxAgents")
+
+	h.reconcile(t)
+	require.Len(t, h.provider.deployed, 1)
+	require.NotContains(t, h.provider.deployed, "pool-e2e-agent-old-labels")
+}
+
 // WorkflowsPerAgent lets one agent take several queued workflows, so the pool
 // scales to ceil(load/WPA) agents rather than one per task.
 func TestAutoscalerPacksWorkflowsPerAgent(t *testing.T) {

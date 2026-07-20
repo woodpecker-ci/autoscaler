@@ -79,7 +79,7 @@ func (a *Autoscaler) createAgents(ctx context.Context, bucket agentBucket, amoun
 		if !agent.NoSchedule {
 			continue
 		}
-		if !agentMatchesCapability(agent, bucket.Capability) {
+		if !agentMatchesBucket(agent, bucket) {
 			continue
 		}
 
@@ -136,7 +136,7 @@ func (a *Autoscaler) drainAgents(_ context.Context, bucket agentBucket, amount i
 			break
 		}
 		// only drain agents that belong to this bucket
-		if !agentMatchesCapability(agent, bucket.Capability) {
+		if !agentMatchesBucket(agent, bucket) {
 			continue
 		}
 		if !a.agentReadyForDrain(agent) {
@@ -179,11 +179,11 @@ func (a *Autoscaler) markAgentForDrain(agent *woodpecker.Agent) error {
 	return nil
 }
 
-// drainUnmatchedAgents drains idle agents whose capability no longer maps to
-// any current bucket (e.g. a provider config change). Such agents would
-// otherwise hold a provider slot against MaxAgents and block a replacement
-// with a needed capability. An empty bucket list — no known capabilities, e.g.
-// a failed provider query — is treated as "unknown", not "drain everything".
+// drainUnmatchedAgents drains idle agents that no longer map to a current
+// bucket because their capability or configured labels changed. Such agents
+// would otherwise hold a provider slot against MaxAgents and block a usable
+// replacement. An empty bucket list — no known capabilities, e.g. a failed
+// provider query — is treated as "unknown", not "drain everything".
 func (a *Autoscaler) drainUnmatchedAgents(buckets []agentBucket) error {
 	if len(buckets) == 0 {
 		return nil

@@ -1,6 +1,8 @@
 package engine
 
 import (
+	"maps"
+
 	"go.woodpecker-ci.org/autoscaler/engine/types"
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
@@ -12,6 +14,9 @@ import (
 type agentBucket struct {
 	Capability types.Capability
 	Labels     agentLabelSet
+	// ConfiguredLabels is the exact custom-label generation deployed for this
+	// bucket. Connected agents from an older config must be replaced.
+	ConfiguredLabels map[string]string
 }
 
 // bucketState holds the per-bucket numbers the planner needs: how much
@@ -40,8 +45,9 @@ func (a *Autoscaler) agentBuckets() []agentBucket {
 	out := make([]agentBucket, 0, len(a.providerCapabilities))
 	for _, c := range a.providerCapabilities {
 		out = append(out, agentBucket{
-			Capability: c,
-			Labels:     a.scope.agentLabelsFor(c, a.config.ExtraAgentLabels),
+			Capability:       c,
+			Labels:           a.scope.agentLabelsFor(c, a.config.ExtraAgentLabels),
+			ConfiguredLabels: maps.Clone(a.config.ExtraAgentLabels),
 		})
 	}
 	return out
@@ -71,11 +77,23 @@ func agentMatchesCapability(agent *woodpecker.Agent, capability types.Capability
 		agent.Backend == string(capability.Backend)
 }
 
-// matchAgentToBucket returns the index of the bucket whose capability
-// matches the given agent, or -1 if none.
+// agentMatchesBucket reports whether an agent belongs to the current
+// generation of a bucket. Platform/backend identify the machine capability;
+// connected agents must also advertise the labels from the current config.
+// Never-connected agents have not reported CustomLabels yet, so their recorded
+// deploy capability is enough while they boot.
+func agentMatchesBucket(agent *woodpecker.Agent, bucket agentBucket) bool {
+	if !agentMatchesCapability(agent, bucket.Capability) {
+		return false
+	}
+	return agent.LastContact == 0 || maps.Equal(agent.CustomLabels, bucket.ConfiguredLabels)
+}
+
+// matchAgentToBucket returns the index of the current bucket generation the
+// given agent belongs to, or -1 if none.
 func matchAgentToBucket(agent *woodpecker.Agent, buckets []agentBucket) int {
 	for i, b := range buckets {
-		if agentMatchesCapability(agent, b.Capability) {
+		if agentMatchesBucket(agent, b) {
 			return i
 		}
 	}
