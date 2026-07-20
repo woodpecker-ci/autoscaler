@@ -81,9 +81,12 @@ func matchAgentToBucket(agent *woodpecker.Agent, buckets []agentBucket) int {
 	return -1
 }
 
-// computeBucketStates routes pending tasks, running tasks, and existing
-// pool agents to their buckets. Tasks that match no bucket are returned
-// in unmatchedPending/unmatchedRunning and don't influence scaling.
+// computeBucketStates routes pending tasks and pool agents to their buckets,
+// and attributes running work to the pool agent executing it (via AgentID).
+// Pending tasks matching no bucket are counted in unmatchedPending. Running
+// work on a pool agent whose capability no longer maps to a bucket is counted
+// in unmatchedRunning; running work on agents outside this pool (static
+// agents, or not yet assigned) is ignored because it is not this pool's demand.
 func computeBucketStates(
 	buckets []agentBucket,
 	pending, running []woodpecker.Task,
@@ -92,6 +95,26 @@ func computeBucketStates(
 	states = make([]bucketState, len(buckets))
 	for i, b := range buckets {
 		states[i].Bucket = b
+	}
+
+	// Index schedulable pool agents by their woodpecker ID and count them
+	// against their bucket in one pass, so running work can be attributed to
+	// the agent (and thus bucket) actually executing it.
+	poolAgentsByID := make(map[int64]*woodpecker.Agent, len(poolAgents))
+	for _, agent := range poolAgents {
+		if agent.NoSchedule {
+			continue
+		}
+		if agent.ID != 0 {
+			poolAgentsByID[agent.ID] = agent
+		}
+		i := matchAgentToBucket(agent, buckets)
+		if i < 0 {
+			// Agent matches no current bucket (e.g. config change). Leave it
+			// alone; the regular idle/stale paths will drain it.
+			continue
+		}
+		states[i].PoolAgents++
 	}
 
 	for _, t := range pending {
@@ -103,24 +126,17 @@ func computeBucketStates(
 		states[i].Pending++
 	}
 	for _, t := range running {
-		i := routeTaskToBucket(t, buckets)
+		agent, ok := poolAgentsByID[t.AgentID]
+		if !ok {
+			// Not running on a schedulable agent of this pool.
+			continue
+		}
+		i := matchAgentToBucket(agent, buckets)
 		if i < 0 {
 			unmatchedRunning++
 			continue
 		}
 		states[i].Running++
-	}
-	for _, ag := range poolAgents {
-		if ag.NoSchedule {
-			continue
-		}
-		i := matchAgentToBucket(ag, buckets)
-		if i < 0 {
-			// Agent doesn't match any current bucket (e.g. config change).
-			// Leave it alone — the regular idle/stale paths will drain it.
-			continue
-		}
-		states[i].PoolAgents++
 	}
 	return states, unmatchedPending, unmatchedRunning
 }

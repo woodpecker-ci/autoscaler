@@ -96,8 +96,9 @@ func Test_computeBucketStates(t *testing.T) {
 		{Labels: map[string]string{"platform": "linux/arm64"}},
 		{Labels: map[string]string{"backend": "local"}}, // unschedulable
 	}
+	// Running task is attributed to the pool agent executing it (AgentID).
 	running := []woodpecker.Task{
-		{Labels: map[string]string{"platform": "linux/arm64"}},
+		{AgentID: 3, Labels: map[string]string{"platform": "linux/arm64"}},
 	}
 
 	pool := map[string]*woodpecker.Agent{
@@ -118,6 +119,39 @@ func Test_computeBucketStates(t *testing.T) {
 	assert.Equal(t, 1, states[1].Pending)
 	assert.Equal(t, 1, states[1].Running)
 	assert.Equal(t, 1, states[1].PoolAgents) // drained one not counted
+}
+
+func Test_routeTaskToBucket_extraLabels(t *testing.T) {
+	// A configured wildcard label composes into routing: a task setting it
+	// still lands in the bucket.
+	buckets := bucketsForTest([]types.Capability{dockerAmd64Cap}, map[string]string{"region": "*"})
+	assert.Equal(t, 0, routeTaskToBucket(woodpecker.Task{
+		Labels: map[string]string{"platform": "linux/amd64", "region": "eu-west"},
+	}, buckets))
+}
+
+func Test_computeBucketStates_runningAttributedByAgentID(t *testing.T) {
+	buckets := bucketsForTest([]types.Capability{dockerAmd64Cap, dockerArm64Cap}, nil)
+	pool := map[string]*woodpecker.Agent{
+		"amd64":   {ID: 1, Name: "amd64", Platform: "linux/amd64", Backend: "docker"},
+		"arm64":   {ID: 2, Name: "arm64", Platform: "linux/arm64", Backend: "docker"},
+		"drained": {ID: 3, Name: "drained", Platform: "linux/arm64", Backend: "docker", NoSchedule: true},
+		"drift":   {ID: 4, Name: "drift", Platform: "linux/ppc64le", Backend: "docker"}, // matches no bucket
+	}
+	running := []woodpecker.Task{
+		{AgentID: 1},  // schedulable amd64 pool agent
+		{AgentID: 2},  // schedulable arm64 pool agent
+		{AgentID: 3},  // draining pool agent -> ignored
+		{AgentID: 4},  // config-drifted pool agent -> unmatched
+		{AgentID: 99}, // agent outside this pool -> ignored
+		{AgentID: 0},  // not yet assigned -> ignored
+	}
+
+	states, _, unmatchedRunning := computeBucketStates(buckets, nil, running, pool)
+
+	assert.Equal(t, 1, states[0].Running, "amd64 running attributed by AgentID")
+	assert.Equal(t, 1, states[1].Running, "arm64 running attributed by AgentID")
+	assert.Equal(t, 1, unmatchedRunning, "only work on a config-drifted pool agent is unmatched")
 }
 
 func Test_agentMatchesCapability(t *testing.T) {
