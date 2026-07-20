@@ -137,7 +137,7 @@ func (p *provider) setupKeyPair(ctx context.Context) error {
 func imageToGoArch(i govultr.OS) string {
 	switch i.Arch {
 	case "x64":
-		return "arm64"
+		return "amd64"
 	default:
 		return i.Arch
 	}
