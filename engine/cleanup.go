@@ -62,13 +62,18 @@ func (a *Autoscaler) cleanupStaleAgents(ctx context.Context) error {
 		}
 
 		lastContact := agent.LastContact
+		timeout := a.config.AgentInactivityTimeout
 
-		// if agent has never contacted the server, use the creation time
+		// An agent that has never contacted the server is judged from its
+		// creation time, against the boot deadline when one is configured.
 		if lastContact == 0 {
 			lastContact = agent.Created
+			if a.config.AgentCreationTimeout > 0 {
+				timeout = a.config.AgentCreationTimeout
+			}
 		}
 
-		if time.Since(time.Unix(lastContact, 0)) > a.config.AgentInactivityTimeout {
+		if time.Since(time.Unix(lastContact, 0)) > timeout {
 			err := a.removeAgent(ctx, agent, "hasn't connected to the server for a while")
 			if err != nil {
 				return err

@@ -104,6 +104,11 @@ func run(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("can't parse agent-inactivity-timeout: %w", err)
 	}
 
+	config.AgentCreationTimeout, err = time.ParseDuration(cmd.String("agent-creation-timeout"))
+	if err != nil {
+		return fmt.Errorf("can't parse agent-creation-timeout: %w", err)
+	}
+
 	config.AgentIdleTimeout, err = time.ParseDuration(cmd.String("agent-idle-timeout"))
 	if err != nil {
 		return fmt.Errorf("can't parse agent-idle-timeout: %w", err)

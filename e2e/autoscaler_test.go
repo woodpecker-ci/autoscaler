@@ -176,6 +176,39 @@ func TestAutoscalerDoesNotOverprovisionWhileAgentsBoot(t *testing.T) {
 	require.Len(t, h.woodpecker.agents, 2)
 }
 
+// An agent whose boot exceeds the creation timeout must not hold its bucket
+// slot forever: the planner stops counting it as capacity, provisions a
+// replacement, and the stale-cleanup path reaps the stuck machine.
+func TestAutoscalerReplacesAgentsStuckInBoot(t *testing.T) {
+	cfg := testConfig(0, 10)
+	cfg.AgentCreationTimeout = time.Minute
+	h := newHarness(t, cfg, dockerAMD64)
+	h.woodpecker.queue.Pending = []woodpecker.Task{
+		realWorkflowTask("build-1", "linux/amd64"),
+	}
+
+	t.Log("the first cycle provisions one agent for the pending workflow")
+	h.reconcile(t)
+	require.Len(t, h.provider.deployed, 1)
+	var stuck string
+	for name := range h.provider.deployed {
+		stuck = name
+	}
+
+	t.Log("within the creation timeout the booting agent covers the demand")
+	h.reconcile(t)
+	require.Len(t, h.provider.deployed, 1)
+
+	t.Log("past the creation timeout the stuck agent is replaced and reaped")
+	for _, agent := range h.woodpecker.agents {
+		agent.Created = time.Now().Add(-2 * time.Minute).Unix()
+	}
+	h.reconcile(t)
+	require.Len(t, h.provider.deployed, 1)
+	require.Len(t, h.woodpecker.agents, 1)
+	require.NotContains(t, h.provider.deployed, stuck, "the stuck boot must be torn down")
+}
+
 // A provisioned agent that registered but never phoned home, older than the
 // inactivity timeout, is a boot that silently failed. It holds a provider slot
 // forever unless reaped, so the stale-cleanup path must tear it down.

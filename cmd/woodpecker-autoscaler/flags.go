@@ -45,6 +45,12 @@ var flags = []cli.Flag{
 		Sources: cli.EnvVars("WOODPECKER_AGENT_INACTIVITY_TIMEOUT", "WOODPECKER_AGENT_ALLOWED_STARTUP_TIME"),
 	},
 	&cli.StringFlag{
+		Name:    "agent-creation-timeout",
+		Value:   "10m",
+		Usage:   "time a deployed agent is allowed to take for its first contact with the server before it is replaced and torn down, as duration string like 2h45m (https://pkg.go.dev/time#ParseDuration)",
+		Sources: cli.EnvVars("WOODPECKER_AGENT_CREATION_TIMEOUT"),
+	},
+	&cli.StringFlag{
 		Name:    "agent-idle-timeout",
 		Value:   "10m",
 		Usage:   "time an agent is allowed to be idle before it can be terminated as duration string like 2h45m (https://pkg.go.dev/time#ParseDuration)",

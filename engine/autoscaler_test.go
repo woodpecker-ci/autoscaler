@@ -412,18 +412,21 @@ func Test_loadAgents_attributesPendingDeploys(t *testing.T) {
 	client := mocks_server.NewMockClient(t)
 	client.On("AgentList").Return([]*woodpecker.Agent{
 		// still booting: registered but never connected, reports no identity
-		{ID: 1, Name: "pool-1-agent-boot"},
+		{ID: 1, Name: "pool-1-agent-boot", Created: time.Now().Unix()},
 		// connected since last cycle: self-reported identity wins
 		{ID: 2, Name: "pool-1-agent-up", Platform: "linux/arm64", Backend: "docker", LastContact: 1},
+		// booting longer than the creation timeout: a stuck boot
+		{ID: 3, Name: "pool-1-agent-stuck", Created: time.Now().Add(-2 * time.Minute).Unix()},
 	}, nil)
 
 	autoscaler := Autoscaler{
 		client: client,
-		config: &config.Config{PoolID: "1"},
+		config: &config.Config{PoolID: "1", AgentCreationTimeout: time.Minute},
 		pendingDeploys: map[string]types.Capability{
-			"pool-1-agent-boot": dockerAmd64Cap,
-			"pool-1-agent-up":   dockerAmd64Cap, // stale: agent connected as arm64
-			"pool-1-agent-gone": dockerAmd64Cap, // stale: agent no longer exists
+			"pool-1-agent-boot":  dockerAmd64Cap,
+			"pool-1-agent-up":    dockerAmd64Cap, // stale: agent connected as arm64
+			"pool-1-agent-gone":  dockerAmd64Cap, // stale: agent no longer exists
+			"pool-1-agent-stuck": dockerAmd64Cap, // stale: boot deadline exceeded
 		},
 	}
 
@@ -437,7 +440,12 @@ func Test_loadAgents_attributesPendingDeploys(t *testing.T) {
 	// A connected agent keeps its self-reported identity.
 	assert.Equal(t, "linux/arm64", autoscaler.agents["pool-1-agent-up"].Platform)
 
-	// Records for connected or vanished agents are pruned; the booting one stays.
+	// A boot past its deadline is no longer counted as bucket capacity, so
+	// the planner provisions a replacement while cleanup reaps the machine.
+	assert.Empty(t, autoscaler.agents["pool-1-agent-stuck"].Platform)
+
+	// Records for connected, vanished, or overdue agents are pruned; the
+	// still-booting one stays.
 	assert.Equal(t, map[string]types.Capability{
 		"pool-1-agent-boot": dockerAmd64Cap,
 	}, autoscaler.pendingDeploys)
@@ -614,6 +622,46 @@ func Test_cleanupStaleAgents(t *testing.T) {
 			client:   client,
 			config: &config.Config{
 				AgentInactivityTimeout: time.Minute * 15,
+			},
+		}
+
+		client.On("AgentTasksList", int64(2)).Return(nil, nil)
+		client.On("AgentDelete", int64(2)).Return(nil)
+		provider.On("RemoveAgent", mock.Anything, mock.MatchedBy(func(agent *woodpecker.Agent) bool {
+			return agent.ID == 2
+		})).Return(nil)
+
+		err := autoscaler.cleanupStaleAgents(ctx)
+		assert.NoError(t, err)
+	})
+
+	t.Run("judges never-connected agents against the creation timeout", func(t *testing.T) {
+		// The boot deadline is stricter than the inactivity timeout: a
+		// never-connected agent past it is reaped, while a connected agent of
+		// the same age with a recent heartbeat is untouched.
+		ctx := t.Context()
+		client := mocks_server.NewMockClient(t)
+		provider := mocks_provider.NewMockProvider(t)
+		autoscaler := Autoscaler{
+			agents: map[string]*woodpecker.Agent{
+				"connected agent": {
+					ID:          1,
+					Name:        "connected agent",
+					Created:     time.Now().Add(-time.Minute * 5).Unix(),
+					LastContact: time.Now().Unix(),
+				},
+				"stuck boot": {
+					ID:          2,
+					Name:        "stuck boot",
+					Created:     time.Now().Add(-time.Minute * 5).Unix(),
+					LastContact: 0,
+				},
+			},
+			provider: provider,
+			client:   client,
+			config: &config.Config{
+				AgentInactivityTimeout: time.Minute * 15,
+				AgentCreationTimeout:   time.Minute * 2,
 			},
 		}
 

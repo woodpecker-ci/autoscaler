@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/rs/zerolog/log"
 
@@ -35,11 +36,13 @@ func (a *Autoscaler) loadAgents(_ context.Context) error {
 
 	// Attribute agents that have not connected yet to the capability they
 	// were deployed for, so the planner counts them as capacity while they
-	// boot. Once an agent reports its own identity — or is gone — the
-	// deploy record has served its purpose and is dropped.
+	// boot. Once an agent reports its own identity, is gone, or has exceeded
+	// its boot deadline, the deploy record has served its purpose and is
+	// dropped — a stuck boot then stops covering demand and the planner
+	// provisions a replacement while cleanupStaleAgents reaps the machine.
 	for name, capability := range a.pendingDeploys {
 		agent, ok := a.agents[name]
-		if !ok || agent.Platform != "" || agent.Backend != "" {
+		if !ok || agent.Platform != "" || agent.Backend != "" || a.bootDeadlineExceeded(agent) {
 			delete(a.pendingDeploys, name)
 			continue
 		}
@@ -48,6 +51,13 @@ func (a *Autoscaler) loadAgents(_ context.Context) error {
 	}
 
 	return nil
+}
+
+// bootDeadlineExceeded reports whether an agent has been booting for longer
+// than the configured creation timeout. A zero timeout disables the deadline.
+func (a *Autoscaler) bootDeadlineExceeded(agent *woodpecker.Agent) bool {
+	return a.config.AgentCreationTimeout > 0 &&
+		time.Since(time.Unix(agent.Created, 0)) > a.config.AgentCreationTimeout
 }
 
 // createAgents deploys `amount` new agents into the given bucket.
