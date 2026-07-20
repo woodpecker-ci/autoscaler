@@ -238,3 +238,26 @@ func TestAutoscalerKeepsADrainingAgentThatStillRunsWork(t *testing.T) {
 	require.Empty(t, h.provider.deployed)
 	require.Empty(t, h.woodpecker.agents)
 }
+
+// Provider and server can disagree about which agents exist. The cleanup pass
+// reconciles both directions: an agent only the provider knows about is torn
+// down, and an agent only the server knows about is deregistered.
+func TestAutoscalerReconcilesProviderServerDrift(t *testing.T) {
+	h := newHarness(t, testConfig(0, 3), dockerAMD64)
+
+	// Only on the provider: a leaked machine the server never registered.
+	h.provider.deployed["pool-e2e-agent-ghost"] = dockerAMD64
+
+	// Only on the server: a registration with no backing machine.
+	orphan, err := h.woodpecker.AgentCreate(&woodpecker.Agent{Name: "pool-e2e-agent-orphan"})
+	require.NoError(t, err)
+	orphan.Platform = dockerAMD64.Platform
+	orphan.Backend = string(dockerAMD64.Backend)
+	orphan.LastContact = time.Now().Unix()
+	orphan.LastWork = time.Now().Unix()
+	h.woodpecker.put(orphan)
+
+	h.reconcile(t)
+	require.Empty(t, h.provider.deployed, "the provider-only ghost is torn down")
+	require.Empty(t, h.woodpecker.agents, "the server-only orphan is deregistered")
+}
