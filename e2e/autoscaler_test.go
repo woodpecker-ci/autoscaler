@@ -130,3 +130,17 @@ func TestAutoscalerPacksWorkflowsPerAgent(t *testing.T) {
 	require.Len(t, h.provider.deployed, 2)
 	require.Len(t, h.woodpecker.agents, 2)
 }
+
+// A pending workflow whose labels no provider capability can satisfy is
+// unschedulable here: spinning up agents that still cannot run it wouldn't
+// help, so the pool must stay put.
+func TestAutoscalerIgnoresUnschedulablePending(t *testing.T) {
+	h := newHarness(t, testConfig(0, 3), dockerAMD64)
+	h.woodpecker.queue.Pending = []woodpecker.Task{
+		realWorkflowTask("needs-arm", "linux/arm64"),
+	}
+
+	h.reconcile(t)
+	require.Empty(t, h.provider.deployed, "no bucket can serve arm64; do not scale")
+	require.Empty(t, h.woodpecker.agents)
+}
