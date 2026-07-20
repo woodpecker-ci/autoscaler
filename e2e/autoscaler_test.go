@@ -14,84 +14,101 @@ var (
 	dockerARM64 = types.Capability{Platform: "linux/arm64", Backend: types.BackendDocker}
 )
 
-func TestAutoscalerHandlesARealWorkflowLifecycle(t *testing.T) {
-	environment := newTestEnvironment(t, testConfig(0, 2), dockerAMD64, dockerARM64)
-	environment.woodpecker.queue.Pending = []woodpecker.Task{
+// A full workflow lifecycle: real queue labels route to per-platform agents,
+// reconciling during provisioning respects MaxAgents, running work is tracked
+// by agent, and idle agents are drained and removed.
+func TestAutoscalerHandlesAWorkflowLifecycle(t *testing.T) {
+	h := newHarness(t, testConfig(0, 2), dockerAMD64, dockerARM64)
+	h.woodpecker.queue.Pending = []woodpecker.Task{
 		realWorkflowTask("build-amd64", "linux/amd64"),
 		realWorkflowTask("build-arm64", "linux/arm64"),
 	}
 
-	t.Log("pending workflows create one agent for each required platform")
-	environment.reconcile(t)
-	require.Len(t, environment.provider.deployed, 2)
-	require.ElementsMatch(
-		t,
-		[]types.Capability{dockerAMD64, dockerARM64},
-		environment.provider.deployedCapabilities(),
-	)
-	require.Len(t, environment.woodpecker.agents, 2)
+	t.Log("pending workflows create one agent per required platform")
+	h.reconcile(t)
+	require.ElementsMatch(t, []types.Capability{dockerAMD64, dockerARM64}, h.provider.deployedCapabilities())
+	require.Len(t, h.woodpecker.agents, 2)
 
-	t.Log("another reconciliation during provisioning does not exceed MaxAgents")
-	environment.reconcile(t)
-	require.Len(t, environment.provider.deployed, 2)
-	require.Len(t, environment.woodpecker.agents, 2)
+	t.Log("reconciling again during provisioning stays within MaxAgents")
+	h.reconcile(t)
+	require.Len(t, h.provider.deployed, 2)
+	require.Len(t, h.woodpecker.agents, 2)
 
-	t.Log("agents connect and Woodpecker assigns each workflow to its matching platform")
-	environment.connectDeployedAgents(t)
-	environment.woodpecker.queue.Running = []woodpecker.Task{
-		runningTask(
-			realWorkflowTask("build-amd64", "linux/amd64"),
-			environment.agentIDForPlatform(t, "linux/amd64"),
-		),
-		runningTask(
-			realWorkflowTask("build-arm64", "linux/arm64"),
-			environment.agentIDForPlatform(t, "linux/arm64"),
-		),
+	t.Log("agents connect and each workflow runs on its matching agent")
+	h.connectAgents(t)
+	h.woodpecker.queue.Pending = nil
+	h.woodpecker.queue.Running = []woodpecker.Task{
+		runningOn(realWorkflowTask("build-amd64", "linux/amd64"), h.agentIDForPlatform(t, "linux/amd64")),
+		runningOn(realWorkflowTask("build-arm64", "linux/arm64"), h.agentIDForPlatform(t, "linux/arm64")),
 	}
-	environment.woodpecker.queue.Pending = nil
-	environment.reconcile(t)
-	require.Len(t, environment.provider.deployed, 2)
+	h.reconcile(t)
+	require.Len(t, h.provider.deployed, 2, "busy agents are kept")
 
-	t.Log("completed workflows leave idle agents that are drained and removed")
-	environment.woodpecker.queue.Running = nil
-	environment.markAgentsIdle()
-	environment.reconcile(t)
-	require.Empty(t, environment.provider.deployed)
-	require.Empty(t, environment.woodpecker.agents)
+	t.Log("finished workflows leave idle agents that are drained and removed")
+	h.woodpecker.queue.Running = nil
+	h.markIdle()
+	h.reconcile(t)
+	require.Empty(t, h.provider.deployed)
+	require.Empty(t, h.woodpecker.agents)
 }
 
+// A fixed-size pool holding the wrong capability drains it before it can be
+// replaced with the one that is actually needed.
 func TestAutoscalerReplacesAnIdleAgentWithTheRequiredCapability(t *testing.T) {
-	environment := newTestEnvironment(t, testConfig(1, 1), dockerAMD64, dockerARM64)
-	environment.addConnectedAgent(t, "pool-e2e-agent-existing", dockerAMD64)
-	environment.woodpecker.queue.Pending = []woodpecker.Task{
+	h := newHarness(t, testConfig(1, 1), dockerAMD64, dockerARM64)
+	h.addConnectedAgent(t, "pool-e2e-agent-existing", dockerAMD64)
+	h.woodpecker.queue.Pending = []woodpecker.Task{
 		realWorkflowTask("build-arm64", "linux/arm64"),
 	}
 
-	t.Log("the full pool first removes idle capacity with the wrong capability")
-	environment.reconcile(t)
-	require.Empty(t, environment.provider.deployed)
-	require.Empty(t, environment.woodpecker.agents)
+	t.Log("the full pool first drains the idle wrong-capability agent")
+	h.reconcile(t)
+	require.Empty(t, h.provider.deployed)
+	require.Empty(t, h.woodpecker.agents)
 
-	t.Log("the next reconciliation fills the available slot with the required capability")
-	environment.reconcile(t)
-	require.Equal(t, []types.Capability{dockerARM64}, environment.provider.deployedCapabilities())
-	require.Len(t, environment.woodpecker.agents, 1)
+	t.Log("the freed slot is then filled with the required capability")
+	h.reconcile(t)
+	require.Equal(t, []types.Capability{dockerARM64}, h.provider.deployedCapabilities())
+	require.Len(t, h.woodpecker.agents, 1)
 }
 
-func realWorkflowTask(id, platform string) woodpecker.Task {
-	return woodpecker.Task{
-		ID: id,
-		Labels: map[string]string{
-			"platform":                         platform,
-			"backend":                          "docker",
-			"org-id":                           "42",
-			"repo":                             "acme/api",
-			"woodpecker-ci.org/pipeline-event": "push",
-		},
+// MinAgents keeps a warm agent without any queue demand, and reconciling again
+// does not pile on more.
+func TestAutoscalerMaintainsAWarmPool(t *testing.T) {
+	h := newHarness(t, testConfig(1, 3), dockerAMD64)
+
+	t.Log("an empty queue still provisions the MinAgents warm pool")
+	h.reconcile(t)
+	require.Equal(t, []types.Capability{dockerAMD64}, h.provider.deployedCapabilities())
+
+	t.Log("the warm agent connects and the pool holds steady")
+	h.connectAgents(t)
+	h.markIdle()
+	h.reconcile(t)
+	require.Len(t, h.provider.deployed, 1)
+	require.Len(t, h.woodpecker.agents, 1)
+}
+
+// Work running on agents outside this pool (e.g. static admin agents) is not
+// this pool's demand and must not trigger scale-up.
+func TestAutoscalerIgnoresWorkOutsideThePool(t *testing.T) {
+	h := newHarness(t, testConfig(0, 3), dockerAMD64)
+	h.woodpecker.queue.Running = []woodpecker.Task{
+		runningOn(realWorkflowTask("external", "linux/amd64"), 999),
 	}
+
+	h.reconcile(t)
+	require.Empty(t, h.provider.deployed, "work on a non-pool agent must not scale the pool")
+	require.Empty(t, h.woodpecker.agents)
 }
 
-func runningTask(task woodpecker.Task, agentID int64) woodpecker.Task {
-	task.AgentID = agentID
-	return task
+// An idle agent whose capability the provider no longer offers is retired so it
+// stops holding a slot.
+func TestAutoscalerRetiresAgentsWithUnavailableCapabilities(t *testing.T) {
+	h := newHarness(t, testConfig(0, 2), dockerAMD64)
+	h.addConnectedAgent(t, "pool-e2e-agent-drifted", dockerARM64)
+
+	h.reconcile(t)
+	require.Empty(t, h.provider.deployed, "the drifted agent is drained and removed")
+	require.Empty(t, h.woodpecker.agents)
 }
