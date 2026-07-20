@@ -112,3 +112,21 @@ func TestAutoscalerRetiresAgentsWithUnavailableCapabilities(t *testing.T) {
 	require.Empty(t, h.provider.deployed, "the drifted agent is drained and removed")
 	require.Empty(t, h.woodpecker.agents)
 }
+
+// WorkflowsPerAgent lets one agent take several queued workflows, so the pool
+// scales to ceil(load/WPA) agents rather than one per task.
+func TestAutoscalerPacksWorkflowsPerAgent(t *testing.T) {
+	cfg := testConfig(0, 5)
+	cfg.WorkflowsPerAgent = 2
+	h := newHarness(t, cfg, dockerAMD64)
+	h.woodpecker.queue.Pending = []woodpecker.Task{
+		realWorkflowTask("build-1", "linux/amd64"),
+		realWorkflowTask("build-2", "linux/amd64"),
+		realWorkflowTask("build-3", "linux/amd64"),
+	}
+
+	t.Log("three pending workflows at two-per-agent provision two agents, not three")
+	h.reconcile(t)
+	require.Len(t, h.provider.deployed, 2)
+	require.Len(t, h.woodpecker.agents, 2)
+}
