@@ -212,3 +212,29 @@ func TestAutoscalerReactivatesADrainedAgentAtCapacity(t *testing.T) {
 	require.False(t, h.woodpecker.agentByName(t, drained.Name).NoSchedule)
 	require.Len(t, h.provider.deployed, 1, "reactivation must not deploy another agent")
 }
+
+// A drained agent that is still finishing a task must not be torn down: the
+// removal path has to notice the in-flight work and keep the agent until it is
+// truly idle.
+func TestAutoscalerKeepsADrainingAgentThatStillRunsWork(t *testing.T) {
+	h := newHarness(t, testConfig(0, 1), dockerAMD64)
+	h.addConnectedAgent(t, "pool-e2e-agent-busy", dockerAMD64)
+
+	agent := h.woodpecker.agentByName(t, "pool-e2e-agent-busy")
+	agent.NoSchedule = true // already draining
+	h.woodpecker.put(agent)
+	h.woodpecker.queue.Running = []woodpecker.Task{
+		runningOn(realWorkflowTask("build-amd64", "linux/amd64"), agent.ID),
+	}
+
+	t.Log("a draining agent with an in-flight task is left running")
+	h.reconcile(t)
+	require.Len(t, h.provider.deployed, 1, "must not remove an agent mid-task")
+	require.Len(t, h.woodpecker.agents, 1)
+
+	t.Log("once the task finishes the drained agent is removed")
+	h.woodpecker.queue.Running = nil
+	h.reconcile(t)
+	require.Empty(t, h.provider.deployed)
+	require.Empty(t, h.woodpecker.agents)
+}
