@@ -168,12 +168,17 @@ func TestDeployAgentFallback(t *testing.T) {
 		assert.ErrorIs(t, err, ErrNoMatchingCandidate)
 	})
 
-	t.Run("UnknownArchitectureFailsAtRuntime", func(t *testing.T) {
+	t.Run("UnknownArchitectureDoesNotBlockKnownCandidate", func(t *testing.T) {
 		client := mocks.NewMockClient(t)
+		client.On("RunInstances", mock.Anything,
+			mock.MatchedBy(runRequest("m6i.large", "ami-x86", "subnet-x86", "sg-x86")),
+			mock.MatchedBy(regionOptions("us-east-1"))).
+			Return(runOut, nil).Once()
+		mockAgentVisible(client, agent.Name)
 
 		p := newDeployTestProvider(client, append(testCandidates(), testUnknownArchCandidate()))
 		err := p.DeployAgent(t.Context(), agent, dockerAmd64Cap)
-		assert.ErrorIs(t, err, ErrUnknownArchitecture)
+		assert.NoError(t, err)
 	})
 
 	t.Run("NonDockerBackendRejected", func(t *testing.T) {
@@ -231,11 +236,19 @@ func TestCapabilities(t *testing.T) {
 		assert.Equal(t, []types.Capability{dockerAmd64Cap}, caps)
 	})
 
-	t.Run("UnknownArchitectureFail", func(t *testing.T) {
+	t.Run("SkipsUnknownArchitectureWhenKnownCandidatesRemain", func(t *testing.T) {
 		p := newDeployTestProvider(mocks.NewMockClient(t),
 			append(testCandidates(), testUnknownArchCandidate()))
-		_, err := p.Capabilities(t.Context())
+		caps, err := p.Capabilities(t.Context())
+		assert.NoError(t, err)
+		assert.ElementsMatch(t, []types.Capability{dockerArm64Cap, dockerAmd64Cap}, caps)
+	})
+
+	t.Run("FailsWhenEveryArchitectureIsUnknown", func(t *testing.T) {
+		p := newDeployTestProvider(mocks.NewMockClient(t), []deployCandidate{testUnknownArchCandidate()})
+		caps, err := p.Capabilities(t.Context())
 		assert.ErrorIs(t, err, ErrUnknownArchitecture)
+		assert.Empty(t, caps)
 	})
 }
 

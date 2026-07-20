@@ -163,15 +163,16 @@ func (p *provider) printResolvedConfig() {
 
 func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, capability types.Capability) error {
 	// Filter to the candidates that can serve the requested capability;
-	// the capacity failover below only iterates within this set. Unlike
-	// discovery, hitting an unknown architecture at deploy time is a hard
-	// error.
+	// the capacity failover below only iterates within this set. Candidates
+	// with an unknown architecture were not advertised and remain unusable,
+	// but must not block known candidates.
 	candidates := make([]deployCandidate, 0, len(p.deployCandidates))
 	if capability.Backend == types.BackendDocker {
 		for _, c := range p.deployCandidates {
 			platform, err := candidatePlatform(c)
 			if err != nil {
-				return fmt.Errorf("%s: %w", p.name, err)
+				log.Error().Err(err).Msg("skipping deploy candidate with unknown architecture")
+				continue
 			}
 			if platform == capability.Platform {
 				candidates = append(candidates, c)
@@ -367,6 +368,7 @@ func (p *provider) Capabilities(_ context.Context) ([]types.Capability, error) {
 			// keep the remaining candidates usable.
 			log.Error().Err(err).Msg("skipping deploy candidate with unknown architecture")
 			errs = errors.Join(errs, err)
+			continue
 		}
 		if !seen[platform] {
 			seen[platform] = true
@@ -376,7 +378,10 @@ func (p *provider) Capabilities(_ context.Context) ([]types.Capability, error) {
 			})
 		}
 	}
-	return caps, errs
+	if len(caps) == 0 && errs != nil {
+		return nil, errs
+	}
+	return caps, nil
 }
 
 func (p *provider) BillingModel() types.BillingModel {
