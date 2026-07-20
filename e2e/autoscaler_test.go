@@ -166,3 +166,28 @@ func TestAutoscalerReapsAgentsThatNeverConnect(t *testing.T) {
 	require.Empty(t, h.provider.deployed, "the stuck agent is torn down on the provider")
 	require.Empty(t, h.woodpecker.agents, "and deregistered on the server")
 }
+
+// Under hourly-round-up billing the paid hour is kept warm: an idle agent well
+// inside its hour is not drained (per-second billing would tear it down), and
+// only once it enters the teardown window is it drained and removed.
+func TestAutoscalerHourlyBillingKeepsPaidAgentsWarm(t *testing.T) {
+	cfg := testConfig(0, 1)
+	cfg.BillingModel = types.BillingHourlyRoundUp
+	cfg.ReconciliationInterval = time.Minute
+	cfg.AgentBillingTeardownMargin = time.Minute // window ~2m: a fresh agent sits mid-hour, far from a boundary
+	h := newHarness(t, cfg, dockerAMD64)
+	h.addConnectedAgent(t, "pool-e2e-agent-paid", dockerAMD64)
+	h.markIdle()
+
+	t.Log("an idle agent inside its paid hour is kept schedulable, not drained")
+	h.reconcile(t)
+	require.Len(t, h.provider.deployed, 1, "hourly billing keeps the paid hour warm")
+	require.Len(t, h.woodpecker.agents, 1)
+	require.False(t, h.woodpecker.agentByName(t, "pool-e2e-agent-paid").NoSchedule)
+
+	t.Log("once inside the teardown window the idle agent is drained and removed")
+	cfg.AgentBillingTeardownMargin = time.Hour // window >= 1h: every moment counts as the teardown window
+	h.reconcile(t)
+	require.Empty(t, h.provider.deployed)
+	require.Empty(t, h.woodpecker.agents)
+}
