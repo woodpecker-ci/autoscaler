@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"go.woodpecker-ci.org/autoscaler/config"
+	"go.woodpecker-ci.org/autoscaler/engine/types"
 	"go.woodpecker-ci.org/autoscaler/providers/aws/ec2api/mocks"
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
@@ -50,6 +51,46 @@ func testCandidates() []deployCandidate {
 	}
 }
 
+// testX86Candidates returns two candidates for the same capability
+// (linux/amd64) in different regions, so failover stays within one
+// capability.
+func testX86Candidates() []deployCandidate {
+	return []deployCandidate{
+		{
+			instanceType: testTypeInfo,
+			regionConfig: regionConfig{
+				region:         "eu-central-1",
+				image:          testImage,
+				subnets:        []string{"subnet-x86-eu"},
+				securityGroups: []string{"sg-x86-eu"},
+			},
+		},
+		{
+			instanceType: testTypeInfo,
+			regionConfig: regionConfig{
+				region:         "us-east-1",
+				image:          testImage,
+				subnets:        []string{"subnet-x86"},
+				securityGroups: []string{"sg-x86"},
+			},
+		},
+	}
+}
+
+// testUnknownArchCandidate has an image architecture the goarch mapping does
+// not know.
+func testUnknownArchCandidate() deployCandidate {
+	return deployCandidate{
+		instanceType: ec2_types.InstanceTypeInfo{InstanceType: ec2_types.InstanceType("t1.micro")},
+		regionConfig: regionConfig{
+			region:         "eu-central-1",
+			image:          ec2_types.Image{ImageId: aws.String("ami-i386"), Architecture: ec2_types.ArchitectureValuesI386},
+			subnets:        []string{"subnet-i386"},
+			securityGroups: []string{"sg-i386"},
+		},
+	}
+}
+
 func mockAgentVisible(client *mocks.MockClient, agentName string) {
 	client.On("DescribeInstances", mock.Anything, mock.Anything, mock.Anything).
 		Return(&ec2.DescribeInstancesOutput{
@@ -70,6 +111,11 @@ func runRequest(instanceType, imageID, subnet, securityGroup string) func(*ec2.R
 	}
 }
 
+var (
+	dockerAmd64Cap = types.Capability{Platform: "linux/amd64", Backend: types.BackendDocker}
+	dockerArm64Cap = types.Capability{Platform: "linux/arm64", Backend: types.BackendDocker}
+)
+
 func TestDeployAgentFallback(t *testing.T) {
 	agent := &woodpecker.Agent{Name: "pool-1-agent-abcd"}
 	runOut := &ec2.RunInstancesOutput{Instances: []ec2_types.Instance{{InstanceId: aws.String("i-1")}}}
@@ -81,13 +127,13 @@ func TestDeployAgentFallback(t *testing.T) {
 		mockAgentVisible(client, agent.Name)
 
 		p := newDeployTestProvider(client, testCandidates())
-		assert.NoError(t, p.DeployAgent(t.Context(), agent))
+		assert.NoError(t, p.DeployAgent(t.Context(), agent, dockerArm64Cap))
 	})
 
 	t.Run("CapacityErrorFallsBackToRegionalCandidate", func(t *testing.T) {
 		client := mocks.NewMockClient(t)
 		client.On("RunInstances", mock.Anything,
-			mock.MatchedBy(runRequest("t4g.micro", "ami-arm", "subnet-arm", "sg-arm")),
+			mock.MatchedBy(runRequest("m6i.large", "ami-x86", "subnet-x86-eu", "sg-x86-eu")),
 			mock.MatchedBy(regionOptions("eu-central-1"))).
 			Return(nil, &apiError{code: "InsufficientInstanceCapacity"}).Once()
 		client.On("RunInstances", mock.Anything,
@@ -96,8 +142,47 @@ func TestDeployAgentFallback(t *testing.T) {
 			Return(runOut, nil).Once()
 		mockAgentVisible(client, agent.Name)
 
+		p := newDeployTestProvider(client, testX86Candidates())
+		assert.NoError(t, p.DeployAgent(t.Context(), agent, dockerAmd64Cap))
+	})
+
+	t.Run("CapabilityFiltersCandidates", func(t *testing.T) {
+		// Mixed arm+x86 chain, arm requested: the x86 candidate must never
+		// be tried, even when the arm one is out of capacity.
+		client := mocks.NewMockClient(t)
+		client.On("RunInstances", mock.Anything,
+			mock.MatchedBy(runRequest("t4g.micro", "ami-arm", "subnet-arm", "sg-arm")),
+			mock.MatchedBy(regionOptions("eu-central-1"))).
+			Return(nil, &apiError{code: "InsufficientInstanceCapacity"}).Once()
+
 		p := newDeployTestProvider(client, testCandidates())
-		assert.NoError(t, p.DeployAgent(t.Context(), agent))
+		err := p.DeployAgent(t.Context(), agent, dockerArm64Cap)
+		assert.ErrorContains(t, err, "all 1 deploy candidates out of capacity")
+	})
+
+	t.Run("NoCandidateForCapability", func(t *testing.T) {
+		client := mocks.NewMockClient(t)
+
+		p := newDeployTestProvider(client, testX86Candidates())
+		err := p.DeployAgent(t.Context(), agent, dockerArm64Cap)
+		assert.ErrorIs(t, err, ErrNoMatchingCandidate)
+	})
+
+	t.Run("UnknownArchitectureFailsAtRuntime", func(t *testing.T) {
+		client := mocks.NewMockClient(t)
+
+		p := newDeployTestProvider(client, append(testCandidates(), testUnknownArchCandidate()))
+		err := p.DeployAgent(t.Context(), agent, dockerAmd64Cap)
+		assert.ErrorIs(t, err, ErrUnknownArchitecture)
+	})
+
+	t.Run("NonDockerBackendRejected", func(t *testing.T) {
+		client := mocks.NewMockClient(t)
+
+		p := newDeployTestProvider(client, testCandidates())
+		err := p.DeployAgent(t.Context(), agent,
+			types.Capability{Platform: "linux/amd64", Backend: types.BackendKubernetes})
+		assert.ErrorIs(t, err, ErrNoMatchingCandidate)
 	})
 
 	t.Run("NonCapacityErrorAborts", func(t *testing.T) {
@@ -106,7 +191,7 @@ func TestDeployAgentFallback(t *testing.T) {
 			Return(nil, &apiError{code: "InvalidSubnetID.NotFound"}).Once()
 
 		p := newDeployTestProvider(client, testCandidates())
-		err := p.DeployAgent(t.Context(), agent)
+		err := p.DeployAgent(t.Context(), agent, dockerArm64Cap)
 		assert.ErrorContains(t, err, "InvalidSubnetID.NotFound")
 	})
 
@@ -116,7 +201,7 @@ func TestDeployAgentFallback(t *testing.T) {
 			Return(&ec2.RunInstancesOutput{}, nil).Once()
 
 		p := newDeployTestProvider(client, testCandidates())
-		err := p.DeployAgent(t.Context(), agent)
+		err := p.DeployAgent(t.Context(), agent, dockerArm64Cap)
 		assert.ErrorContains(t, err, "returned no instances")
 	})
 
@@ -125,9 +210,32 @@ func TestDeployAgentFallback(t *testing.T) {
 		client.On("RunInstances", mock.Anything, mock.Anything, mock.Anything).
 			Return(nil, &apiError{code: "InsufficientInstanceCapacity"}).Twice()
 
-		p := newDeployTestProvider(client, testCandidates())
-		err := p.DeployAgent(t.Context(), agent)
+		p := newDeployTestProvider(client, testX86Candidates())
+		err := p.DeployAgent(t.Context(), agent, dockerAmd64Cap)
 		assert.ErrorContains(t, err, "all 2 deploy candidates out of capacity")
+	})
+}
+
+func TestCapabilities(t *testing.T) {
+	t.Run("DerivedFromCandidates", func(t *testing.T) {
+		p := newDeployTestProvider(mocks.NewMockClient(t), testCandidates())
+		caps, err := p.Capabilities(t.Context())
+		assert.NoError(t, err)
+		assert.ElementsMatch(t, []types.Capability{dockerArm64Cap, dockerAmd64Cap}, caps)
+	})
+
+	t.Run("DeduplicatesSamePlatform", func(t *testing.T) {
+		p := newDeployTestProvider(mocks.NewMockClient(t), testX86Candidates())
+		caps, err := p.Capabilities(t.Context())
+		assert.NoError(t, err)
+		assert.Equal(t, []types.Capability{dockerAmd64Cap}, caps)
+	})
+
+	t.Run("UnknownArchitectureFail", func(t *testing.T) {
+		p := newDeployTestProvider(mocks.NewMockClient(t),
+			append(testCandidates(), testUnknownArchCandidate()))
+		_, err := p.Capabilities(t.Context())
+		assert.ErrorIs(t, err, ErrUnknownArchitecture)
 	})
 }
 
