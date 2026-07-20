@@ -28,6 +28,7 @@ type Autoscaler struct {
 	config               *config.Config
 	provider             types.Provider
 	providerCapabilities []types.Capability
+	scope                poolScope
 }
 
 // NewAutoscaler creates a new Autoscaler instance.
@@ -45,6 +46,7 @@ func NewAutoscaler(ctx context.Context, p types.Provider, client server.Client, 
 		config:               config,
 		agents:               make(map[string]*woodpecker.Agent),
 		providerCapabilities: caps,
+		scope:                instanceAdminPoolScope(),
 	}, nil
 }
 

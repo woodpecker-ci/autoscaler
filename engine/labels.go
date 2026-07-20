@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"go.woodpecker-ci.org/autoscaler/engine/types"
+	"go.woodpecker-ci.org/woodpecker/v3/pipeline"
 )
 
 // labelMandatoryPrefix is the prefix configured operators use on a key in
@@ -17,90 +18,89 @@ const labelMandatoryPrefix = "!"
 // that it matches any workflow value for that key.
 const labelWildcard = "*"
 
-// agentLabelSet is the resolved view of what labels a freshly-deployed agent
-// would advertise to the woodpecker server. Both the implicit per-capability
-// labels (platform, backend) and operator-supplied custom labels are merged
-// in, and the "!" prefix on mandatory keys is stripped from the keys (the
-// mandatory-ness is tracked separately in Mandatory).
+// agentLabelSet is the resolved view of labels used to match tasks against a
+// freshly deployed agent. Normal and mandatory labels are kept apart so a
+// pool scope can add server-enforced labels without conflating the two: the
+// server can enforce a normal label with the same key as a mandatory one.
 type agentLabelSet struct {
-	// Labels is the full key->value map an agent would publish, with any
-	// "!" prefix already removed from the keys.
+	// Labels are the agent's normal labels, with the "!" prefix removed.
 	Labels map[string]string
-	// Mandatory is the set of keys that were originally prefixed with "!"
-	// in the operator config — those keys MUST be present (and match) on a
-	// task for this agent to be allowed to pick it up.
-	Mandatory map[string]struct{}
+	// Mandatory are labels configured with a "!" prefix, mapped to their
+	// required value. A task must carry each key with exactly this value.
+	Mandatory map[string]string
 }
 
 // agentLabelsFor constructs the label set a single agent would publish for
 // the given provider capability and operator-configured extra labels.
 //
 // The capability supplies the well-known "platform" and "backend" labels
-// (matching exactly what the woodpecker agent self-reports on connect).
-// extraAgentLabels are merged on top, with the "!" prefix interpreted as
-// "mandatory key" per the woodpecker label rules.
+// (matching what a woodpecker agent self-reports on connect), and every agent
+// advertises "repo=*" by default — without it, real queue tasks, which always
+// carry a concrete "repo" label, would never match. extraAgentLabels are
+// merged on top, with the "!" prefix interpreted as a mandatory key per the
+// woodpecker label rules.
 func agentLabelsFor(capability types.Capability, extraAgentLabels map[string]string) agentLabelSet {
 	out := agentLabelSet{
-		Labels:    make(map[string]string, 2+len(extraAgentLabels)), //nolint:mnd
-		Mandatory: make(map[string]struct{}),
+		Labels:    make(map[string]string, 3+len(extraAgentLabels)), //nolint:mnd
+		Mandatory: make(map[string]string),
 	}
 
 	if capability.Platform != "" {
-		out.Labels["platform"] = capability.Platform
+		out.Labels[pipeline.LabelFilterPlatform] = capability.Platform
 	}
 	if capability.Backend != "" {
-		out.Labels["backend"] = string(capability.Backend)
+		out.Labels[pipeline.LabelFilterBackend] = string(capability.Backend)
 	}
+	// Woodpecker agents allow all repos by default (see cmd/agent in
+	// woodpecker); the server-side repo label on every task is matched by it.
+	out.Labels[pipeline.LabelFilterRepo] = labelWildcard
 
 	for k, v := range extraAgentLabels {
-		key := k
-		if strings.HasPrefix(key, labelMandatoryPrefix) {
-			key = strings.TrimPrefix(key, labelMandatoryPrefix)
-			out.Mandatory[key] = struct{}{}
+		if strings.HasPrefix(k, labelMandatoryPrefix) {
+			out.Mandatory[strings.TrimPrefix(k, labelMandatoryPrefix)] = v
+			continue
 		}
-		out.Labels[key] = v
+		out.Labels[k] = v
 	}
 
 	return out
 }
 
-// taskMatchesAgent reports whether a workflow task with the given labels
-// could be picked up by an agent advertising the given label set.
+// taskMatchesAgent reports whether a workflow task with the given labels could
+// be picked up by an agent advertising the given label set. It mirrors the
+// woodpecker server scheduler (server/scheduler/filter.go):
+//   - Every mandatory ("!"-prefixed) key must be present with the exact
+//     configured value; this is checked first.
+//   - Internal "woodpecker-ci.org/*" labels are ignored.
+//   - Empty workflow label values are ignored.
+//   - For every remaining workflow label, the agent must advertise the same
+//     key (a mandatory key counts too) with a matching value or the wildcard.
 //
-// The matching rules mirror the woodpecker server scheduler:
-//   - Empty workflow label values are ignored (per docs).
-//   - For every non-empty workflow label, the agent must have a label with
-//     the same key, and the agent value must either equal the workflow value
-//     or be the wildcard "*".
-//   - Every key the agent has marked mandatory ("!" prefix in config) must
-//     be present and non-empty in the workflow labels.
-//
-// Scope seam: this compares the task's labels against the labels the agent
-// advertises directly. The real woodpecker server also (a) injects
-// scope labels the agent implicitly satisfies (e.g. a global agent matches
-// the "org-id"/"repo" that ApplyLabelsFromRepo stamps on every task) and
-// (b) strips internal "woodpecker-ci.org/*" labels before matching. Today the
-// autoscaler only manages global-scope pools, so those two steps are the
-// single place that must change to (1) fix real-queue matching and (2) later
-// support user-/organization-scoped pools — without reworking the caller.
+// Scope labels the server enforces (e.g. "org-id=*" for a global agent) are
+// already baked into the agent label set by poolScope.agentLabelsFor, so this
+// matcher stays scope-agnostic.
 func taskMatchesAgent(taskLabels map[string]string, agent agentLabelSet) bool {
-	// Mandatory keys: workflow must explicitly set them (with a non-empty
-	// value, since empty values are ignored by woodpecker).
-	for key := range agent.Mandatory {
-		v, ok := taskLabels[key]
-		if !ok || v == "" {
+	for key, required := range agent.Mandatory {
+		if v, ok := taskLabels[key]; !ok || v != required {
 			return false
 		}
 	}
 
-	// Every (non-empty) workflow label must be matched by the agent.
 	for key, want := range taskLabels {
+		if strings.HasPrefix(key, pipeline.InternalLabelPrefix) {
+			continue
+		}
 		if want == "" {
 			continue
 		}
 		got, ok := agent.Labels[key]
 		if !ok {
-			return false
+			// A mandatory key is matchable too (mirrors the server's "!"+key
+			// lookup), so an agent requiring it can still take the task.
+			got, ok = agent.Mandatory[key]
+			if !ok {
+				return false
+			}
 		}
 		if got == labelWildcard {
 			continue

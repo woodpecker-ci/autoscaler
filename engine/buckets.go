@@ -40,7 +40,7 @@ func (a *Autoscaler) agentBuckets() []agentBucket {
 	for _, c := range a.providerCapabilities {
 		out = append(out, agentBucket{
 			Capability: c,
-			Labels:     agentLabelsFor(c, a.config.ExtraAgentLabels),
+			Labels:     a.scope.agentLabelsFor(c, a.config.ExtraAgentLabels),
 		})
 	}
 	return out

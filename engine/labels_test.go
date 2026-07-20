@@ -45,10 +45,10 @@ func Test_agentLabelsFor(t *testing.T) {
 			"region":   "eu",
 		})
 
-		assert.Equal(t, "yes", got.Labels["special"])
 		assert.Equal(t, "eu", got.Labels["region"])
-		_, isMandatory := got.Mandatory["special"]
-		assert.True(t, isMandatory, "expected 'special' to be mandatory")
+		assert.Equal(t, "yes", got.Mandatory["special"], "mandatory key keeps its required value")
+		_, inLabels := got.Labels["special"]
+		assert.False(t, inLabels, "mandatory key is not a normal label")
 		_, regionMandatory := got.Mandatory["region"]
 		assert.False(t, regionMandatory, "expected 'region' to be non-mandatory")
 	})
