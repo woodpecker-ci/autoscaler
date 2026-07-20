@@ -26,13 +26,13 @@ type Autoscaler struct {
 // NewAutoscaler creates a new Autoscaler instance.
 // It takes in a Provider, Client and Config, and returns a configured
 // Autoscaler struct.
-func NewAutoscaler(p types.Provider, client server.Client, config *config.Config) (Autoscaler, error) {
+func NewAutoscaler(ctx context.Context, p types.Provider, client server.Client, config *config.Config) (*Autoscaler, error) {
 	caps, err := p.Capabilities(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("could not query provider capabilities: %w", err)
 	}
 
-	return Autoscaler{
+	return &Autoscaler{
 		provider:             p,
 		client:               client,
 		config:               config,
