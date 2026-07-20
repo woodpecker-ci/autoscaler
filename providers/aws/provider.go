@@ -10,8 +10,10 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	ec2_types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	"github.com/aws/aws-sdk-go-v2/service/sts"
 	"github.com/rs/zerolog/log"
 	"github.com/urfave/cli/v3"
 
@@ -19,53 +21,80 @@ import (
 	"go.woodpecker-ci.org/autoscaler/engine"
 	"go.woodpecker-ci.org/autoscaler/engine/inits/cloudinit"
 	"go.woodpecker-ci.org/autoscaler/engine/types"
+	"go.woodpecker-ci.org/autoscaler/providers/aws/ec2api"
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
-
-var ErrInstanceTypeNotFound = fmt.Errorf("instance type not found")
 
 type provider struct {
 	name                  string
 	config                *config.Config
-	amiID                 string
 	tags                  []string
 	region                string
-	subnets               []string
-	securityGroups        []string
 	iamInstanceProfileArn string
 	useSpotInstances      bool
-	client                *ec2.Client
+	client                ec2api.Client
 	lock                  sync.Mutex
 	subnetRR              int
 	sshKeyName            string
 	// resolved config
-	instanceType ec2_types.InstanceTypeInfo
+	deployCandidates []deployCandidate
+	regions          []string
 }
 
 func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Provider, error) {
-	if len(c.StringSlice("aws-subnets")) == 0 {
-		return nil, fmt.Errorf("aws-subnets must be set")
-	}
 	p := &provider{
 		name:                  "aws",
 		config:                config,
-		amiID:                 c.String("aws-ami-id"),
 		tags:                  c.StringSlice("aws-tags"),
 		region:                c.String("aws-region"),
-		subnets:               c.StringSlice("aws-subnets"),
 		iamInstanceProfileArn: c.String("aws-iam-instance-profile-arn"),
-		securityGroups:        c.StringSlice("aws-security-groups"),
 		useSpotInstances:      c.Bool("aws-use-spot-instances"),
 		sshKeyName:            c.String("aws-ssh-key-name"),
 	}
-
-	cfg, err := awsconfig.LoadDefaultConfig(ctx, awsconfig.WithRegion(p.region))
+	loadOptions := []func(*awsconfig.LoadOptions) error{}
+	credentialsOption, err := staticCredentialsOption(
+		c.String("aws-access-key-id"),
+		c.String("aws-secret-access-key"),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", p.name, err)
+	}
+	if credentialsOption != nil {
+		loadOptions = append(loadOptions, credentialsOption)
+	}
+	if p.region != "" {
+		loadOptions = append(loadOptions, awsconfig.WithRegion(p.region))
+	}
+	cfg, err := awsconfig.LoadDefaultConfig(ctx, loadOptions...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load configuration, %w", err)
 	}
+	if p.region == "" {
+		// Fall back to the region the SDK resolved from its default chain
+		// (AWS_REGION, shared config, IMDS) so unqualified values keep
+		// working without the aws-region flag.
+		p.region = cfg.Region
+	}
+	instanceTypes := c.StringSlice("aws-instance-type")
+	authenticationRegion, err := p.authenticationRegion(instanceTypes)
+	if err != nil {
+		return nil, err
+	}
+	identityClient := sts.NewFromConfig(cfg, func(options *sts.Options) {
+		options.Region = authenticationRegion
+	})
+	if err := authenticateAWS(ctx, identityClient); err != nil {
+		return nil, fmt.Errorf("%s: %w", p.name, err)
+	}
 	p.client = ec2.NewFromConfig(cfg)
 
-	if err := p.resolveInstanceType(ctx, c.String("aws-instance-type")); err != nil {
+	if err := p.resolveDeployCandidates(
+		ctx,
+		instanceTypes,
+		c.String("aws-ami-id"),
+		c.StringSlice("aws-subnets"),
+		c.StringSlice("aws-security-groups"),
+	); err != nil {
 		return nil, err
 	}
 
@@ -74,37 +103,64 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 	return p, nil
 }
 
-func (p *provider) resolveInstanceType(ctx context.Context, instanceType string) error {
-	out, err := p.client.DescribeInstanceTypes(ctx, &ec2.DescribeInstanceTypesInput{
-		InstanceTypes: []ec2_types.InstanceType{ec2_types.InstanceType(instanceType)},
-	})
+func (p *provider) authenticationRegion(instanceTypes []string) (string, error) {
+	if p.region != "" {
+		return p.region, nil
+	}
+	if len(instanceTypes) == 0 {
+		return "", fmt.Errorf("%s: %w", p.name, ErrNoDeployCandidates)
+	}
+
+	_, region, err := p.valueRegion("aws-instance-type", instanceTypes[0])
+	return region, err
+}
+
+type identityClient interface {
+	GetCallerIdentity(context.Context, *sts.GetCallerIdentityInput, ...func(*sts.Options)) (*sts.GetCallerIdentityOutput, error)
+}
+
+func authenticateAWS(ctx context.Context, client identityClient) error {
+	identity, err := client.GetCallerIdentity(ctx, &sts.GetCallerIdentityInput{})
 	if err != nil {
-		return fmt.Errorf("%s: DescribeInstanceTypes %q: %w", p.name, instanceType, err)
+		return fmt.Errorf("authenticate with AWS: %w", err)
 	}
-	if len(out.InstanceTypes) == 0 {
-		return fmt.Errorf("%w: %s", ErrInstanceTypeNotFound, instanceType)
-	}
-	p.instanceType = out.InstanceTypes[0]
+
+	log.Info().
+		Str("account", aws.ToString(identity.Account)).
+		Str("arn", aws.ToString(identity.Arn)).
+		Msg("authenticated with AWS")
 	return nil
 }
 
-func (p *provider) printResolvedConfig() {
-	archs := make([]string, 0, len(p.instanceType.ProcessorInfo.SupportedArchitectures))
-	for _, a := range p.instanceType.ProcessorInfo.SupportedArchitectures {
-		archs = append(archs, string(a))
+func staticCredentialsOption(accessKeyID, secretAccessKey string) (func(*awsconfig.LoadOptions) error, error) {
+	if accessKeyID == "" && secretAccessKey == "" {
+		return nil, nil
 	}
-	log.Info().
-		Str("type", string(p.instanceType.InstanceType)).
-		Strs("architectures", archs).
-		Bool("current_gen", aws.ToBool(p.instanceType.CurrentGeneration)).
-		Msg("deploy with instance type")
+	if accessKeyID == "" {
+		return nil, fmt.Errorf("aws-access-key-id must be set when aws-secret-access-key is set")
+	}
+	if secretAccessKey == "" {
+		return nil, fmt.Errorf("aws-secret-access-key must be set when aws-access-key-id is set")
+	}
+
+	return awsconfig.WithCredentialsProvider(
+		credentials.NewStaticCredentialsProvider(accessKeyID, secretAccessKey, ""),
+	), nil
 }
 
-func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, capability types.Capability) error {
-	if err := p.validateCapability(capability); err != nil {
-		return err
+func (p *provider) printResolvedConfig() {
+	for _, c := range p.deployCandidates {
+		log.Info().
+			Str("type", string(c.instanceType.InstanceType)).
+			Str("region", c.regionConfig.region).
+			Str("ami", aws.ToString(c.regionConfig.image.ImageId)).
+			Str("ami_arch", string(c.regionConfig.image.Architecture)).
+			Bool("current_gen", aws.ToBool(c.instanceType.CurrentGeneration)).
+			Msg("deploy candidate")
 	}
+}
 
+func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
 	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, cloudinit.RenderOption{})
 	if err != nil {
 		return fmt.Errorf("%s: cloudinit.RenderUserDataTemplate: %w", p.name, err)
@@ -134,6 +190,7 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cap
 				Key: aws.String(parts[0]),
 			}
 		}
+
 		tags = append(tags, rt)
 	}
 
@@ -141,16 +198,13 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cap
 		IamInstanceProfile: &ec2_types.IamInstanceProfileSpecification{
 			Arn: aws.String(p.iamInstanceProfileArn),
 		},
-		ImageId:      aws.String(p.amiID),
-		InstanceType: p.instanceType.InstanceType,
 		MetadataOptions: &ec2_types.InstanceMetadataOptionsRequest{
 			HttpEndpoint:            ec2_types.InstanceMetadataEndpointStateEnabled,
 			HttpPutResponseHopLimit: aws.Int32(1),
 			HttpTokens:              ec2_types.HttpTokensStateRequired,
 		},
-		SecurityGroupIds: p.securityGroups,
-		MinCount:         aws.Int32(1),
-		MaxCount:         aws.Int32(1),
+		MinCount: aws.Int32(1),
+		MaxCount: aws.Int32(1),
 		TagSpecifications: []ec2_types.TagSpecification{
 			{
 				ResourceType: "instance",
@@ -163,12 +217,6 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cap
 		},
 	}
 
-	// When multiple subnets are given, assign agent to a subnet in a round-robin fashion.
-	p.lock.Lock()
-	runInstancesInput.SubnetId = aws.String(p.subnets[p.subnetRR])
-	p.subnetRR = (p.subnetRR + 1) % len(p.subnets)
-	p.lock.Unlock()
-
 	if p.useSpotInstances {
 		runInstancesInput.InstanceMarketOptions = &ec2_types.InstanceMarketOptionsRequest{
 			MarketType: ec2_types.MarketTypeSpot,
@@ -180,9 +228,50 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cap
 	}
 
 	runInstancesInput.UserData = aws.String(b64.StdEncoding.EncodeToString([]byte(userData)))
-	result, err := p.client.RunInstances(ctx, &runInstancesInput)
-	if err != nil {
-		return fmt.Errorf("%s: RunInstances: %w", p.name, err)
+
+	var result *ec2.RunInstancesOutput
+	for i, c := range p.deployCandidates {
+		runInstancesInput.InstanceType = c.instanceType.InstanceType
+		runInstancesInput.ImageId = c.regionConfig.image.ImageId
+		runInstancesInput.SecurityGroupIds = c.regionConfig.securityGroups
+
+		// When multiple subnets are given, assign agent to a subnet in a round-robin fashion.
+		p.lock.Lock()
+		runInstancesInput.SubnetId = aws.String(c.regionConfig.subnets[p.subnetRR%len(c.regionConfig.subnets)])
+		p.subnetRR = (p.subnetRR + 1) % len(c.regionConfig.subnets)
+		p.lock.Unlock()
+
+		log.Info().
+			Str("type", string(c.instanceType.InstanceType)).
+			Str("region", c.regionConfig.region).
+			Msg("create agent")
+
+		result, err = p.client.RunInstances(ctx, &runInstancesInput, regionOpt(c.regionConfig.region))
+		if err == nil {
+			break
+		}
+
+		// Continue to next fallback entry only if capacity is unavailable.
+		if !isCapacityError(err) {
+			return fmt.Errorf("%s: RunInstances: %w", p.name, err)
+		}
+
+		// Only log and continue if there are more candidates left.
+		if i < len(p.deployCandidates)-1 {
+			log.Warn().Msgf(
+				"create agent failed: type = %s region = %s: %s",
+				c.instanceType.InstanceType, c.regionConfig.region, err,
+			)
+			continue
+		}
+
+		// Last candidate failed: the whole fallback chain is exhausted.
+		return fmt.Errorf("%s: all %d deploy candidates out of capacity, last: RunInstances: %w",
+			p.name, len(p.deployCandidates), err)
+	}
+
+	if result == nil || len(result.Instances) == 0 {
+		return fmt.Errorf("%s: RunInstances returned no instances", p.name)
 	}
 
 	// Wait until instance is available. Sometimes it can take a second or two for the tag based
@@ -191,7 +280,7 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cap
 	for range 5 {
 		agents, err := p.ListDeployedAgentNames(ctx)
 		if err != nil {
-			return fmt.Errorf("failed to return list for agents")
+			return fmt.Errorf("%s: ListDeployedAgentNames: %w", p.name, err)
 		}
 
 		for _, a := range agents {
@@ -207,81 +296,18 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cap
 	return fmt.Errorf("instance did not resolve in agent list: %s", *result.Instances[0].InstanceId)
 }
 
-// validateCapability checks the requested (platform, backend) against the
-// architectures reported by DescribeInstanceTypes for the configured type.
-func (p *provider) validateCapability(capability types.Capability) error {
-	for _, c := range p.capabilities() {
-		if c.Platform == capability.Platform && c.Backend == capability.Backend {
-			return nil
-		}
-	}
-	return fmt.Errorf("%s: instance type %s does not support requested capability platform=%s backend=%s",
-		p.name, p.instanceType.InstanceType, capability.Platform, capability.Backend)
-}
-
-func (p *provider) Capabilities(_ context.Context) ([]types.Capability, error) {
-	return p.capabilities(), nil
-}
-
-// capabilities derives the supported (platform, backend) pairs from the
-// resolved InstanceTypeInfo.ProcessorInfo.SupportedArchitectures.
-func (p *provider) capabilities() []types.Capability {
-	var caps []types.Capability
-	for _, arch := range p.instanceType.ProcessorInfo.SupportedArchitectures {
-		goarch := ec2ArchToGoArch(arch)
-		if goarch == "" {
-			continue
-		}
-		caps = append(caps, types.Capability{
-			Platform: "linux/" + goarch,
-			Backend:  types.BackendDocker,
-		})
-	}
-	return caps
-}
-
-// ec2ArchToGoArch maps EC2 ArchitectureType values to Go GOARCH strings.
-func ec2ArchToGoArch(a ec2_types.ArchitectureType) string {
-	switch a {
-	case ec2_types.ArchitectureTypeX8664:
-		return "amd64"
-	case ec2_types.ArchitectureTypeArm64:
-		return "arm64"
-	default:
-		return ""
-	}
-}
-
-func (p *provider) getAgent(ctx context.Context, agent *woodpecker.Agent) (*ec2_types.Instance, error) {
-	instances, err := p.client.DescribeInstances(ctx, &ec2.DescribeInstancesInput{
-		Filters: []ec2_types.Filter{
-			{
-				Name:   aws.String("tag:Name"),
-				Values: []string{agent.Name},
-			},
-		},
-	})
-	if err != nil {
-		return nil, err
-	}
-	if len(instances.Reservations) != 1 {
-		return nil, fmt.Errorf("expected 1 reservation with tag:Name=%s, got %d", agent.Name, len(instances.Reservations))
-	}
-	if len(instances.Reservations[0].Instances) != 1 {
-		return nil, fmt.Errorf("expected 1 instance with tag:Name=%s, got %d", agent.Name, len(instances.Reservations[0].Instances))
-	}
-	return &instances.Reservations[0].Instances[0], nil
-}
-
 func (p *provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) error {
-	instance, err := p.getAgent(ctx, agent)
+	instance, region, err := p.getAgent(ctx, agent)
 	if err != nil {
 		return err
 	}
 
 	_, err = p.client.TerminateInstances(ctx, &ec2.TerminateInstancesInput{
 		InstanceIds: []string{*instance.InstanceId},
-	})
+		// Skip the graceful OS shutdown so an unresponsive or hung guest
+		// cannot block termination and leave a dangling instance behind.
+		SkipOsShutdown: aws.Bool(true),
+	}, regionOpt(region))
 	return err
 }
 
@@ -289,23 +315,12 @@ func (p *provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 	log.Debug().Msgf("list deployed agent names")
 
 	var names []string
-	instances, err := p.client.DescribeInstances(ctx, &ec2.DescribeInstancesInput{
-		Filters: []ec2_types.Filter{
-			{
-				Name:   aws.String(fmt.Sprintf("tag:%s", engine.LabelPool)),
-				Values: []string{p.config.PoolID},
-			},
-		},
-	})
-	if err != nil {
-		return nil, err
-	}
-	for _, reservation := range instances.Reservations {
-		for _, instance := range reservation.Instances {
-			if instance.State.Name != ec2_types.InstanceStateNamePending &&
-				instance.State.Name != ec2_types.InstanceStateNameRunning {
-				continue
-			}
+	for _, region := range p.regions {
+		instances, err := p.instancesByTag(ctx, region, engine.LabelPool, p.config.PoolID)
+		if err != nil {
+			return nil, err
+		}
+		for _, instance := range instances {
 			for _, tag := range instance.Tags {
 				if *tag.Key == "Name" {
 					log.Debug().Msgf("found agent %s", *tag.Value)
