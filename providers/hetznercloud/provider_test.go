@@ -123,9 +123,9 @@ func TestDeployAgent(t *testing.T) {
 			capability: types.Capability{Platform: "linux/amd64", Backend: types.BackendDocker},
 		},
 		{
-			// First candidate's location is unavailable; provider should
-			// log and fall through to the second candidate, which succeeds.
-			name: "FallbackOnUnavailable",
+			// The ARM candidate is filtered out for an amd64 request. Failure
+			// of the sole matching candidate must still be returned.
+			name: "FilteredFallbackExhausted",
 			setupMocks: func(mockClient *mocks.MockClient) {
 				st1 := &hcloud.ServerType{
 					Name: "cx11", Architecture: "x86",
@@ -134,18 +134,19 @@ func TestDeployAgent(t *testing.T) {
 					},
 				}
 				st2 := &hcloud.ServerType{
-					Name: "cx21", Architecture: "x86",
+					Name: "cax11", Architecture: "arm",
 					Locations: []hcloud.ServerTypeLocation{
 						{Location: &hcloud.Location{Name: "fsn1"}},
 					},
 				}
 				mockServerTypeClient := mocks.NewMockServerTypeClient(t)
 				mockServerTypeClient.On("GetByName", mock.Anything, "cx11").Return(st1, nil, nil)
-				mockServerTypeClient.On("GetByName", mock.Anything, "cx21").Return(st2, nil, nil)
+				mockServerTypeClient.On("GetByName", mock.Anything, "cax11").Return(st2, nil, nil)
 				mockClient.On("ServerType").Return(mockServerTypeClient)
 
 				mockImageClient := mocks.NewMockImageClient(t)
 				mockImageClient.On("GetForArchitecture", mock.Anything, mock.Anything, hcloud.ArchitectureX86).Return(mockImage, nil, nil)
+				mockImageClient.On("GetForArchitecture", mock.Anything, mock.Anything, hcloud.ArchitectureARM).Return(&hcloud.Image{Architecture: hcloud.ArchitectureARM}, nil, nil)
 				mockClient.On("Image").Return(mockImageClient)
 
 				unavailable := hcloud.Error{Code: hcloud.ErrorCodeResourceUnavailable, Message: "unavailable"}
@@ -153,13 +154,11 @@ func TestDeployAgent(t *testing.T) {
 				mockServerClient.On("Create", mock.Anything, mock.MatchedBy(func(opts hcloud.ServerCreateOpts) bool {
 					return opts.ServerType.Name == "cx11"
 				})).Return(hcloud.ServerCreateResult{}, &hcloud.Response{}, unavailable).Once()
-				mockServerClient.On("Create", mock.Anything, mock.MatchedBy(func(opts hcloud.ServerCreateOpts) bool {
-					return opts.ServerType.Name == "cx21"
-				})).Return(hcloud.ServerCreateResult{Server: &hcloud.Server{}}, &hcloud.Response{}, nil).Once()
 				mockClient.On("Server").Return(mockServerClient)
 			},
-			serverType: []string{"cx11:nbg1", "cx21:fsn1"},
-			capability: types.Capability{Platform: "linux/amd64", Backend: types.BackendDocker},
+			serverType:    []string{"cx11:nbg1", "cax11:fsn1"},
+			capability:    types.Capability{Platform: "linux/amd64", Backend: types.BackendDocker},
+			expectedError: string(hcloud.ErrorCodeResourceUnavailable),
 		},
 	}
 
@@ -184,8 +183,7 @@ func TestDeployAgent(t *testing.T) {
 			}
 
 			if tt.expectedError != "" {
-				assert.Error(t, err)
-				assert.Contains(t, err.Error(), tt.expectedError)
+				assert.ErrorContains(t, err, tt.expectedError)
 			} else {
 				assert.NoError(t, err)
 			}

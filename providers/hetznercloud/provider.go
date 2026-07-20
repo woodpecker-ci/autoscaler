@@ -170,7 +170,7 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cap
 		}
 
 		// Only log and continue if there are more candidates left.
-		if i < len(p.deployCandidates)-1 {
+		if i < len(candidates)-1 {
 			log.Warn().Msgf(
 				"create agent failed: location = %s type = %s: %s",
 				locationName, c.serverType.Name, err,

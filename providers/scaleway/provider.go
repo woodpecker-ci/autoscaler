@@ -108,7 +108,7 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cap
 		if !isResourceUnavailable(err) {
 			return err
 		}
-		if i < len(p.candidates)-1 {
+		if i < len(matched)-1 {
 			log.Warn().Str("type", c.rawType).Str("zone", c.zone.String()).
 				Msgf("scaleway: create failed (resource unavailable), trying next candidate: %s", err)
 			continue
