@@ -146,6 +146,36 @@ func TestAutoscalerIgnoresUnschedulablePending(t *testing.T) {
 	require.Empty(t, h.woodpecker.agents)
 }
 
+// Agent startup can take longer than the reconciliation interval: agents
+// deployed last cycle have not connected yet (and thus report no platform or
+// backend) when the next reconcile runs. The still-pending demand must be
+// attributed to those booting agents instead of provisioning another round
+// every cycle until they come up.
+func TestAutoscalerDoesNotOverprovisionWhileAgentsBoot(t *testing.T) {
+	h := newHarness(t, testConfig(0, 10), dockerAMD64)
+	h.woodpecker.queue.Pending = []woodpecker.Task{
+		realWorkflowTask("build-1", "linux/amd64"),
+		realWorkflowTask("build-2", "linux/amd64"),
+	}
+
+	t.Log("the first cycle provisions one agent per pending workflow")
+	h.reconcile(t)
+	require.Len(t, h.provider.deployed, 2)
+	require.Len(t, h.woodpecker.agents, 2)
+
+	t.Log("later cycles see the demand covered by the still-booting agents")
+	h.reconcile(t)
+	h.reconcile(t)
+	require.Len(t, h.provider.deployed, 2, "booting agents already cover the demand")
+	require.Len(t, h.woodpecker.agents, 2)
+
+	t.Log("once connected the pool serves the work without further changes")
+	h.connectAgents(t)
+	h.reconcile(t)
+	require.Len(t, h.provider.deployed, 2)
+	require.Len(t, h.woodpecker.agents, 2)
+}
+
 // A provisioned agent that registered but never phoned home, older than the
 // inactivity timeout, is a boot that silently failed. It holds a provider slot
 // forever unless reaped, so the stale-cleanup path must tear it down.
