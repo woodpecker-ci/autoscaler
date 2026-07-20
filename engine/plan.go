@@ -60,7 +60,11 @@ func (a *Autoscaler) planScaling(pending, running []woodpecker.Task) []bucketDec
 	for i := range states {
 		rawDeltas[i] = rawDelta(states[i], a.config.WorkflowsPerAgent)
 	}
-	finalDeltas := allocateBudget(states, rawDeltas, a.config.MinAgents, a.config.MaxAgents)
+	finalDeltas := allocateBudget(states, rawDeltas, poolLimits{
+		Footprint: len(a.agents),
+		Min:       a.config.MinAgents,
+		Max:       a.config.MaxAgents,
+	})
 
 	out := make([]bucketDecision, 0, len(states))
 	for i, s := range states {
@@ -80,49 +84,96 @@ func (a *Autoscaler) planScaling(pending, running []woodpecker.Task) []bucketDec
 	return out
 }
 
-// allocateBudget clamps each bucket's raw delta to the global Min/Max
-// caps, distributing the remaining scale-up/scale-down budget greedily,
-// largest absolute demand first, so the most-loaded buckets are served
-// first. Returns one final delta per bucket, in the same order as states.
-func allocateBudget(states []bucketState, rawDeltas []int, minAgents, maxAgents int) []int {
-	totalOnline := 0
-	for _, s := range states {
-		totalOnline += s.PoolAgents
-	}
-	upBudget := max(maxAgents-totalOnline, 0)
-	downBudget := max(totalOnline-minAgents, 0)
+// poolLimits bounds the whole pool for one planning cycle.
+type poolLimits struct {
+	// Footprint is the number of pool agents currently holding a provider
+	// slot — every tracked agent, including booting, draining and
+	// config-drifted ones. New agents may only be created up to Max minus this,
+	// so slow or stale registrations cannot bypass MaxAgents.
+	Footprint int
+	Min       int
+	Max       int
+}
 
-	order := make([]int, len(states))
+// allocateBudget turns each bucket's raw delta into a bounded final delta.
+//
+// It reasons in terms of a target fleet: the number of agents each bucket
+// should have once the global Min/Max caps are applied. Draining always
+// proceeds — it frees a provider slot for the next cycle — while scale-up is
+// throttled by how many slots MaxAgents still allows given the current
+// footprint. That upholds three invariants the earlier greedy budget missed:
+//   - MinAgents stays a warm-pool floor even without queue demand;
+//   - a full, fixed-size pool drains an idle wrong-capability agent so a
+//     demanded capability can take its slot on a later cycle;
+//   - booting/draining/drifted agents count against MaxAgents, so slow or
+//     stale registrations never push the pool past its ceiling.
+//
+// Returns one final delta per bucket, in the same order as states.
+func allocateBudget(states []bucketState, rawDeltas []int, limits poolLimits) []int {
+	n := len(states)
+
+	// required[i] is the agent count this bucket's load demands
+	// (ceil(load/WPA)); never negative.
+	required := make([]int, n)
+	for i := range states {
+		required[i] = max(states[i].PoolAgents+rawDeltas[i], 0)
+	}
+
+	// desired[i] is the target agent count per bucket: demand first, then the
+	// global floor and ceiling applied against the total.
+	desired := make([]int, n)
+	copy(desired, required)
+	total := 0
+	for _, d := range desired {
+		total += d
+	}
+
+	// Serve the busiest buckets first; ties keep provider order (stable).
+	order := make([]int, n)
 	for i := range order {
 		order[i] = i
 	}
 	sort.SliceStable(order, func(i, j int) bool {
-		ai, aj := rawDeltas[order[i]], rawDeltas[order[j]]
-		if ai < 0 {
-			ai = -ai
-		}
-		if aj < 0 {
-			aj = -aj
-		}
-		return ai > aj
+		return required[order[i]] > required[order[j]]
 	})
 
-	finalDeltas := make([]int, len(states))
-	for _, idx := range order {
-		raw := rawDeltas[idx]
-		switch {
-		case raw > 0:
-			grant := min(raw, upBudget)
-			finalDeltas[idx] = grant
-			upBudget -= grant
-		case raw < 0:
-			// Drain at most |raw| agents from this bucket, at most this
-			// bucket's own PoolAgents (can't drain what isn't there),
-			// and at most the global downBudget.
-			want := min(-raw, states[idx].PoolAgents, downBudget)
-			finalDeltas[idx] = -want
-			downBudget -= want
+	// MinAgents warm-pool floor: top the target up even without demand, adding
+	// warm agents to the busiest bucket (the first bucket when the pool idles).
+	for n > 0 && total < limits.Min {
+		desired[order[0]]++
+		total++
+	}
+
+	// MaxAgents ceiling: trim the target from the least-busy buckets first.
+	for total > limits.Max {
+		trimmed := false
+		for i := n - 1; i >= 0; i-- {
+			idx := order[i]
+			if desired[idx] > 0 {
+				desired[idx]--
+				total--
+				trimmed = true
+				break
+			}
+		}
+		if !trimmed {
+			break
 		}
 	}
-	return finalDeltas
+
+	// Turn targets into deltas. Drains apply in full; creates share the slots
+	// MaxAgents still allows given the footprint, busiest bucket first.
+	createBudget := max(limits.Max-limits.Footprint, 0)
+	final := make([]int, n)
+	for _, idx := range order {
+		switch delta := desired[idx] - states[idx].PoolAgents; {
+		case delta < 0:
+			final[idx] = delta
+		case delta > 0:
+			grant := min(delta, createBudget)
+			final[idx] = grant
+			createBudget -= grant
+		}
+	}
+	return final
 }

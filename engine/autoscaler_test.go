@@ -224,6 +224,70 @@ func Test_planScaling(t *testing.T) {
 		assert.Len(t, decisions, 1)
 		assert.Equal(t, 2, decisions[0].Delta)
 	})
+
+	t.Run("maintains a MinAgents warm pool without demand", func(t *testing.T) {
+		a := Autoscaler{
+			providerCapabilities: []types.Capability{dockerAmd64Cap},
+			config: &config.Config{
+				WorkflowsPerAgent: 1,
+				MaxAgents:         5,
+				MinAgents:         1,
+			},
+		}
+		decisions := a.planScaling(nil, nil)
+		assert.Len(t, decisions, 1)
+		assert.Equal(t, dockerAmd64Cap, decisions[0].Bucket.Capability)
+		assert.Equal(t, 1, decisions[0].Delta)
+	})
+
+	t.Run("counts unconnected agents toward MaxAgents", func(t *testing.T) {
+		// Two agents were created last cycle but haven't connected, so they
+		// report no platform/backend. With MaxAgents=2 we must not create more
+		// even though two tasks are pending.
+		a := Autoscaler{
+			providerCapabilities: []types.Capability{dockerAmd64Cap},
+			agents: map[string]*woodpecker.Agent{
+				"pool-1-agent-1": {ID: 1, Name: "pool-1-agent-1"},
+				"pool-1-agent-2": {ID: 2, Name: "pool-1-agent-2"},
+			},
+			config: &config.Config{
+				WorkflowsPerAgent: 1,
+				MaxAgents:         2,
+				MinAgents:         0,
+			},
+		}
+		decisions := a.planScaling([]woodpecker.Task{
+			taskWithLabels(map[string]string{"platform": "linux/amd64"}),
+			taskWithLabels(map[string]string{"platform": "linux/amd64"}),
+		}, nil)
+		assert.Empty(t, decisions, "booting agents already fill the MaxAgents budget")
+	})
+
+	t.Run("rebalances a full pool toward demand", func(t *testing.T) {
+		// MaxAgents=1 and the single slot is held by an idle arm64 agent while
+		// an amd64 task is pending. Drain the idle wrong-capability agent this
+		// cycle; the amd64 create waits until its slot frees next cycle.
+		a := Autoscaler{
+			providerCapabilities: []types.Capability{dockerAmd64Cap, dockerArm64Cap},
+			agents: map[string]*woodpecker.Agent{
+				"pool-1-agent-1": {ID: 1, Name: "pool-1-agent-1", Platform: "linux/arm64", Backend: "docker"},
+			},
+			config: &config.Config{
+				WorkflowsPerAgent: 1,
+				MaxAgents:         1,
+				MinAgents:         1,
+			},
+		}
+		decisions := a.planScaling([]woodpecker.Task{
+			taskWithLabels(map[string]string{"platform": "linux/amd64"}),
+		}, nil)
+		seen := map[string]int{}
+		for _, d := range decisions {
+			seen[d.Bucket.Capability.Platform] = d.Delta
+		}
+		assert.Equal(t, -1, seen["linux/arm64"], "idle wrong-capability agent drained to free the slot")
+		assert.Equal(t, 0, seen["linux/amd64"], "amd64 create blocked until the slot frees")
+	})
 }
 
 func Test_createAgents(t *testing.T) {
