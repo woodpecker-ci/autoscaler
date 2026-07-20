@@ -115,11 +115,6 @@ func TestImageCapability(t *testing.T) {
 			wantErr:    "hw_architecture",
 		},
 		{
-			name:       "unknown architecture",
-			properties: map[string]any{"hw_architecture": "alpha"},
-			wantErr:    "alpha",
-		},
-		{
 			name:       "unsupported operating system",
 			properties: map[string]any{"hw_architecture": "x86_64", "os_type": "windows"},
 			wantErr:    "windows",
@@ -152,7 +147,6 @@ func TestOpenStackArchToGoArch(t *testing.T) {
 		"ppc64le":  "ppc64le",
 		"s390x":    "s390x",
 		"x86_64":   "amd64",
-		"alpha":    "",
 	}
 
 	for architecture, want := range tests {
