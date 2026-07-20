@@ -74,6 +74,15 @@ func agentLabelsFor(capability types.Capability, extraAgentLabels map[string]str
 //     or be the wildcard "*".
 //   - Every key the agent has marked mandatory ("!" prefix in config) must
 //     be present and non-empty in the workflow labels.
+//
+// Scope seam: this compares the task's labels against the labels the agent
+// advertises directly. The real woodpecker server also (a) injects
+// scope labels the agent implicitly satisfies (e.g. a global agent matches
+// the "org-id"/"repo" that ApplyLabelsFromRepo stamps on every task) and
+// (b) strips internal "woodpecker-ci.org/*" labels before matching. Today the
+// autoscaler only manages global-scope pools, so those two steps are the
+// single place that must change to (1) fix real-queue matching and (2) later
+// support user-/organization-scoped pools — without reworking the caller.
 func taskMatchesAgent(taskLabels map[string]string, agent agentLabelSet) bool {
 	// Mandatory keys: workflow must explicitly set them (with a non-empty
 	// value, since empty values are ignored by woodpecker).
