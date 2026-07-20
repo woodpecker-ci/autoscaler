@@ -2,6 +2,7 @@ package e2e_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -143,4 +144,25 @@ func TestAutoscalerIgnoresUnschedulablePending(t *testing.T) {
 	h.reconcile(t)
 	require.Empty(t, h.provider.deployed, "no bucket can serve arm64; do not scale")
 	require.Empty(t, h.woodpecker.agents)
+}
+
+// A provisioned agent that registered but never phoned home, older than the
+// inactivity timeout, is a boot that silently failed. It holds a provider slot
+// forever unless reaped, so the stale-cleanup path must tear it down.
+func TestAutoscalerReapsAgentsThatNeverConnect(t *testing.T) {
+	cfg := testConfig(0, 2)
+	cfg.AgentInactivityTimeout = time.Minute
+	h := newHarness(t, cfg, dockerAMD64)
+
+	name := "pool-e2e-agent-stuck"
+	agent, err := h.woodpecker.AgentCreate(&woodpecker.Agent{Name: name})
+	require.NoError(t, err)
+	agent.Created = time.Now().Add(-2 * time.Minute).Unix()
+	agent.LastContact = 0
+	h.woodpecker.put(agent)
+	h.provider.deployed[name] = dockerAMD64
+
+	h.reconcile(t)
+	require.Empty(t, h.provider.deployed, "the stuck agent is torn down on the provider")
+	require.Empty(t, h.woodpecker.agents, "and deregistered on the server")
 }
