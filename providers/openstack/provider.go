@@ -373,24 +373,14 @@ func openStackArchToGoArch(architecture string) string {
 		return "arm"
 	case "i686":
 		return "386"
-	case "mips":
-		return "mips"
 	case "mipsel":
 		return "mipsle"
-	case "mips64":
-		return "mips64"
 	case "mips64el":
 		return "mips64le"
-	case "ppc64":
-		return "ppc64"
-	case "ppc64le":
-		return "ppc64le"
-	case "s390x":
-		return "s390x"
 	case "x86_64":
 		return "amd64"
-	default:
-		return ""
+	default: // ppc64le, s390x, mips, ...
+		return architecture
 	}
 }
 
