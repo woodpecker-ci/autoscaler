@@ -17,10 +17,11 @@ type agentBucket struct {
 // bucketState holds the per-bucket numbers the planner needs: how much
 // work is queued for it and how many agents it currently has.
 type bucketState struct {
-	Bucket     agentBucket
-	Pending    int
-	Running    int
-	PoolAgents int // online (NoSchedule=false) pool agents matching this bucket
+	Bucket         agentBucket
+	Pending        int
+	Running        int
+	PoolAgents     int // online (NoSchedule=false) pool agents matching this bucket
+	ReusableAgents int // matching NoSchedule agents that can be reactivated
 }
 
 // bucketDecision is the per-bucket scaling decision Reconcile acts on.
@@ -103,6 +104,9 @@ func computeBucketStates(
 	poolAgentsByID := make(map[int64]*woodpecker.Agent, len(poolAgents))
 	for _, agent := range poolAgents {
 		if agent.NoSchedule {
+			if i := matchAgentToBucket(agent, buckets); i >= 0 {
+				states[i].ReusableAgents++
+			}
 			continue
 		}
 		if agent.ID != 0 {

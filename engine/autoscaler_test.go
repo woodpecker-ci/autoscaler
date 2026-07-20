@@ -263,6 +263,33 @@ func Test_planScaling(t *testing.T) {
 		assert.Empty(t, decisions, "booting agents already fill the MaxAgents budget")
 	})
 
+	t.Run("reactivates a matching drained agent at MaxAgents", func(t *testing.T) {
+		a := Autoscaler{
+			providerCapabilities: []types.Capability{dockerAmd64Cap},
+			agents: map[string]*woodpecker.Agent{
+				"pool-1-agent-1": {
+					ID:         1,
+					Name:       "pool-1-agent-1",
+					Platform:   "linux/amd64",
+					Backend:    "docker",
+					NoSchedule: true,
+				},
+			},
+			config: &config.Config{
+				WorkflowsPerAgent: 1,
+				MaxAgents:         1,
+			},
+		}
+
+		decisions := a.planScaling([]woodpecker.Task{
+			taskWithLabels(map[string]string{"platform": "linux/amd64"}),
+		}, nil)
+
+		if assert.Len(t, decisions, 1) {
+			assert.Equal(t, 1, decisions[0].Delta)
+		}
+	})
+
 	t.Run("rebalances a full pool toward demand", func(t *testing.T) {
 		// MaxAgents=1 and the single slot is held by an idle arm64 agent while
 		// an amd64 task is pending. Drain the idle wrong-capability agent this

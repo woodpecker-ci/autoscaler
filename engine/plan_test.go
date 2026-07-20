@@ -74,6 +74,15 @@ func Test_allocateBudget(t *testing.T) {
 		assert.Equal(t, []int{0}, final)
 	})
 
+	t.Run("reactivates without requiring another provider slot", func(t *testing.T) {
+		states := []bucketState{{Pending: 1, ReusableAgents: 1}}
+		raw := []int{1}
+
+		final := allocateBudget(states, raw, poolLimits{Footprint: 1, Max: 1})
+
+		assert.Equal(t, []int{1}, final)
+	})
+
 	t.Run("clamps total scale-up at MaxAgents", func(t *testing.T) {
 		// Two buckets, both want 5 agents, total cap is 6.
 		states := []bucketState{

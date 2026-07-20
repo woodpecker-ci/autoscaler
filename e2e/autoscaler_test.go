@@ -191,3 +191,24 @@ func TestAutoscalerHourlyBillingKeepsPaidAgentsWarm(t *testing.T) {
 	require.Empty(t, h.provider.deployed)
 	require.Empty(t, h.woodpecker.agents)
 }
+
+// A drained agent already occupies a provider slot, but reactivating it does
+// not consume another slot. Demand should therefore bring it back immediately
+// even when the pool is at MaxAgents.
+func TestAutoscalerReactivatesADrainedAgentAtCapacity(t *testing.T) {
+	cfg := testConfig(0, 1)
+	cfg.BillingModel = types.BillingHourlyRoundUp
+	h := newHarness(t, cfg, dockerAMD64)
+	h.addConnectedAgent(t, "pool-e2e-agent-drained", dockerAMD64)
+
+	drained := h.woodpecker.agentByName(t, "pool-e2e-agent-drained")
+	drained.NoSchedule = true
+	h.woodpecker.put(drained)
+	h.woodpecker.queue.Pending = []woodpecker.Task{
+		realWorkflowTask("build-amd64", "linux/amd64"),
+	}
+
+	h.reconcile(t)
+	require.False(t, h.woodpecker.agentByName(t, drained.Name).NoSchedule)
+	require.Len(t, h.provider.deployed, 1, "reactivation must not deploy another agent")
+}

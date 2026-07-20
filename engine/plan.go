@@ -78,6 +78,7 @@ func (a *Autoscaler) planScaling(pending, running []woodpecker.Task) []bucketDec
 			Int("pending", s.Pending).
 			Int("running", s.Running).
 			Int("pool", s.PoolAgents).
+			Int("reusable", s.ReusableAgents).
 			Int("delta", finalDeltas[i]).
 			Msg("bucket plan")
 	}
@@ -161,8 +162,9 @@ func allocateBudget(states []bucketState, rawDeltas []int, limits poolLimits) []
 		}
 	}
 
-	// Turn targets into deltas. Drains apply in full; creates share the slots
-	// MaxAgents still allows given the footprint, busiest bucket first.
+	// Turn targets into deltas. Drains apply in full. Reactivating a matching
+	// NoSchedule agent reuses its existing provider slot, while fresh creates
+	// share the slots MaxAgents still allows, busiest bucket first.
 	createBudget := max(limits.Max-limits.Footprint, 0)
 	final := make([]int, n)
 	for _, idx := range order {
@@ -170,9 +172,10 @@ func allocateBudget(states []bucketState, rawDeltas []int, limits poolLimits) []
 		case delta < 0:
 			final[idx] = delta
 		case delta > 0:
-			grant := min(delta, createBudget)
-			final[idx] = grant
-			createBudget -= grant
+			reactivate := min(delta, states[idx].ReusableAgents)
+			create := min(delta-reactivate, createBudget)
+			final[idx] = reactivate + create
+			createBudget -= create
 		}
 	}
 	return final

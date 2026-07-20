@@ -119,6 +119,7 @@ func Test_computeBucketStates(t *testing.T) {
 	assert.Equal(t, 1, states[1].Pending)
 	assert.Equal(t, 1, states[1].Running)
 	assert.Equal(t, 1, states[1].PoolAgents) // drained one not counted
+	assert.Equal(t, 1, states[1].ReusableAgents)
 }
 
 func Test_routeTaskToBucket_extraLabels(t *testing.T) {
