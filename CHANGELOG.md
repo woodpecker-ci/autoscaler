@@ -1,5 +1,55 @@
 # Changelog
 
+## [2.0.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.0) - 2026-07-22
+
+### ❤️ Thanks to all contributors! ❤️
+
+@6543, @LaGrunge, @bcornish1797, @btriller, @hstern, @toothstone
+
+### 💥 Breaking changes
+
+- AWS resolve config on start and use defaults [[#637](https://github.com/woodpecker-ci/autoscaler/pull/637)]
+- Scaleway resolve config on startup [[#636](https://github.com/woodpecker-ci/autoscaler/pull/636)]
+- Remove provider injected userdata and global provider userdata, use `WOODPECKER_CLOUDINIT_TEMPLATE` [[#633](https://github.com/woodpecker-ci/autoscaler/pull/633)]
+- Remove "WOODPECKER_FILTER_LABELS", use WOODPECKER_AGENT_LABELS [[#629](https://github.com/woodpecker-ci/autoscaler/pull/629)]
+- Forbidd to set WOODPECKER_AGENT_LABELS via WOODPECKER_AGENT_ENV [[#630](https://github.com/woodpecker-ci/autoscaler/pull/630)]
+- Check Vultr config on startup [[#600](https://github.com/woodpecker-ci/autoscaler/pull/600)]
+- Resolve Hetzner config on startup and remove deprecated flags [[#605](https://github.com/woodpecker-ci/autoscaler/pull/605)]
+
+### ✨ Features
+
+- Add  experimental OpenStack provider [[#682](https://github.com/woodpecker-ci/autoscaler/pull/682)]
+- Add experimental Equinix Metal provider [[#604](https://github.com/woodpecker-ci/autoscaler/pull/604)]
+
+### 📈 Enhancement
+
+- Clarify WOODPECKER_TOKEN setting and agent token usage [[#676](https://github.com/woodpecker-ci/autoscaler/pull/676)]
+- Make agent teardown billing-aware [[#645](https://github.com/woodpecker-ci/autoscaler/pull/645)]
+- Support custom images on Hetzner [[#638](https://github.com/woodpecker-ci/autoscaler/pull/638)]
+
+### 🐛 Bug Fixes
+
+- fix(engine): stop double-subtracting pool size in calcAgents [[#674](https://github.com/woodpecker-ci/autoscaler/pull/674)]
+
+### 📦️ Dependency
+
+- Update golang deps non-major [[#690](https://github.com/woodpecker-ci/autoscaler/pull/690)]
+- Update golang.org/x/exp digest to 764159d [[#685](https://github.com/woodpecker-ci/autoscaler/pull/685)]
+- Update docker.io/woodpeckerci/plugin-ready-release-go Docker tag to v4.1.2 [[#683](https://github.com/woodpecker-ci/autoscaler/pull/683)]
+- Update pre-commit hook igorshubovych/markdownlint-cli to v0.49.1 [[#684](https://github.com/woodpecker-ci/autoscaler/pull/684)]
+- Update golang deps non-major [[#681](https://github.com/woodpecker-ci/autoscaler/pull/681)]
+- Update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.316.0 [[#680](https://github.com/woodpecker-ci/autoscaler/pull/680)]
+- Update docker.io/woodpeckerci/plugin-docker-buildx Docker tag to v6.1.1 [[#679](https://github.com/woodpecker-ci/autoscaler/pull/679)]
+- Update golang.org/x/exp digest to 9ea1abe [[#678](https://github.com/woodpecker-ci/autoscaler/pull/678)]
+- Update golang deps non-major [[#675](https://github.com/woodpecker-ci/autoscaler/pull/675)]
+- Update module github.com/linode/linodego/v2 to v2.4.0 [[#669](https://github.com/woodpecker-ci/autoscaler/pull/669)]
+- Update module github.com/equinix/equinix-sdk-go to v0.66.0 [[#666](https://github.com/woodpecker-ci/autoscaler/pull/666)]
+- fix(deps): update module github.com/hetznercloud/hcloud-go/v2 to v2.41.1 [[#631](https://github.com/woodpecker-ci/autoscaler/pull/631)]
+
+### Misc
+
+- Add flake.nix for dev environment [[#672](https://github.com/woodpecker-ci/autoscaler/pull/672)]
+
 ## [1.5.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.5.0) - 2026-05-19
 
 ### ❤️ Thanks to all contributors! ❤️
