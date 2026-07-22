@@ -19,6 +19,13 @@ import (
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
 
+// blackhole metadata services so running steps can not extract agent token from user-data
+// https://www.scaleway.com/en/developers/api/instance/
+var blackholeMetadataAPI = []string{
+	"ip -4 route add blackhole 169.254.42.42/32",
+	"ip -6 route add blackhole fd00:42::42/128",
+}
+
 type provider struct {
 	projectID   *string
 	prefix      string
@@ -169,7 +176,9 @@ func (p *provider) createInstance(ctx context.Context, agent *woodpecker.Agent, 
 }
 
 func (p *provider) setCloudInit(ctx context.Context, agent *woodpecker.Agent, inst *instance.Server) error {
-	ud, err := cloudinit.RenderUserDataTemplate(p.config, agent, cloudinit.RenderOption{})
+	ud, err := cloudinit.RenderUserDataTemplate(p.config, agent, cloudinit.RenderOption{
+		PreExec: blackholeMetadataAPI,
+	})
 	if err != nil {
 		return err
 	}
