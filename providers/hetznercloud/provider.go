@@ -69,7 +69,11 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 	return p, nil
 }
 
-func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
+func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, capability types.Capability) error {
+	if capability.Backend != types.BackendDocker {
+		return fmt.Errorf("hetzner only support docker backend")
+	}
+
 	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, cloudinit.RenderOption{})
 	if err != nil {
 		return fmt.Errorf("%s: cloudinit.RenderUserDataTemplate: %w", p.name, err)
@@ -124,7 +128,27 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 		},
 	}
 
-	for i, c := range p.deployCandidates {
+	// First pass: resolve all configured entries and filter to those that
+	// match the requested capability and whose location actually supports
+	// the server type. We need this list up front so that we can correctly
+	// distinguish "no last entry to error on" from "last viable entry
+	// failed".
+	candidates := make([]deployCandidate, 0, len(p.deployCandidates))
+	for _, c := range p.deployCandidates {
+		// Filter by requested capability (arch). cap is always one of the
+		// platforms we returned from Capabilities, so a mismatch here just
+		// means this entry is for a different arch in the fallback chain.
+		platform := "linux/" + hcloudArchToGoArch(c.serverType.Architecture)
+		if platform == capability.Platform {
+			candidates = append(candidates, c)
+		}
+	}
+
+	if len(candidates) == 0 {
+		return fmt.Errorf("%s: %w: %s", p.name, ErrNoMatchingServerType, capability.Platform)
+	}
+
+	for i, c := range candidates {
 		serverCreateOpts.Location = c.location
 		serverCreateOpts.ServerType = c.serverType
 		serverCreateOpts.Image = c.image
@@ -146,7 +170,7 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 		}
 
 		// Only log and continue if there are more candidates left.
-		if i < len(p.deployCandidates)-1 {
+		if i < len(candidates)-1 {
 			log.Warn().Msgf(
 				"create agent failed: location = %s type = %s: %s",
 				locationName, c.serverType.Name, err,
@@ -199,4 +223,21 @@ func (p *provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 
 func (p *provider) BillingModel() types.BillingModel {
 	return types.BillingHourlyRoundUp
+}
+
+func (p *provider) Capabilities(_ context.Context) ([]types.Capability, error) {
+	seen := map[string]bool{}
+	var caps []types.Capability
+
+	for _, c := range p.deployCandidates {
+		platform := "linux/" + hcloudArchToGoArch(c.serverType.Architecture)
+		if !seen[platform] {
+			seen[platform] = true
+			caps = append(caps, types.Capability{
+				Platform: platform,
+				Backend:  types.BackendDocker,
+			})
+		}
+	}
+	return caps, nil
 }

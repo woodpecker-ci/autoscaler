@@ -3,6 +3,7 @@ package aws
 import (
 	"context"
 	b64 "encoding/base64"
+	"errors"
 	"fmt"
 	"strings"
 	"sync"
@@ -160,7 +161,29 @@ func (p *provider) printResolvedConfig() {
 	}
 }
 
-func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
+func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, capability types.Capability) error {
+	// Filter to the candidates that can serve the requested capability;
+	// the capacity failover below only iterates within this set. Candidates
+	// with an unknown architecture were not advertised and remain unusable,
+	// but must not block known candidates.
+	candidates := make([]deployCandidate, 0, len(p.deployCandidates))
+	if capability.Backend == types.BackendDocker {
+		for _, c := range p.deployCandidates {
+			platform, err := candidatePlatform(c)
+			if err != nil {
+				log.Error().Err(err).Msg("skipping deploy candidate with unknown architecture")
+				continue
+			}
+			if platform == capability.Platform {
+				candidates = append(candidates, c)
+			}
+		}
+	}
+	if len(candidates) == 0 {
+		return fmt.Errorf("%s: %w: platform=%s backend=%s",
+			p.name, ErrNoMatchingCandidate, capability.Platform, capability.Backend)
+	}
+
 	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, cloudinit.RenderOption{})
 	if err != nil {
 		return fmt.Errorf("%s: cloudinit.RenderUserDataTemplate: %w", p.name, err)
@@ -230,7 +253,7 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 	runInstancesInput.UserData = aws.String(b64.StdEncoding.EncodeToString([]byte(userData)))
 
 	var result *ec2.RunInstancesOutput
-	for i, c := range p.deployCandidates {
+	for i, c := range candidates {
 		runInstancesInput.InstanceType = c.instanceType.InstanceType
 		runInstancesInput.ImageId = c.regionConfig.image.ImageId
 		runInstancesInput.SecurityGroupIds = c.regionConfig.securityGroups
@@ -257,7 +280,7 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 		}
 
 		// Only log and continue if there are more candidates left.
-		if i < len(p.deployCandidates)-1 {
+		if i < len(candidates)-1 {
 			log.Warn().Msgf(
 				"create agent failed: type = %s region = %s: %s",
 				c.instanceType.InstanceType, c.regionConfig.region, err,
@@ -267,7 +290,7 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 
 		// Last candidate failed: the whole fallback chain is exhausted.
 		return fmt.Errorf("%s: all %d deploy candidates out of capacity, last: RunInstances: %w",
-			p.name, len(p.deployCandidates), err)
+			p.name, len(candidates), err)
 	}
 
 	if result == nil || len(result.Instances) == 0 {
@@ -330,6 +353,35 @@ func (p *provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 		}
 	}
 	return names, nil
+}
+
+func (p *provider) Capabilities(_ context.Context) ([]types.Capability, error) {
+	seen := map[string]bool{}
+	var caps []types.Capability
+	var errs error
+
+	for _, c := range p.deployCandidates {
+		platform, err := candidatePlatform(c)
+		if err != nil {
+			// Discovery must not take the autoscaler down over one candidate
+			// with an architecture the mapping does not know; report it and
+			// keep the remaining candidates usable.
+			log.Error().Err(err).Msg("skipping deploy candidate with unknown architecture")
+			errs = errors.Join(errs, err)
+			continue
+		}
+		if !seen[platform] {
+			seen[platform] = true
+			caps = append(caps, types.Capability{
+				Platform: platform,
+				Backend:  types.BackendDocker,
+			})
+		}
+	}
+	if len(caps) == 0 && errs != nil {
+		return nil, errs
+	}
+	return caps, nil
 }
 
 func (p *provider) BillingModel() types.BillingModel {
