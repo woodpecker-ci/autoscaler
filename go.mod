@@ -14,7 +14,7 @@ require (
 	github.com/docker/go-units v0.5.0
 	github.com/equinix/equinix-sdk-go v0.66.0
 	github.com/gophercloud/gophercloud/v2 v2.13.0
-	github.com/hetznercloud/hcloud-go/v2 v2.45.0
+	github.com/hetznercloud/hcloud-go/v2 v2.46.0
 	github.com/joho/godotenv v1.5.1
 	github.com/linode/linodego/v2 v2.4.2
 	github.com/rs/zerolog v1.35.1
