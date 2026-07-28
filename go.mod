@@ -10,7 +10,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/credentials v1.19.30
 	github.com/aws/aws-sdk-go-v2/service/ec2 v1.317.0
 	github.com/aws/aws-sdk-go-v2/service/sts v1.45.0
-	github.com/aws/smithy-go v1.27.4
+	github.com/aws/smithy-go v1.27.5
 	github.com/docker/go-units v0.5.0
 	github.com/equinix/equinix-sdk-go v0.66.0
 	github.com/gophercloud/gophercloud/v2 v2.13.0
