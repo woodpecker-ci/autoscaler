@@ -1,6 +1,6 @@
 # Changelog
 
-## [2.0.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.0) - 2026-07-27
+## [2.0.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.0) - 2026-07-28
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -33,6 +33,7 @@
 
 ### 📦️ Dependency
 
+- Update module github.com/aws/smithy-go to v1.27.5 [[#692](https://github.com/woodpecker-ci/autoscaler/pull/692)]
 - Update module github.com/hetznercloud/hcloud-go/v2 to v2.47.0 [[#691](https://github.com/woodpecker-ci/autoscaler/pull/691)]
 - Update golang deps non-major [[#690](https://github.com/woodpecker-ci/autoscaler/pull/690)]
 - Update golang.org/x/exp digest to 764159d [[#685](https://github.com/woodpecker-ci/autoscaler/pull/685)]
