@@ -1,6 +1,6 @@
 # Changelog
 
-## [2.0.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.0) - 2026-07-30
+## [2.0.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.0) - 2026-07-31
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -33,6 +33,7 @@
 
 ### 📦️ Dependency
 
+- Update module github.com/linode/linodego/v2 to v2.5.0 [[#695](https://github.com/woodpecker-ci/autoscaler/pull/695)]
 - Update golang deps non-major [[#694](https://github.com/woodpecker-ci/autoscaler/pull/694)]
 - Update golang deps non-major [[#693](https://github.com/woodpecker-ci/autoscaler/pull/693)]
 - Update module github.com/aws/smithy-go to v1.27.5 [[#692](https://github.com/woodpecker-ci/autoscaler/pull/692)]
