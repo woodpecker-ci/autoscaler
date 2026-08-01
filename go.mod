@@ -23,7 +23,7 @@ require (
 	github.com/urfave/cli/v3 v3.10.1
 	github.com/vultr/govultr/v3 v3.32.0
 	go.woodpecker-ci.org/woodpecker/v3 v3.16.0
-	golang.org/x/exp v0.0.0-20260718201538-764159d718ef
+	golang.org/x/exp v0.0.0-20260727155853-b88d891fe743
 	golang.org/x/net v0.57.0
 	golang.org/x/oauth2 v0.36.0
 )
