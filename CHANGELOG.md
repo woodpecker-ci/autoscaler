@@ -33,6 +33,7 @@
 
 ### 📦️ Dependency
 
+- Update pre-commit hook hadolint/hadolint to v2.15.1 [[#699](https://github.com/woodpecker-ci/autoscaler/pull/699)]
 - Update dependency mvdan/gofumpt to v0.11.0 [[#698](https://github.com/woodpecker-ci/autoscaler/pull/698)]
 - Update golang deps non-major [[#697](https://github.com/woodpecker-ci/autoscaler/pull/697)]
 - Update golang.org/x/exp digest to b88d891 [[#696](https://github.com/woodpecker-ci/autoscaler/pull/696)]
