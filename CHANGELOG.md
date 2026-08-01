@@ -33,6 +33,7 @@
 
 ### 📦️ Dependency
 
+- Update golang deps non-major [[#697](https://github.com/woodpecker-ci/autoscaler/pull/697)]
 - Update golang.org/x/exp digest to b88d891 [[#696](https://github.com/woodpecker-ci/autoscaler/pull/696)]
 - Update module github.com/linode/linodego/v2 to v2.5.0 [[#695](https://github.com/woodpecker-ci/autoscaler/pull/695)]
 - Update golang deps non-major [[#694](https://github.com/woodpecker-ci/autoscaler/pull/694)]
