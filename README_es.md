@@ -66,10 +66,10 @@ Establezca `WOODPECKER_PROVIDER=openstack`. El prefijo de todas las variables de
 
 Debe proporcionar la variable `AUTH_URL` que apunte a su Keystone. Si es necesario, también puede especificar `DOMAIN_NAME`, `REGION` y `PROJECT_NAME`.
 
-Se admiten tanto la autenticación con `USERNAME`/`PASSWORD` como las credenciales de la aplicación a través de `APPLICATION_CREDENTIAL_ID` y `APPLICATION_CREDENTIAL_SECRET`.  
+Se admiten tanto la autenticación con `USERNAME`/`PASSWORD` como las credenciales de la aplicación a través de `APPLICATION_CREDENTIAL_ID` y `APPLICATION_CREDENTIAL_SECRET`.
 Las credenciales también se pueden leer desde archivos; para ello, añada `_FILE` al nombre de la variable correspondiente e indique la ruta del archivo.
 
-Puede seleccionar el tipo y la imagen para las instancias de agente a través de `FLAVOR/IMAGE_NAME` o mediante una referencia UUID (`FLAVOR/IMAGE_REF`).  
+Puede seleccionar el tipo y la imagen para las instancias de agente a través de `FLAVOR/IMAGE_NAME` o mediante una referencia UUID (`FLAVOR/IMAGE_REF`).
 Si establece `VOLUME_SIZE`, se utilizarán volúmenes de almacenamiento en bloque.
 
 Puede agregar su par de claves SSH de OpenStack mediante `KEYPAIR`.

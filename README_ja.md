@@ -94,7 +94,7 @@ Keystoneを指す`AUTH_URL`を指定する必要があります。必要に応�
   - [ ] Azure
   - [ ] Digital Ocean
   - [x] Linode
-  - [x] OpenStack **[実験的]** 
+  - [x] OpenStack **[実験的]**
   - [ ] Oracle Cloud
   - [x] Equinix Metal **[実験的]**（メンテナーによる実際のプロバイダーアクセスでのテストは行われていない。詳細は[上記](#equinix-metal)を参照）
   - [x] Vultr
