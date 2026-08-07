@@ -81,12 +81,26 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 	return p, nil
 }
 
-func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
+func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, capability types.Capability) error {
+	if capability.Backend != types.BackendDocker {
+		return fmt.Errorf("scaleway only support docker backend")
+	}
+
 	if len(p.candidates) == 0 {
 		return fmt.Errorf("scaleway: no candidates to deploy from")
 	}
 
-	for i, c := range p.candidates {
+	var matched []deployCandidate
+	for _, c := range p.candidates {
+		if "linux/"+scwArchToGoArch(c.serverType.Arch) == capability.Platform {
+			matched = append(matched, c)
+		}
+	}
+	if len(matched) == 0 {
+		return fmt.Errorf("scaleway: %w: %s", ErrNoMatchingServerType, capability.Platform)
+	}
+
+	for i, c := range matched {
 		err := p.createAndBoot(ctx, agent, c)
 		if err == nil {
 			return nil
@@ -94,7 +108,7 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 		if !isResourceUnavailable(err) {
 			return err
 		}
-		if i < len(p.candidates)-1 {
+		if i < len(matched)-1 {
 			log.Warn().Str("type", c.rawType).Str("zone", c.zone.String()).
 				Msgf("scaleway: create failed (resource unavailable), trying next candidate: %s", err)
 			continue
@@ -103,6 +117,41 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 	}
 
 	return nil
+}
+
+func (p *provider) Capabilities(_ context.Context) ([]types.Capability, error) {
+	seen := make(map[string]struct{})
+	var caps []types.Capability
+	for _, c := range p.candidates {
+		goarch := scwArchToGoArch(c.serverType.Arch)
+		if goarch == "" {
+			continue
+		}
+		platform := "linux/" + goarch
+		if _, exists := seen[platform]; exists {
+			continue
+		}
+		seen[platform] = struct{}{}
+		caps = append(caps, types.Capability{
+			Platform: platform,
+			Backend:  types.BackendDocker,
+		})
+	}
+	return caps, nil
+}
+
+// scwArchToGoArch maps Scaleway Arch values to Go GOARCH strings.
+func scwArchToGoArch(a instance.Arch) string {
+	switch a {
+	case instance.ArchX86_64:
+		return "amd64"
+	case instance.ArchArm64:
+		return "arm64"
+	case instance.ArchArm:
+		return "arm"
+	default:
+		return ""
+	}
 }
 
 func (p *provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) error {

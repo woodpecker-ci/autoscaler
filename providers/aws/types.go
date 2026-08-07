@@ -16,6 +16,8 @@ var (
 	ErrInstanceTypeArchitecture = errors.New("instance type must report exactly one architecture")
 	ErrTypeNotInRegion          = errors.New("instance type not offered in region")
 	ErrNoDeployCandidates       = errors.New("no deploy candidates resolved")
+	ErrNoMatchingCandidate      = errors.New("no deploy candidate matches requested capability")
+	ErrUnknownArchitecture      = errors.New("unknown architecture")
 	ErrRegionNotSet             = errors.New("aws-region must be set for unqualified values")
 )
 

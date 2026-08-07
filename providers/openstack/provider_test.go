@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/gophercloud/gophercloud/v2/openstack/image/v2/images"
 	th "github.com/gophercloud/gophercloud/v2/testhelper"
 	fakeclient "github.com/gophercloud/gophercloud/v2/testhelper/client"
 	"github.com/stretchr/testify/assert"
@@ -16,6 +17,11 @@ import (
 	"go.woodpecker-ci.org/autoscaler/engine/types"
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
+
+var dockerAMD64Capability = types.Capability{
+	Platform: "linux/amd64",
+	Backend:  types.BackendDocker,
+}
 
 // newTestCommand builds a parsed *cli.Command exposing the given flag values,
 // so provider constructors that read configuration through the CLI can be
@@ -59,6 +65,8 @@ func newTestProvider(t *testing.T) (*provider, *http.ServeMux) {
 		name:          "openstack",
 		config:        &config.Config{PoolID: "pool-7"},
 		computeClient: fakeclient.ServiceClient(fakeServer),
+		imageClient:   fakeclient.ServiceClient(fakeServer),
+		capability:    &dockerAMD64Capability,
 	}
 
 	return p, fakeServer.Mux
@@ -84,6 +92,104 @@ func TestBillingModel(t *testing.T) {
 	assert.Equal(t, types.BillingPerSecond, p.BillingModel())
 }
 
+func TestImageCapability(t *testing.T) {
+	tests := []struct {
+		name       string
+		properties map[string]any
+		want       types.Capability
+		wantErr    string
+	}{
+		{
+			name:       "preferred architecture",
+			properties: map[string]any{"hw_architecture": "aarch64", "architecture": "x86_64", "os_type": "linux"},
+			want:       types.Capability{Platform: "linux/arm64", Backend: types.BackendDocker},
+		},
+		{
+			name:       "legacy architecture",
+			properties: map[string]any{"architecture": "x86_64"},
+			want:       dockerAMD64Capability,
+		},
+		{
+			name:       "missing architecture",
+			properties: map[string]any{},
+			wantErr:    "hw_architecture",
+		},
+		{
+			name:       "unsupported operating system",
+			properties: map[string]any{"hw_architecture": "x86_64", "os_type": "windows"},
+			wantErr:    "windows",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got, err := imageCapability(&images.Image{Properties: test.properties})
+			if test.wantErr != "" {
+				require.ErrorContains(t, err, test.wantErr)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, test.want, got)
+		})
+	}
+}
+
+func TestOpenStackArchToGoArch(t *testing.T) {
+	tests := map[string]string{
+		"aarch64":  "arm64",
+		"armv7l":   "arm",
+		"i686":     "386",
+		"mips":     "mips",
+		"mipsel":   "mipsle",
+		"mips64":   "mips64",
+		"mips64el": "mips64le",
+		"ppc64":    "ppc64",
+		"ppc64le":  "ppc64le",
+		"s390x":    "s390x",
+		"x86_64":   "amd64",
+	}
+
+	for architecture, want := range tests {
+		t.Run(architecture, func(t *testing.T) {
+			assert.Equal(t, want, openStackArchToGoArch(architecture))
+		})
+	}
+}
+
+func TestResolveCapabilityQueriesImageOnce(t *testing.T) {
+	p, mux := newTestProvider(t)
+	p.capability = nil
+	p.imageRef = "image-456"
+
+	requests := 0
+	mux.HandleFunc("GET /images/image-456", func(w http.ResponseWriter, _ *http.Request) {
+		requests++
+		writeJSON(w, http.StatusOK, `{"id":"image-456","name":"ubuntu","hw_architecture":"aarch64","os_type":"linux"}`)
+	})
+
+	require.NoError(t, p.resolveCapability(t.Context()))
+
+	want := []types.Capability{{Platform: "linux/arm64", Backend: types.BackendDocker}}
+	for range 2 {
+		got, err := p.Capabilities(t.Context())
+		require.NoError(t, err)
+		assert.Equal(t, want, got)
+	}
+	assert.Equal(t, 1, requests)
+}
+
+func TestDeployAgentRejectsUnsupportedCapability(t *testing.T) {
+	p, _ := newTestProvider(t)
+	p.flavorRef = "flavor-123"
+	p.imageRef = "image-456"
+
+	err := p.DeployAgent(t.Context(), &woodpecker.Agent{Name: "agent-1"}, types.Capability{
+		Platform: "linux/arm64",
+		Backend:  types.BackendDocker,
+	})
+	require.ErrorContains(t, err, "linux/arm64")
+}
+
 func TestNewRejectsFlavorRefAndName(t *testing.T) {
 	c := newTestCommand(t, map[string]string{
 		"openstack-flavor-ref":  "f-1",
@@ -98,6 +204,7 @@ func TestNewRejectsFlavorRefAndName(t *testing.T) {
 
 func TestNewRejectsImageRefAndName(t *testing.T) {
 	c := newTestCommand(t, map[string]string{
+		"openstack-flavor-ref": "f-1",
 		"openstack-image-ref":  "i-1",
 		"openstack-image-name": "ubuntu",
 	})
@@ -105,6 +212,24 @@ func TestNewRejectsImageRefAndName(t *testing.T) {
 	_, err := New(t.Context(), c, &config.Config{})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "Image")
+}
+
+func TestNewRequiresFlavor(t *testing.T) {
+	c := newTestCommand(t, map[string]string{
+		"openstack-image-ref": "i-1",
+	})
+
+	_, err := New(t.Context(), c, &config.Config{})
+	require.ErrorContains(t, err, "Flavor")
+}
+
+func TestNewRequiresImage(t *testing.T) {
+	c := newTestCommand(t, map[string]string{
+		"openstack-flavor-ref": "f-1",
+	})
+
+	_, err := New(t.Context(), c, &config.Config{})
+	require.ErrorContains(t, err, "Image")
 }
 
 func TestNewFailsIfVolumeSizeNotInt(t *testing.T) {
@@ -121,7 +246,7 @@ func TestDeployAgentInvalidUserData(t *testing.T) {
 	p, _ := newTestProvider(t)
 	p.config = &config.Config{UserData: "{{.InvalidField}}"}
 
-	err := p.DeployAgent(t.Context(), &woodpecker.Agent{Name: "agent-1"})
+	err := p.DeployAgent(t.Context(), &woodpecker.Agent{Name: "agent-1"}, dockerAMD64Capability)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "RenderUserDataTemplate")
 }
@@ -145,7 +270,7 @@ func TestDeployAgentWithRefs(t *testing.T) {
 	})
 	handleWaitActive(mux, "srv-1")
 
-	err := p.DeployAgent(t.Context(), &woodpecker.Agent{Name: "agent-1"})
+	err := p.DeployAgent(t.Context(), &woodpecker.Agent{Name: "agent-1"}, dockerAMD64Capability)
 	require.NoError(t, err)
 
 	require.NotNil(t, got)
@@ -191,7 +316,7 @@ func TestDeployAgentWithKeypair(t *testing.T) {
 	})
 	handleWaitActive(mux, "srv-1")
 
-	err := p.DeployAgent(t.Context(), &woodpecker.Agent{Name: "agent-1"})
+	err := p.DeployAgent(t.Context(), &woodpecker.Agent{Name: "agent-1"}, dockerAMD64Capability)
 	require.NoError(t, err)
 	assert.Equal(t, "my-key", got["key_name"])
 }
@@ -212,16 +337,15 @@ func TestDeployAgentOmitsNetworkWhenUnset(t *testing.T) {
 	})
 	handleWaitActive(mux, "srv-1")
 
-	err := p.DeployAgent(t.Context(), &woodpecker.Agent{Name: "agent-1"})
+	err := p.DeployAgent(t.Context(), &woodpecker.Agent{Name: "agent-1"}, dockerAMD64Capability)
 	require.NoError(t, err)
 	_, hasNetworks := got["networks"]
 	assert.False(t, hasNetworks, "networks must be omitted when no network is configured")
 }
 
-func TestDeployAgentResolvesFlavorName(t *testing.T) {
+func TestResolveFlavorName(t *testing.T) {
 	p, mux := newTestProvider(t)
 	p.flavorName = "m1.small"
-	p.imageRef = "image-456"
 
 	mux.HandleFunc("GET /flavors/detail", func(w http.ResponseWriter, _ *http.Request) {
 		writeJSON(w, http.StatusOK, `{"flavors":[
@@ -230,40 +354,47 @@ func TestDeployAgentResolvesFlavorName(t *testing.T) {
 		]}`)
 	})
 
-	var got map[string]any
-	mux.HandleFunc("POST /servers", func(w http.ResponseWriter, r *http.Request) {
-		var body struct {
-			Server map[string]any `json:"server"`
-		}
-		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
-		got = body.Server
-		writeJSON(w, http.StatusAccepted, `{"server":{"id":"srv-1","status":"ACTIVE"}}`)
-	})
-	handleWaitActive(mux, "srv-1")
-
-	err := p.DeployAgent(t.Context(), &woodpecker.Agent{Name: "agent-1"})
-	require.NoError(t, err)
-	assert.Equal(t, "flavor-bbb", got["flavorRef"], "should resolve the ID for m1.small")
-	assert.Equal(t, "flavor-bbb", p.flavorRef, "resolved flavor ref should be cached on the provider")
+	require.NoError(t, p.resolveFlavor(t.Context()))
+	assert.Equal(t, "flavor-bbb", p.flavorRef)
 }
 
-func TestDeployAgentFlavorNameNotFound(t *testing.T) {
+func TestResolveFlavorNameNotFound(t *testing.T) {
 	p, mux := newTestProvider(t)
 	p.flavorName = "does-not-exist"
-	p.imageRef = "image-456"
 
 	mux.HandleFunc("GET /flavors/detail", func(w http.ResponseWriter, _ *http.Request) {
 		writeJSON(w, http.StatusOK, `{"flavors":[{"id":"flavor-aaa","name":"m1.tiny"}]}`)
 	})
 
-	err := p.DeployAgent(t.Context(), &woodpecker.Agent{Name: "agent-1"})
+	err := p.resolveFlavor(t.Context())
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "No flavor ID found")
 }
 
-func TestDeployAgentResolvesImageName(t *testing.T) {
+func TestResolveFlavorRef(t *testing.T) {
 	p, mux := newTestProvider(t)
 	p.flavorRef = "flavor-123"
+
+	mux.HandleFunc("GET /flavors/flavor-123", func(w http.ResponseWriter, _ *http.Request) {
+		writeJSON(w, http.StatusOK, `{"flavor":{"id":"flavor-123","name":"m1.small"}}`)
+	})
+
+	require.NoError(t, p.resolveFlavor(t.Context()))
+}
+
+func TestResolveFlavorRefNotFound(t *testing.T) {
+	p, mux := newTestProvider(t)
+	p.flavorRef = "missing"
+
+	mux.HandleFunc("GET /flavors/missing", func(w http.ResponseWriter, _ *http.Request) {
+		writeJSON(w, http.StatusNotFound, `{"itemNotFound":{"message":"not found"}}`)
+	})
+
+	require.ErrorContains(t, p.resolveFlavor(t.Context()), "flavors.Get")
+}
+
+func TestResolveImageName(t *testing.T) {
+	p, mux := newTestProvider(t)
 	p.imageName = "ubuntu-24.04"
 
 	mux.HandleFunc("GET /images", func(w http.ResponseWriter, _ *http.Request) {
@@ -275,33 +406,21 @@ func TestDeployAgentResolvesImageName(t *testing.T) {
 		]}`)
 	})
 
-	var got map[string]any
-	mux.HandleFunc("POST /servers", func(w http.ResponseWriter, r *http.Request) {
-		var body struct {
-			Server map[string]any `json:"server"`
-		}
-		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
-		got = body.Server
-		writeJSON(w, http.StatusAccepted, `{"server":{"id":"srv-1","status":"ACTIVE"}}`)
-	})
-	handleWaitActive(mux, "srv-1")
-
-	err := p.DeployAgent(t.Context(), &woodpecker.Agent{Name: "agent-1"})
+	image, err := p.resolveImage(t.Context())
 	require.NoError(t, err)
-	assert.Equal(t, "image-newest", got["imageRef"])
+	assert.Equal(t, "image-newest", image.ID)
 	assert.Equal(t, "image-newest", p.imageRef)
 }
 
-func TestDeployAgentImageNameNotFound(t *testing.T) {
+func TestResolveImageNameNotFound(t *testing.T) {
 	p, mux := newTestProvider(t)
-	p.flavorRef = "flavor-123"
 	p.imageName = "ghost-image"
 
 	mux.HandleFunc("GET /images", func(w http.ResponseWriter, _ *http.Request) {
 		writeJSON(w, http.StatusOK, `{"images":[]}`)
 	})
 
-	err := p.DeployAgent(t.Context(), &woodpecker.Agent{Name: "agent-1"})
+	_, err := p.resolveImage(t.Context())
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "No image ID found")
 }
@@ -322,7 +441,7 @@ func TestDeployAgentOnEphemeralStorage(t *testing.T) {
 	})
 	handleWaitActive(mux, "srv-1")
 
-	err := p.DeployAgent(t.Context(), &woodpecker.Agent{Name: "agent-1"})
+	err := p.DeployAgent(t.Context(), &woodpecker.Agent{Name: "agent-1"}, dockerAMD64Capability)
 	require.NoError(t, err)
 	assert.Equal(t, "image-123", got["imageRef"])
 
@@ -347,7 +466,7 @@ func TestDeployAgentOnVolume(t *testing.T) {
 	})
 	handleWaitActive(mux, "srv-1")
 
-	err := p.DeployAgent(t.Context(), &woodpecker.Agent{Name: "agent-1"})
+	err := p.DeployAgent(t.Context(), &woodpecker.Agent{Name: "agent-1"}, dockerAMD64Capability)
 	require.NoError(t, err)
 	bdms, ok := got["block_device_mapping_v2"].([]any)
 	require.True(t, ok)
@@ -370,7 +489,7 @@ func TestDeployAgentCreateError(t *testing.T) {
 		writeJSON(w, http.StatusInternalServerError, `{"error":"boom"}`)
 	})
 
-	err := p.DeployAgent(t.Context(), &woodpecker.Agent{Name: "agent-1"})
+	err := p.DeployAgent(t.Context(), &woodpecker.Agent{Name: "agent-1"}, dockerAMD64Capability)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "servers.Create")
 }
@@ -393,7 +512,7 @@ func TestDeployAgentRemovesServerWhenWaitFails(t *testing.T) {
 		w.WriteHeader(http.StatusNoContent)
 	})
 
-	err := p.DeployAgent(t.Context(), &woodpecker.Agent{Name: "agent-1"})
+	err := p.DeployAgent(t.Context(), &woodpecker.Agent{Name: "agent-1"}, dockerAMD64Capability)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "servers.WaitForStatus")
 	assert.True(t, deleted, "server should be deleted after waiting for ACTIVE fails")

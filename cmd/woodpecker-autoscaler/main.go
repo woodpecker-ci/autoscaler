@@ -99,16 +99,24 @@ func run(ctx context.Context, cmd *cli.Command) error {
 	}
 	config.BillingModel = provider.BillingModel()
 
-	autoscaler := engine.NewAutoscaler(provider, client, config)
-
 	config.AgentInactivityTimeout, err = time.ParseDuration(cmd.String("agent-inactivity-timeout"))
 	if err != nil {
 		return fmt.Errorf("can't parse agent-inactivity-timeout: %w", err)
 	}
 
+	config.AgentCreationTimeout, err = time.ParseDuration(cmd.String("agent-creation-timeout"))
+	if err != nil {
+		return fmt.Errorf("can't parse agent-creation-timeout: %w", err)
+	}
+
 	config.AgentIdleTimeout, err = time.ParseDuration(cmd.String("agent-idle-timeout"))
 	if err != nil {
 		return fmt.Errorf("can't parse agent-idle-timeout: %w", err)
+	}
+
+	autoscaler, err := engine.NewAutoscaler(ctx, provider, client, config)
+	if err != nil {
+		return fmt.Errorf("could not create autoscaler: %w", err)
 	}
 
 	config.AgentBillingTeardownMargin, err = time.ParseDuration(cmd.String("agent-billing-teardown-margin"))
