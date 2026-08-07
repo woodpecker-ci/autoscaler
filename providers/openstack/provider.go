@@ -19,6 +19,14 @@ import (
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
 
+// blackhole metadata services so running steps can not extract agent token from user-data
+// https://docs.openstack.org/nova/latest/user/metadata.html
+// IPv6 metadata (fe80::a9fe:a9fe) is deployment-specific and requires an interface
+// scope, so it can not be blackholed generically here.
+var blackholeMetadataAPI = []string{
+	"ip -4 route add blackhole 169.254.169.254/32",
+}
+
 const (
 	labelPool = "wp.autoscaler-pool" // Override because OpenStack does not allow "/"
 )
@@ -104,7 +112,9 @@ func New(ctx context.Context, c *cli.Command, cfg *config.Config) (types.Provide
 }
 
 func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
-	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, cloudinit.RenderOption{})
+	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, cloudinit.RenderOption{
+		PreExec: blackholeMetadataAPI,
+	})
 	if err != nil {
 		return fmt.Errorf("%s: cloudinit.RenderUserDataTemplate: %w", p.name, err)
 	}
