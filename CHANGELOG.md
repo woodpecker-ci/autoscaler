@@ -1,6 +1,6 @@
 # Changelog
 
-## [2.0.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.0) - 2026-08-06
+## [2.0.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.0) - 2026-08-07
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -33,6 +33,7 @@
 
 ### 📦️ Dependency
 
+- Update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.320.0 [[#705](https://github.com/woodpecker-ci/autoscaler/pull/705)]
 - Update golang deps non-major [[#704](https://github.com/woodpecker-ci/autoscaler/pull/704)]
 - Update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.319.0 [[#701](https://github.com/woodpecker-ci/autoscaler/pull/701)]
 - Update pre-commit hook hadolint/hadolint to v2.15.1 [[#699](https://github.com/woodpecker-ci/autoscaler/pull/699)]
