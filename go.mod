@@ -24,7 +24,7 @@ require (
 	github.com/vultr/govultr/v3 v3.32.0
 	go.woodpecker-ci.org/woodpecker/v3 v3.17.0
 	golang.org/x/exp v0.0.0-20260727155853-b88d891fe743
-	golang.org/x/net v0.57.0
+	golang.org/x/net v0.58.0
 	golang.org/x/oauth2 v0.36.0
 )
 
@@ -54,7 +54,7 @@ require (
 	github.com/prometheus/procfs v0.21.1 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	golang.org/x/sys v0.47.0 // indirect
-	golang.org/x/text v0.40.0 // indirect
+	golang.org/x/text v0.41.0 // indirect
 	google.golang.org/protobuf v1.36.12-0.20260120151049-f2248ac996af // indirect
 	gopkg.in/ini.v1 v1.67.3 // indirect
 	gopkg.in/validator.v2 v2.0.1 // indirect
