@@ -33,6 +33,7 @@
 
 ### 📦️ Dependency
 
+- Update golang deps non-major [[#711](https://github.com/woodpecker-ci/autoscaler/pull/711)]
 - Update golang.org/x/exp digest to c1d0aac [[#710](https://github.com/woodpecker-ci/autoscaler/pull/710)]
 - Update go toolchain directive to v1.26.6 [[#709](https://github.com/woodpecker-ci/autoscaler/pull/709)]
 - Update module golang.org/x/net to v0.58.0 [[#708](https://github.com/woodpecker-ci/autoscaler/pull/708)]
