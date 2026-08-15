@@ -17,8 +17,10 @@ import (
 	"go.woodpecker-ci.org/autoscaler/engine/types"
 	"go.woodpecker-ci.org/autoscaler/providers/aws"
 	"go.woodpecker-ci.org/autoscaler/providers/digitalocean"
+	"go.woodpecker-ci.org/autoscaler/providers/equinixmetal"
 	"go.woodpecker-ci.org/autoscaler/providers/hetznercloud"
 	"go.woodpecker-ci.org/autoscaler/providers/linode"
+	"go.woodpecker-ci.org/autoscaler/providers/openstack"
 	"go.woodpecker-ci.org/autoscaler/providers/scaleway"
 	"go.woodpecker-ci.org/autoscaler/providers/vultr"
 	"go.woodpecker-ci.org/autoscaler/server"
@@ -33,10 +35,14 @@ func setupProvider(ctx context.Context, cmd *cli.Command, config *config.Config)
 		return digitalocean.New(ctx, cmd, config)
 	case "hetznercloud":
 		return hetznercloud.New(ctx, cmd, config)
+	case "equinixmetal":
+		return equinixmetal.New(ctx, cmd, config)
 	case "linode":
 		return linode.New(ctx, cmd, config)
 	case "vultr":
 		return vultr.New(ctx, cmd, config)
+	case "openstack":
+		return openstack.New(ctx, cmd, config)
 	case "scaleway":
 		return scaleway.New(ctx, cmd, config)
 	case "":
@@ -167,11 +173,13 @@ func main() {
 	}
 
 	app.Flags = append(app.Flags, hetznercloud.ProviderFlags...)
+	app.Flags = append(app.Flags, equinixmetal.ProviderFlags...)
 	app.Flags = append(app.Flags, scaleway.ProviderFlags...)
 	app.Flags = append(app.Flags, linode.ProviderFlags...)
 	app.Flags = append(app.Flags, aws.ProviderFlags...)
 	app.Flags = append(app.Flags, digitalocean.ProviderFlags...)
 	app.Flags = append(app.Flags, vultr.ProviderFlags...)
+	app.Flags = append(app.Flags, openstack.ProviderFlags...)
 
 	if err := app.Run(context.Background(), os.Args); err != nil {
 		log.Error().Err(err).Msg("got error while try to run autoscaler")

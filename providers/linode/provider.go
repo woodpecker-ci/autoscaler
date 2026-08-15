@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/linode/linodego"
+	"github.com/linode/linodego/v2"
 	"github.com/rs/zerolog/log"
 	"github.com/urfave/cli/v3"
 	"golang.org/x/oauth2"
@@ -68,7 +68,11 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 		p.rootPass = rand
 	}
 
-	p.client = newClient(apiToken)
+	client, err := newClient(apiToken)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", p.name, err)
+	}
+	p.client = client
 
 	if err := p.resolveRegion(ctx, c.String("linode-region")); err != nil {
 		return nil, err
@@ -211,7 +215,7 @@ func (p *provider) setupKeypair(ctx context.Context) error {
 	return ErrSSHKeyNotFound
 }
 
-func newClient(apiKey string) *linodego.Client {
+func newClient(apiKey string) (*linodego.Client, error) {
 	tokenSource := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: apiKey})
 
 	oauth2Client := &http.Client{
@@ -220,11 +224,14 @@ func newClient(apiKey string) *linodego.Client {
 		},
 	}
 
-	linodeClient := linodego.NewClient(oauth2Client)
+	linodeClient, err := linodego.NewClient(oauth2Client)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create linode client: %w", err)
+	}
 	linodeClient.SetDebug(false)
 	linodeClient.SetUserAgent("woodpecker-autoscaler/" + version.String())
 
-	return &linodeClient
+	return &linodeClient, nil
 }
 
 func (p *provider) BillingModel() types.BillingModel {

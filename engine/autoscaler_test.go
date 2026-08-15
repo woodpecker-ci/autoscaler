@@ -115,6 +115,28 @@ func Test_calcAgents(t *testing.T) {
 		value, _ := autoscaler.calcAgents(t.Context())
 		assert.Equal(t, float64(0), value)
 	})
+
+	t.Run("should create new agents when pool is fully busy with a backlog", func(t *testing.T) {
+		// All 3 existing pool agents are busy (workers=0, running=3) and 2 more
+		// workflows are queued. Regression test: calcAgents previously
+		// double-subtracted availablePoolAgents, which made it return a
+		// negative value here (wanting to drain agents) instead of scaling up.
+		autoscaler := Autoscaler{client: &MockClient{
+			workers: 0,
+			running: 3,
+			pending: 2,
+		}, config: &config.Config{
+			WorkflowsPerAgent: 1,
+			MaxAgents:         10,
+		}, agents: []*woodpecker.Agent{
+			{Name: "pool-1-agent-1111"},
+			{Name: "pool-1-agent-2222"},
+			{Name: "pool-1-agent-3333"},
+		}}
+
+		value, _ := autoscaler.calcAgents(t.Context())
+		assert.Equal(t, float64(2), value)
+	})
 }
 
 func Test_getQueueInfo(t *testing.T) {
