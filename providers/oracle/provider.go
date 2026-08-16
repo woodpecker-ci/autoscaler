@@ -16,6 +16,12 @@ import (
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
 
+// blackhole metadata services so running steps can not extract agent token from user-data
+// https://docs.oracle.com/en-us/iaas/Content/Compute/Tasks/gettingmetadata.htm (served over IPv4 169.254.169.254 only)
+var blackholeMetadataAPI = []string{
+	"ip -4 route add blackhole 169.254.169.254/32",
+}
+
 type provider struct {
 	name               string
 	config             *config.Config
@@ -117,7 +123,9 @@ func (p *provider) setup(ctx context.Context, operatingSystem, operatingSystemVe
 }
 
 func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
-	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, cloudinit.RenderOption{})
+	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, cloudinit.RenderOption{
+		PreExec: blackholeMetadataAPI,
+	})
 	if err != nil {
 		return fmt.Errorf("%s: cloudinit.RenderUserDataTemplate: %w", p.name, err)
 	}

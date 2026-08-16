@@ -243,6 +243,7 @@ func TestDeployAgentLaunchesInstance(t *testing.T) {
 	assert.Contains(t, string(userData), "#cloud-config")
 	assert.Contains(t, string(userData), "grpc.example.com")
 	assert.Contains(t, string(userData), "secret")
+	assert.Contains(t, string(userData), "ip -4 route add blackhole 169.254.169.254/32")
 }
 
 func TestDeployAgentOmitsShapeConfigForFixedShapes(t *testing.T) {
