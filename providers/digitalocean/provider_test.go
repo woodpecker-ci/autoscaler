@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/digitalocean/godo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli/v3"
@@ -18,12 +19,24 @@ import (
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
 
+// dropletCreateBody mirrors the JSON DigitalOcean receives for a droplet create request.
+type dropletCreateBody struct {
+	Name     string   `json:"name"`
+	Region   string   `json:"region"`
+	Size     string   `json:"size"`
+	Image    string   `json:"image"`
+	SSHKeys  []string `json:"ssh_keys"`
+	IPv6     bool     `json:"ipv6"`
+	Tags     []string `json:"tags"`
+	UserData string   `json:"user_data"`
+}
+
 func TestNewResolvesConfigAndDefaultSSHKey(t *testing.T) {
 	api := newTestAPIServer(t, testAPIHandler{
-		regions: []region{{Slug: "nyc1", Available: true}},
-		sizes:   []size{{Slug: "s-1vcpu-1gb", Regions: []string{"nyc1"}, Available: true}},
-		images:  []image{{ID: 101, Slug: "ubuntu-24-04-x64", Name: "24.04 x64", Distribution: "Ubuntu"}},
-		sshKeys: []sshKey{
+		regions: []godo.Region{{Slug: "nyc1", Available: true}},
+		sizes:   []godo.Size{{Slug: "s-1vcpu-1gb", Regions: []string{"nyc1"}, Available: true}},
+		images:  []godo.Image{{ID: 101, Slug: "ubuntu-24-04-x64", Name: "24.04 x64", Distribution: "Ubuntu"}},
+		sshKeys: []godo.Key{
 			{Name: "something-else", Fingerprint: "ff:00"},
 			{Name: "woodpecker", Fingerprint: "aa:bb"},
 		},
@@ -36,24 +49,25 @@ func TestNewResolvesConfigAndDefaultSSHKey(t *testing.T) {
 		"--digitalocean-image=ubuntu-24-04-x64",
 	})
 
-	p, err := newWithClient(t.Context(), cmd, &config.Config{PoolID: "pool-1"}, newClient(api.Client(), api.URL, "token"))
+	p, err := newWithClient(t.Context(), cmd, &config.Config{PoolID: "pool-1"}, newTestClient(t, api))
 	require.NoError(t, err)
 
-	doProvider := p.(*provider)
+	doProvider, ok := p.(*provider)
+	require.True(t, ok)
 	assert.Equal(t, "nyc1", doProvider.region.Slug)
 	assert.Equal(t, "s-1vcpu-1gb", doProvider.size.Slug)
 	assert.Equal(t, "ubuntu-24-04-x64", doProvider.image.Slug)
-	assert.Equal(t, []string{"aa:bb"}, doProvider.sshKeys)
+	assert.Equal(t, []godo.DropletCreateSSHKey{{Fingerprint: "aa:bb"}}, doProvider.sshKeys)
 	assert.Contains(t, doProvider.tags, "wp-autoscaler-pool-pool-1")
 	assert.Contains(t, doProvider.tags, "wp-autoscaler-image-ubuntu-24-04-x64")
 }
 
 func TestNewResolvesConfiguredSSHKeys(t *testing.T) {
 	api := newTestAPIServer(t, testAPIHandler{
-		regions: []region{{Slug: "nyc1", Available: true}},
-		sizes:   []size{{Slug: "s-1vcpu-1gb", Regions: []string{"nyc1"}, Available: true}},
-		images:  []image{{ID: 101, Slug: "ubuntu-24-04-x64", Name: "24.04 x64", Distribution: "Ubuntu"}},
-		sshKeys: []sshKey{
+		regions: []godo.Region{{Slug: "nyc1", Available: true}},
+		sizes:   []godo.Size{{Slug: "s-1vcpu-1gb", Regions: []string{"nyc1"}, Available: true}},
+		images:  []godo.Image{{ID: 101, Slug: "ubuntu-24-04-x64", Name: "24.04 x64", Distribution: "Ubuntu"}},
+		sshKeys: []godo.Key{
 			{Name: "build", Fingerprint: "11:22"},
 			{Name: "deploy", Fingerprint: "33:44"},
 		},
@@ -65,20 +79,22 @@ func TestNewResolvesConfiguredSSHKeys(t *testing.T) {
 		"--digitalocean-ssh-keys=11:22",
 	})
 
-	p, err := newWithClient(t.Context(), cmd, &config.Config{PoolID: "pool-1"}, newClient(api.Client(), api.URL, "token"))
+	p, err := newWithClient(t.Context(), cmd, &config.Config{PoolID: "pool-1"}, newTestClient(t, api))
 	require.NoError(t, err)
 
-	assert.Equal(t, []string{"33:44", "11:22"}, p.(*provider).sshKeys)
+	doProvider, ok := p.(*provider)
+	require.True(t, ok)
+	assert.Equal(t, []godo.DropletCreateSSHKey{{Fingerprint: "33:44"}, {Fingerprint: "11:22"}}, doProvider.sshKeys)
 }
 
 func TestDeployAgentCreatesDroplet(t *testing.T) {
-	var created dropletCreateRequest
+	var created dropletCreateBody
 	api := newTestAPIServer(t, testAPIHandler{
-		regions: []region{{Slug: "nyc1", Available: true}},
-		sizes:   []size{{Slug: "s-1vcpu-1gb", Regions: []string{"nyc1"}, Available: true}},
-		images:  []image{{ID: 101, Slug: "ubuntu-24-04-x64", Name: "24.04 x64", Distribution: "Ubuntu"}},
-		sshKeys: []sshKey{{Name: "woodpecker", Fingerprint: "aa:bb"}},
-		onCreateDroplet: func(t *testing.T, req dropletCreateRequest) {
+		regions: []godo.Region{{Slug: "nyc1", Available: true}},
+		sizes:   []godo.Size{{Slug: "s-1vcpu-1gb", Regions: []string{"nyc1"}, Available: true}},
+		images:  []godo.Image{{ID: 101, Slug: "ubuntu-24-04-x64", Name: "24.04 x64", Distribution: "Ubuntu"}},
+		sshKeys: []godo.Key{{Name: "woodpecker", Fingerprint: "aa:bb"}},
+		onCreateDroplet: func(_ *testing.T, req dropletCreateBody) {
 			created = req
 		},
 	})
@@ -92,7 +108,7 @@ func TestDeployAgentCreatesDroplet(t *testing.T) {
 		PoolID:      "pool-1",
 		GRPCAddress: "grpc.example.com",
 		Image:       "woodpeckerci/woodpecker-agent:next",
-	}, newClient(api.Client(), api.URL, "token"))
+	}, newTestClient(t, api))
 	require.NoError(t, err)
 
 	err = p.DeployAgent(t.Context(), &woodpecker.Agent{
@@ -104,7 +120,7 @@ func TestDeployAgentCreatesDroplet(t *testing.T) {
 	assert.Equal(t, "pool-1-agent-1", created.Name)
 	assert.Equal(t, "nyc1", created.Region)
 	assert.Equal(t, "s-1vcpu-1gb", created.Size)
-	assert.Equal(t, "ubuntu-24-04-x64", created.Image.Slug)
+	assert.Equal(t, "ubuntu-24-04-x64", created.Image)
 	assert.Equal(t, []string{"aa:bb"}, created.SSHKeys)
 	assert.True(t, created.IPv6)
 	assert.Contains(t, created.Tags, "team-ci")
@@ -114,7 +130,7 @@ func TestDeployAgentCreatesDroplet(t *testing.T) {
 
 func TestListDeployedAgentNames(t *testing.T) {
 	api := newTestAPIServer(t, testAPIHandler{
-		dropletsByTag: map[string][]droplet{
+		dropletsByTag: map[string][]godo.Droplet{
 			"wp-autoscaler-pool-pool-1": {
 				{ID: 1, Name: "pool-1-agent-1", Status: "new"},
 				{ID: 2, Name: "pool-1-agent-2", Status: "active"},
@@ -126,7 +142,7 @@ func TestListDeployedAgentNames(t *testing.T) {
 	p := &provider{
 		name:   "digitalocean",
 		config: &config.Config{PoolID: "pool-1"},
-		client: newClient(api.Client(), api.URL, "token"),
+		client: newTestClient(t, api),
 	}
 
 	names, err := p.ListDeployedAgentNames(t.Context())
@@ -137,7 +153,7 @@ func TestListDeployedAgentNames(t *testing.T) {
 func TestRemoveAgentDeletesMatchingDroplet(t *testing.T) {
 	var deleted []int
 	api := newTestAPIServer(t, testAPIHandler{
-		dropletsByTag: map[string][]droplet{
+		dropletsByTag: map[string][]godo.Droplet{
 			"wp-autoscaler-pool-pool-1": {
 				{ID: 99, Name: "pool-1-agent-1", Status: "active"},
 			},
@@ -150,7 +166,7 @@ func TestRemoveAgentDeletesMatchingDroplet(t *testing.T) {
 	p := &provider{
 		name:   "digitalocean",
 		config: &config.Config{PoolID: "pool-1"},
-		client: newClient(api.Client(), api.URL, "token"),
+		client: newTestClient(t, api),
 	}
 
 	err := p.RemoveAgent(t.Context(), &woodpecker.Agent{Name: "pool-1-agent-1"})
@@ -163,8 +179,17 @@ func TestSanitizeTagPart(t *testing.T) {
 	assert.Equal(t, "default", sanitizeTagPart("///"))
 }
 
-func newWithClient(ctx context.Context, c *cli.Command, config *config.Config, client *client) (types.Provider, error) {
+func newWithClient(ctx context.Context, c *cli.Command, config *config.Config, client *godo.Client) (types.Provider, error) {
 	return newProviderWithClient(ctx, c, config, client)
+}
+
+func newTestClient(t *testing.T, api *httptest.Server) *godo.Client {
+	t.Helper()
+
+	client, err := godo.New(api.Client(), godo.SetBaseURL(api.URL+"/"))
+	require.NoError(t, err)
+
+	return client
 }
 
 func newTestCommand(t *testing.T, flags []cli.Flag, args []string) *cli.Command {
@@ -187,12 +212,12 @@ func newTestCommand(t *testing.T, flags []cli.Flag, args []string) *cli.Command 
 }
 
 type testAPIHandler struct {
-	regions         []region
-	sizes           []size
-	images          []image
-	sshKeys         []sshKey
-	dropletsByTag   map[string][]droplet
-	onCreateDroplet func(*testing.T, dropletCreateRequest)
+	regions         []godo.Region
+	sizes           []godo.Size
+	images          []godo.Image
+	sshKeys         []godo.Key
+	dropletsByTag   map[string][]godo.Droplet
+	onCreateDroplet func(*testing.T, dropletCreateBody)
 	onDeleteDroplet func(*testing.T, int)
 }
 
@@ -203,26 +228,26 @@ func newTestAPIServer(t *testing.T, handler testAPIHandler) *httptest.Server {
 		w.Header().Set("Content-Type", "application/json")
 
 		switch {
-		case r.Method == http.MethodGet && r.URL.Path == "/regions":
+		case r.Method == http.MethodGet && r.URL.Path == "/v2/regions":
 			_ = json.NewEncoder(w).Encode(map[string]any{"regions": handler.regions})
-		case r.Method == http.MethodGet && r.URL.Path == "/sizes":
+		case r.Method == http.MethodGet && r.URL.Path == "/v2/sizes":
 			_ = json.NewEncoder(w).Encode(map[string]any{"sizes": handler.sizes})
-		case r.Method == http.MethodGet && r.URL.Path == "/images":
+		case r.Method == http.MethodGet && r.URL.Path == "/v2/images":
 			_ = json.NewEncoder(w).Encode(map[string]any{"images": handler.images})
-		case r.Method == http.MethodGet && r.URL.Path == "/account/keys":
+		case r.Method == http.MethodGet && r.URL.Path == "/v2/account/keys":
 			_ = json.NewEncoder(w).Encode(map[string]any{"ssh_keys": handler.sshKeys})
-		case r.Method == http.MethodGet && r.URL.Path == "/droplets":
+		case r.Method == http.MethodGet && r.URL.Path == "/v2/droplets":
 			tag := r.URL.Query().Get("tag_name")
 			_ = json.NewEncoder(w).Encode(map[string]any{"droplets": handler.dropletsByTag[tag]})
-		case r.Method == http.MethodPost && r.URL.Path == "/droplets":
-			var req dropletCreateRequest
+		case r.Method == http.MethodPost && r.URL.Path == "/v2/droplets":
+			var req dropletCreateBody
 			require.NoError(t, json.NewDecoder(r.Body).Decode(&req))
 			if handler.onCreateDroplet != nil {
 				handler.onCreateDroplet(t, req)
 			}
-			_ = json.NewEncoder(w).Encode(map[string]any{"droplet": droplet{ID: 1, Name: req.Name, Status: "new"}})
-		case r.Method == http.MethodDelete && strings.HasPrefix(r.URL.Path, "/droplets/"):
-			id, err := strconv.Atoi(strings.TrimPrefix(r.URL.Path, "/droplets/"))
+			_ = json.NewEncoder(w).Encode(map[string]any{"droplet": godo.Droplet{ID: 1, Name: req.Name, Status: "new"}})
+		case r.Method == http.MethodDelete && strings.HasPrefix(r.URL.Path, "/v2/droplets/"):
+			id, err := strconv.Atoi(strings.TrimPrefix(r.URL.Path, "/v2/droplets/"))
 			require.NoError(t, err)
 			if handler.onDeleteDroplet != nil {
 				handler.onDeleteDroplet(t, id)

@@ -4,11 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 	"regexp"
 	"slices"
 	"strings"
 
+	"github.com/digitalocean/godo"
 	"github.com/rs/zerolog/log"
 	"github.com/urfave/cli/v3"
 
@@ -28,14 +28,16 @@ var (
 
 var invalidTagPart = regexp.MustCompile(`[^a-z0-9:_-]+`)
 
+const perPage = 200
+
 type provider struct {
 	name       string
 	config     *config.Config
-	client     *client
-	region     region
-	size       size
-	image      image
-	sshKeys    []string
+	client     *godo.Client
+	region     godo.Region
+	size       godo.Size
+	image      godo.Image
+	sshKeys    []godo.DropletCreateSSHKey
 	tags       []string
 	enableIPv6 bool
 }
@@ -46,10 +48,10 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 		return nil, ErrAPITokenNotSet
 	}
 
-	return newProviderWithClient(ctx, c, config, newClient(http.DefaultClient, defaultBaseURL, apiToken))
+	return newProviderWithClient(ctx, c, config, godo.NewFromToken(apiToken))
 }
 
-func newProviderWithClient(ctx context.Context, c *cli.Command, config *config.Config, client *client) (types.Provider, error) {
+func newProviderWithClient(ctx context.Context, c *cli.Command, config *config.Config, client *godo.Client) (types.Provider, error) {
 	p := &provider{
 		name:       "digitalocean",
 		config:     config,
@@ -83,7 +85,7 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 		return fmt.Errorf("%s: cloudinit.RenderUserDataTemplate: %w", p.name, err)
 	}
 
-	req := dropletCreateRequest{
+	req := &godo.DropletCreateRequest{
 		Name:     agent.Name,
 		Region:   p.region.Slug,
 		Size:     p.size.Slug,
@@ -95,8 +97,8 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 		Backups:  false,
 	}
 
-	if _, err := p.client.createDroplet(ctx, req); err != nil {
-		return fmt.Errorf("%s: createDroplet: %w", p.name, err)
+	if _, _, err := p.client.Droplets.Create(ctx, req); err != nil {
+		return fmt.Errorf("%s: Droplets.Create: %w", p.name, err)
 	}
 
 	return nil
@@ -111,17 +113,17 @@ func (p *provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) err
 		return nil
 	}
 
-	if err := p.client.deleteDroplet(ctx, droplet.ID); err != nil {
-		return fmt.Errorf("%s: deleteDroplet: %w", p.name, err)
+	if _, err := p.client.Droplets.Delete(ctx, droplet.ID); err != nil {
+		return fmt.Errorf("%s: Droplets.Delete: %w", p.name, err)
 	}
 
 	return nil
 }
 
 func (p *provider) ListDeployedAgentNames(ctx context.Context) ([]string, error) {
-	droplets, err := p.client.listDropletsByTag(ctx, poolTag(p.config.PoolID))
+	droplets, err := p.listPoolDroplets(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("%s: listDropletsByTag: %w", p.name, err)
+		return nil, fmt.Errorf("%s: Droplets.ListByTag: %w", p.name, err)
 	}
 
 	names := make([]string, 0, len(droplets))
@@ -141,9 +143,9 @@ func (p *provider) BillingModel() types.BillingModel {
 }
 
 func (p *provider) resolveRegion(ctx context.Context, regionSlug string) error {
-	regions, err := p.client.listRegions(ctx)
+	regions, err := listAll(ctx, p.client.Regions.List)
 	if err != nil {
-		return fmt.Errorf("%s: listRegions: %w", p.name, err)
+		return fmt.Errorf("%s: Regions.List: %w", p.name, err)
 	}
 
 	for _, region := range regions {
@@ -157,9 +159,9 @@ func (p *provider) resolveRegion(ctx context.Context, regionSlug string) error {
 }
 
 func (p *provider) resolveSize(ctx context.Context, sizeSlug string) error {
-	sizes, err := p.client.listSizes(ctx)
+	sizes, err := listAll(ctx, p.client.Sizes.List)
 	if err != nil {
-		return fmt.Errorf("%s: listSizes: %w", p.name, err)
+		return fmt.Errorf("%s: Sizes.List: %w", p.name, err)
 	}
 
 	for _, size := range sizes {
@@ -173,12 +175,12 @@ func (p *provider) resolveSize(ctx context.Context, sizeSlug string) error {
 }
 
 func (p *provider) resolveImage(ctx context.Context, selector string) error {
-	images, err := p.client.listImages(ctx)
+	images, err := listAll(ctx, p.client.Images.List)
 	if err != nil {
-		return fmt.Errorf("%s: listImages: %w", p.name, err)
+		return fmt.Errorf("%s: Images.List: %w", p.name, err)
 	}
 
-	var matches []image
+	var matches []godo.Image
 	want := normalizeSelector(selector)
 	for _, image := range images {
 		switch {
@@ -196,7 +198,7 @@ func (p *provider) resolveImage(ctx context.Context, selector string) error {
 		return ErrImageNotFound
 	}
 
-	slices.SortFunc(matches, func(a, b image) int {
+	slices.SortFunc(matches, func(a, b godo.Image) int {
 		return strings.Compare(a.Name, b.Name)
 	})
 	p.image = matches[0]
@@ -208,7 +210,7 @@ func (p *provider) resolveImage(ctx context.Context, selector string) error {
 }
 
 func (p *provider) setupKeyPair(ctx context.Context, configuredKeys []string) error {
-	keys, err := p.client.listSSHKeys(ctx)
+	keys, err := listAll(ctx, p.client.Keys.List)
 	if err != nil {
 		return err
 	}
@@ -225,14 +227,14 @@ func (p *provider) setupKeyPair(ctx context.Context, configuredKeys []string) er
 	}
 
 	if len(configuredKeys) > 0 {
-		p.sshKeys = make([]string, 0, len(configuredKeys))
+		p.sshKeys = make([]godo.DropletCreateSSHKey, 0, len(configuredKeys))
 		for _, configuredKey := range configuredKeys {
 			if fingerprint, ok := byName[configuredKey]; ok {
-				p.sshKeys = append(p.sshKeys, fingerprint)
+				p.sshKeys = append(p.sshKeys, godo.DropletCreateSSHKey{Fingerprint: fingerprint})
 				continue
 			}
 			if fingerprint, ok := byFingerprint[configuredKey]; ok {
-				p.sshKeys = append(p.sshKeys, fingerprint)
+				p.sshKeys = append(p.sshKeys, godo.DropletCreateSSHKey{Fingerprint: fingerprint})
 				continue
 			}
 			return fmt.Errorf("%w: %s", ErrSSHKeyNotFound, configuredKey)
@@ -243,22 +245,29 @@ func (p *provider) setupKeyPair(ctx context.Context, configuredKeys []string) er
 
 	for _, name := range []string{"woodpecker", "id_rsa_woodpecker"} {
 		if fingerprint, ok := byName[name]; ok {
-			p.sshKeys = []string{fingerprint}
+			p.sshKeys = []godo.DropletCreateSSHKey{{Fingerprint: fingerprint}}
 			return nil
 		}
 	}
 
-	p.sshKeys = []string{keys[0].Fingerprint}
+	p.sshKeys = []godo.DropletCreateSSHKey{{Fingerprint: keys[0].Fingerprint}}
 	return nil
 }
 
-func (p *provider) getAgent(ctx context.Context, name string) (*droplet, error) {
-	droplets, err := p.client.listDropletsByTag(ctx, poolTag(p.config.PoolID))
+func (p *provider) listPoolDroplets(ctx context.Context) ([]godo.Droplet, error) {
+	tag := poolTag(p.config.PoolID)
+	return listAll(ctx, func(ctx context.Context, opt *godo.ListOptions) ([]godo.Droplet, *godo.Response, error) {
+		return p.client.Droplets.ListByTag(ctx, tag, opt)
+	})
+}
+
+func (p *provider) getAgent(ctx context.Context, name string) (*godo.Droplet, error) {
+	droplets, err := p.listPoolDroplets(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	var matches []droplet
+	var matches []godo.Droplet
 	for _, droplet := range droplets {
 		if droplet.Name == name {
 			matches = append(matches, droplet)
@@ -272,6 +281,29 @@ func (p *provider) getAgent(ctx context.Context, name string) (*droplet, error) 
 		return &matches[0], nil
 	default:
 		return nil, fmt.Errorf("found multiple droplets named %s", name)
+	}
+}
+
+// listAll drains a paginated godo list endpoint.
+func listAll[T any](ctx context.Context, list func(context.Context, *godo.ListOptions) ([]T, *godo.Response, error)) ([]T, error) {
+	var all []T
+	opt := &godo.ListOptions{Page: 1, PerPage: perPage}
+	for {
+		items, resp, err := list(ctx, opt)
+		if err != nil {
+			return nil, err
+		}
+		all = append(all, items...)
+
+		if resp == nil || resp.Links == nil || resp.Links.IsLastPage() {
+			return all, nil
+		}
+
+		page, err := resp.Links.CurrentPage()
+		if err != nil {
+			return nil, err
+		}
+		opt.Page = page + 1
 	}
 }
 
@@ -300,10 +332,10 @@ func normalizeSelector(value string) string {
 	return value
 }
 
-func createImageRef(image image) dropletCreateImage {
+func createImageRef(image godo.Image) godo.DropletCreateImage {
 	if image.Slug != "" {
-		return dropletCreateImage{Slug: image.Slug}
+		return godo.DropletCreateImage{Slug: image.Slug}
 	}
 
-	return dropletCreateImage{ID: image.ID}
+	return godo.DropletCreateImage{ID: image.ID}
 }

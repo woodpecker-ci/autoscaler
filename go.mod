@@ -11,6 +11,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ec2 v1.321.2
 	github.com/aws/aws-sdk-go-v2/service/sts v1.45.6
 	github.com/aws/smithy-go v1.27.8
+	github.com/digitalocean/godo v1.204.0
 	github.com/docker/go-units v0.5.0
 	github.com/equinix/equinix-sdk-go v0.66.0
 	github.com/gophercloud/gophercloud/v2 v2.13.0
@@ -55,6 +56,7 @@ require (
 	github.com/stretchr/objx v0.5.2 // indirect
 	golang.org/x/sys v0.47.0 // indirect
 	golang.org/x/text v0.41.0 // indirect
+	golang.org/x/time v0.15.0 // indirect
 	google.golang.org/protobuf v1.36.12-0.20260120151049-f2248ac996af // indirect
 	gopkg.in/ini.v1 v1.67.3 // indirect
 	gopkg.in/validator.v2 v2.0.1 // indirect
