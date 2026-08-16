@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 	"text/template"
+	"unicode"
 
 	"go.woodpecker-ci.org/autoscaler/config"
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
@@ -61,7 +62,10 @@ func RenderUserDataTemplate(config *config.Config, agent *woodpecker.Agent, r Re
 		return "", err
 	}
 
-	return userData.String(), nil
+	// cloud-init only recognizes user data if the header (e.g. #cloud-config)
+	// is on the very first line. Some datasources tolerate leading whitespace,
+	// stricter ones such as NoCloud silently ignore the whole payload.
+	return strings.TrimLeftFunc(userData.String(), unicode.IsSpace), nil
 }
 
 func genExtraAgentLabels(conf map[string]string) string {
@@ -73,8 +77,7 @@ func genExtraAgentLabels(conf map[string]string) string {
 }
 
 // editorconfig-checker-disable
-var CloudInitUserDataUbuntuDefault = `
-#cloud-config
+var CloudInitUserDataUbuntuDefault = `#cloud-config
 
 package_reboot_if_required: false
 package_update: true
