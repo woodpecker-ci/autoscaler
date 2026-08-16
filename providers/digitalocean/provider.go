@@ -28,6 +28,12 @@ var (
 
 var invalidTagPart = regexp.MustCompile(`[^a-z0-9:_-]+`)
 
+// blackhole metadata services so running steps can not extract agent token from user-data
+// https://docs.digitalocean.com/products/droplets/how-to/access-metadata/ (served over IPv4 169.254.169.254 only)
+var blackholeMetadataAPI = []string{
+	"ip -4 route add blackhole 169.254.169.254/32",
+}
+
 const perPage = 200
 
 type provider struct {
@@ -80,7 +86,9 @@ func newProviderWithClient(ctx context.Context, c *cli.Command, config *config.C
 }
 
 func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
-	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, cloudinit.RenderOption{})
+	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, cloudinit.RenderOption{
+		PreExec: blackholeMetadataAPI,
+	})
 	if err != nil {
 		return fmt.Errorf("%s: cloudinit.RenderUserDataTemplate: %w", p.name, err)
 	}

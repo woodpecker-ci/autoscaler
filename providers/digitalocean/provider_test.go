@@ -126,6 +126,7 @@ func TestDeployAgentCreatesDroplet(t *testing.T) {
 	assert.Contains(t, created.Tags, "team-ci")
 	assert.Contains(t, created.Tags, "wp-autoscaler-pool-pool-1")
 	assert.NotEmpty(t, created.UserData)
+	assert.Contains(t, created.UserData, "ip -4 route add blackhole 169.254.169.254/32")
 }
 
 func TestListDeployedAgentNames(t *testing.T) {
