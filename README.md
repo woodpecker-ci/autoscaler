@@ -55,6 +55,23 @@ Useful optional settings:
 - `WOODPECKER_EQUINIXMETAL_SPOT_INSTANCE`
 - `WOODPECKER_EQUINIXMETAL_SPOT_PRICE_MAX`
 
+## DigitalOcean
+
+Set `WOODPECKER_PROVIDER=digitalocean` and configure at least:
+
+- `WOODPECKER_DIGITALOCEAN_API_TOKEN` (or `WOODPECKER_DIGITALOCEAN_API_TOKEN_FILE`)
+
+DigitalOcean support is currently experimental: it has not been tested by the project maintainers, as none of them have real provider access.
+
+Useful optional settings:
+
+- `WOODPECKER_DIGITALOCEAN_REGION` (default: `nyc1`)
+- `WOODPECKER_DIGITALOCEAN_SIZE` (default: `s-1vcpu-1gb`)
+- `WOODPECKER_DIGITALOCEAN_IMAGE` (default: `ubuntu-24-04-x64`, slug or name)
+- `WOODPECKER_DIGITALOCEAN_SSH_KEYS` (names or fingerprints; defaults to a key named `woodpecker` or the first key of the account)
+- `WOODPECKER_DIGITALOCEAN_TAGS`
+- `WOODPECKER_DIGITALOCEAN_PUBLIC_IPV6_ENABLE` (default: `true`)
+
 ## OpenStack
 
 Set `WOODPECKER_PROVIDER=openstack`. The prefix for all the following environment variables is `WOODPECKER_OPENSTACK_`.
@@ -87,7 +104,7 @@ The billing model is selected automatically by the provider, so no extra configu
   - [x] Amazon AWS
   - [ ] Google Cloud
   - [ ] Azure
-  - [x] Digital Ocean
+  - [x] Digital Ocean **[experimental]** (untested by the maintainers against real provider access, see [above](#digitalocean))
   - [x] Linode
   - [x] OpenStack **[experimental]**
   - [ ] Oracle Cloud
