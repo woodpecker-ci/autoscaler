@@ -1,10 +1,10 @@
 # Changelog
 
-## [2.0.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.0) - 2026-08-15
+## [2.0.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.0) - 2026-08-17
 
 ### ❤️ Thanks to all contributors! ❤️
 
-@6543, @LaGrunge, @bcornish1797, @btriller, @hstern, @toothstone
+@6543, @AJ0070, @LaGrunge, @bcornish1797, @btriller, @hstern, @toothstone
 
 ### 💥 Breaking changes
 
@@ -23,6 +23,7 @@
 
 ### 📈 Enhancement
 
+- Trim leading whitespace from rendered cloud-init user data [[#713](https://github.com/woodpecker-ci/autoscaler/pull/713)]
 - Clarify WOODPECKER_TOKEN setting and agent token usage [[#676](https://github.com/woodpecker-ci/autoscaler/pull/676)]
 - Make agent teardown billing-aware [[#645](https://github.com/woodpecker-ci/autoscaler/pull/645)]
 - Support custom images on Hetzner [[#638](https://github.com/woodpecker-ci/autoscaler/pull/638)]
