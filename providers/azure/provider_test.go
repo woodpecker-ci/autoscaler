@@ -1,55 +1,6 @@
 package azure
 
-import (
-	"errors"
-	"testing"
-)
-
-func TestParseImageURN(t *testing.T) {
-	tests := []struct {
-		urn     string
-		wantErr error
-		want    imageReference
-	}{
-		{
-			urn:  "Canonical:ubuntu-24_04-lts:server:latest",
-			want: imageReference{publisher: "Canonical", offer: "ubuntu-24_04-lts", sku: "server", version: "latest"},
-		},
-		{
-			urn:  "MicrosoftWindowsServer:WindowsServer:2022-Datacenter:latest",
-			want: imageReference{publisher: "MicrosoftWindowsServer", offer: "WindowsServer", sku: "2022-Datacenter", version: "latest"},
-		},
-		{
-			urn:     "Canonical:ubuntu-24_04-lts:server",
-			wantErr: ErrImageInvalid,
-		},
-		{
-			urn:     "Canonical:ubuntu-24_04-lts::latest",
-			wantErr: ErrImageInvalid,
-		},
-		{
-			urn:     "",
-			wantErr: ErrImageInvalid,
-		},
-	}
-
-	for _, tt := range tests {
-		got, err := parseImageURN(tt.urn)
-		if tt.wantErr != nil {
-			if !errors.Is(err, tt.wantErr) {
-				t.Errorf("parseImageURN(%q): got err %v, want %v", tt.urn, err, tt.wantErr)
-			}
-			continue
-		}
-		if err != nil {
-			t.Errorf("parseImageURN(%q): unexpected error: %v", tt.urn, err)
-			continue
-		}
-		if got != tt.want {
-			t.Errorf("parseImageURN(%q): got %+v, want %+v", tt.urn, got, tt.want)
-		}
-	}
-}
+import "testing"
 
 func TestSanitizeComputerName(t *testing.T) {
 	tests := []struct {

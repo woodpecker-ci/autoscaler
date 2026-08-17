@@ -50,7 +50,10 @@ Useful optional settings:
 
 - `WOODPECKER_AZURE_LOCATION` (default: `eastus`)
 - `WOODPECKER_AZURE_VM_SIZE` (default: `Standard_B2s`)
-- `WOODPECKER_AZURE_IMAGE` — marketplace image in `publisher:offer:sku:version` form (default: `Canonical:ubuntu-24_04-lts:server:latest`)
+- `WOODPECKER_AZURE_IMAGE_PUBLISHER` (default: `Canonical`)
+- `WOODPECKER_AZURE_IMAGE_OFFER` (default: `ubuntu-24_04-lts`)
+- `WOODPECKER_AZURE_IMAGE_SKU` (default: `server`)
+- `WOODPECKER_AZURE_IMAGE_VERSION` (default: `latest`)
 - `WOODPECKER_AZURE_ADMIN_USERNAME` (default: `woodpecker`)
 - `WOODPECKER_AZURE_TAGS` — comma-separated `key=value` pairs applied to every agent VM
 - `WOODPECKER_AZURE_SSH_PUBLIC_KEY_FILE` — path to a file containing the SSH public key (alternative to the env var)

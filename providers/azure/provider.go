@@ -72,10 +72,11 @@ func New(_ context.Context, c *cli.Command, cfg *config.Config) (types.Provider,
 		return nil, ErrSSHPublicKeyNotSet
 	}
 
-	var err error
-	p.image, err = parseImageURN(c.String("azure-image"))
-	if err != nil {
-		return nil, fmt.Errorf("%s: %w", p.name, err)
+	p.image = imageReference{
+		publisher: c.String("azure-image-publisher"),
+		offer:     c.String("azure-image-offer"),
+		sku:       c.String("azure-image-sku"),
+		version:   c.String("azure-image-version"),
 	}
 
 	p.tags = map[string]*string{
