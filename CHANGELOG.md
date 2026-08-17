@@ -32,11 +32,6 @@
 
 - fix(engine): stop double-subtracting pool size in calcAgents [[#674](https://github.com/woodpecker-ci/autoscaler/pull/674)]
 
-### 📦️ Dependency
-
-- Update module github.com/urfave/cli/v3 to v3.11.0 [[#714](https://github.com/woodpecker-ci/autoscaler/pull/714)]
-- Update golang deps non-major [[#711](https://github.com/woodpecker-ci/autoscaler/pull/711)]
-
 ### Misc
 
 - Add flake.nix for dev environment [[#672](https://github.com/woodpecker-ci/autoscaler/pull/672)]
