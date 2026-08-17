@@ -62,7 +62,7 @@ func TestRenderUserDataTemplate_DefaultStartsWithCloudConfigHeader(t *testing.T)
 	assert.True(t, strings.HasPrefix(userData, "#cloud-config\n"), "user data must start with the cloud-config header")
 }
 
-func TestRenderUserDataTemplate_TrimsLeadingWhitespace(t *testing.T) {
+func TestRenderUserDataTemplate_TrimsWhitespace(t *testing.T) {
 	config := &config.Config{
 		UserData: "\n\n  \t#cloud-config\nimage: {{ .Image }}\n",
 		Image:    "test-image",
@@ -71,7 +71,7 @@ func TestRenderUserDataTemplate_TrimsLeadingWhitespace(t *testing.T) {
 	userData, err := cloudinit.RenderUserDataTemplate(config, &woodpecker.Agent{}, cloudinit.RenderOption{})
 
 	assert.NoError(t, err)
-	assert.Equal(t, "#cloud-config\nimage: test-image\n", userData)
+	assert.Equal(t, "#cloud-config\nimage: test-image", userData)
 }
 
 func TestRenderUserDataTemplate_Error(t *testing.T) {
@@ -145,7 +145,6 @@ runcmd:
   - sh -xc "cd /root; docker compose up -d"
   - echo exec after docker up
 
-final_message: "The system is finally up, after $UPTIME seconds"
-`, conf)
+final_message: "The system is finally up, after $UPTIME seconds"`, conf)
 	// editorconfig-checker-enable
 }
