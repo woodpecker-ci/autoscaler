@@ -34,36 +34,8 @@
 
 ### 📦️ Dependency
 
+- Update module github.com/urfave/cli/v3 to v3.11.0 [[#714](https://github.com/woodpecker-ci/autoscaler/pull/714)]
 - Update golang deps non-major [[#711](https://github.com/woodpecker-ci/autoscaler/pull/711)]
-- Update golang.org/x/exp digest to c1d0aac [[#710](https://github.com/woodpecker-ci/autoscaler/pull/710)]
-- Update go toolchain directive to v1.26.6 [[#709](https://github.com/woodpecker-ci/autoscaler/pull/709)]
-- Update module golang.org/x/net to v0.58.0 [[#708](https://github.com/woodpecker-ci/autoscaler/pull/708)]
-- Update golang deps non-major [[#707](https://github.com/woodpecker-ci/autoscaler/pull/707)]
-- Update golang deps non-major [[#706](https://github.com/woodpecker-ci/autoscaler/pull/706)]
-- Update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.320.0 [[#705](https://github.com/woodpecker-ci/autoscaler/pull/705)]
-- Update golang deps non-major [[#704](https://github.com/woodpecker-ci/autoscaler/pull/704)]
-- Update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.319.0 [[#701](https://github.com/woodpecker-ci/autoscaler/pull/701)]
-- Update pre-commit hook hadolint/hadolint to v2.15.1 [[#699](https://github.com/woodpecker-ci/autoscaler/pull/699)]
-- Update dependency mvdan/gofumpt to v0.11.0 [[#698](https://github.com/woodpecker-ci/autoscaler/pull/698)]
-- Update golang deps non-major [[#697](https://github.com/woodpecker-ci/autoscaler/pull/697)]
-- Update golang.org/x/exp digest to b88d891 [[#696](https://github.com/woodpecker-ci/autoscaler/pull/696)]
-- Update module github.com/linode/linodego/v2 to v2.5.0 [[#695](https://github.com/woodpecker-ci/autoscaler/pull/695)]
-- Update golang deps non-major [[#694](https://github.com/woodpecker-ci/autoscaler/pull/694)]
-- Update golang deps non-major [[#693](https://github.com/woodpecker-ci/autoscaler/pull/693)]
-- Update module github.com/aws/smithy-go to v1.27.5 [[#692](https://github.com/woodpecker-ci/autoscaler/pull/692)]
-- Update module github.com/hetznercloud/hcloud-go/v2 to v2.47.0 [[#691](https://github.com/woodpecker-ci/autoscaler/pull/691)]
-- Update golang deps non-major [[#690](https://github.com/woodpecker-ci/autoscaler/pull/690)]
-- Update golang.org/x/exp digest to 764159d [[#685](https://github.com/woodpecker-ci/autoscaler/pull/685)]
-- Update docker.io/woodpeckerci/plugin-ready-release-go Docker tag to v4.1.2 [[#683](https://github.com/woodpecker-ci/autoscaler/pull/683)]
-- Update pre-commit hook igorshubovych/markdownlint-cli to v0.49.1 [[#684](https://github.com/woodpecker-ci/autoscaler/pull/684)]
-- Update golang deps non-major [[#681](https://github.com/woodpecker-ci/autoscaler/pull/681)]
-- Update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.316.0 [[#680](https://github.com/woodpecker-ci/autoscaler/pull/680)]
-- Update docker.io/woodpeckerci/plugin-docker-buildx Docker tag to v6.1.1 [[#679](https://github.com/woodpecker-ci/autoscaler/pull/679)]
-- Update golang.org/x/exp digest to 9ea1abe [[#678](https://github.com/woodpecker-ci/autoscaler/pull/678)]
-- Update golang deps non-major [[#675](https://github.com/woodpecker-ci/autoscaler/pull/675)]
-- Update module github.com/linode/linodego/v2 to v2.4.0 [[#669](https://github.com/woodpecker-ci/autoscaler/pull/669)]
-- Update module github.com/equinix/equinix-sdk-go to v0.66.0 [[#666](https://github.com/woodpecker-ci/autoscaler/pull/666)]
-- fix(deps): update module github.com/hetznercloud/hcloud-go/v2 to v2.41.1 [[#631](https://github.com/woodpecker-ci/autoscaler/pull/631)]
 
 ### Misc
 
