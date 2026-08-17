@@ -35,6 +35,28 @@ services:
 
 The agents will use `WOODPECKER_GRPC_ADDR` and an agent token automatically created on the server by the autoscaler to connect to the server. Therefore the `WOODPECKER_GRPC_ADDR` has to be publicly accessible from the newly created agents. Check for example how you could use [caddy](https://woodpecker-ci.org/docs/administration/configuration/server#caddy) to expose the grpc connection.
 
+## Azure
+
+Set `WOODPECKER_PROVIDER=azure` and configure at least:
+
+- `WOODPECKER_AZURE_SUBSCRIPTION_ID` — Azure subscription ID (also accepted as `AZURE_SUBSCRIPTION_ID`)
+- `WOODPECKER_AZURE_RESOURCE_GROUP` — existing resource group all agents are created in
+- `WOODPECKER_AZURE_SUBNET_ID` — full ARM resource ID of an existing subnet the agent NICs attach to (no public IP is allocated)
+- `WOODPECKER_AZURE_SSH_PUBLIC_KEY` — SSH public key granted to the admin user, in authorized_keys format
+
+Authentication uses `DefaultAzureCredential`, which automatically picks up `AZURE_CLIENT_ID` + `AZURE_TENANT_ID` + `AZURE_CLIENT_SECRET`, a managed identity, or an active `az login` session.
+
+Useful optional settings:
+
+- `WOODPECKER_AZURE_LOCATION` (default: `eastus`)
+- `WOODPECKER_AZURE_VM_SIZE` (default: `Standard_B2s`)
+- `WOODPECKER_AZURE_IMAGE` — marketplace image in `publisher:offer:sku:version` form (default: `Canonical:ubuntu-24_04-lts:server:latest`)
+- `WOODPECKER_AZURE_ADMIN_USERNAME` (default: `woodpecker`)
+- `WOODPECKER_AZURE_TAGS` — comma-separated `key=value` pairs applied to every agent VM
+- `WOODPECKER_AZURE_SSH_PUBLIC_KEY_FILE` — path to a file containing the SSH public key (alternative to the env var)
+
+Each agent creates a VM and a NIC inside the configured resource group. On teardown the VM, NIC, and OS disk are deleted in order (each independently, so a 404 is treated as success). The operator is responsible for the VNet having outbound internet access (for Docker and agent-image pulls) and a route to the Woodpecker gRPC endpoint.
+
 ## Equinix Metal
 
 Set `WOODPECKER_PROVIDER=equinixmetal` and configure at least:
@@ -86,7 +108,7 @@ The billing model is selected automatically by the provider, so no extra configu
   - [x] Hetzner Cloud
   - [x] Amazon AWS
   - [ ] Google Cloud
-  - [ ] Azure
+  - [x] Azure
   - [ ] Digital Ocean
   - [x] Linode
   - [x] OpenStack **[experimental]**
