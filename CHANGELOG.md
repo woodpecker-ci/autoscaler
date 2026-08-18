@@ -1,6 +1,6 @@
 # Changelog
 
-## [2.0.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.0) - 2026-08-17
+## [2.0.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.0) - 2026-08-18
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -31,6 +31,10 @@
 ### 🐛 Bug Fixes
 
 - fix(engine): stop double-subtracting pool size in calcAgents [[#674](https://github.com/woodpecker-ci/autoscaler/pull/674)]
+
+### 📦️ Dependency
+
+- Update module github.com/stretchr/testify to v1.12.0 [[#716](https://github.com/woodpecker-ci/autoscaler/pull/716)]
 
 ### Misc
 
