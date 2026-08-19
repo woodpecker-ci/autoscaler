@@ -1,6 +1,6 @@
 # Changelog
 
-## [2.0.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.0) - 2026-08-18
+## [2.0.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.0) - 2026-08-19
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -34,6 +34,7 @@
 
 ### 📦️ Dependency
 
+- Update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.321.3 [[#717](https://github.com/woodpecker-ci/autoscaler/pull/717)]
 - Update module github.com/stretchr/testify to v1.12.0 [[#716](https://github.com/woodpecker-ci/autoscaler/pull/716)]
 
 ### Misc
