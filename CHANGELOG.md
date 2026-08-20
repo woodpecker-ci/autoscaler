@@ -39,6 +39,7 @@
 
 ### Misc
 
+- Fix RandomString returning identical values within one clock tick [[#719](https://github.com/woodpecker-ci/autoscaler/pull/719)]
 - Add DigitalOcean provider support to autoscaler [[#661](https://github.com/woodpecker-ci/autoscaler/pull/661)]
 - Add flake.nix for dev environment [[#672](https://github.com/woodpecker-ci/autoscaler/pull/672)]
 
