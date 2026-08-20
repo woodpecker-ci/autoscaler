@@ -71,7 +71,7 @@ Useful optional settings:
 - `WOODPECKER_DIGITALOCEAN_SSH_KEYS` (names or fingerprints; if unset, a key named `random-autoscaler-key` is created and reused, its private key is discarded)
 - `WOODPECKER_DIGITALOCEAN_TAGS`
 - `WOODPECKER_DIGITALOCEAN_PUBLIC_IPV4_ENABLE` (default: `true`; set to `false` to create private droplets without a public network interface, the VPC then needs a [NAT gateway](https://docs.digitalocean.com/products/vpc-nat-gateway/) as default route so the agents can reach the server and pull images)
-- `WOODPECKER_DIGITALOCEAN_PUBLIC_IPV6_ENABLE` (default: `false`, requires public IPv4)
+- `WOODPECKER_DIGITALOCEAN_PUBLIC_IPV6_ENABLE` (default: `true`, requires public IPv4)
 
 ## OpenStack
 
