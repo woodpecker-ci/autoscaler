@@ -274,6 +274,7 @@ func (p *provider) resolveNATGateway(ctx context.Context, selector string) error
 	}
 
 	for _, gateway := range gateways {
+		// skip gateways matching neither the ID nor the name
 		if gateway.ID != selector && gateway.Name != selector {
 			continue
 		}
