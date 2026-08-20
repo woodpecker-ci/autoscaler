@@ -18,6 +18,7 @@
 
 ### ✨ Features
 
+- Add experimental DigitalOcean provider [[#661](https://github.com/woodpecker-ci/autoscaler/pull/661)]
 - Add  experimental OpenStack provider [[#682](https://github.com/woodpecker-ci/autoscaler/pull/682)]
 - Add experimental Equinix Metal provider [[#604](https://github.com/woodpecker-ci/autoscaler/pull/604)]
 
@@ -40,7 +41,6 @@
 
 ### Misc
 
-- Add DigitalOcean provider support to autoscaler [[#661](https://github.com/woodpecker-ci/autoscaler/pull/661)]
 - Add flake.nix for dev environment [[#672](https://github.com/woodpecker-ci/autoscaler/pull/672)]
 
 ## [1.5.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.5.0) - 2026-05-19
