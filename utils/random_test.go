@@ -40,3 +40,17 @@ func TestRandomString(t *testing.T) {
 		})
 	}
 }
+
+// Rapid successive calls must not repeat: a generator re-seeded from the wall
+// clock on every call collapses to identical output within one clock tick on
+// coarse-clock platforms, producing duplicate agent names.
+func TestRandomStringRapidCallsAreUnique(t *testing.T) {
+	const calls = 1000
+
+	seen := make(map[string]struct{}, calls)
+	for range calls {
+		seen[utils.RandomString(10)] = struct{}{}
+	}
+
+	assert.Len(t, seen, calls)
+}

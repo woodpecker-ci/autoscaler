@@ -55,6 +55,25 @@ Useful optional settings:
 - `WOODPECKER_EQUINIXMETAL_SPOT_INSTANCE`
 - `WOODPECKER_EQUINIXMETAL_SPOT_PRICE_MAX`
 
+## DigitalOcean
+
+Set `WOODPECKER_PROVIDER=digitalocean` and configure at least:
+
+- `WOODPECKER_DIGITALOCEAN_API_TOKEN` (or `WOODPECKER_DIGITALOCEAN_API_TOKEN_FILE`)
+
+DigitalOcean support is currently experimental: it has not been tested by the project maintainers, as none of them have real provider access.
+
+Useful optional settings:
+
+- `WOODPECKER_DIGITALOCEAN_REGION` (default: `nyc1`)
+- `WOODPECKER_DIGITALOCEAN_SIZE` (default: `s-1vcpu-1gb`)
+- `WOODPECKER_DIGITALOCEAN_IMAGE` (default: `ubuntu-24-04-x64`, slug or name)
+- `WOODPECKER_DIGITALOCEAN_SSH_KEYS` (names or fingerprints; if unset, a key named `random-autoscaler-key` is created and reused, its private key is discarded)
+- `WOODPECKER_DIGITALOCEAN_TAGS`
+- `WOODPECKER_DIGITALOCEAN_PUBLIC_IPV4_ENABLE` (default: `true`; set to `false` to create private droplets without a public network interface, which requires `WOODPECKER_DIGITALOCEAN_NAT_GATEWAY`)
+- `WOODPECKER_DIGITALOCEAN_NAT_GATEWAY` (name or ID of an existing [VPC NAT gateway](https://docs.digitalocean.com/products/vpc-nat-gateway/); the agents are placed in the VPC it serves as default gateway so they can reach the server and pull images)
+- `WOODPECKER_DIGITALOCEAN_PUBLIC_IPV6_ENABLE` (default: `true`, requires public IPv4)
+
 ## OpenStack
 
 Set `WOODPECKER_PROVIDER=openstack`. The prefix for all the following environment variables is `WOODPECKER_OPENSTACK_`.
@@ -109,7 +128,7 @@ The billing model is selected automatically by the provider, so no extra configu
   - [x] Amazon AWS
   - [ ] Google Cloud
   - [ ] Azure
-  - [ ] Digital Ocean
+  - [x] Digital Ocean **[experimental]** (untested by the maintainers against real provider access, see [above](#digitalocean))
   - [x] Linode
   - [x] OpenStack **[experimental]**
   - [x] Oracle Cloud **[experimental]** (untested by the maintainers against real provider access, see [above](#oracle-cloud))
