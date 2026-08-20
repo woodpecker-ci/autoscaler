@@ -38,6 +38,21 @@ func (b BillingModel) String() string {
 type Provider interface {
 	DeployAgent(context.Context, *woodpecker.Agent, Capability) error
 	RemoveAgent(context.Context, *woodpecker.Agent) error
+	// ListDeployedAgentNames reports the names of the machines this pool
+	// currently has deployed, as passed to DeployAgent.
+	//
+	// The result is the provider's half of the drift reconciliation: the
+	// engine deletes agents the server knows but this list omits, and tears
+	// down machines this list reports but the server does not know. So the
+	// implementation MUST scope the listing to its own pool (config.PoolID),
+	// and MUST report agents that are still booting — anything else makes the
+	// engine destroy a machine that belongs to someone else, or one it just
+	// created. Providers whose API has no label store filter on an equivalent
+	// pool tag set at deploy time.
+	//
+	// An error means "unknown", not "nothing deployed": it aborts the rest of
+	// the reconcile cycle, so returning a partial list instead of the error
+	// is worse than returning nothing.
 	ListDeployedAgentNames(context.Context) ([]string, error)
 	Capabilities(ctx context.Context) ([]Capability, error)
 
