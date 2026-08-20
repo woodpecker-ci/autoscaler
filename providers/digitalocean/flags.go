@@ -61,7 +61,7 @@ var ProviderFlags = []cli.Flag{
 	&cli.BoolFlag{
 		Name:     "digitalocean-public-ipv6-enable",
 		Usage:    "enable public IPv6 networking for agents (requires public IPv4)",
-		Value:    false,
+		Value:    true,
 		Sources:  cli.EnvVars("WOODPECKER_DIGITALOCEAN_PUBLIC_IPV6_ENABLE"),
 		Category: category,
 	},
