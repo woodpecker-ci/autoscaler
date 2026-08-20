@@ -35,9 +35,39 @@ func (b BillingModel) String() string {
 	}
 }
 
+// Provider is the cloud side of the autoscaler: it turns the engine's
+// decisions into machines. Every method is scoped to a single pool
+// (config.PoolID) and is called from the reconcile loop, so any error aborts
+// the rest of that cycle and is retried on the next one. Implementations must
+// therefore tolerate being re-run against a half-finished state.
 type Provider interface {
+	// DeployAgent provisions one machine for the given agent and capability
+	// and returns once it has been handed to the cloud API. The agent has
+	// already been registered on the woodpecker server, so agent.Name is the
+	// machine's identity: RemoveAgent and ListDeployedAgentNames must be able
+	// to find it by that name again, and the machine must be labeled or
+	// tagged so it is recognizable as belonging to this pool.
+	//
+	// The capability is one the provider itself reported via Capabilities.
+	// An implementation that cannot serve it must return an error rather than
+	// silently deploy something else — the engine counts the agent against
+	// the demand of that capability, so a substitute would leave the demand
+	// unserved while occupying a slot of the MaxAgents budget.
+	//
+	// The agent boots asynchronously and reports its own labels when it first
+	// connects; DeployAgent does not wait for that.
 	DeployAgent(context.Context, *woodpecker.Agent, Capability) error
+
+	// RemoveAgent tears down the machine belonging to the given agent.
+	//
+	// Only agent.Name is guaranteed to be set: drift cleanup passes a
+	// synthetic agent for a machine the woodpecker server no longer knows.
+	//
+	// It must be idempotent — an already-gone machine is success, not an
+	// error — because the engine deletes the server-side agent after this
+	// returns and retries the whole step if anything in between fails.
 	RemoveAgent(context.Context, *woodpecker.Agent) error
+
 	// ListDeployedAgentNames reports the names of the machines this pool
 	// currently has deployed, as passed to DeployAgent.
 	//
@@ -54,6 +84,16 @@ type Provider interface {
 	// the reconcile cycle, so returning a partial list instead of the error
 	// is worse than returning nothing.
 	ListDeployedAgentNames(context.Context) ([]string, error)
+
+	// Capabilities reports every (platform, backend) pair this provider can
+	// deploy with its current configuration. The engine turns each pair into
+	// one scheduling bucket, so a pair listed here must be deployable via
+	// DeployAgent, and a pair left out is one no queued task can be served
+	// with.
+	//
+	// It is queried once at startup and the result is cached for the process
+	// lifetime: an error aborts startup, and later configuration changes on
+	// the cloud side are not picked up until the autoscaler restarts.
 	Capabilities(ctx context.Context) ([]Capability, error)
 
 	// BillingModel reports how the provider charges for agent runtime, which
