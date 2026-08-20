@@ -2,6 +2,7 @@ package digitalocean
 
 import (
 	"context"
+	"crypto/ed25519"
 	"errors"
 	"fmt"
 	"regexp"
@@ -11,6 +12,7 @@ import (
 	"github.com/digitalocean/godo"
 	"github.com/rs/zerolog/log"
 	"github.com/urfave/cli/v3"
+	"golang.org/x/crypto/ssh"
 
 	"go.woodpecker-ci.org/autoscaler/config"
 	"go.woodpecker-ci.org/autoscaler/engine/inits/cloudinit"
@@ -19,12 +21,18 @@ import (
 )
 
 var (
-	ErrAPITokenNotSet = errors.New("no api token provided")
-	ErrRegionNotFound = errors.New("region not found")
-	ErrSizeNotFound   = errors.New("size not found")
-	ErrImageNotFound  = errors.New("image not found")
-	ErrSSHKeyNotFound = errors.New("SSH key not found")
+	ErrAPITokenNotSet   = errors.New("no api token provided")
+	ErrRegionNotFound   = errors.New("region not found")
+	ErrSizeNotFound     = errors.New("size not found")
+	ErrSizeNotAvailable = errors.New("size not available")
+	ErrImageNotFound    = errors.New("image not found")
+	ErrSSHKeyNotFound   = errors.New("SSH key not found")
+	ErrIPv6RequiresIPv4 = errors.New("public IPv6 can not be enabled without public IPv4")
 )
+
+// autoSSHKeyName is the SSH key the provider creates and reuses when no key is
+// configured. Its private key is generated in memory and discarded.
+const autoSSHKeyName = "random-autoscaler-key"
 
 var invalidTagPart = regexp.MustCompile(`[^a-z0-9:_-]+`)
 
@@ -45,6 +53,7 @@ type provider struct {
 	image      godo.Image
 	sshKeys    []godo.DropletCreateSSHKey
 	tags       []string
+	enableIPv4 bool
 	enableIPv6 bool
 }
 
@@ -61,8 +70,15 @@ func newProviderWithClient(ctx context.Context, c *cli.Command, config *config.C
 	p := &provider{
 		name:       "digitalocean",
 		config:     config,
+		enableIPv4: c.Bool("digitalocean-public-ipv4-enable"),
 		enableIPv6: c.Bool("digitalocean-public-ipv6-enable"),
 		client:     client,
+	}
+
+	// DigitalOcean has no IPv6-only droplets: public IPv6 is only served on the
+	// public interface, which always carries IPv4 as well.
+	if p.enableIPv6 && !p.enableIPv4 {
+		return nil, fmt.Errorf("%s: %w", p.name, ErrIPv6RequiresIPv4)
 	}
 
 	if err := p.resolveRegion(ctx, c.String("digitalocean-region")); err != nil {
@@ -103,6 +119,10 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 		IPv6:     p.enableIPv6,
 		Tags:     slices.Clone(p.tags),
 		Backups:  false,
+	}
+	if !p.enableIPv4 {
+		// creates the droplet without a public network interface
+		req.PublicNetworking = godo.PtrTo(false)
 	}
 
 	if _, _, err := p.client.Droplets.Create(ctx, req); err != nil {
@@ -173,10 +193,17 @@ func (p *provider) resolveSize(ctx context.Context, sizeSlug string) error {
 	}
 
 	for _, size := range sizes {
-		if size.Slug == sizeSlug && slices.Contains(size.Regions, p.region.Slug) && size.Available {
-			p.size = size
-			return nil
+		if size.Slug != sizeSlug {
+			continue
 		}
+		if !slices.Contains(size.Regions, p.region.Slug) {
+			return fmt.Errorf("%w: size %s is not offered in region %s", ErrSizeNotAvailable, sizeSlug, p.region.Slug)
+		}
+		if !size.Available {
+			return fmt.Errorf("%w: size %s is currently not available", ErrSizeNotAvailable, sizeSlug)
+		}
+		p.size = size
+		return nil
 	}
 
 	return ErrSizeNotFound
@@ -223,10 +250,6 @@ func (p *provider) setupKeyPair(ctx context.Context, configuredKeys []string) er
 		return err
 	}
 
-	if len(keys) == 0 {
-		return ErrSSHKeyNotFound
-	}
-
 	byName := make(map[string]string, len(keys))
 	byFingerprint := make(map[string]string, len(keys))
 	for _, key := range keys {
@@ -251,14 +274,34 @@ func (p *provider) setupKeyPair(ctx context.Context, configuredKeys []string) er
 		return nil
 	}
 
-	for _, name := range []string{"woodpecker", "id_rsa_woodpecker"} {
-		if fingerprint, ok := byName[name]; ok {
-			p.sshKeys = []godo.DropletCreateSSHKey{{Fingerprint: fingerprint}}
-			return nil
-		}
+	// No key configured. SSH access is not needed for the agent to work, but
+	// creating a droplet without a key makes DigitalOcean email a root
+	// password, so reuse or create a throwaway key instead.
+	if fingerprint, ok := byName[autoSSHKeyName]; ok {
+		log.Info().Msgf("%s: using existing SSH key %q", p.name, autoSSHKeyName)
+		p.sshKeys = []godo.DropletCreateSSHKey{{Fingerprint: fingerprint}}
+		return nil
 	}
 
-	p.sshKeys = []godo.DropletCreateSSHKey{{Fingerprint: keys[0].Fingerprint}}
+	publicKey, _, err := ed25519.GenerateKey(nil)
+	if err != nil {
+		return err
+	}
+	sshPublicKey, err := ssh.NewPublicKey(publicKey)
+	if err != nil {
+		return err
+	}
+
+	key, _, err := p.client.Keys.Create(ctx, &godo.KeyCreateRequest{
+		Name:      autoSSHKeyName,
+		PublicKey: string(ssh.MarshalAuthorizedKey(sshPublicKey)),
+	})
+	if err != nil {
+		return fmt.Errorf("Keys.Create: %w", err)
+	}
+
+	log.Info().Msgf("%s: created SSH key %q, its private key was discarded", p.name, autoSSHKeyName)
+	p.sshKeys = []godo.DropletCreateSSHKey{{Fingerprint: key.Fingerprint}}
 	return nil
 }
 

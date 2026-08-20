@@ -29,16 +29,21 @@ type dropletCreateBody struct {
 	IPv6     bool     `json:"ipv6"`
 	Tags     []string `json:"tags"`
 	UserData string   `json:"user_data"`
+	// pointer to distinguish "absent" (public networking on) from explicit false
+	PublicNetworking *bool `json:"public_networking"`
 }
 
-func TestNewResolvesConfigAndDefaultSSHKey(t *testing.T) {
+func TestNewResolvesConfigAndUsesExistingAutoSSHKey(t *testing.T) {
 	api := newTestAPIServer(t, testAPIHandler{
 		regions: []godo.Region{{Slug: "nyc1", Available: true}},
 		sizes:   []godo.Size{{Slug: "s-1vcpu-1gb", Regions: []string{"nyc1"}, Available: true}},
 		images:  []godo.Image{{ID: 101, Slug: "ubuntu-24-04-x64", Name: "24.04 x64", Distribution: "Ubuntu"}},
 		sshKeys: []godo.Key{
 			{Name: "something-else", Fingerprint: "ff:00"},
-			{Name: "woodpecker", Fingerprint: "aa:bb"},
+			{Name: autoSSHKeyName, Fingerprint: "aa:bb"},
+		},
+		onCreateKey: func(t *testing.T, _ godo.KeyCreateRequest) {
+			t.Error("Keys.Create must not be called when the auto key already exists")
 		},
 	})
 
@@ -60,6 +65,93 @@ func TestNewResolvesConfigAndDefaultSSHKey(t *testing.T) {
 	assert.Equal(t, []godo.DropletCreateSSHKey{{Fingerprint: "aa:bb"}}, doProvider.sshKeys)
 	assert.Contains(t, doProvider.tags, "wp-autoscaler-pool-pool-1")
 	assert.Contains(t, doProvider.tags, "wp-autoscaler-image-ubuntu-24-04-x64")
+}
+
+func TestNewCreatesAutoSSHKeyWhenNoneConfigured(t *testing.T) {
+	var created godo.KeyCreateRequest
+	api := newTestAPIServer(t, testAPIHandler{
+		regions: []godo.Region{{Slug: "nyc1", Available: true}},
+		sizes:   []godo.Size{{Slug: "s-1vcpu-1gb", Regions: []string{"nyc1"}, Available: true}},
+		images:  []godo.Image{{ID: 101, Slug: "ubuntu-24-04-x64", Name: "24.04 x64", Distribution: "Ubuntu"}},
+		sshKeys: []godo.Key{{Name: "something-else", Fingerprint: "ff:00"}},
+		onCreateKey: func(_ *testing.T, req godo.KeyCreateRequest) {
+			created = req
+		},
+	})
+
+	cmd := newTestCommand(t, ProviderFlags, []string{"--digitalocean-api-token=token"})
+
+	p, err := newWithClient(t.Context(), cmd, &config.Config{PoolID: "pool-1"}, newTestClient(t, api))
+	require.NoError(t, err)
+
+	assert.Equal(t, autoSSHKeyName, created.Name)
+	assert.True(t, strings.HasPrefix(created.PublicKey, "ssh-ed25519 "), "expected an ed25519 public key, got %q", created.PublicKey)
+
+	doProvider, ok := p.(*provider)
+	require.True(t, ok)
+	// the fake API returns the fingerprint "ge:ne:ra:te:d" for created keys
+	assert.Equal(t, []godo.DropletCreateSSHKey{{Fingerprint: "ge:ne:ra:te:d"}}, doProvider.sshKeys)
+}
+
+func TestNewFailsOnUnknownConfiguredSSHKey(t *testing.T) {
+	api := newTestAPIServer(t, testAPIHandler{
+		regions: []godo.Region{{Slug: "nyc1", Available: true}},
+		sizes:   []godo.Size{{Slug: "s-1vcpu-1gb", Regions: []string{"nyc1"}, Available: true}},
+		images:  []godo.Image{{ID: 101, Slug: "ubuntu-24-04-x64", Name: "24.04 x64", Distribution: "Ubuntu"}},
+		sshKeys: []godo.Key{{Name: "build", Fingerprint: "11:22"}},
+	})
+
+	cmd := newTestCommand(t, ProviderFlags, []string{
+		"--digitalocean-api-token=token",
+		"--digitalocean-ssh-keys=missing",
+	})
+
+	_, err := newWithClient(t.Context(), cmd, &config.Config{PoolID: "pool-1"}, newTestClient(t, api))
+	require.ErrorIs(t, err, ErrSSHKeyNotFound)
+}
+
+func TestNewSizeNotAvailable(t *testing.T) {
+	tests := []struct {
+		name  string
+		sizes []godo.Size
+		want  string
+	}{
+		{
+			name:  "not offered in region",
+			sizes: []godo.Size{{Slug: "s-1vcpu-1gb", Regions: []string{"fra1"}, Available: true}},
+			want:  "not offered in region nyc1",
+		},
+		{
+			name:  "currently not available",
+			sizes: []godo.Size{{Slug: "s-1vcpu-1gb", Regions: []string{"nyc1"}, Available: false}},
+			want:  "currently not available",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			api := newTestAPIServer(t, testAPIHandler{
+				regions: []godo.Region{{Slug: "nyc1", Available: true}},
+				sizes:   tt.sizes,
+			})
+
+			cmd := newTestCommand(t, ProviderFlags, []string{"--digitalocean-api-token=token"})
+
+			_, err := newWithClient(t.Context(), cmd, &config.Config{PoolID: "pool-1"}, newTestClient(t, api))
+			require.ErrorIs(t, err, ErrSizeNotAvailable)
+			assert.Contains(t, err.Error(), tt.want)
+		})
+	}
+}
+
+func TestNewRejectsIPv6WithoutIPv4(t *testing.T) {
+	cmd := newTestCommand(t, ProviderFlags, []string{
+		"--digitalocean-api-token=token",
+		"--digitalocean-public-ipv6-enable",
+	})
+
+	_, err := newWithClient(t.Context(), cmd, &config.Config{PoolID: "pool-1"}, nil)
+	require.ErrorIs(t, err, ErrIPv6RequiresIPv4)
 }
 
 func TestNewResolvesConfiguredSSHKeys(t *testing.T) {
@@ -93,7 +185,7 @@ func TestDeployAgentCreatesDroplet(t *testing.T) {
 		regions: []godo.Region{{Slug: "nyc1", Available: true}},
 		sizes:   []godo.Size{{Slug: "s-1vcpu-1gb", Regions: []string{"nyc1"}, Available: true}},
 		images:  []godo.Image{{ID: 101, Slug: "ubuntu-24-04-x64", Name: "24.04 x64", Distribution: "Ubuntu"}},
-		sshKeys: []godo.Key{{Name: "woodpecker", Fingerprint: "aa:bb"}},
+		sshKeys: []godo.Key{{Name: autoSSHKeyName, Fingerprint: "aa:bb"}},
 		onCreateDroplet: func(_ *testing.T, req dropletCreateBody) {
 			created = req
 		},
@@ -122,11 +214,40 @@ func TestDeployAgentCreatesDroplet(t *testing.T) {
 	assert.Equal(t, "s-1vcpu-1gb", created.Size)
 	assert.Equal(t, "ubuntu-24-04-x64", created.Image)
 	assert.Equal(t, []string{"aa:bb"}, created.SSHKeys)
-	assert.True(t, created.IPv6)
+	assert.False(t, created.IPv6)
+	require.NotNil(t, created.PublicNetworking)
+	assert.False(t, *created.PublicNetworking)
 	assert.Contains(t, created.Tags, "team-ci")
 	assert.Contains(t, created.Tags, "wp-autoscaler-pool-pool-1")
 	assert.NotEmpty(t, created.UserData)
 	assert.Contains(t, created.UserData, "ip -4 route add blackhole 169.254.169.254/32")
+}
+
+func TestDeployAgentWithPublicNetworking(t *testing.T) {
+	var created dropletCreateBody
+	api := newTestAPIServer(t, testAPIHandler{
+		regions: []godo.Region{{Slug: "nyc1", Available: true}},
+		sizes:   []godo.Size{{Slug: "s-1vcpu-1gb", Regions: []string{"nyc1"}, Available: true}},
+		images:  []godo.Image{{ID: 101, Slug: "ubuntu-24-04-x64", Name: "24.04 x64", Distribution: "Ubuntu"}},
+		sshKeys: []godo.Key{{Name: autoSSHKeyName, Fingerprint: "aa:bb"}},
+		onCreateDroplet: func(_ *testing.T, req dropletCreateBody) {
+			created = req
+		},
+	})
+
+	cmd := newTestCommand(t, ProviderFlags, []string{
+		"--digitalocean-api-token=token",
+		"--digitalocean-public-ipv4-enable",
+		"--digitalocean-public-ipv6-enable",
+	})
+
+	p, err := newWithClient(t.Context(), cmd, &config.Config{PoolID: "pool-1"}, newTestClient(t, api))
+	require.NoError(t, err)
+
+	require.NoError(t, p.DeployAgent(t.Context(), &woodpecker.Agent{Name: "pool-1-agent-1"}))
+
+	assert.True(t, created.IPv6)
+	assert.Nil(t, created.PublicNetworking, "public_networking must be omitted when the public interface is enabled")
 }
 
 func TestListDeployedAgentNames(t *testing.T) {
@@ -220,6 +341,7 @@ type testAPIHandler struct {
 	dropletsByTag   map[string][]godo.Droplet
 	onCreateDroplet func(*testing.T, dropletCreateBody)
 	onDeleteDroplet func(*testing.T, int)
+	onCreateKey     func(*testing.T, godo.KeyCreateRequest)
 }
 
 func newTestAPIServer(t *testing.T, handler testAPIHandler) *httptest.Server {
@@ -237,6 +359,13 @@ func newTestAPIServer(t *testing.T, handler testAPIHandler) *httptest.Server {
 			_ = json.NewEncoder(w).Encode(map[string]any{"images": handler.images})
 		case r.Method == http.MethodGet && r.URL.Path == "/v2/account/keys":
 			_ = json.NewEncoder(w).Encode(map[string]any{"ssh_keys": handler.sshKeys})
+		case r.Method == http.MethodPost && r.URL.Path == "/v2/account/keys":
+			var req godo.KeyCreateRequest
+			require.NoError(t, json.NewDecoder(r.Body).Decode(&req))
+			if handler.onCreateKey != nil {
+				handler.onCreateKey(t, req)
+			}
+			_ = json.NewEncoder(w).Encode(map[string]any{"ssh_key": godo.Key{Name: req.Name, Fingerprint: "ge:ne:ra:te:d"}})
 		case r.Method == http.MethodGet && r.URL.Path == "/v2/droplets":
 			tag := r.URL.Query().Get("tag_name")
 			_ = json.NewEncoder(w).Encode(map[string]any{"droplets": handler.dropletsByTag[tag]})
