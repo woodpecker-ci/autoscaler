@@ -53,7 +53,7 @@ var ProviderFlags = []cli.Flag{
 	},
 	&cli.BoolFlag{
 		Name:     "digitalocean-public-ipv4-enable",
-		Usage:    "give agents a public network interface; disabling hardens the setup by creating private droplets, which requires digitalocean-nat-gateway so agents can reach the server and pull images",
+		Usage:    "enable access to internet via IPv4 for agents; when disabled digitalocean-nat-gateway is required so agents can reach the server",
 		Value:    true,
 		Sources:  cli.EnvVars("WOODPECKER_DIGITALOCEAN_PUBLIC_IPV4_ENABLE"),
 		Category: category,
