@@ -47,17 +47,21 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 	if !c.IsSet("scaleway-project") {
 		return nil, fmt.Errorf("WOODPECKER_SCALEWAY_PROJECT is missing")
 	}
-	if !c.IsSet("scaleway-tags") {
-		log.Warn().Msg("\"WOODPECKER_SCALEWAY_TAGS\" is not set, all scaleway instances are managed by autoscaler!")
-	}
 
 	defaultProjectID := c.String("scaleway-project")
 
+	userTags := c.StringSlice("scaleway-tags")
+	if err := checkReservedTags(userTags); err != nil {
+		return nil, fmt.Errorf("scaleway: %w", err)
+	}
+
 	// load config
 	p := &provider{
-		projectID:   scw.StringPtr(defaultProjectID),
-		prefix:      c.String("scaleway-prefix"),
-		tags:        c.StringSlice("scaleway-tags"),
+		projectID: scw.StringPtr(defaultProjectID),
+		prefix:    c.String("scaleway-prefix"),
+		// The pool tag is both what every created instance carries and what
+		// getAllInstances filters on, so it leads the operator-supplied tags.
+		tags:        append([]string{poolTag(config.PoolID)}, userTags...),
 		images:      c.StringSlice("scaleway-images"),
 		enableIPv6:  c.Bool("scaleway-enable-ipv6"),
 		storage:     scw.Size(c.Uint64("scaleway-storage-size") * units.GB),

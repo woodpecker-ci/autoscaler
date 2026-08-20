@@ -10,6 +10,8 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/scaleway/scaleway-sdk-go/api/instance/v1"
 	"github.com/scaleway/scaleway-sdk-go/scw"
+
+	"go.woodpecker-ci.org/autoscaler/engine"
 )
 
 // resolveCandidates resolves each "type:zone" entry from --scaleway-server-types.
@@ -157,4 +159,23 @@ func isResourceUnavailable(err error) bool {
 		return scwErr.Message == "server_type_unavailable" || scwErr.StatusCode == http.StatusServiceUnavailable
 	}
 	return false
+}
+
+// poolTag is the tag every instance of this pool carries, mirroring the pool
+// label the label-capable providers use.
+func poolTag(poolID string) string {
+	return engine.LabelPool + "=" + poolID
+}
+
+// checkReservedTags rejects operator tags in the autoscaler's own namespace:
+// they would let a configured tag claim a foreign pool, so instances of this
+// pool would show up in that pool's listing and be torn down by it.
+func checkReservedTags(tags []string) error {
+	for _, tag := range tags {
+		key, _, _ := strings.Cut(tag, "=")
+		if strings.HasPrefix(strings.TrimSpace(key), engine.LabelPrefix) {
+			return fmt.Errorf("%w: %s", ErrReservedTagPrefix, engine.LabelPrefix)
+		}
+	}
+	return nil
 }

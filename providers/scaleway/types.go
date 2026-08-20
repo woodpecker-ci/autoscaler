@@ -13,6 +13,7 @@ var (
 	ErrImageNotFound        = errors.New("no configured image resolves for server type arch")
 	ErrNoMatchingServerType = errors.New("no configured server type matches requested capability")
 	ErrInstanceNotFound     = errors.New("instance not found")
+	ErrReservedTagPrefix    = errors.New("reserved tag prefix")
 )
 
 // deployCandidate is a fully-resolved server type + image pair ready for use
