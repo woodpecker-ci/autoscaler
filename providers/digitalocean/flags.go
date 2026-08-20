@@ -53,9 +53,15 @@ var ProviderFlags = []cli.Flag{
 	},
 	&cli.BoolFlag{
 		Name:     "digitalocean-public-ipv4-enable",
-		Usage:    "give agents a public network interface; disabling hardens the setup by creating private droplets, but then the VPC needs a NAT gateway (paid) as default route so agents can reach the server and pull images",
+		Usage:    "give agents a public network interface; disabling hardens the setup by creating private droplets, which requires digitalocean-nat-gateway so agents can reach the server and pull images",
 		Value:    true,
 		Sources:  cli.EnvVars("WOODPECKER_DIGITALOCEAN_PUBLIC_IPV4_ENABLE"),
+		Category: category,
+	},
+	&cli.StringFlag{
+		Name:     "digitalocean-nat-gateway",
+		Usage:    "name or ID of an existing VPC NAT gateway (paid); required when public IPv4 is disabled, agents are placed in the gateway's VPC",
+		Sources:  cli.EnvVars("WOODPECKER_DIGITALOCEAN_NAT_GATEWAY"),
 		Category: category,
 	},
 	&cli.BoolFlag{

@@ -21,13 +21,16 @@ import (
 )
 
 var (
-	ErrAPITokenNotSet   = errors.New("no api token provided")
-	ErrRegionNotFound   = errors.New("region not found")
-	ErrSizeNotFound     = errors.New("size not found")
-	ErrSizeNotAvailable = errors.New("size not available")
-	ErrImageNotFound    = errors.New("image not found")
-	ErrSSHKeyNotFound   = errors.New("SSH key not found")
-	ErrIPv6RequiresIPv4 = errors.New("public IPv6 can not be enabled without public IPv4")
+	ErrAPITokenNotSet     = errors.New("no api token provided")
+	ErrRegionNotFound     = errors.New("region not found")
+	ErrSizeNotFound       = errors.New("size not found")
+	ErrSizeNotAvailable   = errors.New("size not available")
+	ErrImageNotFound      = errors.New("image not found")
+	ErrSSHKeyNotFound     = errors.New("SSH key not found")
+	ErrIPv6RequiresIPv4   = errors.New("public IPv6 can not be enabled without public IPv4")
+	ErrNATGatewayRequired = errors.New("a NAT gateway is required when public IPv4 is disabled")
+	ErrNATGatewayNotFound = errors.New("NAT gateway not found")
+	ErrNATGatewayInvalid  = errors.New("NAT gateway not usable")
 )
 
 // autoSSHKeyName is the SSH key the provider creates and reuses when no key is
@@ -53,6 +56,7 @@ type provider struct {
 	image      godo.Image
 	sshKeys    []godo.DropletCreateSSHKey
 	tags       []string
+	vpcUUID    string
 	enableIPv4 bool
 	enableIPv6 bool
 }
@@ -93,6 +97,9 @@ func newProviderWithClient(ctx context.Context, c *cli.Command, config *config.C
 	if err := p.setupKeyPair(ctx, c.StringSlice("digitalocean-ssh-keys")); err != nil {
 		return nil, fmt.Errorf("%s: setupKeyPair: %w", p.name, err)
 	}
+	if err := p.resolveNATGateway(ctx, c.String("digitalocean-nat-gateway")); err != nil {
+		return nil, err
+	}
 
 	p.tags = slices.Clone(c.StringSlice("digitalocean-tags"))
 	p.tags = append(p.tags, poolTag(config.PoolID))
@@ -123,6 +130,9 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 	if !p.enableIPv4 {
 		// creates the droplet without a public network interface
 		req.PublicNetworking = godo.PtrTo(false)
+	}
+	if p.vpcUUID != "" {
+		req.VPCUUID = p.vpcUUID
 	}
 
 	if _, _, err := p.client.Droplets.Create(ctx, req); err != nil {
@@ -242,6 +252,44 @@ func (p *provider) resolveImage(ctx context.Context, selector string) error {
 	}
 
 	return nil
+}
+
+// resolveNATGateway looks up the configured VPC NAT gateway and pins agents to
+// the VPC it serves as default gateway, so private droplets get egress. Private
+// droplets without a gateway have no way to reach the server, so this is
+// required when public IPv4 is disabled.
+func (p *provider) resolveNATGateway(ctx context.Context, selector string) error {
+	if selector == "" {
+		if !p.enableIPv4 {
+			return fmt.Errorf("%s: %w", p.name, ErrNATGatewayRequired)
+		}
+		return nil
+	}
+
+	gateways, err := listAll(ctx, func(ctx context.Context, opt *godo.ListOptions) ([]*godo.VPCNATGateway, *godo.Response, error) {
+		return p.client.VPCNATGateways.List(ctx, &godo.VPCNATGatewaysListOptions{ListOptions: *opt})
+	})
+	if err != nil {
+		return fmt.Errorf("%s: VPCNATGateways.List: %w", p.name, err)
+	}
+
+	for _, gateway := range gateways {
+		if gateway.ID != selector && gateway.Name != selector {
+			continue
+		}
+		if gateway.Region != p.region.Slug {
+			return fmt.Errorf("%s: %w: gateway %s is in region %s, not %s", p.name, ErrNATGatewayInvalid, selector, gateway.Region, p.region.Slug)
+		}
+		for _, vpc := range gateway.VPCs {
+			if vpc.DefaultGateway {
+				p.vpcUUID = vpc.VpcUUID
+				return nil
+			}
+		}
+		return fmt.Errorf("%s: %w: gateway %s is not the default gateway of any VPC", p.name, ErrNATGatewayInvalid, selector)
+	}
+
+	return fmt.Errorf("%s: %w: %s", p.name, ErrNATGatewayNotFound, selector)
 }
 
 func (p *provider) setupKeyPair(ctx context.Context, configuredKeys []string) error {

@@ -30,7 +30,8 @@ type dropletCreateBody struct {
 	Tags     []string `json:"tags"`
 	UserData string   `json:"user_data"`
 	// pointer to distinguish "absent" (public networking on) from explicit false
-	PublicNetworking *bool `json:"public_networking"`
+	PublicNetworking *bool  `json:"public_networking"`
+	VPCUUID          string `json:"vpc_uuid"`
 }
 
 func TestNewResolvesConfigAndUsesExistingAutoSSHKey(t *testing.T) {
@@ -145,10 +146,10 @@ func TestNewSizeNotAvailable(t *testing.T) {
 }
 
 func TestNewRejectsIPv6WithoutIPv4(t *testing.T) {
+	// public IPv6 defaults to true, so disabling only IPv4 must fail fast
 	cmd := newTestCommand(t, ProviderFlags, []string{
 		"--digitalocean-api-token=token",
 		"--digitalocean-public-ipv4-enable=false",
-		"--digitalocean-public-ipv6-enable",
 	})
 
 	_, err := newWithClient(t.Context(), cmd, &config.Config{PoolID: "pool-1"}, nil)
@@ -215,7 +216,7 @@ func TestDeployAgentCreatesDroplet(t *testing.T) {
 	assert.Equal(t, "s-1vcpu-1gb", created.Size)
 	assert.Equal(t, "ubuntu-24-04-x64", created.Image)
 	assert.Equal(t, []string{"aa:bb"}, created.SSHKeys)
-	assert.False(t, created.IPv6)
+	assert.True(t, created.IPv6)
 	assert.Nil(t, created.PublicNetworking, "public_networking must be omitted with the default public IPv4")
 	assert.Contains(t, created.Tags, "team-ci")
 	assert.Contains(t, created.Tags, "wp-autoscaler-pool-pool-1")
@@ -223,7 +224,7 @@ func TestDeployAgentCreatesDroplet(t *testing.T) {
 	assert.Contains(t, created.UserData, "ip -4 route add blackhole 169.254.169.254/32")
 }
 
-func TestDeployAgentWithPublicNetworking(t *testing.T) {
+func TestDeployAgentWithoutIPv6(t *testing.T) {
 	var created dropletCreateBody
 	api := newTestAPIServer(t, testAPIHandler{
 		regions: []godo.Region{{Slug: "nyc1", Available: true}},
@@ -237,7 +238,7 @@ func TestDeployAgentWithPublicNetworking(t *testing.T) {
 
 	cmd := newTestCommand(t, ProviderFlags, []string{
 		"--digitalocean-api-token=token",
-		"--digitalocean-public-ipv6-enable",
+		"--digitalocean-public-ipv6-enable=false",
 	})
 
 	p, err := newWithClient(t.Context(), cmd, &config.Config{PoolID: "pool-1"}, newTestClient(t, api))
@@ -245,7 +246,7 @@ func TestDeployAgentWithPublicNetworking(t *testing.T) {
 
 	require.NoError(t, p.DeployAgent(t.Context(), &woodpecker.Agent{Name: "pool-1-agent-1"}))
 
-	assert.True(t, created.IPv6)
+	assert.False(t, created.IPv6)
 	assert.Nil(t, created.PublicNetworking, "public_networking must be omitted when the public interface is enabled")
 }
 
@@ -256,6 +257,15 @@ func TestDeployAgentPrivateDroplet(t *testing.T) {
 		sizes:   []godo.Size{{Slug: "s-1vcpu-1gb", Regions: []string{"nyc1"}, Available: true}},
 		images:  []godo.Image{{ID: 101, Slug: "ubuntu-24-04-x64", Name: "24.04 x64", Distribution: "Ubuntu"}},
 		sshKeys: []godo.Key{{Name: autoSSHKeyName, Fingerprint: "aa:bb"}},
+		natGateways: []*godo.VPCNATGateway{{
+			ID:     "gw-1",
+			Name:   "ci-egress",
+			Region: "nyc1",
+			VPCs: []*godo.IngressVPC{
+				{VpcUUID: "vpc-other"},
+				{VpcUUID: "vpc-123", DefaultGateway: true},
+			},
+		}},
 		onCreateDroplet: func(_ *testing.T, req dropletCreateBody) {
 			created = req
 		},
@@ -264,6 +274,8 @@ func TestDeployAgentPrivateDroplet(t *testing.T) {
 	cmd := newTestCommand(t, ProviderFlags, []string{
 		"--digitalocean-api-token=token",
 		"--digitalocean-public-ipv4-enable=false",
+		"--digitalocean-public-ipv6-enable=false",
+		"--digitalocean-nat-gateway=ci-egress",
 	})
 
 	p, err := newWithClient(t.Context(), cmd, &config.Config{PoolID: "pool-1"}, newTestClient(t, api))
@@ -274,6 +286,71 @@ func TestDeployAgentPrivateDroplet(t *testing.T) {
 	assert.False(t, created.IPv6)
 	require.NotNil(t, created.PublicNetworking)
 	assert.False(t, *created.PublicNetworking)
+	assert.Equal(t, "vpc-123", created.VPCUUID, "agents must join the VPC the gateway serves as default gateway")
+}
+
+func TestNewNATGatewayValidation(t *testing.T) {
+	gateway := &godo.VPCNATGateway{
+		ID:     "gw-1",
+		Name:   "ci-egress",
+		Region: "nyc1",
+		VPCs:   []*godo.IngressVPC{{VpcUUID: "vpc-123", DefaultGateway: true}},
+	}
+
+	tests := []struct {
+		name        string
+		args        []string
+		natGateways []*godo.VPCNATGateway
+		wantErr     error
+	}{
+		{
+			name:        "required when public IPv4 is disabled",
+			args:        []string{"--digitalocean-public-ipv4-enable=false", "--digitalocean-public-ipv6-enable=false"},
+			natGateways: []*godo.VPCNATGateway{gateway},
+			wantErr:     ErrNATGatewayRequired,
+		},
+		{
+			name:        "unknown gateway",
+			args:        []string{"--digitalocean-public-ipv4-enable=false", "--digitalocean-public-ipv6-enable=false", "--digitalocean-nat-gateway=missing"},
+			natGateways: []*godo.VPCNATGateway{gateway},
+			wantErr:     ErrNATGatewayNotFound,
+		},
+		{
+			name: "wrong region",
+			args: []string{"--digitalocean-public-ipv4-enable=false", "--digitalocean-public-ipv6-enable=false", "--digitalocean-nat-gateway=gw-1"},
+			natGateways: []*godo.VPCNATGateway{{
+				ID: "gw-1", Name: "ci-egress", Region: "fra1",
+				VPCs: []*godo.IngressVPC{{VpcUUID: "vpc-123", DefaultGateway: true}},
+			}},
+			wantErr: ErrNATGatewayInvalid,
+		},
+		{
+			name: "no default gateway VPC",
+			args: []string{"--digitalocean-public-ipv4-enable=false", "--digitalocean-public-ipv6-enable=false", "--digitalocean-nat-gateway=ci-egress"},
+			natGateways: []*godo.VPCNATGateway{{
+				ID: "gw-1", Name: "ci-egress", Region: "nyc1",
+				VPCs: []*godo.IngressVPC{{VpcUUID: "vpc-123"}},
+			}},
+			wantErr: ErrNATGatewayInvalid,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			api := newTestAPIServer(t, testAPIHandler{
+				regions:     []godo.Region{{Slug: "nyc1", Available: true}},
+				sizes:       []godo.Size{{Slug: "s-1vcpu-1gb", Regions: []string{"nyc1"}, Available: true}},
+				images:      []godo.Image{{ID: 101, Slug: "ubuntu-24-04-x64", Name: "24.04 x64", Distribution: "Ubuntu"}},
+				sshKeys:     []godo.Key{{Name: autoSSHKeyName, Fingerprint: "aa:bb"}},
+				natGateways: tt.natGateways,
+			})
+
+			cmd := newTestCommand(t, ProviderFlags, append([]string{"--digitalocean-api-token=token"}, tt.args...))
+
+			_, err := newWithClient(t.Context(), cmd, &config.Config{PoolID: "pool-1"}, newTestClient(t, api))
+			require.ErrorIs(t, err, tt.wantErr)
+		})
+	}
 }
 
 func TestListDeployedAgentNames(t *testing.T) {
@@ -368,6 +445,7 @@ type testAPIHandler struct {
 	onCreateDroplet func(*testing.T, dropletCreateBody)
 	onDeleteDroplet func(*testing.T, int)
 	onCreateKey     func(*testing.T, godo.KeyCreateRequest)
+	natGateways     []*godo.VPCNATGateway
 }
 
 func newTestAPIServer(t *testing.T, handler testAPIHandler) *httptest.Server {
@@ -392,6 +470,8 @@ func newTestAPIServer(t *testing.T, handler testAPIHandler) *httptest.Server {
 				handler.onCreateKey(t, req)
 			}
 			_ = json.NewEncoder(w).Encode(map[string]any{"ssh_key": godo.Key{Name: req.Name, Fingerprint: "ge:ne:ra:te:d"}})
+		case r.Method == http.MethodGet && r.URL.Path == "/v2/vpc_nat_gateways":
+			_ = json.NewEncoder(w).Encode(map[string]any{"vpc_nat_gateways": handler.natGateways})
 		case r.Method == http.MethodGet && r.URL.Path == "/v2/droplets":
 			tag := r.URL.Query().Get("tag_name")
 			_ = json.NewEncoder(w).Encode(map[string]any{"droplets": handler.dropletsByTag[tag]})
