@@ -54,7 +54,7 @@ var ProviderFlags = []cli.Flag{
 	&cli.BoolFlag{
 		Name:     "digitalocean-public-ipv4-enable",
 		Usage:    "enable a public network interface (IPv4) for agents; when disabled the VPC needs a NAT gateway so agents can reach the server",
-		Value:    false,
+		Value:    true,
 		Sources:  cli.EnvVars("WOODPECKER_DIGITALOCEAN_PUBLIC_IPV4_ENABLE"),
 		Category: category,
 	},
