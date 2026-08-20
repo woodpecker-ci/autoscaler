@@ -60,8 +60,8 @@ var ProviderFlags = []cli.Flag{
 	},
 	&cli.BoolFlag{
 		Name:     "digitalocean-public-ipv6-enable",
-		Usage:    "additionally enable public IPv6 on the agents' public interface (requires public IPv4, DigitalOcean has no IPv6-only droplets)",
-		Value:    false,
+		Usage:    "enable public IPv6 on the agents' public interface (requires public IPv4, DigitalOcean has no IPv6-only droplets)",
+		Value:    true,
 		Sources:  cli.EnvVars("WOODPECKER_DIGITALOCEAN_PUBLIC_IPV6_ENABLE"),
 		Category: category,
 	},
