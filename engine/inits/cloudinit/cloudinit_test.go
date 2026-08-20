@@ -1,6 +1,7 @@
 package cloudinit_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -54,6 +55,25 @@ func TestRenderUserDataTemplate_Secure(t *testing.T) {
 	assert.Contains(t, userData, "WOODPECKER_GRPC_SECURE=true")
 }
 
+func TestRenderUserDataTemplate_DefaultStartsWithCloudConfigHeader(t *testing.T) {
+	userData, err := cloudinit.RenderUserDataTemplate(&config.Config{}, &woodpecker.Agent{}, cloudinit.RenderOption{})
+
+	assert.NoError(t, err)
+	assert.True(t, strings.HasPrefix(userData, "#cloud-config\n"), "user data must start with the cloud-config header")
+}
+
+func TestRenderUserDataTemplate_TrimsWhitespace(t *testing.T) {
+	config := &config.Config{
+		UserData: "\n\n  \t#cloud-config\nimage: {{ .Image }}\n",
+		Image:    "test-image",
+	}
+
+	userData, err := cloudinit.RenderUserDataTemplate(config, &woodpecker.Agent{}, cloudinit.RenderOption{})
+
+	assert.NoError(t, err)
+	assert.Equal(t, "#cloud-config\nimage: test-image", userData)
+}
+
 func TestRenderUserDataTemplate_Error(t *testing.T) {
 	config := &config.Config{
 		UserData: "{{.Missing}}",
@@ -77,8 +97,7 @@ func TestRenderUserDataTemplate_CustomCommands(t *testing.T) {
 	})
 	assert.NoError(t, err)
 	// editorconfig-checker-disable
-	assert.EqualValues(t, `
-#cloud-config
+	assert.EqualValues(t, `#cloud-config
 
 package_reboot_if_required: false
 package_update: true
@@ -126,7 +145,6 @@ runcmd:
   - sh -xc "cd /root; docker compose up -d"
   - echo exec after docker up
 
-final_message: "The system is finally up, after $UPTIME seconds"
-`, conf)
+final_message: "The system is finally up, after $UPTIME seconds"`, conf)
 	// editorconfig-checker-enable
 }
