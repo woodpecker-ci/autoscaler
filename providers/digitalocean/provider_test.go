@@ -147,6 +147,7 @@ func TestNewSizeNotAvailable(t *testing.T) {
 func TestNewRejectsIPv6WithoutIPv4(t *testing.T) {
 	cmd := newTestCommand(t, ProviderFlags, []string{
 		"--digitalocean-api-token=token",
+		"--digitalocean-public-ipv4-enable=false",
 		"--digitalocean-public-ipv6-enable",
 	})
 
@@ -215,8 +216,7 @@ func TestDeployAgentCreatesDroplet(t *testing.T) {
 	assert.Equal(t, "ubuntu-24-04-x64", created.Image)
 	assert.Equal(t, []string{"aa:bb"}, created.SSHKeys)
 	assert.False(t, created.IPv6)
-	require.NotNil(t, created.PublicNetworking)
-	assert.False(t, *created.PublicNetworking)
+	assert.Nil(t, created.PublicNetworking, "public_networking must be omitted with the default public IPv4")
 	assert.Contains(t, created.Tags, "team-ci")
 	assert.Contains(t, created.Tags, "wp-autoscaler-pool-pool-1")
 	assert.NotEmpty(t, created.UserData)
@@ -237,7 +237,6 @@ func TestDeployAgentWithPublicNetworking(t *testing.T) {
 
 	cmd := newTestCommand(t, ProviderFlags, []string{
 		"--digitalocean-api-token=token",
-		"--digitalocean-public-ipv4-enable",
 		"--digitalocean-public-ipv6-enable",
 	})
 
@@ -248,6 +247,33 @@ func TestDeployAgentWithPublicNetworking(t *testing.T) {
 
 	assert.True(t, created.IPv6)
 	assert.Nil(t, created.PublicNetworking, "public_networking must be omitted when the public interface is enabled")
+}
+
+func TestDeployAgentPrivateDroplet(t *testing.T) {
+	var created dropletCreateBody
+	api := newTestAPIServer(t, testAPIHandler{
+		regions: []godo.Region{{Slug: "nyc1", Available: true}},
+		sizes:   []godo.Size{{Slug: "s-1vcpu-1gb", Regions: []string{"nyc1"}, Available: true}},
+		images:  []godo.Image{{ID: 101, Slug: "ubuntu-24-04-x64", Name: "24.04 x64", Distribution: "Ubuntu"}},
+		sshKeys: []godo.Key{{Name: autoSSHKeyName, Fingerprint: "aa:bb"}},
+		onCreateDroplet: func(_ *testing.T, req dropletCreateBody) {
+			created = req
+		},
+	})
+
+	cmd := newTestCommand(t, ProviderFlags, []string{
+		"--digitalocean-api-token=token",
+		"--digitalocean-public-ipv4-enable=false",
+	})
+
+	p, err := newWithClient(t.Context(), cmd, &config.Config{PoolID: "pool-1"}, newTestClient(t, api))
+	require.NoError(t, err)
+
+	require.NoError(t, p.DeployAgent(t.Context(), &woodpecker.Agent{Name: "pool-1-agent-1"}))
+
+	assert.False(t, created.IPv6)
+	require.NotNil(t, created.PublicNetworking)
+	assert.False(t, *created.PublicNetworking)
 }
 
 func TestListDeployedAgentNames(t *testing.T) {

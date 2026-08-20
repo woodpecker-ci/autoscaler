@@ -53,15 +53,15 @@ var ProviderFlags = []cli.Flag{
 	},
 	&cli.BoolFlag{
 		Name:     "digitalocean-public-ipv4-enable",
-		Usage:    "enable access to internet via IPv4 for agents; when disabled the VPC needs a NAT gateway so agents can reach the server",
+		Usage:    "give agents a public network interface; disabling hardens the setup by creating private droplets, but then the VPC needs a NAT gateway (paid) as default route so agents can reach the server and pull images",
 		Value:    true,
 		Sources:  cli.EnvVars("WOODPECKER_DIGITALOCEAN_PUBLIC_IPV4_ENABLE"),
 		Category: category,
 	},
 	&cli.BoolFlag{
 		Name:     "digitalocean-public-ipv6-enable",
-		Usage:    "enable public IPv6 networking for agents (requires public IPv4)",
-		Value:    true,
+		Usage:    "additionally enable public IPv6 on the agents' public interface (requires public IPv4, DigitalOcean has no IPv6-only droplets)",
+		Value:    false,
 		Sources:  cli.EnvVars("WOODPECKER_DIGITALOCEAN_PUBLIC_IPV6_ENABLE"),
 		Category: category,
 	},
