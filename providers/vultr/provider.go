@@ -31,6 +31,12 @@ var (
 	ErrInvalidImage       = errors.New("no valid image set")
 )
 
+// blackhole metadata services so running steps can not extract agent token from user-data
+// https://www.vultr.com/metadata/ (data is served over IPv4 169.254.169.254 only)
+var blackholeMetadataAPI = []string{
+	"ip -4 route add blackhole 169.254.169.254/32",
+}
+
 type provider struct {
 	sshKeys    []string
 	labels     map[string]string
@@ -91,7 +97,9 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 }
 
 func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
-	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, cloudinit.RenderOption{})
+	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, cloudinit.RenderOption{
+		PreExec: blackholeMetadataAPI,
+	})
 	if err != nil {
 		return fmt.Errorf("%s: cloudinit.RenderUserDataTemplate: %w", p.name, err)
 	}
