@@ -68,8 +68,9 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 	p := &provider{
 		projectID: scw.StringPtr(defaultProjectID),
 		prefix:    c.String("scaleway-prefix"),
-		// The pool tag is both what every created instance carries and what
-		// getAllInstances filters on, so it leads the operator-supplied tags.
+		// The pool tag identifies every instance this provider creates and is
+		// what getInstance and getAllInstances look for, so it leads the
+		// operator-supplied tags.
 		tags:        append([]string{poolTag(config.PoolID)}, userTags...),
 		images:      c.StringSlice("scaleway-images"),
 		enableIPv6:  c.Bool("scaleway-enable-ipv6"),
