@@ -175,7 +175,7 @@ func (p *provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 	var names []string
 
 	f := linodego.Filter{}
-	f.AddField(linodego.Eq, "tags", poolTag(p.config.PoolID))
+	f.AddField(linodego.Contains, "tags", poolTag(p.config.PoolID))
 	fStr, err := f.MarshalJSON()
 	if err != nil {
 		return names, err
