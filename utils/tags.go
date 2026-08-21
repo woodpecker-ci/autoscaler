@@ -1,5 +1,10 @@
 package utils
 
+import (
+	"fmt"
+	"strings"
+)
+
 // CheckReservedTags rejects tags that intrude into a reserved key namespace.
 //
 // Each tag is treated as a "key=value" pair; only the key part is inspected,

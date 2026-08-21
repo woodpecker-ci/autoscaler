@@ -14,8 +14,10 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"go.woodpecker-ci.org/autoscaler/config"
+	"go.woodpecker-ci.org/autoscaler/engine"
 	"go.woodpecker-ci.org/autoscaler/engine/inits/cloudinit"
 	"go.woodpecker-ci.org/autoscaler/engine/types"
+	"go.woodpecker-ci.org/autoscaler/utils"
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
 
@@ -58,7 +60,7 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 	defaultProjectID := c.String("scaleway-project")
 
 	userTags := c.StringSlice("scaleway-tags")
-	if err := utils.checkReservedTags(userTags, engine.LabelPrefix, ErrReservedTagPrefix); err != nil {
+	if err := utils.CheckReservedTags(userTags, engine.LabelPrefix, ErrReservedTagPrefix); err != nil {
 		return nil, fmt.Errorf("scaleway: %w", err)
 	}
 

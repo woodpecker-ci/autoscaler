@@ -13,8 +13,10 @@ import (
 	"golang.org/x/oauth2"
 
 	"go.woodpecker-ci.org/autoscaler/config"
+	"go.woodpecker-ci.org/autoscaler/engine"
 	"go.woodpecker-ci.org/autoscaler/engine/inits/cloudinit"
 	"go.woodpecker-ci.org/autoscaler/engine/types"
+	"go.woodpecker-ci.org/autoscaler/utils"
 	"go.woodpecker-ci.org/autoscaler/version"
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
