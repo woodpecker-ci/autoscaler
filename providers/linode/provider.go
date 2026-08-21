@@ -13,8 +13,10 @@ import (
 	"golang.org/x/oauth2"
 
 	"go.woodpecker-ci.org/autoscaler/config"
+	"go.woodpecker-ci.org/autoscaler/engine"
 	"go.woodpecker-ci.org/autoscaler/engine/inits/cloudinit"
 	"go.woodpecker-ci.org/autoscaler/engine/types"
+	"go.woodpecker-ci.org/autoscaler/utils"
 	"go.woodpecker-ci.org/autoscaler/version"
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
@@ -95,7 +97,7 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 	// instance this provider creates has to carry it, and an operator tag
 	// must not be able to claim another pool's namespace.
 	userTags := c.StringSlice("linode-tags")
-	if err := checkReservedTags(userTags); err != nil {
+	if err := utils.CheckReservedTags(userTags, engine.LabelPrefix, ErrReservedTagPrefix); err != nil {
 		return nil, fmt.Errorf("%s: %w", p.name, err)
 	}
 	p.tags = append([]string{poolTag(config.PoolID)}, userTags...)
@@ -185,7 +187,7 @@ func (p *provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 	var names []string
 
 	f := linodego.Filter{}
-	f.AddField(linodego.Eq, "tags", poolTag(p.config.PoolID))
+	f.AddField(linodego.Contains, "tags", poolTag(p.config.PoolID))
 	fStr, err := f.MarshalJSON()
 	if err != nil {
 		return names, err

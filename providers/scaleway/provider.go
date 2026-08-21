@@ -14,10 +14,19 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"go.woodpecker-ci.org/autoscaler/config"
+	"go.woodpecker-ci.org/autoscaler/engine"
 	"go.woodpecker-ci.org/autoscaler/engine/inits/cloudinit"
 	"go.woodpecker-ci.org/autoscaler/engine/types"
+	"go.woodpecker-ci.org/autoscaler/utils"
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
+
+// blackhole metadata services so running steps can not extract agent token from user-data
+// https://www.scaleway.com/en/developers/api/instance/
+var blackholeMetadataAPI = []string{
+	"ip -4 route add blackhole 169.254.42.42/32",
+	"ip -6 route add blackhole fd00:42::42/128",
+}
 
 type provider struct {
 	projectID   *string
@@ -51,7 +60,7 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 	defaultProjectID := c.String("scaleway-project")
 
 	userTags := c.StringSlice("scaleway-tags")
-	if err := checkReservedTags(userTags); err != nil {
+	if err := utils.CheckReservedTags(userTags, engine.LabelPrefix, ErrReservedTagPrefix); err != nil {
 		return nil, fmt.Errorf("scaleway: %w", err)
 	}
 
@@ -59,8 +68,9 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 	p := &provider{
 		projectID: scw.StringPtr(defaultProjectID),
 		prefix:    c.String("scaleway-prefix"),
-		// The pool tag is both what every created instance carries and what
-		// getAllInstances filters on, so it leads the operator-supplied tags.
+		// The pool tag identifies every instance this provider creates and is
+		// what getInstance and getAllInstances look for, so it leads the
+		// operator-supplied tags.
 		tags:        append([]string{poolTag(config.PoolID)}, userTags...),
 		images:      c.StringSlice("scaleway-images"),
 		enableIPv6:  c.Bool("scaleway-enable-ipv6"),
@@ -222,7 +232,9 @@ func (p *provider) createInstance(ctx context.Context, agent *woodpecker.Agent, 
 }
 
 func (p *provider) setCloudInit(ctx context.Context, agent *woodpecker.Agent, inst *instance.Server) error {
-	ud, err := cloudinit.RenderUserDataTemplate(p.config, agent, cloudinit.RenderOption{})
+	ud, err := cloudinit.RenderUserDataTemplate(p.config, agent, cloudinit.RenderOption{
+		PreExec: blackholeMetadataAPI,
+	})
 	if err != nil {
 		return err
 	}

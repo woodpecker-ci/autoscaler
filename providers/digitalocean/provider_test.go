@@ -156,6 +156,18 @@ func TestNewRejectsIPv6WithoutIPv4(t *testing.T) {
 	require.ErrorIs(t, err, ErrIPv6RequiresIPv4)
 }
 
+func TestNewRejectsReservedTags(t *testing.T) {
+	// a tag in the autoscaler's own namespace could claim another pool's
+	// droplets, which listPoolDroplets would then hand to this pool
+	cmd := newTestCommand(t, ProviderFlags, []string{
+		"--digitalocean-api-token=token",
+		"--digitalocean-tags=" + poolTag("other-pool"),
+	})
+
+	_, err := newWithClient(t.Context(), cmd, &config.Config{PoolID: "pool-1"}, nil)
+	require.ErrorIs(t, err, ErrReservedTagPrefix)
+}
+
 func TestNewResolvesConfiguredSSHKeys(t *testing.T) {
 	api := newTestAPIServer(t, testAPIHandler{
 		regions: []godo.Region{{Slug: "nyc1", Available: true}},

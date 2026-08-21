@@ -19,6 +19,7 @@ var (
 	ErrNoMatchingCandidate      = errors.New("no deploy candidate matches requested capability")
 	ErrUnknownArchitecture      = errors.New("unknown architecture")
 	ErrRegionNotSet             = errors.New("aws-region must be set for unqualified values")
+	ErrReservedTagPrefix        = errors.New("reserved tag prefix")
 )
 
 // regionConfig contains the resources that exist together in an AWS region.

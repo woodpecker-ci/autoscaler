@@ -106,8 +106,8 @@ func (p *provider) resolveImage(ctx context.Context, api *instance.API, zone scw
 	return "", "", fmt.Errorf("%w: tried %v for arch=%s zone=%s", ErrImageNotFound, p.images, arch, zone)
 }
 
-// getInstance looks up a single managed instance by name across all Scaleway
-// zones. Returns ErrInstanceNotFound if no matching instance exists.
+// getInstance looks up a single instance of this pool by name across all
+// Scaleway zones. Returns ErrInstanceNotFound if no matching instance exists.
 func (p *provider) getInstance(ctx context.Context, name string) (*instance.Server, error) {
 	api := instance.NewAPI(p.client)
 	for _, zone := range scw.AllZones {
@@ -115,7 +115,7 @@ func (p *provider) getInstance(ctx context.Context, name string) (*instance.Serv
 			Zone:    zone,
 			Project: p.projectID,
 			Name:    scw.StringPtr(name),
-			Tags:    p.tags,
+			Tags:    []string{poolTag(p.config.PoolID)},
 		}, scw.WithContext(ctx))
 		if err != nil {
 			return nil, err
@@ -130,7 +130,10 @@ func (p *provider) getInstance(ctx context.Context, name string) (*instance.Serv
 	return nil, fmt.Errorf("%w: %s", ErrInstanceNotFound, name)
 }
 
-// getAllInstances returns every managed instance across all Scaleway zones.
+// getAllInstances returns every instance of this pool across all Scaleway
+// zones. Only the pool tag identifies membership: the operator-supplied tags
+// in p.tags are applied at creation and may be reconfigured afterwards, so
+// filtering on them would hide instances deployed under an earlier config.
 func (p *provider) getAllInstances(ctx context.Context) ([]*instance.Server, error) {
 	api := instance.NewAPI(p.client)
 	var instances []*instance.Server
@@ -138,7 +141,7 @@ func (p *provider) getAllInstances(ctx context.Context) ([]*instance.Server, err
 		resp, err := api.ListServers(&instance.ListServersRequest{
 			Zone:    zone,
 			Project: p.projectID,
-			Tags:    p.tags,
+			Tags:    []string{poolTag(p.config.PoolID)},
 			PerPage: scw.Uint32Ptr(100), //nolint:mnd
 		}, scw.WithContext(ctx), scw.WithAllPages())
 		if err != nil {
@@ -165,17 +168,4 @@ func isResourceUnavailable(err error) bool {
 // label the label-capable providers use.
 func poolTag(poolID string) string {
 	return engine.LabelPool + "=" + poolID
-}
-
-// checkReservedTags rejects operator tags in the autoscaler's own namespace:
-// they would let a configured tag claim a foreign pool, so instances of this
-// pool would show up in that pool's listing and be torn down by it.
-func checkReservedTags(tags []string) error {
-	for _, tag := range tags {
-		key, _, _ := strings.Cut(tag, "=")
-		if strings.HasPrefix(strings.TrimSpace(key), engine.LabelPrefix) {
-			return fmt.Errorf("%w: %s", ErrReservedTagPrefix, engine.LabelPrefix)
-		}
-	}
-	return nil
 }

@@ -34,6 +34,15 @@ var (
 	ErrReservedTagPrefix     = errors.New("illegal tag prefix")
 )
 
+// blackhole metadata services so running steps can not extract agent token from user-data.
+// Equinix Metal serves metadata over the routable host metadata.platformequinix.com
+// (not a link-local IP), so resolve it at runtime and blackhole every resolved address
+// (getent returns A and AAAA records; `ip route` infers the address family).
+// https://deploy.equinix.com/developers/docs/metal/server-metadata/metadata/
+var blackholeMetadataAPI = []string{
+	"for ip in $(getent ahosts metadata.platformequinix.com | awk '{print $1}' | sort -u); do ip route add blackhole $ip || true; done",
+}
+
 const deviceListPerPage int32 = 100
 
 const facilityLookupSlots = 2
@@ -154,13 +163,9 @@ func (p *provider) validate() error {
 		if strings.TrimSpace(tag) == "" {
 			return ErrEmptyTag
 		}
-		key, _, _ := strings.Cut(tag, "=")
-		if strings.HasPrefix(strings.TrimSpace(key), engine.LabelPrefix) {
-			return fmt.Errorf("%w: %s", ErrReservedTagPrefix, engine.LabelPrefix)
-		}
 	}
 
-	return nil
+	return utils.CheckReservedTags(p.tags, engine.LabelPrefix, ErrReservedTagPrefix)
 }
 
 func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, capability types.Capability) error {
@@ -169,7 +174,9 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cap
 		return err
 	}
 
-	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, cloudinit.RenderOption{})
+	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, cloudinit.RenderOption{
+		PreExec: blackholeMetadataAPI,
+	})
 	if err != nil {
 		return fmt.Errorf("%s: cloudinit.RenderUserDataTemplate: %w", p.name, err)
 	}

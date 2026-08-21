@@ -5,13 +5,11 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/rs/zerolog/log"
 	"github.com/urfave/cli/v3"
 	"github.com/vultr/govultr/v3"
-	"golang.org/x/exp/maps"
 	"golang.org/x/oauth2"
 
 	"go.woodpecker-ci.org/autoscaler/config"
@@ -30,6 +28,12 @@ var (
 	ErrInvalidPlan        = errors.New("no valid plan set")
 	ErrInvalidImage       = errors.New("no valid image set")
 )
+
+// blackhole metadata services so running steps can not extract agent token from user-data
+// https://www.vultr.com/metadata/ (data is served over IPv4 169.254.169.254 only)
+var blackholeMetadataAPI = []string{
+	"ip -4 route add blackhole 169.254.169.254/32",
+}
 
 type provider struct {
 	sshKeys    []string
@@ -76,15 +80,15 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 	defaultLabels[engine.LabelPool] = p.config.PoolID
 	defaultLabels[engine.LabelImage] = p.image.Name
 
-	labels, err := utils.SliceToMap(c.StringSlice("vultr-labels"), "=")
-	if err != nil {
+	userLabels := c.StringSlice("vultr-labels")
+	if err := utils.CheckReservedTags(userLabels, engine.LabelPrefix, ErrIllegalLabelPrefix); err != nil {
 		return nil, fmt.Errorf("%s: %w", p.name, err)
 	}
-	for _, key := range maps.Keys(labels) {
-		if strings.HasPrefix(key, engine.LabelPrefix) {
-			return nil, fmt.Errorf("%s: %w: %s", p.name, ErrIllegalLabelPrefix, engine.LabelPrefix)
-		}
+
+	if _, err := utils.SliceToMap(userLabels, "="); err != nil {
+		return nil, fmt.Errorf("%s: %w", p.name, err)
 	}
+
 	p.labels = utils.MergeMaps(defaultLabels, p.labels)
 
 	return p, nil
@@ -96,7 +100,9 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cap
 		return fmt.Errorf("we only support docker on linux/amd64 but %#v was requested", capability)
 	}
 
-	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, cloudinit.RenderOption{})
+	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, cloudinit.RenderOption{
+		PreExec: blackholeMetadataAPI,
+	})
 	if err != nil {
 		return fmt.Errorf("%s: cloudinit.RenderUserDataTemplate: %w", p.name, err)
 	}

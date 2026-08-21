@@ -23,8 +23,16 @@ import (
 	"go.woodpecker-ci.org/autoscaler/engine/inits/cloudinit"
 	"go.woodpecker-ci.org/autoscaler/engine/types"
 	"go.woodpecker-ci.org/autoscaler/providers/aws/ec2api"
+	"go.woodpecker-ci.org/autoscaler/utils"
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
+
+// blackhole metadata services so running steps can not extract agent token from user-data
+// https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/configuring-instance-metadata-service.html
+var blackholeMetadataAPI = []string{
+	"ip -4 route add blackhole 169.254.169.254/32",
+	"ip -6 route add blackhole fd00:ec2::254/128",
+}
 
 type provider struct {
 	name                  string
@@ -52,6 +60,10 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 		useSpotInstances:      c.Bool("aws-use-spot-instances"),
 		sshKeyName:            c.String("aws-ssh-key-name"),
 	}
+	if err := utils.CheckReservedTags(p.tags, engine.LabelPrefix, ErrReservedTagPrefix); err != nil {
+		return nil, fmt.Errorf("%s: %w", p.name, err)
+	}
+
 	loadOptions := []func(*awsconfig.LoadOptions) error{}
 	credentialsOption, err := staticCredentialsOption(
 		c.String("aws-access-key-id"),
@@ -184,7 +196,9 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cap
 			p.name, ErrNoMatchingCandidate, capability.Platform, capability.Backend)
 	}
 
-	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, cloudinit.RenderOption{})
+	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, cloudinit.RenderOption{
+		PreExec: blackholeMetadataAPI,
+	})
 	if err != nil {
 		return fmt.Errorf("%s: cloudinit.RenderUserDataTemplate: %w", p.name, err)
 	}

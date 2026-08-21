@@ -77,16 +77,3 @@ func (p *provider) resolveImage(ctx context.Context, i string) error {
 func poolTag(poolID string) string {
 	return engine.LabelPool + "=" + poolID
 }
-
-// checkReservedTags rejects operator tags in the autoscaler's own namespace:
-// they would let a configured tag claim a foreign pool, so instances of this
-// pool would show up in that pool's listing and be torn down by it.
-func checkReservedTags(tags []string) error {
-	for _, tag := range tags {
-		key, _, _ := strings.Cut(tag, "=")
-		if strings.HasPrefix(strings.TrimSpace(key), engine.LabelPrefix) {
-			return fmt.Errorf("%w: %s", ErrReservedTagPrefix, engine.LabelPrefix)
-		}
-	}
-	return nil
-}
