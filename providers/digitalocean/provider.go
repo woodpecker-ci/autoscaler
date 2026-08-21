@@ -17,6 +17,7 @@ import (
 	"go.woodpecker-ci.org/autoscaler/config"
 	"go.woodpecker-ci.org/autoscaler/engine/inits/cloudinit"
 	"go.woodpecker-ci.org/autoscaler/engine/types"
+	"go.woodpecker-ci.org/autoscaler/utils"
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
 
@@ -31,7 +32,13 @@ var (
 	ErrNATGatewayRequired = errors.New("a NAT gateway is required when public IPv4 is disabled")
 	ErrNATGatewayNotFound = errors.New("NAT gateway not found")
 	ErrNATGatewayInvalid  = errors.New("NAT gateway not usable")
+	ErrReservedTagPrefix  = errors.New("reserved tag prefix")
 )
+
+// tagPrefix is the namespace the provider manages itself. Configured tags may
+// not use it, a foreign pool tag would make this pool adopt that pool's
+// droplets.
+const tagPrefix = "wp-autoscaler-"
 
 // autoSSHKeyName is the SSH key the provider creates and reuses when no key is
 // configured. Its private key is generated in memory and discarded.
@@ -77,6 +84,10 @@ func newProviderWithClient(ctx context.Context, c *cli.Command, config *config.C
 		enableIPv4: c.Bool("digitalocean-public-ipv4-enable"),
 		enableIPv6: c.Bool("digitalocean-public-ipv6-enable"),
 		client:     client,
+	}
+
+	if err := utils.CheckReservedTags(c.StringSlice("digitalocean-tags"), tagPrefix, ErrReservedTagPrefix); err != nil {
+		return nil, fmt.Errorf("%s: %w", p.name, err)
 	}
 
 	// DigitalOcean has no IPv6-only droplets: public IPv6 is only served on the
@@ -408,11 +419,11 @@ func listAll[T any](ctx context.Context, list func(context.Context, *godo.ListOp
 }
 
 func poolTag(poolID string) string {
-	return "wp-autoscaler-pool-" + sanitizeTagPart(poolID)
+	return tagPrefix + "pool-" + sanitizeTagPart(poolID)
 }
 
 func imageTag(image string) string {
-	return "wp-autoscaler-image-" + sanitizeTagPart(image)
+	return tagPrefix + "image-" + sanitizeTagPart(image)
 }
 
 func sanitizeTagPart(value string) string {

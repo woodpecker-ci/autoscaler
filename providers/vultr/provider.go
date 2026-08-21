@@ -5,13 +5,11 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/rs/zerolog/log"
 	"github.com/urfave/cli/v3"
 	"github.com/vultr/govultr/v3"
-	"golang.org/x/exp/maps"
 	"golang.org/x/oauth2"
 
 	"go.woodpecker-ci.org/autoscaler/config"
@@ -82,15 +80,15 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 	defaultLabels[engine.LabelPool] = p.config.PoolID
 	defaultLabels[engine.LabelImage] = p.image.Name
 
-	labels, err := utils.SliceToMap(c.StringSlice("vultr-labels"), "=")
-	if err != nil {
+	userLabels := c.StringSlice("vultr-labels")
+	if err := utils.CheckReservedTags(userLabels, engine.LabelPrefix, ErrIllegalLabelPrefix); err != nil {
 		return nil, fmt.Errorf("%s: %w", p.name, err)
 	}
-	for _, key := range maps.Keys(labels) {
-		if strings.HasPrefix(key, engine.LabelPrefix) {
-			return nil, fmt.Errorf("%s: %w: %s", p.name, ErrIllegalLabelPrefix, engine.LabelPrefix)
-		}
+
+	if _, err := utils.SliceToMap(userLabels, "="); err != nil {
+		return nil, fmt.Errorf("%s: %w", p.name, err)
 	}
+
 	p.labels = utils.MergeMaps(defaultLabels, p.labels)
 
 	return p, nil
