@@ -95,7 +95,7 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 	// instance this provider creates has to carry it, and an operator tag
 	// must not be able to claim another pool's namespace.
 	userTags := c.StringSlice("linode-tags")
-	if err := checkReservedTags(userTags); err != nil {
+	if err := utils.CheckReservedTags(userTags, engine.LabelPrefix, ErrReservedTagPrefix); err != nil {
 		return nil, fmt.Errorf("%s: %w", p.name, err)
 	}
 	p.tags = append([]string{poolTag(config.PoolID)}, userTags...)

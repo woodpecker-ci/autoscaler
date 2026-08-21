@@ -58,7 +58,7 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 	defaultProjectID := c.String("scaleway-project")
 
 	userTags := c.StringSlice("scaleway-tags")
-	if err := checkReservedTags(userTags); err != nil {
+	if err := utils.checkReservedTags(userTags, engine.LabelPrefix, ErrReservedTagPrefix); err != nil {
 		return nil, fmt.Errorf("scaleway: %w", err)
 	}
 
