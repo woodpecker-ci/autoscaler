@@ -17,10 +17,6 @@
 - Check Vultr config on startup [[#600](https://github.com/woodpecker-ci/autoscaler/pull/600)]
 - Resolve Hetzner config on startup and remove deprecated flags [[#605](https://github.com/woodpecker-ci/autoscaler/pull/605)]
 
-### 🔒 Security
-
-- feat(providers): blackhole metadata endpoints to protect agent token [[#688](https://github.com/woodpecker-ci/autoscaler/pull/688)]
-
 ### ✨ Features
 
 - Add experimental DigitalOcean provider [[#661](https://github.com/woodpecker-ci/autoscaler/pull/661)]
