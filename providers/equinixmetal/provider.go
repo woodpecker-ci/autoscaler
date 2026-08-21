@@ -163,13 +163,9 @@ func (p *provider) validate() error {
 		if strings.TrimSpace(tag) == "" {
 			return ErrEmptyTag
 		}
-		key, _, _ := strings.Cut(tag, "=")
-		if strings.HasPrefix(strings.TrimSpace(key), engine.LabelPrefix) {
-			return fmt.Errorf("%w: %s", ErrReservedTagPrefix, engine.LabelPrefix)
-		}
 	}
 
-	return nil
+	return utils.CheckReservedTags(p.tags, engine.LabelPrefix, ErrReservedTagPrefix)
 }
 
 func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {

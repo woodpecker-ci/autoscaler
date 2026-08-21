@@ -13,8 +13,10 @@ import (
 	"golang.org/x/oauth2"
 
 	"go.woodpecker-ci.org/autoscaler/config"
+	"go.woodpecker-ci.org/autoscaler/engine"
 	"go.woodpecker-ci.org/autoscaler/engine/inits/cloudinit"
 	"go.woodpecker-ci.org/autoscaler/engine/types"
+	"go.woodpecker-ci.org/autoscaler/utils"
 	"go.woodpecker-ci.org/autoscaler/version"
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
@@ -23,6 +25,9 @@ var (
 	ErrImageNotFound  = errors.New("image not found")
 	ErrSSHKeyNotFound = errors.New("SSH key not found")
 	ErrAPITokenNotSet = errors.New("no api token provided")
+	// ErrReservedTagPrefix is returned when a configured tag uses the
+	// autoscaler's own label namespace.
+	ErrReservedTagPrefix = errors.New("reserved tag prefix")
 )
 
 // blackhole metadata services so running steps can not extract agent token from user-data
@@ -88,7 +93,14 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 		return nil, fmt.Errorf("%s: setupKeypair: %w", p.name, err)
 	}
 
-	p.tags = c.StringSlice("linode-tags")
+	// The pool tag is what ListDeployedAgentNames filters on, so every
+	// instance this provider creates has to carry it, and an operator tag
+	// must not be able to claim another pool's namespace.
+	userTags := c.StringSlice("linode-tags")
+	if err := utils.CheckReservedTags(userTags, engine.LabelPrefix, ErrReservedTagPrefix); err != nil {
+		return nil, fmt.Errorf("%s: %w", p.name, err)
+	}
+	p.tags = append([]string{poolTag(config.PoolID)}, userTags...)
 
 	return p, nil
 }
@@ -163,7 +175,7 @@ func (p *provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 	var names []string
 
 	f := linodego.Filter{}
-	f.AddField(linodego.Contains, "label", "agent")
+	f.AddField(linodego.Contains, "tags", poolTag(p.config.PoolID))
 	fStr, err := f.MarshalJSON()
 	if err != nil {
 		return names, err

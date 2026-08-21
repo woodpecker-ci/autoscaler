@@ -17,6 +17,7 @@ var (
 	ErrTypeNotInRegion          = errors.New("instance type not offered in region")
 	ErrNoDeployCandidates       = errors.New("no deploy candidates resolved")
 	ErrRegionNotSet             = errors.New("aws-region must be set for unqualified values")
+	ErrReservedTagPrefix        = errors.New("reserved tag prefix")
 )
 
 // regionConfig contains the resources that exist together in an AWS region.
