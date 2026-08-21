@@ -3,12 +3,10 @@ package hetznercloud
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/hetznercloud/hcloud-go/v2/hcloud"
 	"github.com/rs/zerolog/log"
 	"github.com/urfave/cli/v3"
-	"golang.org/x/exp/maps"
 
 	"go.woodpecker-ci.org/autoscaler/config"
 	"go.woodpecker-ci.org/autoscaler/engine"
@@ -60,16 +58,15 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 	defaultLabels[engine.LabelPool] = p.config.PoolID
 	defaultLabels[engine.LabelImage] = p.deployCandidates[0].image.Name
 
-	labels, err := utils.SliceToMap(c.StringSlice("hetznercloud-labels"), "=")
-	if err != nil {
+	userLabels := c.StringSlice("hetznercloud-labels")
+	if err := utils.CheckReservedTags(userLabels, engine.LabelPrefix, ErrIllegalLabelPrefix); err != nil {
 		return nil, fmt.Errorf("%s: %w", p.name, err)
 	}
 
-	for _, key := range maps.Keys(labels) {
-		if strings.HasPrefix(key, engine.LabelPrefix) {
-			return nil, fmt.Errorf("%s: %w: %s", p.name, ErrIllegalLabelPrefix, engine.LabelPrefix)
-		}
+	if _, err := utils.SliceToMap(userLabels, "="); err != nil {
+		return nil, fmt.Errorf("%s: %w", p.name, err)
 	}
+
 	p.labels = utils.MergeMaps(defaultLabels, p.labels)
 
 	return p, nil
