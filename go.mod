@@ -2,25 +2,25 @@ module go.woodpecker-ci.org/autoscaler
 
 go 1.26.0
 
-toolchain go1.26.6
+toolchain go1.27.0
 
 require (
-	github.com/aws/aws-sdk-go-v2 v1.43.6
-	github.com/aws/aws-sdk-go-v2/config v1.32.37
-	github.com/aws/aws-sdk-go-v2/credentials v1.19.36
-	github.com/aws/aws-sdk-go-v2/service/ec2 v1.321.3
-	github.com/aws/aws-sdk-go-v2/service/sts v1.45.6
-	github.com/aws/smithy-go v1.27.8
+	github.com/aws/aws-sdk-go-v2 v1.43.7
+	github.com/aws/aws-sdk-go-v2/config v1.32.38
+	github.com/aws/aws-sdk-go-v2/credentials v1.19.37
+	github.com/aws/aws-sdk-go-v2/service/ec2 v1.322.0
+	github.com/aws/aws-sdk-go-v2/service/sts v1.45.7
+	github.com/aws/smithy-go v1.27.9
 	github.com/digitalocean/godo v1.204.0
 	github.com/docker/go-units v0.5.0
-	github.com/equinix/equinix-sdk-go v0.66.0
-	github.com/gophercloud/gophercloud/v2 v2.13.0
+	github.com/equinix/equinix-sdk-go v0.67.0
+	github.com/gophercloud/gophercloud/v2 v2.14.0
 	github.com/hetznercloud/hcloud-go/v2 v2.47.0
 	github.com/joho/godotenv v1.5.1
 	github.com/linode/linodego/v2 v2.5.0
 	github.com/rs/zerolog v1.35.1
 	github.com/scaleway/scaleway-sdk-go v1.0.0-beta.37
-	github.com/stretchr/testify v1.12.0
+	github.com/stretchr/testify v1.12.1
 	github.com/urfave/cli/v3 v3.11.0
 	github.com/vultr/govultr/v3 v3.32.0
 	go.woodpecker-ci.org/woodpecker/v3 v3.17.0
