@@ -37,6 +37,7 @@
 
 ### 📦️ Dependency
 
+- Update pre-commit hook golangci/golangci-lint to v2.13.1 [[#726](https://github.com/woodpecker-ci/autoscaler/pull/726)]
 - Update docker.io/golang Docker tag to v1.27 [[#724](https://github.com/woodpecker-ci/autoscaler/pull/724)]
 - Update golang Docker tag to v1.27 [[#725](https://github.com/woodpecker-ci/autoscaler/pull/725)]
 - Update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.321.3 [[#717](https://github.com/woodpecker-ci/autoscaler/pull/717)]
