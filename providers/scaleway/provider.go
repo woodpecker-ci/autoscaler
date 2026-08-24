@@ -172,7 +172,7 @@ func (p *provider) createInstance(ctx context.Context, agent *woodpecker.Agent, 
 				VolumeType: p.storageType,
 			},
 		},
-		EnableIPv6: &p.enableIPv6,
+		EnableIPv6: &p.enableIPv6, //nolint:staticcheck // TODO: this option is deprecated use routed IPs
 		Project:    p.projectID,
 		Tags:       p.tags,
 	}, scw.WithContext(ctx))
