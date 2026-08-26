@@ -26,7 +26,6 @@ require (
 	github.com/vultr/govultr/v3 v3.32.0
 	go.woodpecker-ci.org/woodpecker/v3 v3.17.0
 	golang.org/x/crypto v0.55.0
-	golang.org/x/exp v0.0.0-20260813180055-c1d0aacb2297
 	golang.org/x/net v0.58.0
 	golang.org/x/oauth2 v0.36.0
 )

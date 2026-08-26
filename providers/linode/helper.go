@@ -8,6 +8,8 @@ import (
 	"strings"
 
 	"github.com/rs/zerolog/log"
+
+	"go.woodpecker-ci.org/autoscaler/engine"
 )
 
 func generatePassword(length int) (string, error) {
@@ -68,4 +70,10 @@ func (p *provider) resolveImage(ctx context.Context, i string) error {
 	}
 	p.image = img
 	return nil
+}
+
+// poolTag is the tag every instance of this pool carries, mirroring the pool
+// label the label-capable providers use.
+func poolTag(poolID string) string {
+	return engine.LabelPool + "=" + poolID
 }
