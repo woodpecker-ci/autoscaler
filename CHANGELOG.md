@@ -37,6 +37,7 @@
 
 ### 📦️ Dependency
 
+- Update pre-commit hook golangci/golangci-lint to v2.13.2 [[#730](https://github.com/woodpecker-ci/autoscaler/pull/730)]
 - Update dependency golangci/golangci-lint to v2.13.2 [[#729](https://github.com/woodpecker-ci/autoscaler/pull/729)]
 - Update golang.org/x/exp digest to ca53665 [[#727](https://github.com/woodpecker-ci/autoscaler/pull/727)]
 - Update dependency golangci/golangci-lint to v2.13.1 [[#723](https://github.com/woodpecker-ci/autoscaler/pull/723)]
