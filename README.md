@@ -88,6 +88,28 @@ If you set `VOLUME_SIZE`, block storage volumes are used.
 
 You can add your OpenStack SSH keypair via `KEYPAIR`.
 
+## Oracle Cloud
+
+Set `WOODPECKER_PROVIDER=oracle` and configure at least:
+
+- `WOODPECKER_ORACLE_COMPARTMENT_ID`
+- `WOODPECKER_ORACLE_AVAILABILITY_DOMAIN`
+- `WOODPECKER_ORACLE_SUBNET_ID`
+
+Oracle Cloud support is currently experimental: it has not been tested by the project maintainers, as none of them have real provider access.
+
+Authentication uses an API signing key. Either pass it directly via `WOODPECKER_ORACLE_TENANCY_ID`, `WOODPECKER_ORACLE_USER_ID`, `WOODPECKER_ORACLE_FINGERPRINT`, `WOODPECKER_ORACLE_PRIVATE_KEY` (or `_FILE`) and `WOODPECKER_ORACLE_REGION`, or mount an [OCI SDK config file](https://docs.oracle.com/en-us/iaas/Content/API/Concepts/sdkconfig.htm) and point `WOODPECKER_ORACLE_CONFIG_FILE` to it (default `~/.oci/config`, profile selectable via `WOODPECKER_ORACLE_PROFILE`).
+
+By default the newest available platform image for `WOODPECKER_ORACLE_OPERATING_SYSTEM` (default: `Canonical Ubuntu`) and `WOODPECKER_ORACLE_OPERATING_SYSTEM_VERSION` (default: `24.04`) is used. Set `WOODPECKER_ORACLE_IMAGE_ID` to use a specific image OCID instead.
+
+Useful optional settings:
+
+- `WOODPECKER_ORACLE_SHAPE` (default: `VM.Standard.E4.Flex`)
+- `WOODPECKER_ORACLE_OCPUS` and `WOODPECKER_ORACLE_MEMORY_GBS` for flexible `.Flex` shapes (default: `1` and `8`)
+- `WOODPECKER_ORACLE_SSH_AUTHORIZED_KEYS` (or `_FILE`)
+- `WOODPECKER_ORACLE_ASSIGN_PUBLIC_IP` (default: `true`)
+- `WOODPECKER_ORACLE_FREEFORM_TAGS`
+
 ## Teardown policy
 
 How idle agents are torn down depends on how the selected provider bills:
@@ -109,7 +131,7 @@ The billing model is selected automatically by the provider, so no extra configu
   - [x] Digital Ocean **[experimental]** (untested by the maintainers against real provider access, see [above](#digitalocean))
   - [x] Linode
   - [x] OpenStack **[experimental]**
-  - [ ] Oracle Cloud
+  - [x] Oracle Cloud **[experimental]** (untested by the maintainers against real provider access, see [above](#oracle-cloud))
   - [x] Equinix Metal **[experimental]** (untested by the maintainers against real provider access, see [above](#equinix-metal))
   - [x] Vultr
   - [x] Scaleway
