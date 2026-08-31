@@ -1,6 +1,6 @@
 # Changelog
 
-## [2.0.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.0) - 2026-08-30
+## [2.0.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.0) - 2026-08-31
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -16,6 +16,10 @@
 - Forbidd to set WOODPECKER_AGENT_LABELS via WOODPECKER_AGENT_ENV [[#630](https://github.com/woodpecker-ci/autoscaler/pull/630)]
 - Check Vultr config on startup [[#600](https://github.com/woodpecker-ci/autoscaler/pull/600)]
 - Resolve Hetzner config on startup and remove deprecated flags [[#605](https://github.com/woodpecker-ci/autoscaler/pull/605)]
+
+### 🔒 Security
+
+- feat(providers): blackhole metadata endpoints to protect agent token [[#688](https://github.com/woodpecker-ci/autoscaler/pull/688)]
 
 ### ✨ Features
 
@@ -42,7 +46,6 @@
 - Update dependency golangci/golangci-lint to v2.13.2 [[#729](https://github.com/woodpecker-ci/autoscaler/pull/729)]
 - Update golang.org/x/exp digest to ca53665 [[#727](https://github.com/woodpecker-ci/autoscaler/pull/727)]
 - Update dependency golangci/golangci-lint to v2.13.1 [[#723](https://github.com/woodpecker-ci/autoscaler/pull/723)]
-- Update pre-commit hook golangci/golangci-lint to v2.13.1 [[#726](https://github.com/woodpecker-ci/autoscaler/pull/726)]
 - Update docker.io/golang Docker tag to v1.27 [[#724](https://github.com/woodpecker-ci/autoscaler/pull/724)]
 - Update golang Docker tag to v1.27 [[#725](https://github.com/woodpecker-ci/autoscaler/pull/725)]
 - Update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.321.3 [[#717](https://github.com/woodpecker-ci/autoscaler/pull/717)]
