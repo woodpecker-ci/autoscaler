@@ -11,7 +11,7 @@ variables:
     dockerfile: docker/Dockerfile
     repo: 'woodpeckerci/autoscaler'
     platforms: 'linux/arm/v7,linux/arm64/v8,linux/amd64,linux/ppc64le'
-  - &golang_image 'docker.io/golang:1.26'
+  - &golang_image 'docker.io/golang:1.27'
 
 steps:
   - name: vendor
