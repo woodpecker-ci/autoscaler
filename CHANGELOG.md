@@ -1,5 +1,61 @@
 # Changelog
 
+## [2.0.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.0) - 2026-09-01
+
+### ❤️ Thanks to all contributors! ❤️
+
+@6543, @AJ0070, @LaGrunge, @bcornish1797, @btriller, @hstern, @toothstone
+
+### 💥 Breaking changes
+
+- For Linode and Scaleway use tags to identify agents with their pool [[#720](https://github.com/woodpecker-ci/autoscaler/pull/720)]
+- AWS resolve config on start and use defaults [[#637](https://github.com/woodpecker-ci/autoscaler/pull/637)]
+- Scaleway resolve config on startup [[#636](https://github.com/woodpecker-ci/autoscaler/pull/636)]
+- Remove provider injected userdata and global provider userdata, use `WOODPECKER_CLOUDINIT_TEMPLATE` [[#633](https://github.com/woodpecker-ci/autoscaler/pull/633)]
+- Remove "WOODPECKER_FILTER_LABELS", use WOODPECKER_AGENT_LABELS [[#629](https://github.com/woodpecker-ci/autoscaler/pull/629)]
+- Forbidd to set WOODPECKER_AGENT_LABELS via WOODPECKER_AGENT_ENV [[#630](https://github.com/woodpecker-ci/autoscaler/pull/630)]
+- Check Vultr config on startup [[#600](https://github.com/woodpecker-ci/autoscaler/pull/600)]
+- Resolve Hetzner config on startup and remove deprecated flags [[#605](https://github.com/woodpecker-ci/autoscaler/pull/605)]
+
+### 🔒 Security
+
+- feat(providers): blackhole metadata endpoints to protect agent token [[#688](https://github.com/woodpecker-ci/autoscaler/pull/688)]
+
+### ✨ Features
+
+- Add experimental DigitalOcean provider [[#661](https://github.com/woodpecker-ci/autoscaler/pull/661)]
+- Add  experimental OpenStack provider [[#682](https://github.com/woodpecker-ci/autoscaler/pull/682)]
+- Add experimental Equinix Metal provider [[#604](https://github.com/woodpecker-ci/autoscaler/pull/604)]
+
+### 📈 Enhancement
+
+- Trim leading whitespace from rendered cloud-init user data [[#713](https://github.com/woodpecker-ci/autoscaler/pull/713)]
+- Clarify WOODPECKER_TOKEN setting and agent token usage [[#676](https://github.com/woodpecker-ci/autoscaler/pull/676)]
+- Make agent teardown billing-aware [[#645](https://github.com/woodpecker-ci/autoscaler/pull/645)]
+- Support custom images on Hetzner [[#638](https://github.com/woodpecker-ci/autoscaler/pull/638)]
+
+### 🐛 Bug Fixes
+
+- Fix RandomString returning identical values within one clock tick [[#719](https://github.com/woodpecker-ci/autoscaler/pull/719)]
+- fix(engine): stop double-subtracting pool size in calcAgents [[#674](https://github.com/woodpecker-ci/autoscaler/pull/674)]
+
+### 📦️ Dependency
+
+- Update golang deps non-major [[#731](https://github.com/woodpecker-ci/autoscaler/pull/731)]
+- Update golang deps non-major [[#718](https://github.com/woodpecker-ci/autoscaler/pull/718)]
+- Update pre-commit hook golangci/golangci-lint to v2.13.2 [[#730](https://github.com/woodpecker-ci/autoscaler/pull/730)]
+- Update dependency golangci/golangci-lint to v2.13.2 [[#729](https://github.com/woodpecker-ci/autoscaler/pull/729)]
+- Update golang.org/x/exp digest to ca53665 [[#727](https://github.com/woodpecker-ci/autoscaler/pull/727)]
+- Update dependency golangci/golangci-lint to v2.13.1 [[#723](https://github.com/woodpecker-ci/autoscaler/pull/723)]
+- Update docker.io/golang Docker tag to v1.27 [[#724](https://github.com/woodpecker-ci/autoscaler/pull/724)]
+- Update golang Docker tag to v1.27 [[#725](https://github.com/woodpecker-ci/autoscaler/pull/725)]
+- Update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.321.3 [[#717](https://github.com/woodpecker-ci/autoscaler/pull/717)]
+- Update module github.com/stretchr/testify to v1.12.0 [[#716](https://github.com/woodpecker-ci/autoscaler/pull/716)]
+
+### Misc
+
+- Add flake.nix for dev environment [[#672](https://github.com/woodpecker-ci/autoscaler/pull/672)]
+
 ## [1.5.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.5.0) - 2026-05-19
 
 ### ❤️ Thanks to all contributors! ❤️
