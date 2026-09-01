@@ -119,7 +119,12 @@ func newProviderWithClient(ctx context.Context, c *cli.Command, config *config.C
 	return p, nil
 }
 
-func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
+func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, capability types.Capability) error {
+	if capability.Backend != types.BackendDocker ||
+		capability.Platform != "linux/amd64" {
+		return fmt.Errorf("we only support docker on linux/amd64 but %#v was requested", capability)
+	}
+
 	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, cloudinit.RenderOption{
 		PreExec: blackholeMetadataAPI,
 	})
@@ -189,6 +194,14 @@ func (p *provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 
 func (p *provider) BillingModel() types.BillingModel {
 	return types.BillingHourlyRoundUp
+}
+
+func (p *provider) Capabilities(_ context.Context) ([]types.Capability, error) {
+	// DigitalOcean only offers x86_64 droplet sizes
+	return []types.Capability{{
+		Platform: "linux/amd64",
+		Backend:  types.BackendDocker,
+	}}, nil
 }
 
 func (p *provider) resolveRegion(ctx context.Context, regionSlug string) error {

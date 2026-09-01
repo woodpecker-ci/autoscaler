@@ -54,11 +54,12 @@ func (f fakeResolver) Resolve(ctx context.Context, p *provider) error {
 
 func TestDeployAgentInvalidUserData(t *testing.T) {
 	p := &provider{
+		plans:   []string{"c3.small.x86"},
 		config:  &config.Config{UserData: "{{.InvalidField}}"},
 		devices: &fakeDevicesService{},
 	}
 
-	err := p.DeployAgent(t.Context(), &woodpecker.Agent{Name: "agent-1"})
+	err := p.DeployAgent(t.Context(), &woodpecker.Agent{Name: "agent-1"}, types.Capability{Platform: "linux/amd64", Backend: types.BackendDocker})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "RenderUserDataTemplate")
 }
@@ -91,7 +92,7 @@ func TestDeployAgentCreatesDeviceWithExpectedFields(t *testing.T) {
 		}},
 	}
 
-	err := p.DeployAgent(t.Context(), &woodpecker.Agent{Name: "agent-1"})
+	err := p.DeployAgent(t.Context(), &woodpecker.Agent{Name: "agent-1"}, types.Capability{Platform: "linux/amd64", Backend: types.BackendDocker})
 	require.NoError(t, err)
 	assert.Equal(t, "project-123", gotProjectID)
 	assert.Equal(t, "agent-1", got.Hostname)
