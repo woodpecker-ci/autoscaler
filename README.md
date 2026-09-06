@@ -88,6 +88,40 @@ If you set `VOLUME_SIZE`, block storage volumes are used.
 
 You can add your OpenStack SSH keypair via `KEYPAIR`.
 
+## Yandex Cloud
+
+Set `WOODPECKER_PROVIDER=yandexcloud` and configure at least:
+
+- `WOODPECKER_YANDEXCLOUD_FOLDER_ID`
+- `WOODPECKER_YANDEXCLOUD_SUBNET_ID`
+- exactly one of `WOODPECKER_YANDEXCLOUD_IMAGE_ID` or `WOODPECKER_YANDEXCLOUD_IMAGE_FAMILY`
+- exactly one credential mode:
+  - `WOODPECKER_YANDEXCLOUD_SERVICE_ACCOUNT_KEY_FILE` (path to an authorized key JSON file)
+  - `WOODPECKER_YANDEXCLOUD_IAM_TOKEN` (or `WOODPECKER_YANDEXCLOUD_IAM_TOKEN_FILE`)
+  - `WOODPECKER_YANDEXCLOUD_USE_INSTANCE_SERVICE_ACCOUNT=true` when the autoscaler runs on a Yandex Cloud VM
+
+The provider creates one Compute Cloud VM per agent, waits for create/delete operations to finish, and uses the `wp.autoscaler/pool` label to isolate pools. It uses per-second billing behavior.
+
+Useful optional settings:
+
+- `WOODPECKER_YANDEXCLOUD_IMAGE_FOLDER_ID` (default: `standard-images`, used with image families)
+- `WOODPECKER_YANDEXCLOUD_PLATFORM_ID` (default: `standard-v3`)
+- `WOODPECKER_YANDEXCLOUD_CORES` (default: `2`)
+- `WOODPECKER_YANDEXCLOUD_MEMORY` (default: `4GiB`)
+- `WOODPECKER_YANDEXCLOUD_CORE_FRACTION` (default: `100`)
+- `WOODPECKER_YANDEXCLOUD_DISK_TYPE` (default: `network-hdd`)
+- `WOODPECKER_YANDEXCLOUD_DISK_SIZE` (default: `20GiB`)
+- `WOODPECKER_YANDEXCLOUD_SECURITY_GROUP_IDS`
+- `WOODPECKER_YANDEXCLOUD_PUBLIC_IPV4_ENABLE` (default: `true`; when disabled, the subnet must provide egress through NAT or another route)
+- `WOODPECKER_YANDEXCLOUD_LABELS` (key=value pairs)
+- `WOODPECKER_YANDEXCLOUD_OPERATION_TIMEOUT` (default: `5m`)
+
+The service account needs `compute.editor` on the folder and access to the selected image. Creating VMs with public IPv4 additionally requires the corresponding VPC public address permissions. If public IPv4 is disabled, agents still need a route to the Woodpecker gRPC endpoint and container registries.
+
+Yandex Cloud exposes VM metadata at `169.254.169.254`. The provider places a route to that address in the default cloud-init bootstrap before the agent container starts so jobs cannot read the agent token from metadata. Custom cloud-init templates must render and execute `.PreExec`, as the built-in template does.
+
+Yandex Cloud support is currently experimental and should be validated against a real folder before production use.
+
 ## Teardown policy
 
 How idle agents are torn down depends on how the selected provider bills:
@@ -109,6 +143,7 @@ The billing model is selected automatically by the provider, so no extra configu
   - [x] Digital Ocean **[experimental]** (untested by the maintainers against real provider access, see [above](#digitalocean))
   - [x] Linode
   - [x] OpenStack **[experimental]**
+  - [x] Yandex Cloud **[experimental]**
   - [ ] Oracle Cloud
   - [x] Equinix Metal **[experimental]** (untested by the maintainers against real provider access, see [above](#equinix-metal))
   - [x] Vultr
