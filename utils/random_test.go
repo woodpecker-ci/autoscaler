@@ -32,10 +32,10 @@ func TestRandomString(t *testing.T) {
 			assert.Equal(t, tt.want, len(str))
 		})
 
-		t.Run("alphanumeric", func(t *testing.T) {
+		t.Run("lowercase alphabetic", func(t *testing.T) {
 			str1 := utils.RandomString(10)
 			for _, r := range str1 {
-				assert.Contains(t, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ", string(r))
+				assert.Contains(t, "abcdefghijklmnopqrstuvwxyz", string(r))
 			}
 		})
 	}

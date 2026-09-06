@@ -2,7 +2,7 @@ package utils
 
 import "math/rand/v2"
 
-var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+var letterRunes = []rune("abcdefghijklmnopqrstuvwxyz")
 
 // RandomString returns a random string of length n. It uses the shared
 // math/rand/v2 generator: seeding a fresh source per call with the wall clock
