@@ -344,7 +344,38 @@ func (a *Autoscaler) getQueueInfo(_ context.Context) (freeTasks, runningTasks, p
 		return 0, 0, 0, fmt.Errorf("error from QueueInfo: %s", err.Error())
 	}
 
-	return queueInfo.Stats.Workers, queueInfo.Stats.Running, queueInfo.Stats.Pending, nil
+	if len(a.config.ExtraAgentLabels) == 0 {
+		return queueInfo.Stats.Workers, queueInfo.Stats.Running, queueInfo.Stats.Pending, nil
+	}
+
+	// QueueInfo statistics are global. Labeled pools must use the task lists so
+	// each autoscaler only reacts to workflows that can run on its agents.
+	poolAgentIDs := make(map[int64]struct{}, len(a.agents))
+	for _, agent := range a.agents {
+		poolAgentIDs[agent.ID] = struct{}{}
+	}
+
+	for _, task := range queueInfo.Pending {
+		if matchesPoolLabels(task.Labels, a.config.ExtraAgentLabels) {
+			pendingTasks++
+		}
+	}
+	for _, task := range queueInfo.Running {
+		if _, assignedToPool := poolAgentIDs[task.AgentID]; assignedToPool || matchesPoolLabels(task.Labels, a.config.ExtraAgentLabels) {
+			runningTasks++
+		}
+	}
+
+	return 0, runningTasks, pendingTasks, nil
+}
+
+func matchesPoolLabels(taskLabels, poolLabels map[string]string) bool {
+	for key, value := range poolLabels {
+		if taskLabels[key] != value {
+			return false
+		}
+	}
+	return true
 }
 
 func (a *Autoscaler) calcAgents(ctx context.Context) (float64, error) {
@@ -353,13 +384,20 @@ func (a *Autoscaler) calcAgents(ctx context.Context) (float64, error) {
 		return 0, err
 	}
 
-	log.Debug().Msgf("queue info: freeTasks = %v runningTasks = %v pendingTasks = %v", freeTasks, runningTasks, pendingTasks)
-	availableAgents := math.Ceil(float64(freeTasks+runningTasks) / float64(a.config.WorkflowsPerAgent))
-	reqAgents := math.Ceil(float64(pendingTasks+runningTasks) / float64(a.config.WorkflowsPerAgent))
-
 	availablePoolAgents := len(a.getPoolAgents(true))
 	maxUp := float64(a.config.MaxAgents - availablePoolAgents)
 	maxDown := float64(availablePoolAgents - a.config.MinAgents)
+
+	var availableAgents, reqAgents float64
+	if len(a.config.ExtraAgentLabels) > 0 {
+		availableAgents = float64(availablePoolAgents)
+		reqAgents = math.Ceil(float64(pendingTasks+runningTasks) / float64(a.config.WorkflowsPerAgent))
+	} else {
+		availableAgents = math.Ceil(float64(freeTasks+runningTasks) / float64(a.config.WorkflowsPerAgent))
+		reqAgents = math.Ceil(float64(pendingTasks+runningTasks) / float64(a.config.WorkflowsPerAgent))
+	}
+
+	log.Debug().Msgf("queue info: freeTasks = %v runningTasks = %v pendingTasks = %v", freeTasks, runningTasks, pendingTasks)
 
 	reqPoolAgents := math.Ceil(reqAgents - availableAgents)
 	reqPoolAgents = math.Max(reqPoolAgents, -maxDown)
