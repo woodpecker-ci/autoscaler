@@ -35,6 +35,8 @@ services:
 
 The agents will use `WOODPECKER_GRPC_ADDR` and an agent token automatically created on the server by the autoscaler to connect to the server. Therefore the `WOODPECKER_GRPC_ADDR` has to be publicly accessible from the newly created agents. Check for example how you could use [caddy](https://woodpecker-ci.org/docs/administration/configuration/server#caddy) to expose the grpc connection.
 
+When several autoscaler instances manage different pools, set a distinct `WOODPECKER_POOL_ID` and `WOODPECKER_AGENT_LABELS` on each instance. The autoscaler uses those labels to count only matching pending workflows, while Woodpecker uses them to schedule workflows on the matching agents. For example, `WOODPECKER_AGENT_LABELS=worker_name=front-build` pairs with workflows that request `worker_name=front-build`.
+
 ## Equinix Metal
 
 Set `WOODPECKER_PROVIDER=equinixmetal` and configure at least:
