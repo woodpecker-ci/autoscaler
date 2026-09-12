@@ -1,6 +1,6 @@
 # Changelog
 
-## [2.0.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.0) - 2026-09-01
+## [2.0.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.0) - 2026-09-12
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -41,6 +41,7 @@
 
 ### 📦️ Dependency
 
+- Update dependency mvdan/gofumpt to v0.12.0 [[#736](https://github.com/woodpecker-ci/autoscaler/pull/736)]
 - Update golang deps non-major [[#731](https://github.com/woodpecker-ci/autoscaler/pull/731)]
 - Update golang deps non-major [[#718](https://github.com/woodpecker-ci/autoscaler/pull/718)]
 - Update pre-commit hook golangci/golangci-lint to v2.13.2 [[#730](https://github.com/woodpecker-ci/autoscaler/pull/730)]
