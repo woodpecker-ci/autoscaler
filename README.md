@@ -88,6 +88,36 @@ If you set `VOLUME_SIZE`, block storage volumes are used.
 
 You can add your OpenStack SSH keypair via `KEYPAIR`.
 
+## Oracle Cloud
+
+Set `WOODPECKER_PROVIDER=oracle` and configure at least:
+
+- `WOODPECKER_ORACLE_COMPARTMENT_OCID`
+- `WOODPECKER_ORACLE_SUBNET_OCID`
+- credentials, either an API signing key (`WOODPECKER_ORACLE_TENANCY_OCID`, `WOODPECKER_ORACLE_USER_OCID`, `WOODPECKER_ORACLE_REGION`, `WOODPECKER_ORACLE_FINGERPRINT`, `WOODPECKER_ORACLE_PRIVATE_KEY`) or `WOODPECKER_ORACLE_USE_INSTANCE_PRINCIPAL=true` when the autoscaler itself runs on an Oracle Cloud instance
+
+Oracle Cloud support is currently experimental: it has not been tested by the project maintainers, as none of them have real provider access.
+
+Useful optional settings:
+
+- `WOODPECKER_ORACLE_AVAILABILITY_DOMAINS` (default: every availability domain of the compartment; the agents are launched in the first one that has capacity, in the given order)
+- `WOODPECKER_ORACLE_SHAPE` (default: `VM.Standard.E4.Flex`; the shape is looked up at startup, so a name that does not exist in the compartment fails immediately)
+- `WOODPECKER_ORACLE_OCPUS` (default: `1`, only sent for flexible shapes)
+- `WOODPECKER_ORACLE_MEMORY_IN_GBS` (default: `8`, only sent for flexible shapes)
+- `WOODPECKER_ORACLE_IMAGE_OCID` (default: the most recent image matching the operating system settings below for the configured shape)
+- `WOODPECKER_ORACLE_IMAGE_OPERATING_SYSTEM` (default: `Canonical Ubuntu`)
+- `WOODPECKER_ORACLE_IMAGE_OPERATING_SYSTEM_VERSION` (default: `24.04`)
+- `WOODPECKER_ORACLE_BOOT_VOLUME_SIZE` (default: `50`, Oracle Cloud rejects smaller boot volumes)
+- `WOODPECKER_ORACLE_ASSIGN_PUBLIC_IP` (default: `true`; set to `false` for a private subnet that reaches the server through a NAT gateway)
+- `WOODPECKER_ORACLE_SSH_KEY`
+- `WOODPECKER_ORACLE_TAGS` (comma separated `key=value` freeform tags; Oracle Cloud allows 10 per instance and the autoscaler already uses one of them to mark its pool)
+
+Capacity is the common failure mode on Oracle Cloud, in particular for the free `VM.Standard.A1.Flex` shape. If a launch fails with an out-of-capacity error the next availability domain is tried, so listing more than one is worthwhile.
+
+The agents blackhole the instance metadata service (`169.254.169.254`) before the workflow steps start, so a step cannot read the agent token back out of `user_data`.
+
+Only virtual machine shapes are billed per second with a one-minute minimum; bare metal shapes carry a one-hour minimum, which the per-second teardown policy below does not account for.
+
 ## Teardown policy
 
 How idle agents are torn down depends on how the selected provider bills:
@@ -109,7 +139,7 @@ The billing model is selected automatically by the provider, so no extra configu
   - [x] Digital Ocean **[experimental]** (untested by the maintainers against real provider access, see [above](#digitalocean))
   - [x] Linode
   - [x] OpenStack **[experimental]**
-  - [ ] Oracle Cloud
+  - [x] Oracle Cloud **[experimental]** (untested by the maintainers against real provider access, see [above](#oracle-cloud))
   - [x] Equinix Metal **[experimental]** (untested by the maintainers against real provider access, see [above](#equinix-metal))
   - [x] Vultr
   - [x] Scaleway
