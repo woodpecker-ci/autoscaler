@@ -20,6 +20,8 @@ type MockClient struct {
 	running       int
 	pending       int
 	waitingOnDeps int
+	pendingTasks  []woodpecker.Task
+	runningTasks  []woodpecker.Task
 	woodpecker.Client
 }
 
@@ -31,20 +33,22 @@ func (m MockClient) QueueInfo() (*woodpecker.Info, error) {
 	info.Stats.Pending = m.pending
 	info.Stats.WaitingOnDeps = m.waitingOnDeps
 
-	info.Pending = []woodpecker.Task{
-		{
+	if m.pendingTasks == nil {
+		m.pendingTasks = []woodpecker.Task{{
 			Labels: map[string]string{
 				"arch": "amd64",
 			},
-		},
+		}}
 	}
-	info.Running = []woodpecker.Task{
-		{
+	if m.runningTasks == nil {
+		m.runningTasks = []woodpecker.Task{{
 			Labels: map[string]string{
 				"arch": "amd64",
 			},
-		},
+		}}
 	}
+	info.Pending = m.pendingTasks
+	info.Running = m.runningTasks
 
 	return info, nil
 }
@@ -154,6 +158,57 @@ func Test_getQueueInfo(t *testing.T) {
 		assert.Equal(t, 0, running)
 		assert.Equal(t, 2, pending)
 	})
+
+	t.Run("should filter by pool labels", func(t *testing.T) {
+		client := &MockClient{
+			pendingTasks: []woodpecker.Task{
+				{Labels: map[string]string{"worker_name": "front-build"}},
+				{Labels: map[string]string{"worker_name": "back-build"}},
+			},
+			runningTasks: []woodpecker.Task{
+				{AgentID: 10, Labels: map[string]string{"worker_name": "back-build"}},
+				{AgentID: 20, Labels: map[string]string{"worker_name": "front-build"}},
+			},
+		}
+		autoscaler := Autoscaler{
+			client: client,
+			agents: []*woodpecker.Agent{{ID: 10}},
+			config: &config.Config{ExtraAgentLabels: map[string]string{"worker_name": "front-build"}},
+		}
+
+		free, running, pending, _ := autoscaler.getQueueInfo(t.Context())
+		assert.Equal(t, 0, free)
+		assert.Equal(t, 2, running)
+		assert.Equal(t, 1, pending)
+	})
+}
+
+func Test_calcAgentsWithPoolLabels(t *testing.T) {
+	autoscaler := Autoscaler{
+		client: &MockClient{
+			pendingTasks: []woodpecker.Task{
+				{Labels: map[string]string{"worker_name": "front-build"}},
+				{Labels: map[string]string{"worker_name": "front-build"}},
+				{Labels: map[string]string{"worker_name": "back-build"}},
+			},
+			runningTasks: []woodpecker.Task{
+				{AgentID: 10, Labels: map[string]string{"worker_name": "front-build"}},
+			},
+		},
+		agents: []*woodpecker.Agent{
+			{ID: 10, Name: "pool-front-build-agent-1"},
+			{ID: 11, Name: "pool-front-build-agent-2"},
+		},
+		config: &config.Config{
+			ExtraAgentLabels:  map[string]string{"worker_name": "front-build"},
+			WorkflowsPerAgent: 1,
+			MaxAgents:         5,
+		},
+	}
+
+	value, err := autoscaler.calcAgents(t.Context())
+	assert.NoError(t, err)
+	assert.Equal(t, float64(1), value)
 }
 
 func Test_getPoolAgents(t *testing.T) {
