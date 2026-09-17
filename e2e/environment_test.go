@@ -2,6 +2,7 @@ package e2e_test
 
 import (
 	"context"
+	"maps"
 	"sort"
 	"testing"
 	"time"
@@ -19,6 +20,7 @@ import (
 // and the woodpecker server, so tests can drive whole reconcile cycles through
 // the public API and assert on the resulting pool.
 type harness struct {
+	config     *config.Config
 	autoscaler *engine.Autoscaler
 	provider   *fakeProvider
 	woodpecker *fakeWoodpecker
@@ -27,16 +29,13 @@ type harness struct {
 func newHarness(t *testing.T, cfg *config.Config, capabilities ...types.Capability) *harness {
 	t.Helper()
 
-	provider := &fakeProvider{
-		capabilities: capabilities,
-		deployed:     map[string]types.Capability{},
-	}
-	woodpecker := &fakeWoodpecker{nextID: 1, agents: map[int64]*woodpecker.Agent{}}
+	provider := newFakeProvider(capabilities...)
+	woodpecker := newFakeWoodpecker()
 
 	autoscaler, err := engine.NewAutoscaler(t.Context(), provider, woodpecker, cfg)
 	require.NoError(t, err)
 
-	return &harness{autoscaler: autoscaler, provider: provider, woodpecker: woodpecker}
+	return &harness{config: cfg, autoscaler: autoscaler, provider: provider, woodpecker: woodpecker}
 }
 
 func testConfig(minAgents, maxAgents int) *config.Config {
@@ -62,6 +61,10 @@ func (h *harness) connectAgents(t *testing.T) {
 	t.Helper()
 	for name, capability := range h.provider.deployed {
 		agent := h.woodpecker.agentByName(t, name)
+		if agent.LastContact != 0 {
+			continue
+		}
+		agent.CustomLabels = maps.Clone(h.config.ExtraAgentLabels)
 		agent.Platform = capability.Platform
 		agent.Backend = string(capability.Backend)
 		agent.LastContact = time.Now().Unix()
@@ -71,8 +74,8 @@ func (h *harness) connectAgents(t *testing.T) {
 }
 
 // addConnectedAgent seeds an already-registered, idle agent that the provider
-// also knows about — the starting point for replacement scenarios.
-func (h *harness) addConnectedAgent(t *testing.T, name string, capability types.Capability) {
+// also knows about, as a starting point for replacement scenarios.
+func (h *harness) addConnectedAgent(t *testing.T, name string, capability types.Capability) *woodpecker.Agent {
 	t.Helper()
 	agent, err := h.woodpecker.AgentCreate(&woodpecker.Agent{Name: name})
 	require.NoError(t, err)
@@ -80,8 +83,10 @@ func (h *harness) addConnectedAgent(t *testing.T, name string, capability types.
 	agent.Backend = string(capability.Backend)
 	agent.LastContact = time.Now().Unix()
 	agent.LastWork = time.Now().Add(-2 * time.Minute).Unix()
+	agent.CustomLabels = maps.Clone(h.config.ExtraAgentLabels)
 	h.woodpecker.put(agent)
 	h.provider.deployed[name] = capability
+	return agent
 }
 
 // markIdle pushes every agent's last-work time past the idle timeout.
@@ -124,27 +129,49 @@ func runningOn(task woodpecker.Task, agentID int64) woodpecker.Task {
 
 // fakeProvider records the agents deployed to and removed from it.
 type fakeProvider struct {
-	capabilities []types.Capability
-	deployed     map[string]types.Capability
+	capabilities      []types.Capability
+	capabilitiesCalls int
+	capabilitiesErr   error
+	deployed          map[string]types.Capability
+	deployErr         error
+	removeErr         error
+	listErr           error
 }
 
 var _ types.Provider = (*fakeProvider)(nil)
 
+func newFakeProvider(capabilities ...types.Capability) *fakeProvider {
+	return &fakeProvider{
+		capabilities: capabilities,
+		deployed:     map[string]types.Capability{},
+	}
+}
+
 func (p *fakeProvider) Capabilities(context.Context) ([]types.Capability, error) {
-	return append([]types.Capability(nil), p.capabilities...), nil
+	p.capabilitiesCalls++
+	return append([]types.Capability(nil), p.capabilities...), p.capabilitiesErr
 }
 
 func (p *fakeProvider) DeployAgent(_ context.Context, agent *woodpecker.Agent, capability types.Capability) error {
+	if p.deployErr != nil {
+		return p.deployErr
+	}
 	p.deployed[agent.Name] = capability
 	return nil
 }
 
 func (p *fakeProvider) RemoveAgent(_ context.Context, agent *woodpecker.Agent) error {
+	if p.removeErr != nil {
+		return p.removeErr
+	}
 	delete(p.deployed, agent.Name)
 	return nil
 }
 
 func (p *fakeProvider) ListDeployedAgentNames(context.Context) ([]string, error) {
+	if p.listErr != nil {
+		return nil, p.listErr
+	}
 	names := make([]string, 0, len(p.deployed))
 	for name := range p.deployed {
 		names = append(names, name)
@@ -170,18 +197,31 @@ func (p *fakeProvider) deployedCapabilities() []types.Capability {
 // the engine calls are implemented; the embedded interface satisfies the rest.
 type fakeWoodpecker struct {
 	server.Client
-	nextID int64
-	agents map[int64]*woodpecker.Agent
-	queue  woodpecker.Info
+	nextID    int64
+	agents    map[int64]*woodpecker.Agent
+	queue     woodpecker.Info
+	listErr   error
+	createErr error
+	updateErr error
+	deleteErr error
+	tasksErr  error
+	queueErr  error
 }
 
 var _ server.Client = (*fakeWoodpecker)(nil)
+
+func newFakeWoodpecker() *fakeWoodpecker {
+	return &fakeWoodpecker{nextID: 1, agents: map[int64]*woodpecker.Agent{}}
+}
 
 func (s *fakeWoodpecker) put(agent *woodpecker.Agent) {
 	s.agents[agent.ID] = cloneAgent(agent)
 }
 
 func (s *fakeWoodpecker) AgentList() ([]*woodpecker.Agent, error) {
+	if s.listErr != nil {
+		return nil, s.listErr
+	}
 	agents := make([]*woodpecker.Agent, 0, len(s.agents))
 	for _, agent := range s.agents {
 		agents = append(agents, cloneAgent(agent))
@@ -191,6 +231,9 @@ func (s *fakeWoodpecker) AgentList() ([]*woodpecker.Agent, error) {
 }
 
 func (s *fakeWoodpecker) AgentCreate(agent *woodpecker.Agent) (*woodpecker.Agent, error) {
+	if s.createErr != nil {
+		return nil, s.createErr
+	}
 	created := cloneAgent(agent)
 	created.ID = s.nextID
 	created.Created = time.Now().Unix()
@@ -200,16 +243,25 @@ func (s *fakeWoodpecker) AgentCreate(agent *woodpecker.Agent) (*woodpecker.Agent
 }
 
 func (s *fakeWoodpecker) AgentUpdate(agent *woodpecker.Agent) (*woodpecker.Agent, error) {
+	if s.updateErr != nil {
+		return nil, s.updateErr
+	}
 	s.put(agent)
 	return cloneAgent(agent), nil
 }
 
 func (s *fakeWoodpecker) AgentDelete(agentID int64) error {
+	if s.deleteErr != nil {
+		return s.deleteErr
+	}
 	delete(s.agents, agentID)
 	return nil
 }
 
 func (s *fakeWoodpecker) AgentTasksList(agentID int64) ([]*woodpecker.Task, error) {
+	if s.tasksErr != nil {
+		return nil, s.tasksErr
+	}
 	tasks := make([]*woodpecker.Task, 0)
 	for i := range s.queue.Running {
 		if s.queue.Running[i].AgentID == agentID {
@@ -221,6 +273,9 @@ func (s *fakeWoodpecker) AgentTasksList(agentID int64) ([]*woodpecker.Task, erro
 }
 
 func (s *fakeWoodpecker) QueueInfo() (*woodpecker.Info, error) {
+	if s.queueErr != nil {
+		return nil, s.queueErr
+	}
 	queue := s.queue
 	queue.Pending = append([]woodpecker.Task(nil), s.queue.Pending...)
 	queue.Running = append([]woodpecker.Task(nil), s.queue.Running...)
@@ -240,9 +295,6 @@ func (s *fakeWoodpecker) agentByName(t *testing.T, name string) *woodpecker.Agen
 
 func cloneAgent(agent *woodpecker.Agent) *woodpecker.Agent {
 	clone := *agent
-	clone.CustomLabels = make(map[string]string, len(agent.CustomLabels))
-	for key, value := range agent.CustomLabels {
-		clone.CustomLabels[key] = value
-	}
+	clone.CustomLabels = maps.Clone(agent.CustomLabels)
 	return &clone
 }
