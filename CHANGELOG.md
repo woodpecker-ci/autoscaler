@@ -4,7 +4,7 @@
 
 ### ❤️ Thanks to all contributors! ❤️
 
-@6543, @AJ0070, @LaGrunge, @bcornish1797, @btriller, @hstern, @toothstone
+@6543, @AJ0070, @LaGrunge, @btriller, @hstern, @toothstone
 
 ### 💥 Breaking changes
 
@@ -25,7 +25,6 @@
 
 - Add experimental DigitalOcean provider [[#661](https://github.com/woodpecker-ci/autoscaler/pull/661)]
 - Add  experimental OpenStack provider [[#682](https://github.com/woodpecker-ci/autoscaler/pull/682)]
-- Add experimental Equinix Metal provider [[#604](https://github.com/woodpecker-ci/autoscaler/pull/604)]
 
 ### 📈 Enhancement
 
