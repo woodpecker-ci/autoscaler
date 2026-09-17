@@ -35,26 +35,6 @@ services:
 
 The agents will use `WOODPECKER_GRPC_ADDR` and an agent token automatically created on the server by the autoscaler to connect to the server. Therefore the `WOODPECKER_GRPC_ADDR` has to be publicly accessible from the newly created agents. Check for example how you could use [caddy](https://woodpecker-ci.org/docs/administration/configuration/server#caddy) to expose the grpc connection.
 
-## Equinix Metal
-
-Set `WOODPECKER_PROVIDER=equinixmetal` and configure at least:
-
-- `WOODPECKER_EQUINIXMETAL_API_TOKEN`
-- `WOODPECKER_EQUINIXMETAL_PROJECT_ID`
-- `WOODPECKER_EQUINIXMETAL_PLAN`
-- exactly one of `WOODPECKER_EQUINIXMETAL_METRO` or `WOODPECKER_EQUINIXMETAL_FACILITY`
-
-Equinix Metal support is currently experimental: it has not been tested by the project maintainers, as none of them have real provider access.
-
-Useful optional settings:
-
-- `WOODPECKER_EQUINIXMETAL_OPERATING_SYSTEM` (default: `ubuntu_24_04`)
-- `WOODPECKER_EQUINIXMETAL_BILLING_CYCLE` (default: `hourly`)
-- `WOODPECKER_EQUINIXMETAL_TAGS`
-- `WOODPECKER_EQUINIXMETAL_PROJECT_SSH_KEYS`
-- `WOODPECKER_EQUINIXMETAL_SPOT_INSTANCE`
-- `WOODPECKER_EQUINIXMETAL_SPOT_PRICE_MAX`
-
 ## DigitalOcean
 
 Set `WOODPECKER_PROVIDER=digitalocean` and configure at least:
@@ -110,7 +90,6 @@ The billing model is selected automatically by the provider, so no extra configu
   - [x] Linode
   - [x] OpenStack **[experimental]**
   - [ ] Oracle Cloud
-  - [x] Equinix Metal **[experimental]** (untested by the maintainers against real provider access, see [above](#equinix-metal))
   - [x] Vultr
   - [x] Scaleway
 - [ ] Cleanup agents

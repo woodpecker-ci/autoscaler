@@ -13,7 +13,6 @@ require (
 	github.com/aws/smithy-go v1.28.1
 	github.com/digitalocean/godo v1.209.0
 	github.com/docker/go-units v0.5.0
-	github.com/equinix/equinix-sdk-go v0.66.0
 	github.com/gophercloud/gophercloud/v2 v2.14.0
 	github.com/hetznercloud/hcloud-go/v2 v2.48.0
 	github.com/joho/godotenv v1.5.1
@@ -57,7 +56,7 @@ require (
 	golang.org/x/text v0.42.0 // indirect
 	golang.org/x/time v0.15.0 // indirect
 	google.golang.org/protobuf v1.36.12 // indirect
+	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/ini.v1 v1.67.3 // indirect
-	gopkg.in/validator.v2 v2.0.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
