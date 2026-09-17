@@ -90,7 +90,6 @@ The billing model is selected automatically by the provider, so no extra configu
   - [x] Linode
   - [x] OpenStack **[experimental]**
   - [ ] Oracle Cloud
-  - [x] Equinix Metal **[experimental]** (untested by the maintainers against real provider access, see [above](#equinix-metal))
   - [x] Vultr
   - [x] Scaleway
 - [ ] Cleanup agents
