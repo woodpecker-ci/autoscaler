@@ -7,6 +7,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 
 	"go.woodpecker-ci.org/autoscaler/config"
 	"go.woodpecker-ci.org/autoscaler/engine/types"
@@ -262,6 +263,28 @@ func Test_cleanupDanglingAgents(t *testing.T) {
 
 		err := autoscaler.cleanupDanglingAgents(ctx)
 		assert.NoError(t, err)
+	})
+
+	t.Run("should keep the agents that are still deployed in the pool list", func(t *testing.T) {
+		ctx := t.Context()
+		client := mocks_server.NewMockClient(t)
+		provider := mocks_provider.NewMockProvider(t)
+		autoscaler := Autoscaler{
+			agents: []*woodpecker.Agent{
+				{ID: 1, Name: "pool-1-agent-1", NoSchedule: false},
+				{ID: 2, Name: "pool-1-agent-2", NoSchedule: false},
+			},
+			provider: provider,
+			client:   client,
+		}
+
+		provider.On("ListDeployedAgentNames", mock.Anything).Return([]string{"pool-1-agent-2"}, nil)
+		client.On("AgentDelete", int64(1)).Return(nil)
+
+		err := autoscaler.cleanupDanglingAgents(ctx)
+		assert.NoError(t, err)
+		require.Len(t, autoscaler.agents, 1)
+		assert.Equal(t, "pool-1-agent-2", autoscaler.agents[0].Name)
 	})
 }
 
