@@ -302,6 +302,32 @@ var capacityErrorCodes = map[string]bool{
 	"InvalidParameterCombination": true,
 }
 
+// awsArchToGoArch maps EC2 architecture values to Go GOARCH strings.
+func awsArchToGoArch(a ec2_types.ArchitectureValues) string {
+	switch a {
+	case ec2_types.ArchitectureValuesX8664:
+		return "amd64"
+	case ec2_types.ArchitectureValuesArm64:
+		return "arm64"
+	default:
+		return ""
+	}
+}
+
+// candidatePlatform derives the platform label an agent deployed from this
+// candidate self-reports on connect. Instance type and AMI architecture are
+// already validated to match in resolveDeployCandidates. Architectures the
+// mapping does not know yield ErrUnknownArchitecture.
+func candidatePlatform(c deployCandidate) (string, error) {
+	goarch := awsArchToGoArch(c.regionConfig.image.Architecture)
+	if goarch == "" {
+		return "", fmt.Errorf("%w: %s (type %s, region %s)",
+			ErrUnknownArchitecture, c.regionConfig.image.Architecture,
+			c.instanceType.InstanceType, c.regionConfig.region)
+	}
+	return "linux/" + goarch, nil
+}
+
 // isCapacityError reports whether err is an AWS capacity error, for which
 // deploying the next fallback candidate is worthwhile.
 func isCapacityError(err error) bool {

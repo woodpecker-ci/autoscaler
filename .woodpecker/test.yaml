@@ -43,3 +43,10 @@ steps:
     commands:
       - make test
     when: *when
+
+  - name: test-e2e
+    image: *golang_image
+    depends_on: [vendor]
+    commands:
+      - make test-e2e
+    when: *when
