@@ -35,6 +35,7 @@
 
 ### 🐛 Bug Fixes
 
+- Load every page of the agent list [[#738](https://github.com/woodpecker-ci/autoscaler/pull/738)]
 - Fix RandomString returning identical values within one clock tick [[#719](https://github.com/woodpecker-ci/autoscaler/pull/719)]
 - fix(engine): stop double-subtracting pool size in calcAgents [[#674](https://github.com/woodpecker-ci/autoscaler/pull/674)]
 
