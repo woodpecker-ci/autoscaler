@@ -20,7 +20,7 @@ require (
 	github.com/rs/zerolog v1.35.1
 	github.com/scaleway/scaleway-sdk-go v1.0.0-beta.37
 	github.com/stretchr/testify v1.12.1
-	github.com/urfave/cli/v3 v3.12.0
+	github.com/urfave/cli/v3 v3.13.0
 	github.com/vultr/govultr/v3 v3.33.0
 	go.woodpecker-ci.org/woodpecker/v3 v3.18.1
 	golang.org/x/crypto v0.57.0
