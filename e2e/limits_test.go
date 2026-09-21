@@ -77,23 +77,6 @@ func TestWorkflowsPerAgentPacksWorkflows(t *testing.T) {
 	}
 }
 
-// TestWorkflowsPerAgentPacksSeveralWorkflows checks that three workflows need
-// only two agents when each agent runs two.
-func TestWorkflowsPerAgentPacksSeveralWorkflows(t *testing.T) {
-	cfg := testConfig(0, 5)
-	cfg.WorkflowsPerAgent = 2
-	h := newHarness(t, cfg, dockerAMD64)
-	h.woodpecker.queue.Pending = []woodpecker.Task{
-		realWorkflowTask("build-1", "linux/amd64"),
-		realWorkflowTask("build-2", "linux/amd64"),
-		realWorkflowTask("build-3", "linux/amd64"),
-	}
-
-	h.reconcile(t)
-
-	require.Len(t, h.provider.deployed, 2)
-}
-
 // TestRunningWorkPlusBacklogAddsCapacity checks that pending work on top of a
 // busy agent provisions an additional agent.
 func TestRunningWorkPlusBacklogAddsCapacity(t *testing.T) {

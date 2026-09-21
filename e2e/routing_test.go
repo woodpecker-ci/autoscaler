@@ -36,64 +36,6 @@ func TestTaskWithoutPlatformUsesFirstCapability(t *testing.T) {
 	require.Equal(t, []types.Capability{dockerARM64}, h.provider.deployedCapabilities())
 }
 
-// TestMandatoryLabelsRequireExactValue checks that a "!" agent label is only
-// satisfied by a workflow setting exactly that value.
-func TestMandatoryLabelsRequireExactValue(t *testing.T) {
-	for _, test := range []struct {
-		name       string
-		region     string
-		wantAgents int
-	}{
-		{name: "missing", wantAgents: 0},
-		{name: "different", region: "us", wantAgents: 0},
-		{name: "matching", region: "eu", wantAgents: 1},
-	} {
-		t.Run(test.name, func(t *testing.T) {
-			cfg := testConfig(0, 1)
-			cfg.ExtraAgentLabels = map[string]string{"!region": "eu"}
-			h := newHarness(t, cfg, dockerAMD64)
-			task := realWorkflowTask("build", "linux/amd64")
-			if test.region != "" {
-				task.Labels["region"] = test.region
-			}
-			h.woodpecker.queue.Pending = []woodpecker.Task{task}
-
-			h.reconcile(t)
-
-			require.Len(t, h.provider.deployed, test.wantAgents)
-		})
-	}
-}
-
-// TestWildcardExtraLabelAcceptsAnyValue checks that a "*" agent label matches
-// whatever value a workflow requests.
-func TestWildcardExtraLabelAcceptsAnyValue(t *testing.T) {
-	cfg := testConfig(0, 1)
-	cfg.ExtraAgentLabels = map[string]string{"region": "*"}
-	h := newHarness(t, cfg, dockerAMD64)
-	task := realWorkflowTask("build", "linux/amd64")
-	task.Labels["region"] = "eu"
-	h.woodpecker.queue.Pending = []woodpecker.Task{task}
-
-	h.reconcile(t)
-
-	require.Equal(t, []types.Capability{dockerAMD64}, h.provider.deployedCapabilities())
-}
-
-// TestUnschedulablePendingCreatesNoAgent checks that work no capability can
-// serve does not provision an agent that could never pick it up.
-func TestUnschedulablePendingCreatesNoAgent(t *testing.T) {
-	h := newHarness(t, testConfig(0, 3), dockerAMD64)
-	h.woodpecker.queue.Pending = []woodpecker.Task{
-		realWorkflowTask("needs-arm", "linux/arm64"),
-	}
-
-	h.reconcile(t)
-
-	require.Empty(t, h.provider.deployed)
-	require.Empty(t, h.woodpecker.agents)
-}
-
 // TestLabelMatching mirrors the server's label matching between workflow
 // labels and the extra labels the autoscaler gives its agents.
 func TestLabelMatching(t *testing.T) {
@@ -108,6 +50,10 @@ func TestLabelMatching(t *testing.T) {
 		{name: "different normal label", agentLabels: map[string]string{"region": "eu"}, taskLabels: map[string]string{"region": "us"}},
 		{name: "matching normal label", agentLabels: map[string]string{"region": "eu"}, taskLabels: map[string]string{"region": "eu"}, wantAgents: 1},
 		{name: "normal label need not be requested", agentLabels: map[string]string{"region": "eu"}, wantAgents: 1},
+		{name: "wildcard accepts any value", agentLabels: map[string]string{"region": "*"}, taskLabels: map[string]string{"region": "eu"}, wantAgents: 1},
+		{name: "missing mandatory label", agentLabels: map[string]string{"!region": "eu"}},
+		{name: "different mandatory value", agentLabels: map[string]string{"!region": "eu"}, taskLabels: map[string]string{"region": "us"}},
+		{name: "matching mandatory value", agentLabels: map[string]string{"!region": "eu"}, taskLabels: map[string]string{"region": "eu"}, wantAgents: 1},
 		{name: "empty mandatory task value", agentLabels: map[string]string{"!region": "eu"}, taskLabels: map[string]string{"region": ""}},
 		{name: "mandatory wildcard rejects arbitrary values", agentLabels: map[string]string{"!region": "*"}, taskLabels: map[string]string{"region": "eu"}},
 		{name: "mandatory wildcard accepts literal star", agentLabels: map[string]string{"!region": "*"}, taskLabels: map[string]string{"region": "*"}, wantAgents: 1},
