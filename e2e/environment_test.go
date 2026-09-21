@@ -16,6 +16,11 @@ import (
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
 
+var (
+	dockerAMD64 = types.Capability{Platform: "linux/amd64", Backend: types.BackendDocker}
+	dockerARM64 = types.Capability{Platform: "linux/arm64", Backend: types.BackendDocker}
+)
+
 // harness wires the real engine.Autoscaler to in-memory fakes of the provider
 // and the woodpecker server, so tests can drive whole reconcile cycles through
 // the public API and assert on the resulting pool.
@@ -48,6 +53,16 @@ func testConfig(minAgents, maxAgents int) *config.Config {
 		AgentInactivityTimeout: time.Hour,
 		BillingModel:           types.BillingPerSecond,
 	}
+}
+
+// hourlyConfig is a single-agent pool on an hourly-billed provider with a
+// one-minute teardown window at the end of every paid hour.
+func hourlyConfig() *config.Config {
+	cfg := testConfig(0, 1)
+	cfg.BillingModel = types.BillingHourlyRoundUp
+	cfg.ReconciliationInterval = time.Minute
+	cfg.AgentBillingTeardownMargin = time.Minute
+	return cfg
 }
 
 func (h *harness) reconcile(t *testing.T) {
