@@ -26,6 +26,8 @@ var (
 // TestFailedReadsPreserveFleet checks that a failing read aborts the cycle
 // without touching the fleet and that the next cycle recovers.
 func TestFailedReadsPreserveFleet(t *testing.T) {
+	t.Parallel()
+
 	for _, test := range []struct {
 		name  string
 		fault fault
@@ -36,6 +38,8 @@ func TestFailedReadsPreserveFleet(t *testing.T) {
 		{name: "provider inventory", fault: providerListFault, stage: "cleaning up dangling agents failed"},
 	} {
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
 			h := newHarness(t, testConfig(1, 1), dockerAMD64)
 			agent := h.addConnectedAgent(t, "pool-e2e-agent-existing", dockerAMD64)
 			failure := errors.New("service unavailable")
@@ -60,6 +64,8 @@ func TestFailedReadsPreserveFleet(t *testing.T) {
 // TestRegistrationFailureRetriesDemand checks that a failed server
 // registration deploys no machine and the demand is served next cycle.
 func TestRegistrationFailureRetriesDemand(t *testing.T) {
+	t.Parallel()
+
 	h := newHarness(t, testConfig(0, 1), dockerAMD64)
 	h.woodpecker.queue.Pending = []woodpecker.Task{realWorkflowTask("build", "linux/amd64")}
 	failure := errors.New("registration failed")
@@ -79,6 +85,8 @@ func TestRegistrationFailureRetriesDemand(t *testing.T) {
 // TestFailedDeploymentIsDeregistered checks that a registration left behind by
 // a failed deployment is removed before the slot is reused.
 func TestFailedDeploymentIsDeregistered(t *testing.T) {
+	t.Parallel()
+
 	h := newHarness(t, testConfig(0, 1), dockerAMD64)
 	h.woodpecker.queue.Pending = []woodpecker.Task{realWorkflowTask("build", "linux/amd64")}
 	failure := errors.New("deployment failed")
@@ -104,6 +112,8 @@ func TestFailedDeploymentIsDeregistered(t *testing.T) {
 // TestFailedSchedulingUpdatesPreserveServerState checks that a failing
 // NoSchedule update leaves the agent unchanged and is retried.
 func TestFailedSchedulingUpdatesPreserveServerState(t *testing.T) {
+	t.Parallel()
+
 	for _, test := range []struct {
 		name       string
 		capability types.Capability
@@ -114,6 +124,8 @@ func TestFailedSchedulingUpdatesPreserveServerState(t *testing.T) {
 		{name: "reactivate", capability: dockerAMD64, reactivate: true},
 	} {
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
 			h := newHarness(t, testConfig(0, 1), dockerAMD64)
 			agent := h.addConnectedAgent(t, "pool-e2e-agent-existing", test.capability)
 			if test.reactivate {
@@ -145,6 +157,8 @@ func TestFailedSchedulingUpdatesPreserveServerState(t *testing.T) {
 // TestFailedTeardownCanBeRetried checks that every teardown step of a drained
 // or stale agent can fail without losing the state needed to retry.
 func TestFailedTeardownCanBeRetried(t *testing.T) {
+	t.Parallel()
+
 	for _, test := range []struct {
 		name  string
 		stale bool
@@ -161,6 +175,8 @@ func TestFailedTeardownCanBeRetried(t *testing.T) {
 		{name: "stale server deletion", stale: true, fault: agentDeleteFault, removedFromProvider: true},
 	} {
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
 			h := newHarness(t, testConfig(1, 1), dockerAMD64)
 			agent := h.addConnectedAgent(t, "pool-e2e-agent-existing", dockerAMD64)
 			stage := "drained agents failed"
@@ -199,6 +215,8 @@ func TestFailedTeardownCanBeRetried(t *testing.T) {
 // TestFailedDriftCleanupCanBeRetried checks that an orphan on either side of
 // provider and server survives a failed removal and is removed on retry.
 func TestFailedDriftCleanupCanBeRetried(t *testing.T) {
+	t.Parallel()
+
 	const name = "pool-e2e-agent-orphan"
 	for _, test := range []struct {
 		name         string
@@ -209,6 +227,8 @@ func TestFailedDriftCleanupCanBeRetried(t *testing.T) {
 		{name: "server only", fault: agentDeleteFault},
 	} {
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
 			h := newHarness(t, testConfig(0, 1), dockerAMD64)
 			if test.providerOnly {
 				h.provider.deployed[name] = dockerAMD64

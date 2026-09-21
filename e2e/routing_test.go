@@ -12,6 +12,8 @@ import (
 // TestRealQueueLabelsRouteToMatchingPlatforms checks that tasks carrying the
 // labels the server stamps on real workflows provision agents per platform.
 func TestRealQueueLabelsRouteToMatchingPlatforms(t *testing.T) {
+	t.Parallel()
+
 	h := newHarness(t, testConfig(0, 2), dockerAMD64, dockerARM64)
 	amd64 := realWorkflowTask("build-amd64", "linux/amd64")
 	amd64.Labels["empty-value-is-ignored"] = ""
@@ -26,6 +28,8 @@ func TestRealQueueLabelsRouteToMatchingPlatforms(t *testing.T) {
 // TestTaskWithoutPlatformUsesFirstCapability checks that an unconstrained
 // task is served by the first capability the provider advertises.
 func TestTaskWithoutPlatformUsesFirstCapability(t *testing.T) {
+	t.Parallel()
+
 	h := newHarness(t, testConfig(0, 1), dockerARM64, dockerAMD64)
 	h.woodpecker.queue.Pending = []woodpecker.Task{
 		realWorkflowTask("unconstrained", ""),
@@ -39,6 +43,8 @@ func TestTaskWithoutPlatformUsesFirstCapability(t *testing.T) {
 // TestLabelMatching mirrors the server's label matching between workflow
 // labels and the extra labels the autoscaler gives its agents.
 func TestLabelMatching(t *testing.T) {
+	t.Parallel()
+
 	for _, test := range []struct {
 		name        string
 		agentLabels map[string]string
@@ -61,6 +67,8 @@ func TestLabelMatching(t *testing.T) {
 		{name: "repository restriction accepts matching repository", agentLabels: map[string]string{"repo": "acme/api"}, wantAgents: 1},
 	} {
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
 			cfg := testConfig(0, 1)
 			cfg.ExtraAgentLabels = test.agentLabels
 			h := newHarness(t, cfg, dockerAMD64)
@@ -79,6 +87,8 @@ func TestLabelMatching(t *testing.T) {
 // TestAggregateWorkerCountsDoNotHidePendingDemand checks that demand comes
 // from the pending task list, not from the server's aggregate worker stats.
 func TestAggregateWorkerCountsDoNotHidePendingDemand(t *testing.T) {
+	t.Parallel()
+
 	h := newHarness(t, testConfig(0, 2), dockerAMD64)
 	h.woodpecker.queue.Stats = woodpecker.QueueStats{Workers: 100, Pending: 1}
 	h.woodpecker.queue.Pending = []woodpecker.Task{realWorkflowTask("build", "linux/amd64")}
@@ -91,6 +101,8 @@ func TestAggregateWorkerCountsDoNotHidePendingDemand(t *testing.T) {
 // TestWaitingOnDepsCreatesNoCapacity checks that work blocked on other
 // workflows does not provision agents yet.
 func TestWaitingOnDepsCreatesNoCapacity(t *testing.T) {
+	t.Parallel()
+
 	h := newHarness(t, testConfig(0, 2), dockerAMD64)
 	h.woodpecker.queue.WaitingOnDeps = []woodpecker.Task{realWorkflowTask("blocked", "linux/amd64")}
 	h.woodpecker.queue.Stats.WaitingOnDeps = 1
@@ -104,6 +116,8 @@ func TestWaitingOnDepsCreatesNoCapacity(t *testing.T) {
 // TestUnschedulableWorkDoesNotConsumeCapacity checks that unservable tasks do
 // not use up the budget needed by servable ones.
 func TestUnschedulableWorkDoesNotConsumeCapacity(t *testing.T) {
+	t.Parallel()
+
 	h := newHarness(t, testConfig(0, 2), dockerAMD64)
 	h.woodpecker.queue.Pending = []woodpecker.Task{
 		realWorkflowTask("unsupported-1", "linux/arm64"),
@@ -119,6 +133,8 @@ func TestUnschedulableWorkDoesNotConsumeCapacity(t *testing.T) {
 // TestRunningWorkBelongsToItsAgent checks that running tasks are attributed
 // by agent ID, even when they carry no platform label.
 func TestRunningWorkBelongsToItsAgent(t *testing.T) {
+	t.Parallel()
+
 	h := newHarness(t, testConfig(0, 3), dockerAMD64, dockerARM64)
 	agent := h.addConnectedAgent(t, "pool-e2e-agent-arm", dockerARM64)
 	h.woodpecker.queue.Running = []woodpecker.Task{runningOn(realWorkflowTask("running", ""), agent.ID)}
@@ -132,6 +148,8 @@ func TestRunningWorkBelongsToItsAgent(t *testing.T) {
 // TestBackendDistinguishesCapabilities checks that two capabilities sharing a
 // platform are told apart by their backend.
 func TestBackendDistinguishesCapabilities(t *testing.T) {
+	t.Parallel()
+
 	local := types.Capability{Platform: dockerAMD64.Platform, Backend: types.BackendLocal}
 	h := newHarness(t, testConfig(0, 2), dockerAMD64, local)
 	task := realWorkflowTask("local", "linux/amd64")

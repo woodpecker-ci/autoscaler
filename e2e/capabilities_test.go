@@ -14,6 +14,8 @@ import (
 // TestCapabilityDiscoveryErrorPreventsStartup checks that the autoscaler does
 // not start without knowing what the provider can deploy.
 func TestCapabilityDiscoveryErrorPreventsStartup(t *testing.T) {
+	t.Parallel()
+
 	provider := newFakeProvider(dockerAMD64)
 	provider.capabilitiesErr = errors.New("discovery failed")
 	woodpecker := newFakeWoodpecker()
@@ -27,6 +29,8 @@ func TestCapabilityDiscoveryErrorPreventsStartup(t *testing.T) {
 // TestCapabilitiesAreCachedAfterStartup checks that capabilities are queried
 // once and later provider changes are not picked up by reconcile.
 func TestCapabilitiesAreCachedAfterStartup(t *testing.T) {
+	t.Parallel()
+
 	h := newHarness(t, testConfig(0, 1), dockerAMD64)
 	require.Equal(t, 1, h.provider.capabilitiesCalls)
 
@@ -43,6 +47,8 @@ func TestCapabilitiesAreCachedAfterStartup(t *testing.T) {
 // TestEmptyCapabilitiesHoldFleetSteady checks that without any capability the
 // existing fleet is neither grown nor drained.
 func TestEmptyCapabilitiesHoldFleetSteady(t *testing.T) {
+	t.Parallel()
+
 	h := newHarness(t, testConfig(1, 3))
 	h.addConnectedAgent(t, "pool-e2e-agent-standing", dockerAMD64)
 	h.woodpecker.queue.Pending = []woodpecker.Task{

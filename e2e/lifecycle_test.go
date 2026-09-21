@@ -14,6 +14,8 @@ import (
 // TestWorkflowLifecycle follows two workflows from provisioning through
 // running to teardown, one phase per reconcile cycle.
 func TestWorkflowLifecycle(t *testing.T) {
+	t.Parallel()
+
 	h := newHarness(t, testConfig(0, 2), dockerAMD64, dockerARM64)
 	h.woodpecker.queue.Pending = []woodpecker.Task{
 		realWorkflowTask("build-amd64", "linux/amd64"),
@@ -55,6 +57,8 @@ func TestWorkflowLifecycle(t *testing.T) {
 // TestFullPoolReplacesIdleAgentWithNeededCapability checks that a pool at
 // MaxAgents swaps an idle agent of the wrong capability for a needed one.
 func TestFullPoolReplacesIdleAgentWithNeededCapability(t *testing.T) {
+	t.Parallel()
+
 	h := newHarness(t, testConfig(1, 1), dockerAMD64, dockerARM64)
 	h.addConnectedAgent(t, "pool-e2e-agent-existing", dockerAMD64)
 	h.woodpecker.queue.Pending = []woodpecker.Task{
@@ -77,6 +81,8 @@ func TestFullPoolReplacesIdleAgentWithNeededCapability(t *testing.T) {
 // TestStaleCustomLabelsAreReplaced checks that an agent whose custom labels no
 // longer match the config is retired and replaced.
 func TestStaleCustomLabelsAreReplaced(t *testing.T) {
+	t.Parallel()
+
 	cfg := testConfig(0, 1)
 	cfg.ExtraAgentLabels = map[string]string{"region": "us"}
 	h := newHarness(t, cfg, dockerAMD64)
@@ -102,6 +108,8 @@ func TestStaleCustomLabelsAreReplaced(t *testing.T) {
 // TestBootingAgentsCoverDemand checks that agents which have not connected yet
 // count as capacity, so repeated cycles do not overprovision.
 func TestBootingAgentsCoverDemand(t *testing.T) {
+	t.Parallel()
+
 	h := newHarness(t, testConfig(0, 10), dockerAMD64)
 	h.woodpecker.queue.Pending = []woodpecker.Task{
 		realWorkflowTask("build-1", "linux/amd64"),
@@ -131,6 +139,8 @@ func TestBootingAgentsCoverDemand(t *testing.T) {
 // TestRestartBoundsUnattributedBootingAgents checks that a fresh autoscaler,
 // which lost track of booting agents, still respects MaxAgents.
 func TestRestartBoundsUnattributedBootingAgents(t *testing.T) {
+	t.Parallel()
+
 	cfg := testConfig(0, 2)
 	h := newHarness(t, cfg, dockerAMD64)
 	h.woodpecker.queue.Pending = []woodpecker.Task{
@@ -152,6 +162,8 @@ func TestRestartBoundsUnattributedBootingAgents(t *testing.T) {
 // TestStuckBootIsReplacedAfterCreationTimeout checks that an agent that never
 // connects keeps its slot until AgentCreationTimeout, then is replaced.
 func TestStuckBootIsReplacedAfterCreationTimeout(t *testing.T) {
+	t.Parallel()
+
 	cfg := testConfig(0, 10)
 	cfg.AgentCreationTimeout = time.Minute
 	h := newHarness(t, cfg, dockerAMD64)
@@ -185,6 +197,8 @@ func TestStuckBootIsReplacedAfterCreationTimeout(t *testing.T) {
 // TestExpiredBootAtMaxAgentsFreesSlot checks that at MaxAgents an expired boot
 // is removed first and replaced on the next cycle.
 func TestExpiredBootAtMaxAgentsFreesSlot(t *testing.T) {
+	t.Parallel()
+
 	cfg := testConfig(0, 1)
 	cfg.AgentCreationTimeout = time.Minute
 	h := newHarness(t, cfg, dockerAMD64)
@@ -212,6 +226,8 @@ func TestExpiredBootAtMaxAgentsFreesSlot(t *testing.T) {
 // TestVanishedBootRegistrationNoLongerCoversDemand checks that a booting agent
 // deleted from the server is no longer counted as capacity.
 func TestVanishedBootRegistrationNoLongerCoversDemand(t *testing.T) {
+	t.Parallel()
+
 	h := newHarness(t, testConfig(0, 1), dockerAMD64)
 	h.woodpecker.queue.Pending = []woodpecker.Task{realWorkflowTask("build", "linux/amd64")}
 	h.reconcile(t)
@@ -232,6 +248,8 @@ func TestVanishedBootRegistrationNoLongerCoversDemand(t *testing.T) {
 // TestConnectedCustomLabelsKeepAgentUsable checks that once a booting agent
 // reports its custom labels, they take over from boot tracking.
 func TestConnectedCustomLabelsKeepAgentUsable(t *testing.T) {
+	t.Parallel()
+
 	cfg := testConfig(0, 2)
 	cfg.ExtraAgentLabels = map[string]string{"!region": "eu"}
 	h := newHarness(t, cfg, dockerAMD64)
@@ -259,6 +277,8 @@ func TestConnectedCustomLabelsKeepAgentUsable(t *testing.T) {
 // TestDrainedAgentReactivatedAtCapacity checks that matching demand clears
 // NoSchedule on a drained agent instead of waiting for a free slot.
 func TestDrainedAgentReactivatedAtCapacity(t *testing.T) {
+	t.Parallel()
+
 	cfg := testConfig(0, 1)
 	cfg.BillingModel = types.BillingHourlyRoundUp
 	h := newHarness(t, cfg, dockerAMD64)
@@ -278,6 +298,8 @@ func TestDrainedAgentReactivatedAtCapacity(t *testing.T) {
 // TestDrainingAgentStaysUntilWorkFinishes checks that a draining agent is only
 // removed once its running work is done.
 func TestDrainingAgentStaysUntilWorkFinishes(t *testing.T) {
+	t.Parallel()
+
 	h := newHarness(t, testConfig(0, 1), dockerAMD64)
 	agent := h.addConnectedAgent(t, "pool-e2e-agent-busy", dockerAMD64)
 	agent.NoSchedule = true

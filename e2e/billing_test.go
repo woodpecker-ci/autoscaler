@@ -12,6 +12,8 @@ import (
 // TestHourlyBillingKeepsPaidCapacity checks that an idle hourly agent stays
 // schedulable during its paid hour and is removed in the teardown window.
 func TestHourlyBillingKeepsPaidCapacity(t *testing.T) {
+	t.Parallel()
+
 	h := newHarness(t, hourlyConfig(), dockerAMD64)
 	agent := h.addConnectedAgent(t, "pool-e2e-agent-paid", dockerAMD64)
 	h.markIdle()
@@ -35,6 +37,8 @@ func TestHourlyBillingKeepsPaidCapacity(t *testing.T) {
 // TestDrainedAgentInFreshPaidHourStaysWarm checks that a drained hourly agent
 // that already entered a new paid hour is kept.
 func TestDrainedAgentInFreshPaidHourStaysWarm(t *testing.T) {
+	t.Parallel()
+
 	h := newHarness(t, hourlyConfig(), dockerAMD64)
 	agent := h.addConnectedAgent(t, "pool-e2e-agent-drained", dockerAMD64)
 	agent.NoSchedule = true
@@ -50,6 +54,8 @@ func TestDrainedAgentInFreshPaidHourStaysWarm(t *testing.T) {
 // TestHourlyTeardownWindows checks that the teardown window repeats every hour
 // and that unknown creation times are handled conservatively.
 func TestHourlyTeardownWindows(t *testing.T) {
+	t.Parallel()
+
 	for _, test := range []struct {
 		name                 string
 		age                  time.Duration
@@ -65,6 +71,8 @@ func TestHourlyTeardownWindows(t *testing.T) {
 		{name: "window covering an entire hour", age: 30 * time.Minute, margin: time.Hour, wantRemoved: true},
 	} {
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
 			cfg := hourlyConfig()
 			if test.margin != 0 {
 				cfg.AgentBillingTeardownMargin = test.margin
@@ -95,6 +103,8 @@ func TestHourlyTeardownWindows(t *testing.T) {
 // TestBusyHourlyAgentSurvivesMissedWindow checks that work running through a
 // teardown window buys the agent the next paid hour.
 func TestBusyHourlyAgentSurvivesMissedWindow(t *testing.T) {
+	t.Parallel()
+
 	h := newHarness(t, hourlyConfig(), dockerAMD64)
 	agent := h.addConnectedAgent(t, "pool-e2e-agent-busy", dockerAMD64)
 	agent.NoSchedule = true
@@ -124,6 +134,8 @@ func TestBusyHourlyAgentSurvivesMissedWindow(t *testing.T) {
 // TestPerSecondAgentsWaitForIdleTimeout checks that per-second agents are only
 // removed after AgentIdleTimeout, whether or not they already drain.
 func TestPerSecondAgentsWaitForIdleTimeout(t *testing.T) {
+	t.Parallel()
+
 	for _, test := range []struct {
 		name     string
 		draining bool
@@ -132,6 +144,8 @@ func TestPerSecondAgentsWaitForIdleTimeout(t *testing.T) {
 		{name: "already draining", draining: true},
 	} {
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
 			h := newHarness(t, testConfig(0, 1), dockerAMD64)
 			agent := h.addConnectedAgent(t, "pool-e2e-agent-recent", dockerAMD64)
 			agent.NoSchedule = test.draining

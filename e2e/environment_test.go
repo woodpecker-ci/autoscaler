@@ -23,7 +23,9 @@ var (
 
 // harness wires the real engine.Autoscaler to in-memory fakes of the provider
 // and the woodpecker server, so tests can drive whole reconcile cycles through
-// the public API and assert on the resulting pool.
+// the public API and assert on the resulting pool. A harness is not safe for
+// concurrent use: subtests that continue on a parent's harness must not call
+// t.Parallel.
 type harness struct {
 	config     *config.Config
 	autoscaler *engine.Autoscaler

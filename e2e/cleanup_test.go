@@ -13,6 +13,8 @@ import (
 // TestUnavailableCapabilityAgentIsRetired checks that an idle agent whose
 // capability the provider no longer offers is removed.
 func TestUnavailableCapabilityAgentIsRetired(t *testing.T) {
+	t.Parallel()
+
 	h := newHarness(t, testConfig(0, 2), dockerAMD64)
 	h.addConnectedAgent(t, "pool-e2e-agent-drifted", dockerARM64)
 
@@ -25,6 +27,8 @@ func TestUnavailableCapabilityAgentIsRetired(t *testing.T) {
 // TestNeverConnectedAgentIsReaped checks that an agent which never contacted
 // the server is removed after AgentInactivityTimeout.
 func TestNeverConnectedAgentIsReaped(t *testing.T) {
+	t.Parallel()
+
 	cfg := testConfig(0, 2)
 	cfg.AgentInactivityTimeout = time.Minute
 	h := newHarness(t, cfg, dockerAMD64)
@@ -45,6 +49,8 @@ func TestNeverConnectedAgentIsReaped(t *testing.T) {
 // TestSilentAgentIsReaped checks that a connected agent that stopped reporting
 // is removed, even below MinAgents.
 func TestSilentAgentIsReaped(t *testing.T) {
+	t.Parallel()
+
 	cfg := testConfig(1, 1)
 	cfg.AgentInactivityTimeout = time.Minute
 	h := newHarness(t, cfg, dockerAMD64)
@@ -61,6 +67,8 @@ func TestSilentAgentIsReaped(t *testing.T) {
 // TestProviderServerDriftIsReconciled checks that agents known to only one of
 // provider or server are cleaned up on both sides.
 func TestProviderServerDriftIsReconciled(t *testing.T) {
+	t.Parallel()
+
 	h := newHarness(t, testConfig(0, 3), dockerAMD64)
 	h.provider.deployed["pool-e2e-agent-provider-only"] = dockerAMD64
 
@@ -81,6 +89,8 @@ func TestProviderServerDriftIsReconciled(t *testing.T) {
 // TestCleanupLeavesForeignAgentsUntouched checks that agents of other pools or
 // outside any pool are never modified.
 func TestCleanupLeavesForeignAgentsUntouched(t *testing.T) {
+	t.Parallel()
+
 	h := newHarness(t, testConfig(0, 1), dockerAMD64)
 	for _, name := range []string{"pool-e2e-other-agent-1", "pool-other-agent-1", "ordinary-agent", "prefix-pool-e2e-agent-1"} {
 		_, err := h.woodpecker.AgentCreate(&woodpecker.Agent{Name: name})
@@ -102,6 +112,8 @@ func TestCleanupLeavesForeignAgentsUntouched(t *testing.T) {
 // TestCleanupRetainsInFlightWork checks that stale or unavailable agents are
 // kept while they run work and removed once it completes.
 func TestCleanupRetainsInFlightWork(t *testing.T) {
+	t.Parallel()
+
 	for _, test := range []struct {
 		name       string
 		capability types.Capability
@@ -111,6 +123,8 @@ func TestCleanupRetainsInFlightWork(t *testing.T) {
 		{name: "unavailable capability", capability: dockerARM64},
 	} {
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
 			h := newHarness(t, testConfig(0, 2), dockerAMD64)
 			agent := h.addConnectedAgent(t, "pool-e2e-agent-busy", test.capability)
 			if test.stale {
