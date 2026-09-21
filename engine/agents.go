@@ -10,6 +10,7 @@ import (
 
 	"go.woodpecker-ci.org/autoscaler/engine/types"
 	"go.woodpecker-ci.org/autoscaler/utils"
+	shared_utils "go.woodpecker-ci.org/woodpecker/v3/shared/utils"
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
 
@@ -22,9 +23,15 @@ import (
 func (a *Autoscaler) loadAgents(_ context.Context) error {
 	a.agents = make(map[string]*woodpecker.Agent)
 
-	agents, err := a.client.AgentList()
+	// The server caps a page at 50 agents and orders them by id, so a single
+	// request hides the agents deployed most recently -- walk every page.
+	agents, err := shared_utils.Paginate(func(page int) ([]*woodpecker.Agent, error) {
+		return a.client.AgentListWithOpts(woodpecker.AgentListOptions{
+			ListOptions: woodpecker.ListOptions{Page: page},
+		})
+	}, 0)
 	if err != nil {
-		return fmt.Errorf("client.AgentList: %w", err)
+		return fmt.Errorf("client.AgentListWithOpts: %w", err)
 	}
 
 	prefix := fmt.Sprintf("pool-%s-agent-", a.config.PoolID)

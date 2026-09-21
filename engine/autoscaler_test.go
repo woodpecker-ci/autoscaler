@@ -1,12 +1,14 @@
 package engine
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 
 	"go.woodpecker-ci.org/autoscaler/config"
 	"go.woodpecker-ci.org/autoscaler/engine/types"
@@ -407,10 +409,41 @@ func Test_createAgents(t *testing.T) {
 	})
 }
 
+func Test_loadAgents(t *testing.T) {
+	t.Run("should load every page of the agent list", func(t *testing.T) {
+		client := mocks_server.NewMockClient(t)
+		autoscaler := Autoscaler{
+			config: &config.Config{PoolID: "1"},
+			client: client,
+		}
+
+		// The server caps a page at 50 agents, so the agents deployed most
+		// recently only show up on the second page.
+		firstPage := make([]*woodpecker.Agent, 0, 50)
+		for i := 1; i <= 50; i++ {
+			firstPage = append(firstPage, &woodpecker.Agent{ID: int64(i), Name: fmt.Sprintf("pool-1-agent-%d", i)})
+		}
+		secondPage := []*woodpecker.Agent{
+			{ID: 51, Name: "pool-1-agent-51"},
+			{ID: 52, Name: "pool-2-agent-52"},
+		}
+
+		client.On("AgentListWithOpts", woodpecker.AgentListOptions{ListOptions: woodpecker.ListOptions{Page: 1}}).Return(firstPage, nil)
+		client.On("AgentListWithOpts", woodpecker.AgentListOptions{ListOptions: woodpecker.ListOptions{Page: 2}}).Return(secondPage, nil)
+
+		assert.NoError(t, autoscaler.loadAgents(t.Context()))
+		// 50 from the first page plus the one agent of this pool on the second,
+		// the agent of the other pool filtered out.
+		require.Len(t, autoscaler.agents, 51)
+		assert.Contains(t, autoscaler.agents, "pool-1-agent-51")
+		assert.NotContains(t, autoscaler.agents, "pool-2-agent-52")
+	})
+}
+
 func Test_loadAgents_attributesPendingDeploys(t *testing.T) {
 	zerolog.SetGlobalLevel(zerolog.ErrorLevel)
 	client := mocks_server.NewMockClient(t)
-	client.On("AgentList").Return([]*woodpecker.Agent{
+	client.On("AgentListWithOpts", woodpecker.AgentListOptions{ListOptions: woodpecker.ListOptions{Page: 1}}).Return([]*woodpecker.Agent{
 		// still booting: registered but never connected, reports no identity
 		{ID: 1, Name: "pool-1-agent-boot", Created: time.Now().Unix()},
 		// connected since last cycle: self-reported identity wins
@@ -418,6 +451,7 @@ func Test_loadAgents_attributesPendingDeploys(t *testing.T) {
 		// booting longer than the creation timeout: a stuck boot
 		{ID: 3, Name: "pool-1-agent-stuck", Created: time.Now().Add(-2 * time.Minute).Unix()},
 	}, nil)
+	client.On("AgentListWithOpts", woodpecker.AgentListOptions{ListOptions: woodpecker.ListOptions{Page: 2}}).Return([]*woodpecker.Agent{}, nil)
 
 	autoscaler := Autoscaler{
 		client: client,

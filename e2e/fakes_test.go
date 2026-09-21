@@ -117,6 +117,18 @@ func (s *fakeWoodpecker) AgentList() ([]*woodpecker.Agent, error) {
 	return agents, nil
 }
 
+// AgentListWithOpts pages the agents like the server does: 50 per page,
+// ordered by id.
+func (s *fakeWoodpecker) AgentListWithOpts(opt woodpecker.AgentListOptions) ([]*woodpecker.Agent, error) {
+	const perPage = 50
+	agents, err := s.AgentList()
+	if err != nil {
+		return nil, err
+	}
+	start := min(max(opt.Page-1, 0)*perPage, len(agents))
+	return agents[start:min(start+perPage, len(agents))], nil
+}
+
 func (s *fakeWoodpecker) AgentCreate(agent *woodpecker.Agent) (*woodpecker.Agent, error) {
 	if s.createErr != nil {
 		return nil, s.createErr
