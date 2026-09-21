@@ -1,6 +1,6 @@
 # Changelog
 
-## [2.0.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.0) - 2026-09-19
+## [2.0.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.0) - 2026-09-21
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -40,6 +40,7 @@
 
 ### 📦️ Dependency
 
+- Update module github.com/urfave/cli/v3 to v3.13.0 [[#742](https://github.com/woodpecker-ci/autoscaler/pull/742)]
 - Update golang deps non-major [[#741](https://github.com/woodpecker-ci/autoscaler/pull/741)]
 - Update module github.com/aws/aws-sdk-go-v2/service/ec2 to v1.334.0 [[#740](https://github.com/woodpecker-ci/autoscaler/pull/740)]
 - Update golang deps non-major [[#732](https://github.com/woodpecker-ci/autoscaler/pull/732)]
