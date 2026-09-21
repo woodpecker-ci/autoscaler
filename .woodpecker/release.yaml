@@ -35,7 +35,6 @@ steps:
     image: *buildx_plugin
     settings:
       <<: *buildx_settings
-      platforms: linux/amd64
       tag: pull_${CI_COMMIT_PULL_REQUEST}
       username: woodpeckerbot
       password:
