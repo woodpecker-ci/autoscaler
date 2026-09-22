@@ -3,6 +3,8 @@ when:
   - event: push
     branch:
       - ${CI_REPO_DEFAULT_BRANCH}
+  - event: pull_request_metadata
+    evaluate: 'CI_COMMIT_PULL_REQUEST_LABELS contains "build_pr_images"'
 
 variables:
   - &buildx_plugin 'docker.io/woodpeckerci/plugin-docker-buildx:6.1.1'
@@ -27,6 +29,19 @@ steps:
       tag: test
     when:
       - event: pull_request
+        evaluate: 'not (CI_COMMIT_PULL_REQUEST_LABELS contains "build_pr_images")'
+
+  - name: publish-preview
+    image: *buildx_plugin
+    settings:
+      <<: *buildx_settings
+      tag: pull_${CI_COMMIT_PULL_REQUEST}
+      username: woodpeckerbot
+      password:
+        from_secret: docker_password
+    when:
+      - event: [pull_request, pull_request_metadata]
+        evaluate: 'CI_COMMIT_PULL_REQUEST_LABELS contains "build_pr_images"'
 
   - name: publish-next
     image: *buildx_plugin
