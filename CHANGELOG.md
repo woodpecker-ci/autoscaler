@@ -1,6 +1,6 @@
 # Changelog
 
-## [2.0.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.0) - 2026-09-21
+## [2.0.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.0) - 2026-09-22
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -59,6 +59,7 @@
 
 ### Misc
 
+- ci: publish preview image for labeled pull requests [[#743](https://github.com/woodpecker-ci/autoscaler/pull/743)]
 - Add flake.nix for dev environment [[#672](https://github.com/woodpecker-ci/autoscaler/pull/672)]
 
 ## [1.5.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/1.5.0) - 2026-05-19
