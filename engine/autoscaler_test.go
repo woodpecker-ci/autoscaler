@@ -1,12 +1,14 @@
 package engine
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 
 	"go.woodpecker-ci.org/autoscaler/config"
 	"go.woodpecker-ci.org/autoscaler/engine/types"
@@ -153,6 +155,38 @@ func Test_getQueueInfo(t *testing.T) {
 		assert.Equal(t, 0, free)
 		assert.Equal(t, 0, running)
 		assert.Equal(t, 2, pending)
+	})
+}
+
+func Test_loadAgents(t *testing.T) {
+	t.Run("should load every page of the agent list", func(t *testing.T) {
+		ctx := t.Context()
+		client := mocks_server.NewMockClient(t)
+		autoscaler := Autoscaler{
+			config: &config.Config{PoolID: "1"},
+			client: client,
+		}
+
+		// The server caps a page at 50 agents, so the agents deployed most
+		// recently only show up on the second page.
+		firstPage := make([]*woodpecker.Agent, 0, 50)
+		for i := 1; i <= 50; i++ {
+			firstPage = append(firstPage, &woodpecker.Agent{ID: int64(i), Name: fmt.Sprintf("pool-1-agent-%d", i)})
+		}
+		secondPage := []*woodpecker.Agent{
+			{ID: 51, Name: "pool-1-agent-51"},
+			{ID: 52, Name: "pool-2-agent-52"},
+		}
+
+		client.On("AgentListWithOpts", woodpecker.AgentListOptions{ListOptions: woodpecker.ListOptions{Page: 1}}).Return(firstPage, nil)
+		client.On("AgentListWithOpts", woodpecker.AgentListOptions{ListOptions: woodpecker.ListOptions{Page: 2}}).Return(secondPage, nil)
+
+		err := autoscaler.loadAgents(ctx)
+		assert.NoError(t, err)
+		// 50 from the first page plus the one agent of this pool on the second,
+		// the agent of the other pool filtered out.
+		require.Len(t, autoscaler.agents, 51)
+		assert.Equal(t, "pool-1-agent-51", autoscaler.agents[50].Name)
 	})
 }
 
