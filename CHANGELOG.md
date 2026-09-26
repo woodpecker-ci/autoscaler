@@ -41,6 +41,7 @@
 
 ### 📦️ Dependency
 
+- Update go.woodpecker-ci.org/woodpecker/v3 digest to 3060df0 [[#752](https://github.com/woodpecker-ci/autoscaler/pull/752)]
 - Update go.woodpecker-ci.org/woodpecker/v3 digest to 304f184 [[#749](https://github.com/woodpecker-ci/autoscaler/pull/749)]
 - Update pre-commit hook golangci/golangci-lint to v2.14.0 [[#750](https://github.com/woodpecker-ci/autoscaler/pull/750)]
 - Update dependency golangci/golangci-lint to v2.14.0 [[#748](https://github.com/woodpecker-ci/autoscaler/pull/748)]
