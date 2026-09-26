@@ -7,7 +7,7 @@ when:
     evaluate: 'CI_COMMIT_PULL_REQUEST_LABELS contains "build_pr_images"'
 
 variables:
-  - &buildx_plugin 'docker.io/woodpeckerci/plugin-docker-buildx:6.1.1'
+  - &buildx_plugin 'docker.io/woodpeckerci/plugin-docker-buildx:6.1.2'
   - &buildx_settings
     buildkit_oci_max_parallelism: 1
     dockerfile: docker/Dockerfile
