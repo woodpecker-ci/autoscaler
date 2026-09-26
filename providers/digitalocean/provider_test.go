@@ -220,7 +220,7 @@ func TestDeployAgentCreatesDroplet(t *testing.T) {
 	err = p.DeployAgent(t.Context(), &woodpecker.Agent{
 		Name:  "pool-1-agent-1",
 		Token: "secret",
-	})
+	}, types.Capability{Platform: "linux/amd64", Backend: types.BackendDocker})
 	require.NoError(t, err)
 
 	assert.Equal(t, "pool-1-agent-1", created.Name)
@@ -256,7 +256,7 @@ func TestDeployAgentWithoutIPv6(t *testing.T) {
 	p, err := newWithClient(t.Context(), cmd, &config.Config{PoolID: "pool-1"}, newTestClient(t, api))
 	require.NoError(t, err)
 
-	require.NoError(t, p.DeployAgent(t.Context(), &woodpecker.Agent{Name: "pool-1-agent-1"}))
+	require.NoError(t, p.DeployAgent(t.Context(), &woodpecker.Agent{Name: "pool-1-agent-1"}, types.Capability{Platform: "linux/amd64", Backend: types.BackendDocker}))
 
 	assert.False(t, created.IPv6)
 	assert.Nil(t, created.PublicNetworking, "public_networking must be omitted when the public interface is enabled")
@@ -293,7 +293,7 @@ func TestDeployAgentPrivateDroplet(t *testing.T) {
 	p, err := newWithClient(t.Context(), cmd, &config.Config{PoolID: "pool-1"}, newTestClient(t, api))
 	require.NoError(t, err)
 
-	require.NoError(t, p.DeployAgent(t.Context(), &woodpecker.Agent{Name: "pool-1-agent-1"}))
+	require.NoError(t, p.DeployAgent(t.Context(), &woodpecker.Agent{Name: "pool-1-agent-1"}, types.Capability{Platform: "linux/amd64", Backend: types.BackendDocker}))
 
 	assert.False(t, created.IPv6)
 	require.NotNil(t, created.PublicNetworking)
@@ -409,6 +409,24 @@ func TestRemoveAgentDeletesMatchingDroplet(t *testing.T) {
 	err := p.RemoveAgent(t.Context(), &woodpecker.Agent{Name: "pool-1-agent-1"})
 	require.NoError(t, err)
 	assert.Equal(t, []int{99}, deleted)
+}
+
+func TestCapabilities(t *testing.T) {
+	p := &provider{name: "digitalocean"}
+
+	caps, err := p.Capabilities(t.Context())
+	require.NoError(t, err)
+	assert.Equal(t, []types.Capability{{Platform: "linux/amd64", Backend: types.BackendDocker}}, caps)
+}
+
+func TestDeployAgentRejectsUnsupportedCapability(t *testing.T) {
+	p := &provider{name: "digitalocean"}
+
+	err := p.DeployAgent(t.Context(), &woodpecker.Agent{Name: "agent-1"}, types.Capability{Platform: "linux/arm64", Backend: types.BackendDocker})
+	require.ErrorContains(t, err, "linux/amd64")
+
+	err = p.DeployAgent(t.Context(), &woodpecker.Agent{Name: "agent-1"}, types.Capability{Platform: "linux/amd64", Backend: types.BackendKubernetes})
+	require.ErrorContains(t, err, "docker")
 }
 
 func TestSanitizeTagPart(t *testing.T) {
