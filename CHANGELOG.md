@@ -1,6 +1,6 @@
 # Changelog
 
-## [2.0.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.0) - 2026-09-23
+## [2.0.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.0) - 2026-09-26
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -41,6 +41,7 @@
 
 ### 📦️ Dependency
 
+- Update docker.io/woodpeckerci/plugin-docker-buildx Docker tag to v6.1.2 [[#745](https://github.com/woodpecker-ci/autoscaler/pull/745)]
 - Update golang deps non-major [[#744](https://github.com/woodpecker-ci/autoscaler/pull/744)]
 - Update module github.com/urfave/cli/v3 to v3.13.0 [[#742](https://github.com/woodpecker-ci/autoscaler/pull/742)]
 - Update golang deps non-major [[#741](https://github.com/woodpecker-ci/autoscaler/pull/741)]
