@@ -41,6 +41,7 @@
 
 ### 📦️ Dependency
 
+- Update dependency golangci/golangci-lint to v2.14.0 [[#748](https://github.com/woodpecker-ci/autoscaler/pull/748)]
 - Update go.woodpecker-ci.org/woodpecker/v3 digest to ee905d8 [[#747](https://github.com/woodpecker-ci/autoscaler/pull/747)]
 - Update docker.io/woodpeckerci/plugin-editorconfig-checker Docker tag to v0.3.4 [[#746](https://github.com/woodpecker-ci/autoscaler/pull/746)]
 - Update docker.io/woodpeckerci/plugin-docker-buildx Docker tag to v6.1.2 [[#745](https://github.com/woodpecker-ci/autoscaler/pull/745)]
