@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -679,9 +680,57 @@ func Test_removeDrainedAgents_hourlyRoundUp(t *testing.T) {
 		err := autoscaler.removeDrainedAgents(ctx)
 		assert.NoError(t, err)
 	})
+}
 
-	t.Run("keeps a drained agent that rolled into a fresh paid hour", func(t *testing.T) {
-		ctx := t.Context()
+func Test_removeDrainedAgents_hourlyRollover(t *testing.T) {
+	zerolog.SetGlobalLevel(zerolog.ErrorLevel)
+	now := time.Now()
+	cfg := func() *config.Config {
+		return &config.Config{
+			BillingModel:               types.BillingHourlyRoundUp,
+			AgentBillingTeardownMargin: 2 * time.Minute,
+			ReconciliationInterval:     time.Minute,
+		}
+	}
+
+	for _, tc := range []struct {
+		name    string
+		created int64
+	}{
+		{name: "missing creation time"},
+		{name: "future creation time", created: now.Add(5 * time.Minute).Unix()},
+		{name: "first paid hour", created: now.Add(-5 * time.Minute).Unix()},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			client := mocks_server.NewMockClient(t)
+			provider := mocks_provider.NewMockProvider(t)
+			agent := &woodpecker.Agent{ID: 2, NoSchedule: true, Created: tc.created}
+			autoscaler := Autoscaler{
+				agents: []*woodpecker.Agent{agent}, client: client, provider: provider, config: cfg(),
+			}
+
+			require.NoError(t, autoscaler.removeDrainedAgents(t.Context()))
+			assert.True(t, agent.NoSchedule)
+		})
+	}
+
+	t.Run("preserves the drained state when reactivation fails", func(t *testing.T) {
+		client := mocks_server.NewMockClient(t)
+		provider := mocks_provider.NewMockProvider(t)
+		agent := &woodpecker.Agent{ID: 2, NoSchedule: true, Created: now.Add(-65 * time.Minute).Unix()}
+		autoscaler := Autoscaler{
+			agents: []*woodpecker.Agent{agent}, client: client, provider: provider, config: cfg(),
+		}
+		updateErr := errors.New("agent update unavailable")
+		client.On("AgentUpdate", mock.MatchedBy(func(updated *woodpecker.Agent) bool {
+			return updated.ID == agent.ID && !updated.NoSchedule
+		})).Return(nil, updateErr).Once()
+
+		assert.ErrorIs(t, autoscaler.removeDrainedAgents(t.Context()), updateErr)
+		assert.True(t, agent.NoSchedule)
+	})
+
+	t.Run("reactivates a drained agent that rolled into a fresh paid hour", func(t *testing.T) {
 		client := mocks_server.NewMockClient(t)
 		provider := mocks_provider.NewMockProvider(t)
 		autoscaler := Autoscaler{
@@ -694,9 +743,110 @@ func Test_removeDrainedAgents_hourlyRoundUp(t *testing.T) {
 			config:   cfg(),
 		}
 
-		err := autoscaler.removeDrainedAgents(ctx)
+		client.On("AgentUpdate", mock.MatchedBy(func(agent *woodpecker.Agent) bool {
+			return agent.ID == 2 && !agent.NoSchedule
+		})).Return(nil, nil)
+
+		err := autoscaler.removeDrainedAgents(t.Context())
 		assert.NoError(t, err)
+		assert.False(t, autoscaler.agents[0].NoSchedule)
 	})
+
+	t.Run("keeps a running job and reactivates its agent after the boundary", func(t *testing.T) {
+		ctx := t.Context()
+		client := mocks_server.NewMockClient(t)
+		provider := mocks_provider.NewMockProvider(t)
+		agent := &woodpecker.Agent{
+			ID: 2, Name: "pool-1-agent-2", NoSchedule: true,
+			Created: now.Add(-58 * time.Minute).Unix(), LastContact: now.Unix(),
+		}
+		autoscaler := Autoscaler{
+			agents:   []*woodpecker.Agent{agent},
+			provider: provider,
+			client:   client,
+			config:   cfg(),
+		}
+
+		client.On("AgentTasksList", int64(2)).Return([]*woodpecker.Task{{ID: "running"}}, nil).Once()
+		assert.NoError(t, autoscaler.removeDrainedAgents(ctx))
+		assert.True(t, agent.NoSchedule)
+
+		agent.Created = now.Add(-65 * time.Minute).Unix()
+		client.On("AgentUpdate", mock.MatchedBy(func(updated *woodpecker.Agent) bool {
+			return updated.ID == agent.ID && !updated.NoSchedule
+		})).Return(nil, nil).Once()
+		assert.NoError(t, autoscaler.removeDrainedAgents(t.Context()))
+		assert.False(t, agent.NoSchedule)
+		// A schedulable agent stays warm without another update or deletion.
+		require.NoError(t, autoscaler.removeDrainedAgents(ctx))
+
+		// Once idle in the next teardown window, it can drain and be removed.
+		agent.Created = now.Add(-118 * time.Minute).Unix()
+		client.On("AgentUpdate", mock.MatchedBy(func(updated *woodpecker.Agent) bool {
+			return updated.ID == agent.ID && updated.NoSchedule
+		})).Return(nil, nil).Once()
+		require.NoError(t, autoscaler.drainAgents(ctx, 1))
+		client.On("AgentTasksList", int64(2)).Return(nil, nil).Once()
+		provider.On("RemoveAgent", mock.Anything, agent).Return(nil).Once()
+		client.On("AgentDelete", int64(2)).Return(nil).Once()
+		require.NoError(t, autoscaler.removeDrainedAgents(ctx))
+		assert.Empty(t, autoscaler.agents)
+	})
+}
+
+func Test_Reconcile_hourlyRollover(t *testing.T) {
+	for _, pending := range []int{0, 1, 2} {
+		t.Run(fmt.Sprintf("pending=%d", pending), func(t *testing.T) {
+			client := mocks_server.NewMockClient(t)
+			provider := mocks_provider.NewMockProvider(t)
+			agent := &woodpecker.Agent{
+				ID: 2, Name: "pool-1-agent-2", NoSchedule: true,
+				Created: time.Now().Add(-65 * time.Minute).Unix(), LastContact: time.Now().Unix(),
+			}
+			autoscaler := Autoscaler{
+				client: client, provider: provider,
+				config: &config.Config{
+					PoolID: "1", MaxAgents: 2, WorkflowsPerAgent: 1,
+					AgentInactivityTimeout:     15 * time.Minute,
+					BillingModel:               types.BillingHourlyRoundUp,
+					AgentBillingTeardownMargin: 2 * time.Minute, ReconciliationInterval: time.Minute,
+				},
+			}
+
+			client.On("AgentListWithOpts", woodpecker.AgentListOptions{
+				ListOptions: woodpecker.ListOptions{Page: 1},
+			}).Return([]*woodpecker.Agent{agent}, nil).Once()
+			client.On("AgentListWithOpts", woodpecker.AgentListOptions{
+				ListOptions: woodpecker.ListOptions{Page: 2},
+			}).Return(nil, nil).Once()
+			client.On("AgentUpdate", mock.MatchedBy(func(updated *woodpecker.Agent) bool {
+				return updated.ID == agent.ID && !updated.NoSchedule
+			})).Return(nil, nil).Once()
+			info := &woodpecker.Info{}
+			info.Stats.Pending = pending
+			// Clearing NoSchedule does not synchronously register a queue worker.
+			// The agent must poll again before Stats.Workers reflects its capacity.
+			client.On("QueueInfo").Return(info, nil).Once()
+			names := []string{agent.Name}
+			if pending == 2 {
+				additional := &woodpecker.Agent{
+					ID: 3, Name: "pool-1-agent-new", Created: time.Now().Unix(), LastContact: time.Now().Unix(),
+				}
+				client.On("AgentCreate", mock.Anything).Return(additional, nil).Once()
+				provider.On("DeployAgent", mock.Anything, additional).Return(nil).Once()
+				names = append(names, additional.Name)
+			}
+			provider.On("ListDeployedAgentNames", mock.Anything).Return(names, nil).Once()
+
+			require.NoError(t, autoscaler.Reconcile(t.Context()))
+			assert.False(t, agent.NoSchedule)
+			assert.Len(t, autoscaler.agents, len(names))
+			if pending < 2 {
+				client.AssertNotCalled(t, "AgentCreate", mock.Anything)
+				provider.AssertNotCalled(t, "DeployAgent", mock.Anything, mock.Anything)
+			}
+		})
+	}
 }
 
 func Test_isAgentIdle_hourlyRoundUp(t *testing.T) {
