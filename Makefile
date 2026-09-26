@@ -1,7 +1,7 @@
 # renovate: datasource=github-releases depName=mvdan/gofumpt
 GOFUMPT_VERSION := v0.12.0
 # renovate: datasource=github-releases depName=golangci/golangci-lint
-GOLANGCI_LINT_VERSION := v2.13.2
+GOLANGCI_LINT_VERSION := v2.14.0
 
 GO_PACKAGES ?= $(shell go list ./... | grep -v /vendor/)
 
