@@ -22,7 +22,7 @@ require (
 	github.com/stretchr/testify v1.12.1
 	github.com/urfave/cli/v3 v3.14.0
 	github.com/vultr/govultr/v3 v3.33.1
-	go.woodpecker-ci.org/woodpecker/v3 v3.18.2-0.20261003105335-b6db02d32e53
+	go.woodpecker-ci.org/woodpecker/v3 v3.18.2-0.20261003210643-058ffaadbb91
 	golang.org/x/crypto v0.57.0
 	golang.org/x/net v0.59.0
 	golang.org/x/oauth2 v0.37.0
