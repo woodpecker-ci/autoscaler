@@ -107,8 +107,8 @@ github.com/vultr/govultr/v3 v3.33.1 h1:LN/WO0im0urbBQDrh7/jJ7gwSVtXQuZz7QLSJDJ/4
 github.com/vultr/govultr/v3 v3.33.1/go.mod h1:2zyUw9yADQaGwKnwDesmIOlBNLrm7edsCfWHFJpWKf8=
 go.uber.org/goleak v1.3.0 h1:2K3zAYmnTNqV73imy9J1T3WC+gmCePx2hEGkimedGto=
 go.uber.org/goleak v1.3.0/go.mod h1:CoHD4mav9JJNrW/WLlf7HGZPjdw8EucARQHekz1X6bE=
-go.woodpecker-ci.org/woodpecker/v3 v3.18.2-0.20261003054327-6d1fd18cd2de h1:6Gemkp37qVM8iALxlRgJFwytRXHGM5AP8TaNfAeItZ0=
-go.woodpecker-ci.org/woodpecker/v3 v3.18.2-0.20261003054327-6d1fd18cd2de/go.mod h1:VXlVJhkurZFG9zfzDP/GAuQOmL6s9gPsbA1tqXNHYXI=
+go.woodpecker-ci.org/woodpecker/v3 v3.18.2-0.20261003105335-b6db02d32e53 h1:TrfHzQapAXuYFjH6jqprsuXV51uAKBZhpIfV55ahnYU=
+go.woodpecker-ci.org/woodpecker/v3 v3.18.2-0.20261003105335-b6db02d32e53/go.mod h1:VXlVJhkurZFG9zfzDP/GAuQOmL6s9gPsbA1tqXNHYXI=
 go.yaml.in/yaml/v2 v2.4.4 h1:tuyd0P+2Ont/d6e2rl3be67goVK4R6deVxCUX5vyPaQ=
 go.yaml.in/yaml/v2 v2.4.4/go.mod h1:gMZqIpDtDqOfM0uNfy0SkpRhvUryYH0Z6wdMYcacYXQ=
 go.yaml.in/yaml/v3 v3.0.5 h1:N6y/pJk8buWs9NY5ERU2HSMfm+IuD/OtfdAnq6kESPw=
