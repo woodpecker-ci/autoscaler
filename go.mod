@@ -14,14 +14,14 @@ require (
 	github.com/digitalocean/godo v1.217.0
 	github.com/docker/go-units v0.5.0
 	github.com/gophercloud/gophercloud/v2 v2.15.0
-	github.com/hetznercloud/hcloud-go/v2 v2.49.0
+	github.com/hetznercloud/hcloud-go/v2 v2.50.0
 	github.com/joho/godotenv v1.5.1
 	github.com/linode/linodego/v2 v2.8.0
 	github.com/rs/zerolog v1.35.1
 	github.com/scaleway/scaleway-sdk-go v1.0.0-beta.37
 	github.com/stretchr/testify v1.12.1
 	github.com/urfave/cli/v3 v3.14.0
-	github.com/vultr/govultr/v3 v3.33.0
+	github.com/vultr/govultr/v3 v3.33.1
 	go.woodpecker-ci.org/woodpecker/v3 v3.18.2-0.20261003005217-9fd84739dbf3
 	golang.org/x/crypto v0.57.0
 	golang.org/x/net v0.59.0
