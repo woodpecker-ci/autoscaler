@@ -41,6 +41,7 @@
 
 ### 📦️ Dependency
 
+- Update go.woodpecker-ci.org/woodpecker/v3 digest to 058ffaa [[#762](https://github.com/woodpecker-ci/autoscaler/pull/762)]
 - Update go.woodpecker-ci.org/woodpecker/v3 digest to b6db02d [[#761](https://github.com/woodpecker-ci/autoscaler/pull/761)]
 - Update go.woodpecker-ci.org/woodpecker/v3 digest to 6d1fd18 [[#760](https://github.com/woodpecker-ci/autoscaler/pull/760)]
 - Update golang deps non-major [[#759](https://github.com/woodpecker-ci/autoscaler/pull/759)]
