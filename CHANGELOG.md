@@ -41,6 +41,7 @@
 
 ### 📦️ Dependency
 
+- Update go.woodpecker-ci.org/woodpecker/v3 digest to 3c06a27 [[#764](https://github.com/woodpecker-ci/autoscaler/pull/764)]
 - Update go.woodpecker-ci.org/woodpecker/v3 digest to a083441 [[#763](https://github.com/woodpecker-ci/autoscaler/pull/763)]
 - Update go.woodpecker-ci.org/woodpecker/v3 digest to 058ffaa [[#762](https://github.com/woodpecker-ci/autoscaler/pull/762)]
 - Update go.woodpecker-ci.org/woodpecker/v3 digest to b6db02d [[#761](https://github.com/woodpecker-ci/autoscaler/pull/761)]
