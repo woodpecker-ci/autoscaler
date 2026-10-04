@@ -1,6 +1,6 @@
 # Changelog
 
-## [2.0.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.0) - 2026-10-03
+## [2.0.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.0) - 2026-10-04
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -41,6 +41,7 @@
 
 ### 📦️ Dependency
 
+- Update go.woodpecker-ci.org/woodpecker/v3 digest to a083441 [[#763](https://github.com/woodpecker-ci/autoscaler/pull/763)]
 - Update go.woodpecker-ci.org/woodpecker/v3 digest to 058ffaa [[#762](https://github.com/woodpecker-ci/autoscaler/pull/762)]
 - Update go.woodpecker-ci.org/woodpecker/v3 digest to b6db02d [[#761](https://github.com/woodpecker-ci/autoscaler/pull/761)]
 - Update go.woodpecker-ci.org/woodpecker/v3 digest to 6d1fd18 [[#760](https://github.com/woodpecker-ci/autoscaler/pull/760)]
