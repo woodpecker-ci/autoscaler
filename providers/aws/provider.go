@@ -338,6 +338,9 @@ func (p *provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) err
 	if err != nil {
 		return err
 	}
+	if instance == nil {
+		return nil
+	}
 
 	_, err = p.client.TerminateInstances(ctx, &ec2.TerminateInstancesInput{
 		InstanceIds: []string{*instance.InstanceId},

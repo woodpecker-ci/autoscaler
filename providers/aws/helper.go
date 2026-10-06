@@ -281,7 +281,8 @@ func (p *provider) getAgent(ctx context.Context, agent *woodpecker.Agent) (*ec2_
 			return &instances[0], region, nil
 		}
 	}
-	return nil, "", fmt.Errorf("no instance with tag:Name=%s in any deploy region", agent.Name)
+	// already gone
+	return nil, "", nil
 }
 
 // capacityErrorCodes are the RunInstances error codes that mean the requested

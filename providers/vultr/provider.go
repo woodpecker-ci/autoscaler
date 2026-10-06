@@ -85,11 +85,12 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 		return nil, fmt.Errorf("%s: %w", p.name, err)
 	}
 
-	if _, err := utils.SliceToMap(userLabels, "="); err != nil {
+	labels, err := utils.SliceToMap(userLabels, "=")
+	if err != nil {
 		return nil, fmt.Errorf("%s: %w", p.name, err)
 	}
 
-	p.labels = utils.MergeMaps(defaultLabels, p.labels)
+	p.labels = utils.MergeMaps(labels, defaultLabels)
 
 	return p, nil
 }

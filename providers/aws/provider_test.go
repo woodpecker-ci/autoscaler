@@ -269,3 +269,13 @@ func TestRemoveAgentSkipsOSShutdown(t *testing.T) {
 	p.regions = []string{"eu-central-1"}
 	assert.NoError(t, p.RemoveAgent(t.Context(), agent))
 }
+
+func TestRemoveAgentIgnoresMissingInstance(t *testing.T) {
+	client := mocks.NewMockClient(t)
+	client.On("DescribeInstances", mock.Anything, mock.Anything, mock.Anything).
+		Return(&ec2.DescribeInstancesOutput{}, nil).Once()
+
+	p := newTestProvider(client)
+	p.regions = []string{"eu-central-1"}
+	assert.NoError(t, p.RemoveAgent(t.Context(), &woodpecker.Agent{Name: "pool-1-agent-gone"}))
+}

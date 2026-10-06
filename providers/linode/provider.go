@@ -162,6 +162,11 @@ func (p *provider) getAgent(ctx context.Context, agent *woodpecker.Agent) (*lino
 		return nil, fmt.Errorf("%s: ListInstances %w", p.name, err)
 	}
 
+	// already gone
+	if len(server) == 0 {
+		return nil, nil
+	}
+
 	return &server[0], nil
 }
 
