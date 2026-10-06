@@ -52,15 +52,7 @@ func (p *provider) resolveImage(ctx context.Context, image string) error {
 	if err != nil {
 		return fmt.Errorf("could not fetch images: %w", err)
 	}
-	var matches []govultr.OS
-	want := strings.ReplaceAll(strings.ToLower(image), " ", "")
-	for _, os := range ose {
-		got := strings.ReplaceAll(strings.ToLower(os.Name), " ", "")
-		if strings.HasPrefix(got, want) {
-			matches = append(matches, os)
-			log.Trace().Msgf("resolve image got match: %q", os.Name)
-		}
-	}
+	matches := matchImages(ose, image)
 
 	switch len(matches) {
 	case 0:
@@ -74,6 +66,24 @@ func (p *provider) resolveImage(ctx context.Context, image string) error {
 		log.Info().Msgf("image selector had %d matches, choose %q", len(matches), matches[0].Name)
 	}
 	return nil
+}
+
+// matchImages returns the x64 images whose name starts with the selector,
+// as DeployAgent only serves linux/amd64.
+func matchImages(ose []govultr.OS, image string) []govultr.OS {
+	var matches []govultr.OS
+	want := strings.ReplaceAll(strings.ToLower(image), " ", "")
+	for _, os := range ose {
+		if os.Arch != "x64" {
+			continue
+		}
+		got := strings.ReplaceAll(strings.ToLower(os.Name), " ", "")
+		if strings.HasPrefix(got, want) {
+			matches = append(matches, os)
+			log.Trace().Msgf("resolve image got match: %q", os.Name)
+		}
+	}
+	return matches
 }
 
 func (p *provider) printResolvedConfig() {
@@ -131,14 +141,4 @@ func (p *provider) setupKeyPair(ctx context.Context) error {
 	}
 
 	return ErrSSHKeyNotFound
-}
-
-// imageToGoArch maps architecture based on image to Go GOARCH strings.
-func imageToGoArch(i govultr.OS) string {
-	switch i.Arch {
-	case "x64":
-		return "amd64"
-	default:
-		return i.Arch
-	}
 }

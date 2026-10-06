@@ -228,7 +228,7 @@ func (p *provider) BillingModel() types.BillingModel {
 func (p *provider) Capabilities(_ context.Context) ([]types.Capability, error) {
 	// TODO: add native k8s and local backend (with FreeBSD) support
 	return []types.Capability{{
-		Platform: "linux/" + imageToGoArch(p.image),
+		Platform: "linux/amd64",
 		Backend:  types.BackendDocker,
 	}}, nil
 }
