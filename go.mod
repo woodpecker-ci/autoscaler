@@ -14,7 +14,7 @@ require (
 	github.com/digitalocean/godo v1.217.0
 	github.com/docker/go-units v0.5.0
 	github.com/gophercloud/gophercloud/v2 v2.15.0
-	github.com/hetznercloud/hcloud-go/v2 v2.50.0
+	github.com/hetznercloud/hcloud-go/v2 v2.52.0
 	github.com/joho/godotenv v1.5.1
 	github.com/linode/linodego/v2 v2.8.0
 	github.com/rs/zerolog v1.35.1
