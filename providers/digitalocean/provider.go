@@ -180,12 +180,10 @@ func (p *provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 		return nil, fmt.Errorf("%s: Droplets.ListByTag: %w", p.name, err)
 	}
 
+	// Report droplets in every state: a powered-off one left out here would
+	// lose its registration and then never be torn down.
 	names := make([]string, 0, len(droplets))
 	for _, droplet := range droplets {
-		if droplet.Status != "new" && droplet.Status != "active" {
-			continue
-		}
-
 		names = append(names, droplet.Name)
 	}
 

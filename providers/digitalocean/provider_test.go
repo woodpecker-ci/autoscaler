@@ -384,7 +384,7 @@ func TestListDeployedAgentNames(t *testing.T) {
 
 	names, err := p.ListDeployedAgentNames(t.Context())
 	require.NoError(t, err)
-	assert.Equal(t, []string{"pool-1-agent-1", "pool-1-agent-2"}, names)
+	assert.Equal(t, []string{"pool-1-agent-1", "pool-1-agent-2", "pool-1-agent-3"}, names)
 }
 
 func TestRemoveAgentDeletesMatchingDroplet(t *testing.T) {
