@@ -2,6 +2,7 @@ package engine
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/rs/zerolog/log"
@@ -89,7 +90,10 @@ func (a *Autoscaler) Reconcile(ctx context.Context) error {
 		Msg("queue snapshot")
 
 	// planScaling already logs the per-bucket plan at debug level — we
-	// just dispatch.
+	// just dispatch. A bucket that fails to scale (e.g. its capability is out
+	// of stock) must neither starve the other buckets nor skip the cleanup
+	// below, so its error is only reported once the cycle is through.
+	var scaleErr error
 	for _, d := range a.planScaling(queueInfo.Pending, queueInfo.Running) {
 		var err error
 		switch {
@@ -99,25 +103,25 @@ func (a *Autoscaler) Reconcile(ctx context.Context) error {
 			err = a.drainAgents(ctx, d.Bucket, -d.Delta)
 		}
 		if err != nil {
-			return fmt.Errorf("scaling bucket %s/%s: %w",
-				d.Bucket.Capability.Platform, d.Bucket.Capability.Backend, err)
+			scaleErr = errors.Join(scaleErr, fmt.Errorf("scaling bucket %s/%s: %w",
+				d.Bucket.Capability.Platform, d.Bucket.Capability.Backend, err))
 		}
 	}
 
 	// cleanup agents that are only present at the provider or woodpecker
 	if err := a.cleanupDanglingAgents(ctx); err != nil {
-		return fmt.Errorf("cleaning up dangling agents failed: %w", err)
+		return errors.Join(scaleErr, fmt.Errorf("cleaning up dangling agents failed: %w", err))
 	}
 
 	// cleanup agents that haven't contacted the server for a while
 	if err := a.cleanupStaleAgents(ctx); err != nil {
-		return fmt.Errorf("cleaning up stale agents failed: %w", err)
+		return errors.Join(scaleErr, fmt.Errorf("cleaning up stale agents failed: %w", err))
 	}
 
 	// remove agents that are drained
 	if err := a.removeDrainedAgents(ctx); err != nil {
-		return fmt.Errorf("removing drained agents failed: %w", err)
+		return errors.Join(scaleErr, fmt.Errorf("removing drained agents failed: %w", err))
 	}
 
-	return nil
+	return scaleErr
 }

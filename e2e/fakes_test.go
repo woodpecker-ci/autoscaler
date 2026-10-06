@@ -21,6 +21,7 @@ type fakeProvider struct {
 	capabilitiesErr   error
 	deployed          map[string]types.Capability
 	deployErr         error
+	deployErrFor      map[types.Capability]error
 	removeErr         error
 	listErr           error
 }
@@ -42,6 +43,9 @@ func (p *fakeProvider) Capabilities(context.Context) ([]types.Capability, error)
 func (p *fakeProvider) DeployAgent(_ context.Context, agent *woodpecker.Agent, capability types.Capability) error {
 	if p.deployErr != nil {
 		return p.deployErr
+	}
+	if err := p.deployErrFor[capability]; err != nil {
+		return err
 	}
 	p.deployed[agent.Name] = capability
 	return nil

@@ -114,6 +114,13 @@ func (a *Autoscaler) createAgents(ctx context.Context, bucket agentBucket, amoun
 			Msg("deploying agent")
 
 		if err := a.provider.DeployAgent(ctx, agent, bucket.Capability); err != nil {
+			// Do not leave the registration behind: it would hold a slot of
+			// the MaxAgents budget, and a machine the provider created anyway
+			// is torn down by cleanupDanglingAgents once the server no longer
+			// knows it.
+			if deleteErr := a.client.AgentDelete(agent.ID); deleteErr != nil {
+				return fmt.Errorf("types.DeployAgent: %w; client.AgentDelete: %w", err, deleteErr)
+			}
 			return fmt.Errorf("types.DeployAgent: %w", err)
 		}
 
@@ -181,6 +188,7 @@ func (a *Autoscaler) markAgentForDrain(agent *woodpecker.Agent) error {
 	log.Info().Str("agent", agent.Name).Msg("drain agent")
 	agent.NoSchedule = true
 	if _, err := a.client.AgentUpdate(agent); err != nil {
+		agent.NoSchedule = false
 		return fmt.Errorf("client.AgentUpdate: %w", err)
 	}
 	return nil

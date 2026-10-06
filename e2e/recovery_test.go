@@ -82,31 +82,50 @@ func TestRegistrationFailureRetriesDemand(t *testing.T) {
 	})
 }
 
-// TestFailedDeploymentIsDeregistered checks that a registration left behind by
-// a failed deployment is removed before the slot is reused.
+// TestFailedDeploymentIsDeregistered checks that a failed deployment leaves no
+// registration behind, however often it is retried.
 func TestFailedDeploymentIsDeregistered(t *testing.T) {
 	t.Parallel()
 
-	h := newHarness(t, testConfig(0, 1), dockerAMD64)
+	h := newHarness(t, testConfig(0, 3), dockerAMD64)
 	h.woodpecker.queue.Pending = []woodpecker.Task{realWorkflowTask("build", "linux/amd64")}
 	failure := errors.New("deployment failed")
 	h.provider.deployErr = failure
-	require.ErrorIs(t, h.autoscaler.Reconcile(t.Context()), failure)
-	require.Empty(t, h.provider.deployed)
-	require.Len(t, h.woodpecker.agents, 1)
+	for range 3 {
+		require.ErrorIs(t, h.autoscaler.Reconcile(t.Context()), failure)
+		require.Empty(t, h.provider.deployed)
+		require.Empty(t, h.woodpecker.agents)
+	}
 
-	t.Run("recovery removes the orphan registration", func(t *testing.T) {
+	t.Run("recovery", func(t *testing.T) {
 		h.provider.deployErr = nil
 		h.reconcile(t)
-		require.Empty(t, h.woodpecker.agents)
-		require.Empty(t, h.provider.deployed)
-
-		t.Run("next cycle deploys successfully", func(t *testing.T) {
-			h.reconcile(t)
-			require.Len(t, h.provider.deployed, 1)
-			require.Len(t, h.woodpecker.agents, 1)
-		})
+		require.Len(t, h.provider.deployed, 1)
+		require.Len(t, h.woodpecker.agents, 1)
 	})
+}
+
+// TestFailedDeploymentDoesNotBlockOtherWork checks that one capability failing
+// to deploy neither starves the other capability nor skips the cleanup.
+func TestFailedDeploymentDoesNotBlockOtherWork(t *testing.T) {
+	t.Parallel()
+
+	h := newHarness(t, testConfig(0, 3), dockerARM64, dockerAMD64)
+	drained := h.addConnectedAgent(t, "pool-e2e-agent-drained", dockerAMD64)
+	drained.NoSchedule = true
+	drained.CustomLabels = map[string]string{"old": "config"}
+	h.woodpecker.put(drained)
+	h.woodpecker.queue.Pending = []woodpecker.Task{
+		realWorkflowTask("arm", "linux/arm64"),
+		realWorkflowTask("amd", "linux/amd64"),
+	}
+	failure := errors.New("out of stock")
+	h.provider.deployErrFor = map[types.Capability]error{dockerARM64: failure}
+
+	require.ErrorIs(t, h.autoscaler.Reconcile(t.Context()), failure)
+	require.Equal(t, []types.Capability{dockerAMD64}, h.provider.deployedCapabilities())
+	require.NotContains(t, h.provider.deployed, drained.Name)
+	require.Len(t, h.woodpecker.agents, 1)
 }
 
 // TestFailedSchedulingUpdatesPreserveServerState checks that a failing
