@@ -11,6 +11,7 @@ import (
 	"github.com/gophercloud/gophercloud/v2/openstack/compute/v2/keypairs"
 	"github.com/gophercloud/gophercloud/v2/openstack/compute/v2/servers"
 	"github.com/gophercloud/gophercloud/v2/openstack/image/v2/images"
+	"github.com/rs/zerolog/log"
 	"github.com/urfave/cli/v3"
 
 	"go.woodpecker-ci.org/autoscaler/config"
@@ -357,7 +358,10 @@ func imageCapability(image *images.Image) (types.Capability, error) {
 		architecture, ok = image.Properties["architecture"]
 	}
 	if !ok {
-		return types.Capability{}, fmt.Errorf("OpenStack image has no hw_architecture property")
+		// The property is optional and commonly unset on single-architecture
+		// clouds, where nova schedules such images onto its default hosts.
+		log.Warn().Str("image", image.Name).Msg("OpenStack image has no hw_architecture property, assuming x86_64")
+		architecture = "x86_64"
 	}
 
 	value, ok := architecture.(string)

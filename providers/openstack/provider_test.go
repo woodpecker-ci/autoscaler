@@ -110,9 +110,9 @@ func TestImageCapability(t *testing.T) {
 			want:       dockerAMD64Capability,
 		},
 		{
-			name:       "missing architecture",
+			name:       "missing architecture falls back to amd64",
 			properties: map[string]any{},
-			wantErr:    "hw_architecture",
+			want:       dockerAMD64Capability,
 		},
 		{
 			name:       "unsupported operating system",
