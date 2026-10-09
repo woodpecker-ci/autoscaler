@@ -37,26 +37,6 @@ The agents will use `WOODPECKER_GRPC_ADDR` and an agent token automatically crea
 
 When several autoscaler instances manage different pools, set a distinct `WOODPECKER_POOL_ID` and `WOODPECKER_AGENT_LABELS` on each instance. The autoscaler uses those labels to count only matching pending workflows, while Woodpecker uses them to schedule workflows on the matching agents. For example, `WOODPECKER_AGENT_LABELS=worker_name=front-build` pairs with workflows that request `worker_name=front-build`.
 
-## Equinix Metal
-
-Set `WOODPECKER_PROVIDER=equinixmetal` and configure at least:
-
-- `WOODPECKER_EQUINIXMETAL_API_TOKEN`
-- `WOODPECKER_EQUINIXMETAL_PROJECT_ID`
-- `WOODPECKER_EQUINIXMETAL_PLAN`
-- exactly one of `WOODPECKER_EQUINIXMETAL_METRO` or `WOODPECKER_EQUINIXMETAL_FACILITY`
-
-Equinix Metal support is currently experimental: it has not been tested by the project maintainers, as none of them have real provider access.
-
-Useful optional settings:
-
-- `WOODPECKER_EQUINIXMETAL_OPERATING_SYSTEM` (default: `ubuntu_24_04`)
-- `WOODPECKER_EQUINIXMETAL_BILLING_CYCLE` (default: `hourly`)
-- `WOODPECKER_EQUINIXMETAL_TAGS`
-- `WOODPECKER_EQUINIXMETAL_PROJECT_SSH_KEYS`
-- `WOODPECKER_EQUINIXMETAL_SPOT_INSTANCE`
-- `WOODPECKER_EQUINIXMETAL_SPOT_PRICE_MAX`
-
 ## DigitalOcean
 
 Set `WOODPECKER_PROVIDER=digitalocean` and configure at least:
@@ -147,7 +127,6 @@ The billing model is selected automatically by the provider, so no extra configu
   - [x] OpenStack **[experimental]**
   - [x] Yandex Cloud **[experimental]**
   - [ ] Oracle Cloud
-  - [x] Equinix Metal **[experimental]** (untested by the maintainers against real provider access, see [above](#equinix-metal))
   - [x] Vultr
   - [x] Scaleway
 - [ ] Cleanup agents
