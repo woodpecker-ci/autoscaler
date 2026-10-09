@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"go.woodpecker-ci.org/autoscaler/config"
+	"go.woodpecker-ci.org/autoscaler/engine/types"
 	"go.woodpecker-ci.org/autoscaler/providers/hetznercloud/hcapi/mocks"
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
@@ -21,6 +22,7 @@ func TestDeployAgent(t *testing.T) {
 		sshkeys       []string
 		expectedError string
 		serverType    []string
+		capability    types.Capability
 	}{
 		{
 			name: "ServerTypeNotFound",
@@ -46,6 +48,7 @@ func TestDeployAgent(t *testing.T) {
 			},
 			serverType:    []string{"cx11"},
 			expectedError: ErrImageNotFound.Error(),
+			capability:    types.Capability{Platform: "linux/amd64", Backend: types.BackendDocker},
 		},
 		{
 			name: "ServerTypeWithLocation",
@@ -78,6 +81,7 @@ func TestDeployAgent(t *testing.T) {
 				mockClient.On("Server").Return(mockServerClient)
 			},
 			serverType: []string{"cx11:nbg1"},
+			capability: types.Capability{Platform: "linux/amd64", Backend: types.BackendDocker},
 		},
 		{
 			// First candidate's location is unavailable; provider should
@@ -102,7 +106,7 @@ func TestDeployAgent(t *testing.T) {
 				mockClient.On("ServerType").Return(mockServerTypeClient)
 
 				mockImageClient := mocks.NewMockImageClient(t)
-				mockImageClient.On("GetForArchitecture", mock.Anything, mock.Anything, hcloud.ArchitectureX86).Return(mockImage, nil, nil)
+				mockImageClient.On("GetForArchitecture", mock.Anything, mock.Anything, hcloud.ArchitectureX86).Return(&hcloud.Image{Architecture: hcloud.ArchitectureX86}, nil, nil)
 				mockClient.On("Image").Return(mockImageClient)
 
 				unavailable := hcloud.Error{Code: hcloud.ErrorCodeResourceUnavailable, Message: "unavailable"}
@@ -116,6 +120,45 @@ func TestDeployAgent(t *testing.T) {
 				mockClient.On("Server").Return(mockServerClient)
 			},
 			serverType: []string{"cx11:nbg1", "cx21:fsn1"},
+			capability: types.Capability{Platform: "linux/amd64", Backend: types.BackendDocker},
+		},
+		{
+			// The ARM candidate is filtered out for an amd64 request. Failure
+			// of the sole matching candidate must still be returned.
+			name: "FilteredFallbackExhausted",
+			setupMocks: func(mockClient *mocks.MockClient) {
+				st1 := &hcloud.ServerType{
+					Name: "cx11", Architecture: "x86",
+					Locations: []hcloud.ServerTypeLocation{
+						{Location: &hcloud.Location{Name: "nbg1"}},
+					},
+				}
+				st2 := &hcloud.ServerType{
+					Name: "cax11", Architecture: "arm",
+					Locations: []hcloud.ServerTypeLocation{
+						{Location: &hcloud.Location{Name: "fsn1"}},
+					},
+				}
+				mockServerTypeClient := mocks.NewMockServerTypeClient(t)
+				mockServerTypeClient.On("GetByName", mock.Anything, "cx11").Return(st1, nil, nil)
+				mockServerTypeClient.On("GetByName", mock.Anything, "cax11").Return(st2, nil, nil)
+				mockClient.On("ServerType").Return(mockServerTypeClient)
+
+				mockImageClient := mocks.NewMockImageClient(t)
+				mockImageClient.On("GetForArchitecture", mock.Anything, mock.Anything, hcloud.ArchitectureX86).Return(mockImage, nil, nil)
+				mockImageClient.On("GetForArchitecture", mock.Anything, mock.Anything, hcloud.ArchitectureARM).Return(&hcloud.Image{Architecture: hcloud.ArchitectureARM}, nil, nil)
+				mockClient.On("Image").Return(mockImageClient)
+
+				unavailable := hcloud.Error{Code: hcloud.ErrorCodeResourceUnavailable, Message: "unavailable"}
+				mockServerClient := mocks.NewMockServerClient(t)
+				mockServerClient.On("Create", mock.Anything, mock.MatchedBy(func(opts hcloud.ServerCreateOpts) bool {
+					return opts.ServerType.Name == "cx11"
+				})).Return(hcloud.ServerCreateResult{}, &hcloud.Response{}, unavailable).Once()
+				mockClient.On("Server").Return(mockServerClient)
+			},
+			serverType:    []string{"cx11:nbg1", "cax11:fsn1"},
+			capability:    types.Capability{Platform: "linux/amd64", Backend: types.BackendDocker},
+			expectedError: string(hcloud.ErrorCodeResourceUnavailable),
 		},
 	}
 
@@ -136,12 +179,11 @@ func TestDeployAgent(t *testing.T) {
 			}
 			if err == nil {
 				agent := &woodpecker.Agent{}
-				err = p.DeployAgent(t.Context(), agent)
+				err = p.DeployAgent(t.Context(), agent, tt.capability)
 			}
 
 			if tt.expectedError != "" {
-				assert.Error(t, err)
-				assert.Contains(t, err.Error(), tt.expectedError)
+				assert.ErrorContains(t, err, tt.expectedError)
 			} else {
 				assert.NoError(t, err)
 			}
