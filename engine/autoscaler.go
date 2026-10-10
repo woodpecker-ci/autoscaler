@@ -240,10 +240,21 @@ func (a *Autoscaler) removeDrainedAgents(ctx context.Context) error {
 			continue
 		}
 
-		// hourly-round-up: a drained agent that rolled into a fresh paid hour
-		// (e.g. it was busy at the boundary) stays up until its next teardown
-		// window rather than wasting the hour just bought.
+		// A drained agent that survived the billing boundary has another paid
+		// hour available. Restore scheduling after scaling has had a chance to
+		// reuse it: queue worker counts only catch up when the agent polls again.
 		if a.config.BillingModel == types.BillingHourlyRoundUp && !a.inTeardownWindow(agent) {
+			if agent.Created == 0 || time.Since(time.Unix(agent.Created, 0)) < time.Hour {
+				continue
+			}
+
+			updated := *agent
+			updated.NoSchedule = false
+			if _, err := a.client.AgentUpdate(&updated); err != nil {
+				return fmt.Errorf("client.AgentUpdate: %w", err)
+			}
+			*agent = updated
+			log.Info().Str("agent", agent.Name).Msg("reactivate agent for paid hour")
 			continue
 		}
 
