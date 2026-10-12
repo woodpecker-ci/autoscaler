@@ -332,8 +332,7 @@ func candidatePlatform(c deployCandidate) (string, error) {
 // isCapacityError reports whether err is an AWS capacity error, for which
 // deploying the next fallback candidate is worthwhile.
 func isCapacityError(err error) bool {
-	var apiErr smithy.APIError
-	if errors.As(err, &apiErr) {
+	if apiErr, ok := errors.AsType[smithy.APIError](err); ok {
 		return capacityErrorCodes[apiErr.ErrorCode()]
 	}
 	return false

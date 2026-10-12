@@ -42,10 +42,8 @@ func TestResolveLocation(t *testing.T) {
 			st: &hcloud.ServerType{
 				Locations: []hcloud.ServerTypeLocation{
 					{
-						Location: nbg1,
-						DeprecatableResource: hcloud.DeprecatableResource{
-							Deprecation: &hcloud.DeprecationInfo{Announced: time.Now()},
-						},
+						Location:    nbg1,
+						Deprecation: &hcloud.DeprecationInfo{Announced: time.Now()},
 					},
 				},
 			},

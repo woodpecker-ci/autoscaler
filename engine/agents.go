@@ -27,7 +27,7 @@ func (a *Autoscaler) loadAgents(_ context.Context) error {
 	// request hides the agents deployed most recently -- walk every page.
 	agents, err := shared_utils.Paginate(func(page int) ([]*woodpecker.Agent, error) {
 		return a.client.AgentListWithOpts(woodpecker.AgentListOptions{
-			ListOptions: woodpecker.ListOptions{Page: page},
+			Page: page,
 		})
 	}, 0)
 	if err != nil {

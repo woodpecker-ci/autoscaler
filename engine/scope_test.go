@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"maps"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -21,9 +22,7 @@ func serverTaskLabels(workflow map[string]string) map[string]string {
 		pipeline.LabelRepoID:     "42",
 		pipeline.LabelBranch:     "main",
 	}
-	for key, value := range workflow {
-		labels[key] = value
-	}
+	maps.Copy(labels, workflow)
 	return labels
 }
 

@@ -66,7 +66,7 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 
 	// load config
 	p := &provider{
-		projectID: scw.StringPtr(defaultProjectID),
+		projectID: new(defaultProjectID),
 		prefix:    c.String("scaleway-prefix"),
 		// The pool tag identifies every instance this provider creates and is
 		// what getInstance and getAllInstances look for, so it leads the
@@ -211,13 +211,13 @@ func (p *provider) createInstance(ctx context.Context, agent *woodpecker.Agent, 
 	res, err := api.CreateServer(&instance.CreateServerRequest{
 		Zone:              c.zone,
 		Name:              agent.Name,
-		DynamicIPRequired: scw.BoolPtr(true),
+		DynamicIPRequired: new(true),
 		CommercialType:    c.rawType,
-		Image:             scw.StringPtr(c.imageID),
+		Image:             new(c.imageID),
 		Volumes: map[string]*instance.VolumeServerTemplate{
 			"0": {
-				Boot:       scw.BoolPtr(true),
-				Size:       scw.SizePtr(p.storage),
+				Boot:       new(true),
+				Size:       new(p.storage),
 				VolumeType: p.storageType,
 			},
 		},

@@ -56,8 +56,8 @@ func agentLabelsFor(capability types.Capability, extraAgentLabels map[string]str
 	out.Labels[pipeline.LabelFilterRepo] = labelWildcard
 
 	for k, v := range extraAgentLabels {
-		if strings.HasPrefix(k, labelMandatoryPrefix) {
-			out.Mandatory[strings.TrimPrefix(k, labelMandatoryPrefix)] = v
+		if after, ok := strings.CutPrefix(k, labelMandatoryPrefix); ok {
+			out.Mandatory[after] = v
 			continue
 		}
 		out.Labels[k] = v

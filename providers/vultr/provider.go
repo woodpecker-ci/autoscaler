@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/rs/zerolog/log"
@@ -121,8 +122,8 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cap
 		Label:           agent.Name,
 		Tags:            tags,
 		OsID:            p.image.ID,
-		EnableVPC:       govultr.BoolToBoolPtr(false), // TODO: allow to use private networks
-		ActivationEmail: govultr.BoolToBoolPtr(false),
+		EnableVPC:       new(false), // TODO: allow to use private networks
+		ActivationEmail: new(false),
 		SSHKeys:         p.sshKeys,
 		EnableIPv6:      &p.enableIPv6,
 		Backups:         "disabled",
@@ -139,10 +140,8 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cap
 			return fmt.Errorf("failed to return list for agents")
 		}
 
-		for _, a := range agents {
-			if a == agent.Name {
-				return nil
-			}
+		if slices.Contains(agents, agent.Name) {
+			return nil
 		}
 
 		log.Debug().Msgf("created agent not found in list yet")

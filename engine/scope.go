@@ -1,6 +1,8 @@
 package engine
 
 import (
+	"maps"
+
 	"go.woodpecker-ci.org/autoscaler/engine/types"
 	"go.woodpecker-ci.org/woodpecker/v3/pipeline"
 )
@@ -34,8 +36,6 @@ func instanceAdminPoolScope() poolScope {
 // the provider/operator labels.
 func (s poolScope) agentLabelsFor(capability types.Capability, configuredLabels map[string]string) agentLabelSet {
 	labels := agentLabelsFor(capability, configuredLabels)
-	for key, value := range s.enforcedLabels {
-		labels.Labels[key] = value
-	}
+	maps.Copy(labels.Labels, s.enforcedLabels)
 	return labels
 }

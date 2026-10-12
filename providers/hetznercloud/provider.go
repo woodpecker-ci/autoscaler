@@ -214,7 +214,7 @@ func (p *provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 
 	servers, err := p.client.Server().AllWithOpts(ctx,
 		hcloud.ServerListOpts{
-			ListOpts: hcloud.ListOpts{LabelSelector: fmt.Sprintf("%s==%s", engine.LabelPool, p.config.PoolID)},
+			LabelSelector: fmt.Sprintf("%s==%s", engine.LabelPool, p.config.PoolID),
 		})
 	if err != nil {
 		return nil, fmt.Errorf("%s: Server.AllWithOpts %w", p.name, err)

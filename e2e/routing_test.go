@@ -1,6 +1,7 @@
 package e2e_test
 
 import (
+	"maps"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -73,9 +74,7 @@ func TestLabelMatching(t *testing.T) {
 			cfg.ExtraAgentLabels = test.agentLabels
 			h := newHarness(t, cfg, dockerAMD64)
 			task := realWorkflowTask("build", "linux/amd64")
-			for key, value := range test.taskLabels {
-				task.Labels[key] = value
-			}
+			maps.Copy(task.Labels, test.taskLabels)
 			h.woodpecker.queue.Pending = []woodpecker.Task{task}
 			h.reconcile(t)
 			require.Len(t, h.provider.deployed, test.wantAgents)

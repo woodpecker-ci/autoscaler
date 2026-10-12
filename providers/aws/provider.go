@@ -5,6 +5,7 @@ import (
 	b64 "encoding/base64"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -320,10 +321,8 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cap
 			return fmt.Errorf("%s: ListDeployedAgentNames: %w", p.name, err)
 		}
 
-		for _, a := range agents {
-			if a == agent.Name {
-				return nil
-			}
+		if slices.Contains(agents, agent.Name) {
+			return nil
 		}
 
 		log.Debug().Msgf("created agent not found in list yet")

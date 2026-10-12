@@ -145,7 +145,7 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cap
 	}
 	if !p.enableIPv4 {
 		// creates the droplet without a public network interface
-		req.PublicNetworking = godo.PtrTo(false)
+		req.PublicNetworking = new(false)
 	}
 	if p.vpcUUID != "" {
 		req.VPCUUID = p.vpcUUID

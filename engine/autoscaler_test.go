@@ -428,8 +428,8 @@ func Test_loadAgents(t *testing.T) {
 			{ID: 52, Name: "pool-2-agent-52"},
 		}
 
-		client.On("AgentListWithOpts", woodpecker.AgentListOptions{ListOptions: woodpecker.ListOptions{Page: 1}}).Return(firstPage, nil)
-		client.On("AgentListWithOpts", woodpecker.AgentListOptions{ListOptions: woodpecker.ListOptions{Page: 2}}).Return(secondPage, nil)
+		client.On("AgentListWithOpts", woodpecker.AgentListOptions{Page: 1}).Return(firstPage, nil)
+		client.On("AgentListWithOpts", woodpecker.AgentListOptions{Page: 2}).Return(secondPage, nil)
 
 		assert.NoError(t, autoscaler.loadAgents(t.Context()))
 		// 50 from the first page plus the one agent of this pool on the second,
@@ -443,7 +443,7 @@ func Test_loadAgents(t *testing.T) {
 func Test_loadAgents_attributesPendingDeploys(t *testing.T) {
 	zerolog.SetGlobalLevel(zerolog.ErrorLevel)
 	client := mocks_server.NewMockClient(t)
-	client.On("AgentListWithOpts", woodpecker.AgentListOptions{ListOptions: woodpecker.ListOptions{Page: 1}}).Return([]*woodpecker.Agent{
+	client.On("AgentListWithOpts", woodpecker.AgentListOptions{Page: 1}).Return([]*woodpecker.Agent{
 		// still booting: registered but never connected, reports no identity
 		{ID: 1, Name: "pool-1-agent-boot", Created: time.Now().Unix()},
 		// connected since last cycle: self-reported identity wins
@@ -451,7 +451,7 @@ func Test_loadAgents_attributesPendingDeploys(t *testing.T) {
 		// booting longer than the creation timeout: a stuck boot
 		{ID: 3, Name: "pool-1-agent-stuck", Created: time.Now().Add(-2 * time.Minute).Unix()},
 	}, nil)
-	client.On("AgentListWithOpts", woodpecker.AgentListOptions{ListOptions: woodpecker.ListOptions{Page: 2}}).Return([]*woodpecker.Agent{}, nil)
+	client.On("AgentListWithOpts", woodpecker.AgentListOptions{Page: 2}).Return([]*woodpecker.Agent{}, nil)
 
 	autoscaler := Autoscaler{
 		client: client,
