@@ -104,8 +104,8 @@ type Provider interface {
 // Capability is a single (platform, backend) pair a provider can deploy.
 // Platform and Backend match exactly the label keys the woodpecker agent
 // self-reports on connect ("platform", "backend"). An empty Platform or
-// Backend means unknown and accepts any agent value, so such a capability must
-// not overlap with another one of the provider.
+// Backend means unknown and accepts any agent value. Capabilities that one
+// agent could match more than one of are rejected at startup.
 type Capability struct {
 	Platform string
 	Backend  Backend

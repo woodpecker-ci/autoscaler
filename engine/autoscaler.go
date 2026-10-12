@@ -52,6 +52,9 @@ func NewAutoscaler(ctx context.Context, p types.Provider, client server.Client, 
 	if err != nil {
 		return nil, fmt.Errorf("could not query provider capabilities: %w", err)
 	}
+	if err := checkCapabilitiesDisjoint(caps); err != nil {
+		return nil, err
+	}
 
 	return &Autoscaler{
 		provider:             p,

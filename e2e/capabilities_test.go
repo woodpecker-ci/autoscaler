@@ -97,3 +97,37 @@ func TestCapabilityWithoutPlatform(t *testing.T) {
 		})
 	})
 }
+
+// TestOverlappingCapabilitiesPreventStartup checks that the autoscaler does
+// not start when an agent could belong to more than one capability.
+func TestOverlappingCapabilitiesPreventStartup(t *testing.T) {
+	t.Parallel()
+
+	dockerAnyPlatform := types.Capability{Backend: types.BackendDocker}
+	amd64AnyBackend := types.Capability{Platform: "linux/amd64"}
+	kubernetesAMD64 := types.Capability{Platform: "linux/amd64", Backend: types.BackendKubernetes}
+
+	for _, test := range []struct {
+		name         string
+		capabilities []types.Capability
+		wantErr      bool
+	}{
+		{name: "distinct platforms", capabilities: []types.Capability{dockerAMD64, dockerARM64}},
+		{name: "distinct backends", capabilities: []types.Capability{dockerAMD64, kubernetesAMD64}},
+		{name: "single open capability", capabilities: []types.Capability{dockerAnyPlatform}},
+		{name: "duplicate", capabilities: []types.Capability{dockerAMD64, dockerAMD64}, wantErr: true},
+		{name: "open platform next to a platform", capabilities: []types.Capability{dockerARM64, dockerAnyPlatform}, wantErr: true},
+		{name: "open backend next to a backend", capabilities: []types.Capability{amd64AnyBackend, dockerAMD64}, wantErr: true},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			_, err := engine.NewAutoscaler(t.Context(), newFakeProvider(test.capabilities...), newFakeWoodpecker(), testConfig(0, 1))
+			if test.wantErr {
+				require.ErrorIs(t, err, engine.ErrOverlappingCapabilities)
+				return
+			}
+			require.NoError(t, err)
+		})
+	}
+}

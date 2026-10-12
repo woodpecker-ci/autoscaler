@@ -1,6 +1,8 @@
 package engine
 
 import (
+	"errors"
+	"fmt"
 	"maps"
 
 	"go.woodpecker-ci.org/autoscaler/engine/types"
@@ -76,6 +78,22 @@ func agentMatchesCapability(agent *woodpecker.Agent, capability types.Capability
 	// an empty capability platform or backend is unknown and accepts any agent value
 	return (capability.Platform == "" || agent.Platform == capability.Platform) &&
 		(capability.Backend == "" || agent.Backend == string(capability.Backend))
+}
+
+var ErrOverlappingCapabilities = errors.New("provider capabilities overlap")
+
+// checkCapabilitiesDisjoint rejects capabilities that one agent could match
+// both of, as the agent would then be counted for the wrong one.
+func checkCapabilitiesDisjoint(capabilities []types.Capability) error {
+	overlap := func(a, b string) bool { return a == "" || b == "" || a == b }
+	for i, a := range capabilities {
+		for _, b := range capabilities[i+1:] {
+			if overlap(a.Platform, b.Platform) && overlap(string(a.Backend), string(b.Backend)) {
+				return fmt.Errorf("%w: %+v and %+v", ErrOverlappingCapabilities, a, b)
+			}
+		}
+	}
+	return nil
 }
 
 // agentMatchesBucket reports whether an agent belongs to the current
