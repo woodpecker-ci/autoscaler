@@ -359,9 +359,10 @@ func imageCapability(image *images.Image) (types.Capability, error) {
 	}
 	if !ok {
 		// The property is optional and commonly unset on single-architecture
-		// clouds, where nova schedules such images onto its default hosts.
-		log.Warn().Str("image", image.Name).Msg("OpenStack image has no hw_architecture property, assuming x86_64")
-		architecture = "x86_64"
+		// clouds, so the platform is left open: agents count for whatever
+		// they report, but workflows that ask for a platform do not scale.
+		log.Warn().Str("image", image.Name).Msg("OpenStack image has no hw_architecture property, workflows that set a platform label will not trigger scaling")
+		return types.Capability{Backend: types.BackendDocker}, nil
 	}
 
 	value, ok := architecture.(string)

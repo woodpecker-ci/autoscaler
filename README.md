@@ -64,6 +64,7 @@ Both `USERNAME`/`PASSWORD` authentication and application credentials via `APPLI
 Credentials can also be read from files, to do so append `_FILE` to the appropriate variable name and set it to the file path.
 
 You can select the flavor and image for the agent instances via `FLAVOR/IMAGE_NAME` or UUID reference (`FLAVOR/IMAGE_REF`).
+The agent platform is taken from the image's `hw_architecture` (or `architecture`) property. Without it the platform is unknown, and workflows that set a `platform` label do not trigger scaling.
 If you set `VOLUME_SIZE`, block storage volumes are used.
 
 You can add your OpenStack SSH keypair via `KEYPAIR`.
