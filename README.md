@@ -69,6 +69,16 @@ If you set `VOLUME_SIZE`, block storage volumes are used.
 
 You can add your OpenStack SSH keypair via `KEYPAIR`.
 
+## Server type fallbacks
+
+Hetzner Cloud (`WOODPECKER_HETZNERCLOUD_SERVER_TYPE`), AWS (`WOODPECKER_AWS_INSTANCE_TYPE`) and Scaleway (`WOODPECKER_SCALEWAY_SERVER_TYPES`) take an ordered list of server types. If a type is out of capacity, the next type of the same architecture is tried; any other error fails the deploy.
+
+Limits:
+
+- There is no fallback across architectures: x86 and arm types are separate pools, each with its own fallback order.
+- Workflows without a `platform` label are deployed on the architecture of the first listed type.
+- Workflows that ask for a platform none of the types provides do not trigger scaling.
+
 ## Teardown policy
 
 How idle agents are torn down depends on how the selected provider bills:

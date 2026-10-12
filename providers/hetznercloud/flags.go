@@ -21,7 +21,7 @@ var ProviderFlags = []cli.Flag{
 	&cli.StringSliceFlag{
 		Name:     "hetznercloud-server-type",
 		Value:    []string{"cx11:nbg1"},
-		Usage:    "hetzner cloud server type",
+		Usage:    "ordered list of hetzner cloud server types as 'type' or 'type:location'; if a type is unavailable, the next one of the same architecture is tried",
 		Sources:  cli.EnvVars("WOODPECKER_HETZNERCLOUD_SERVER_TYPE"),
 		Category: category,
 	},
