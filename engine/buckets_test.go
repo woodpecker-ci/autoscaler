@@ -175,4 +175,24 @@ func Test_agentMatchesCapability(t *testing.T) {
 			dockerAmd64Cap,
 		))
 	})
+	t.Run("capability without platform matches any platform", func(t *testing.T) {
+		assert.True(t, agentMatchesCapability(
+			&woodpecker.Agent{Platform: "linux/arm64", Backend: "docker"},
+			types.Capability{Backend: types.BackendDocker},
+		))
+		assert.False(t, agentMatchesCapability(
+			&woodpecker.Agent{Platform: "linux/arm64", Backend: "kubernetes"},
+			types.Capability{Backend: types.BackendDocker},
+		))
+	})
+	t.Run("capability without backend matches any backend", func(t *testing.T) {
+		assert.True(t, agentMatchesCapability(
+			&woodpecker.Agent{Platform: "linux/amd64", Backend: "kubernetes"},
+			types.Capability{Platform: "linux/amd64"},
+		))
+		assert.False(t, agentMatchesCapability(
+			&woodpecker.Agent{Platform: "linux/arm64", Backend: "kubernetes"},
+			types.Capability{Platform: "linux/amd64"},
+		))
+	})
 }

@@ -73,8 +73,9 @@ func routeTaskToBucket(task woodpecker.Task, buckets []agentBucket) int {
 // CustomLabels can drift if the operator edits ExtraAgentLabels between
 // reconciles.
 func agentMatchesCapability(agent *woodpecker.Agent, capability types.Capability) bool {
-	return agent.Platform == capability.Platform &&
-		agent.Backend == string(capability.Backend)
+	// an empty capability platform or backend is unknown and accepts any agent value
+	return (capability.Platform == "" || agent.Platform == capability.Platform) &&
+		(capability.Backend == "" || agent.Backend == string(capability.Backend))
 }
 
 // agentMatchesBucket reports whether an agent belongs to the current
