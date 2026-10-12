@@ -2,6 +2,8 @@ package e2e_test
 
 import (
 	"errors"
+	"maps"
+	"slices"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -59,4 +61,39 @@ func TestEmptyCapabilitiesHoldFleetSteady(t *testing.T) {
 
 	require.Len(t, h.provider.deployed, 1)
 	require.Len(t, h.woodpecker.agents, 1)
+}
+
+// TestCapabilityWithoutPlatform checks that a provider which cannot tell its
+// architecture keeps the agents it deployed, whatever platform they report on
+// connect, and only scales for workflows that do not ask for a platform.
+func TestCapabilityWithoutPlatform(t *testing.T) {
+	t.Parallel()
+
+	dockerAnyPlatform := types.Capability{Backend: types.BackendDocker}
+	h := newHarness(t, testConfig(0, 3), dockerAnyPlatform)
+
+	h.woodpecker.queue.Pending = []woodpecker.Task{realWorkflowTask("build", "")}
+	h.reconcile(t)
+	require.Equal(t, []types.Capability{dockerAnyPlatform}, h.provider.deployedCapabilities())
+
+	// the agent connects with its real platform, idle and ready for the workflow
+	h.connectAgents(t)
+	agent := h.woodpecker.agentByName(t, slices.Collect(maps.Keys(h.provider.deployed))[0])
+	agent.Platform = dockerAMD64.Platform
+	h.woodpecker.put(agent)
+	h.markIdle()
+
+	t.Run("connected agent counts as capacity", func(t *testing.T) {
+		h.reconcile(t)
+		require.Equal(t, []string{agent.Name}, slices.Collect(maps.Keys(h.provider.deployed)))
+		require.False(t, h.woodpecker.agentByName(t, agent.Name).NoSchedule)
+
+		t.Run("workflow asking for a platform does not scale", func(t *testing.T) {
+			h.woodpecker.queue.Pending = []woodpecker.Task{realWorkflowTask("pinned", "linux/amd64")}
+			h.reconcile(t)
+			for name := range h.provider.deployed {
+				require.Equal(t, agent.Name, name)
+			}
+		})
+	})
 }
