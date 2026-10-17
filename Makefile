@@ -116,7 +116,7 @@ lint: install-tools ## Lint code
 	lint go.woodpecker-ci.org/autoscaler/cmd/woodpecker-autoscaler
 
 test-autoscaler: ## Test autoscaler code
-	go test -race -cover -coverprofile autoscaler-coverage.out -timeout 30s ${GO_PACKAGES}
+	go test -race -cover -coverpkg=./... -coverprofile autoscaler-coverage.out -timeout 30s ${GO_PACKAGES}
 
 .PHONY: test-e2e
 test-e2e: ## Run end-to-end tests and report the engine coverage they exercise
@@ -126,7 +126,7 @@ test-e2e: ## Run end-to-end tests and report the engine coverage they exercise
 	@go tool cover -func=e2e-coverage.out
 
 .PHONY: test
-test: test-autoscaler ## Run all tests
+test: test-autoscaler test-e2e ## Run all tests
 
 .PHONY: generate
 generate:
