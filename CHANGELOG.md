@@ -4,7 +4,11 @@
 
 ### ❤️ Thanks to all contributors! ❤️
 
-@LaGrunge
+@LaGrunge, @menelike
+
+### 🐛 Bug Fixes
+
+- Reactivate hourly agents after billing rollover [[#751](https://github.com/woodpecker-ci/autoscaler/pull/751)]
 
 ### 🧪 Tests
 
