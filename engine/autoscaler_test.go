@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -1058,6 +1059,66 @@ func Test_removeDrainedAgents_hourlyRoundUp(t *testing.T) {
 
 		err := autoscaler.removeDrainedAgents(ctx)
 		assert.NoError(t, err)
+	})
+}
+
+func Test_removeDrainedAgents_hourlyRollover(t *testing.T) {
+	now := time.Now()
+	cfg := &config.Config{
+		BillingModel:               types.BillingHourlyRoundUp,
+		AgentBillingTeardownMargin: 2 * time.Minute,
+		ReconciliationInterval:     time.Minute,
+	}
+
+	for _, tc := range []struct {
+		name    string
+		created int64
+	}{
+		{name: "missing creation time"},
+		{name: "future creation time", created: now.Add(5 * time.Minute).Unix()},
+		{name: "first paid hour", created: now.Add(-5 * time.Minute).Unix()},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			client := mocks_server.NewMockClient(t)
+			provider := mocks_provider.NewMockProvider(t)
+			agent := &woodpecker.Agent{
+				ID: 2, Name: "pool-1-agent-2", NoSchedule: true, Created: tc.created,
+				Platform: "linux/amd64", Backend: "docker", LastContact: now.Unix(),
+			}
+			autoscaler := Autoscaler{
+				agents:               map[string]*woodpecker.Agent{agent.Name: agent},
+				client:               client,
+				provider:             provider,
+				config:               cfg,
+				providerCapabilities: []types.Capability{dockerAmd64Cap},
+			}
+
+			require.NoError(t, autoscaler.removeDrainedAgents(t.Context()))
+			assert.True(t, agent.NoSchedule)
+		})
+	}
+
+	t.Run("preserves the drained state when reactivation fails", func(t *testing.T) {
+		client := mocks_server.NewMockClient(t)
+		provider := mocks_provider.NewMockProvider(t)
+		agent := &woodpecker.Agent{
+			ID: 2, Name: "pool-1-agent-2", NoSchedule: true, Created: now.Add(-65 * time.Minute).Unix(),
+			Platform: "linux/amd64", Backend: "docker", LastContact: now.Unix(),
+		}
+		autoscaler := Autoscaler{
+			agents:               map[string]*woodpecker.Agent{agent.Name: agent},
+			client:               client,
+			provider:             provider,
+			config:               cfg,
+			providerCapabilities: []types.Capability{dockerAmd64Cap},
+		}
+		updateErr := errors.New("agent update unavailable")
+		client.On("AgentUpdate", mock.MatchedBy(func(updated *woodpecker.Agent) bool {
+			return updated.ID == agent.ID && !updated.NoSchedule
+		})).Return(nil, updateErr).Once()
+
+		assert.ErrorIs(t, autoscaler.removeDrainedAgents(t.Context()), updateErr)
+		assert.True(t, agent.NoSchedule)
 	})
 }
 
