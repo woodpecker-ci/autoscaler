@@ -138,8 +138,19 @@ func allocateBudget(states []bucketState, rawDeltas []int, limits poolLimits) []
 		return required[order[i]] > required[order[j]]
 	})
 
-	// MinAgents warm-pool floor: top the target up even without demand, adding
-	// warm agents to the busiest bucket (the first bucket when the pool idles).
+	// MinAgents warm-pool floor: count existing warm agents first, then create
+	// the missing agents in the busiest bucket (ties keep provider order).
+	for i := range order {
+		if total >= limits.Min {
+			break
+		}
+		idx := order[i]
+		for desired[idx] < states[idx].PoolAgents && total < limits.Min {
+			desired[idx]++
+			total++
+		}
+	}
+
 	for n > 0 && total < limits.Min {
 		desired[order[0]]++
 		total++
