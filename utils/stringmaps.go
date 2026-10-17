@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"maps"
 	"strings"
 )
 
@@ -29,11 +30,7 @@ func SliceToMap(list []string, del string) (map[string]string, error) {
 // The merged map is returned.
 func MergeMaps(m1, m2 map[string]string) map[string]string {
 	merged := make(map[string]string)
-	for k, v := range m1 {
-		merged[k] = v
-	}
-	for key, value := range m2 {
-		merged[key] = value
-	}
+	maps.Copy(merged, m1)
+	maps.Copy(merged, m2)
 	return merged
 }

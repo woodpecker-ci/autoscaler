@@ -35,7 +35,7 @@ var ProviderFlags = []cli.Flag{
 		Usage: "Ordered list of server types to deploy, in \"type:zone\" format " +
 			"(e.g. \"PRO2-XXS:fr-par-1\", \"COPARM1-2C-8G:fr-par-2\"). " +
 			"Architecture is inferred from the server type. " +
-			"On resource unavailability the next entry is tried.",
+			"On resource unavailability the next entry of the same architecture is tried.",
 		Sources:  cli.EnvVars("WOODPECKER_SCALEWAY_SERVER_TYPES"),
 		Category: category,
 	},
