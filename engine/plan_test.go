@@ -52,6 +52,19 @@ func Test_allocateBudget(t *testing.T) {
 		assert.Equal(t, []int{2, 0}, final)
 	})
 
+	t.Run("keeps warm agents of every capability at the floor when idle at max", func(t *testing.T) {
+		states := []bucketState{
+			{PoolAgents: 1},
+			{PoolAgents: 1},
+		}
+		raw := []int{-1, -1}
+		// Pool full and idle across two capabilities: the floor is already
+		// met by the two existing warm agents, so neither bucket may drain
+		// (draining one would drop the fleet below MinAgents and churn).
+		final := allocateBudget(states, raw, poolLimits{Footprint: 2, Min: 2, Max: 2})
+		assert.Equal(t, []int{0, 0}, final)
+	})
+
 	t.Run("drains an excess capability before replacing it at a fixed size", func(t *testing.T) {
 		states := []bucketState{
 			{Pending: 1},    // wants an agent
