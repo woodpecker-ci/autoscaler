@@ -31,6 +31,7 @@
             LDFLAGS = "-L${pkgs.glibc}/lib";
             GO = "${go}/bin/go";
             GOROOT = "${go}/share/go";
+            STATIC_BUILD = "false";
           };
       }
     );
