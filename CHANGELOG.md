@@ -1,5 +1,15 @@
 # Changelog
 
+## [2.0.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.1) - 2026-10-17
+
+### ❤️ Thanks to all contributors! ❤️
+
+@LaGrunge
+
+### 🧪 Tests
+
+- Test retain surviving agents during cleanup [[#737](https://github.com/woodpecker-ci/autoscaler/pull/737)]
+
 ## [2.0.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.0) - 2026-10-17
 
 ### ❤️ Thanks to all contributors! ❤️
