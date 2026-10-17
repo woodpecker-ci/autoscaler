@@ -1,7 +1,7 @@
 # renovate: datasource=github-releases depName=mvdan/gofumpt
 GOFUMPT_VERSION := v0.12.0
 # renovate: datasource=github-releases depName=golangci/golangci-lint
-GOLANGCI_LINT_VERSION := v2.14.0
+GOLANGCI_LINT_VERSION := v2.15.0
 
 GO_PACKAGES ?= $(shell go list ./... | grep -v /vendor/)
 
@@ -116,10 +116,17 @@ lint: install-tools ## Lint code
 	lint go.woodpecker-ci.org/autoscaler/cmd/woodpecker-autoscaler
 
 test-autoscaler: ## Test autoscaler code
-	go test -race -cover -coverprofile autoscaler-coverage.out -timeout 30s ${GO_PACKAGES}
+	go test -race -cover -coverpkg=./... -coverprofile autoscaler-coverage.out -timeout 30s ${GO_PACKAGES}
+
+.PHONY: test-e2e
+test-e2e: ## Run end-to-end tests and report the engine coverage they exercise
+	go test -race -coverpkg=go.woodpecker-ci.org/autoscaler/engine/... -coverprofile e2e-coverage.out -timeout 60s go.woodpecker-ci.org/autoscaler/e2e
+	@echo
+	@echo "e2e coverage of engine:"
+	@go tool cover -func=e2e-coverage.out
 
 .PHONY: test
-test: test-autoscaler ## Run all tests
+test: test-autoscaler test-e2e ## Run all tests
 
 .PHONY: generate
 generate:

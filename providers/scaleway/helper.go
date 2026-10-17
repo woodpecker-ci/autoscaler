@@ -91,9 +91,9 @@ func (p *provider) resolveImage(ctx context.Context, api *instance.API, zone scw
 	for _, name := range p.images {
 		resp, err := api.ListImages(&instance.ListImagesRequest{
 			Zone:   zone,
-			Name:   scw.StringPtr(name),
-			Arch:   scw.StringPtr(arch),
-			Public: scw.BoolPtr(true),
+			Name:   new(name),
+			Arch:   new(arch),
+			Public: new(true),
 		}, scw.WithContext(ctx))
 		if err != nil {
 			return "", "", fmt.Errorf("ListImages name=%s arch=%s zone=%s: %w", name, arch, zone, err)
@@ -114,7 +114,7 @@ func (p *provider) getInstance(ctx context.Context, name string) (*instance.Serv
 		resp, err := api.ListServers(&instance.ListServersRequest{
 			Zone:    zone,
 			Project: p.projectID,
-			Name:    scw.StringPtr(name),
+			Name:    new(name),
 			Tags:    []string{poolTag(p.config.PoolID)},
 		}, scw.WithContext(ctx))
 		if err != nil {
@@ -157,8 +157,7 @@ func (p *provider) getAllInstances(ctx context.Context) ([]*instance.Server, err
 // isResourceUnavailable reports whether the error indicates the requested
 // server type has no capacity in the zone (soft error, try next candidate).
 func isResourceUnavailable(err error) bool {
-	var scwErr *scw.ResponseError
-	if errors.As(err, &scwErr) {
+	if scwErr, ok := errors.AsType[*scw.ResponseError](err); ok {
 		return scwErr.Message == "server_type_unavailable" || scwErr.StatusCode == http.StatusServiceUnavailable
 	}
 	return false

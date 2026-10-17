@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/rs/zerolog/log"
@@ -85,16 +86,22 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 		return nil, fmt.Errorf("%s: %w", p.name, err)
 	}
 
-	if _, err := utils.SliceToMap(userLabels, "="); err != nil {
+	labels, err := utils.SliceToMap(userLabels, "=")
+	if err != nil {
 		return nil, fmt.Errorf("%s: %w", p.name, err)
 	}
 
-	p.labels = utils.MergeMaps(defaultLabels, p.labels)
+	p.labels = utils.MergeMaps(labels, defaultLabels)
 
 	return p, nil
 }
 
-func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) error {
+func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, capability types.Capability) error {
+	if capability.Backend != types.BackendDocker ||
+		capability.Platform != "linux/amd64" {
+		return fmt.Errorf("we only support docker on linux/amd64 but %#v was requested", capability)
+	}
+
 	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, cloudinit.RenderOption{
 		PreExec: blackholeMetadataAPI,
 	})
@@ -115,8 +122,8 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 		Label:           agent.Name,
 		Tags:            tags,
 		OsID:            p.image.ID,
-		EnableVPC:       govultr.BoolToBoolPtr(false), // TODO: allow to use private networks
-		ActivationEmail: govultr.BoolToBoolPtr(false),
+		EnableVPC:       new(false), // TODO: allow to use private networks
+		ActivationEmail: new(false),
 		SSHKeys:         p.sshKeys,
 		EnableIPv6:      &p.enableIPv6,
 		Backups:         "disabled",
@@ -133,10 +140,8 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent) err
 			return fmt.Errorf("failed to return list for agents")
 		}
 
-		for _, a := range agents {
-			if a == agent.Name {
-				return nil
-			}
+		if slices.Contains(agents, agent.Name) {
+			return nil
 		}
 
 		log.Debug().Msgf("created agent not found in list yet")
@@ -218,4 +223,12 @@ func (p *provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 
 func (p *provider) BillingModel() types.BillingModel {
 	return types.BillingHourlyRoundUp
+}
+
+func (p *provider) Capabilities(_ context.Context) ([]types.Capability, error) {
+	// TODO: add native k8s and local backend (with FreeBSD) support
+	return []types.Capability{{
+		Platform: "linux/amd64",
+		Backend:  types.BackendDocker,
+	}}, nil
 }
