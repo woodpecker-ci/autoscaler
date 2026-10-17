@@ -35,26 +35,6 @@ services:
 
 The agents will use `WOODPECKER_GRPC_ADDR` and an agent token automatically created on the server by the autoscaler to connect to the server. Therefore the `WOODPECKER_GRPC_ADDR` has to be publicly accessible from the newly created agents. Check for example how you could use [caddy](https://woodpecker-ci.org/docs/administration/configuration/server#caddy) to expose the grpc connection.
 
-## Equinix Metal
-
-Set `WOODPECKER_PROVIDER=equinixmetal` and configure at least:
-
-- `WOODPECKER_EQUINIXMETAL_API_TOKEN`
-- `WOODPECKER_EQUINIXMETAL_PROJECT_ID`
-- `WOODPECKER_EQUINIXMETAL_PLAN`
-- exactly one of `WOODPECKER_EQUINIXMETAL_METRO` or `WOODPECKER_EQUINIXMETAL_FACILITY`
-
-Equinix Metal support is currently experimental: it has not been tested by the project maintainers, as none of them have real provider access.
-
-Useful optional settings:
-
-- `WOODPECKER_EQUINIXMETAL_OPERATING_SYSTEM` (default: `ubuntu_24_04`)
-- `WOODPECKER_EQUINIXMETAL_BILLING_CYCLE` (default: `hourly`)
-- `WOODPECKER_EQUINIXMETAL_TAGS`
-- `WOODPECKER_EQUINIXMETAL_PROJECT_SSH_KEYS`
-- `WOODPECKER_EQUINIXMETAL_SPOT_INSTANCE`
-- `WOODPECKER_EQUINIXMETAL_SPOT_PRICE_MAX`
-
 ## DigitalOcean
 
 Set `WOODPECKER_PROVIDER=digitalocean` and configure at least:
@@ -84,9 +64,20 @@ Both `USERNAME`/`PASSWORD` authentication and application credentials via `APPLI
 Credentials can also be read from files, to do so append `_FILE` to the appropriate variable name and set it to the file path.
 
 You can select the flavor and image for the agent instances via `FLAVOR/IMAGE_NAME` or UUID reference (`FLAVOR/IMAGE_REF`).
+The agent platform is taken from the image's `hw_architecture` (or `architecture`) property. Without it the platform is unknown, and workflows that set a `platform` label do not trigger scaling.
 If you set `VOLUME_SIZE`, block storage volumes are used.
 
 You can add your OpenStack SSH keypair via `KEYPAIR`.
+
+## Server type fallbacks
+
+Hetzner Cloud (`WOODPECKER_HETZNERCLOUD_SERVER_TYPE`), AWS (`WOODPECKER_AWS_INSTANCE_TYPE`) and Scaleway (`WOODPECKER_SCALEWAY_SERVER_TYPES`) take an ordered list of server types. If a type is out of capacity, the next type of the same architecture is tried; any other error fails the deploy.
+
+Limits:
+
+- There is no fallback across architectures: x86 and arm types are separate pools, each with its own fallback order.
+- Workflows without a `platform` label are deployed on the architecture of the first listed type.
+- Workflows that ask for a platform none of the types provides do not trigger scaling.
 
 ## Teardown policy
 
@@ -110,7 +101,6 @@ The billing model is selected automatically by the provider, so no extra configu
   - [x] Linode
   - [x] OpenStack **[experimental]**
   - [ ] Oracle Cloud
-  - [x] Equinix Metal **[experimental]** (untested by the maintainers against real provider access, see [above](#equinix-metal))
   - [x] Vultr
   - [x] Scaleway
 - [ ] Cleanup agents
@@ -119,4 +109,4 @@ The billing model is selected automatically by the provider, so no extra configu
   - [ ] Remove agents which have not connected for a long time
 - [x] Release as container image
 - [x] Add docs
-- [ ] Support agent deployment with specific attributes (e.g. platforms, architectures, etc.)
+- [x] Support agent deployment with specific attributes (e.g. platforms, architectures, etc.)

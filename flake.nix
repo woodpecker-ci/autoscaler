@@ -15,13 +15,12 @@
         devShells.default =
           with pkgs;
           let
-            go = go_1_26;
+            go = go_1_27;
           in
           pkgs.mkShell {
             buildInputs = [
               gnumake
               go
-              glibc.static
               gofumpt
               golangci-lint
               go-mockery

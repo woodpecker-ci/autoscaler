@@ -3,6 +3,7 @@ package cloudinit
 import (
 	"bytes"
 	"fmt"
+	"maps"
 	"strings"
 	"text/template"
 
@@ -50,9 +51,7 @@ func RenderUserDataTemplate(config *config.Config, agent *woodpecker.Agent, r Re
 		params.Environment["WOODPECKER_GRPC_SECURE"] = "true"
 	}
 
-	for key, value := range config.Environment {
-		params.Environment[key] = value
-	}
+	maps.Copy(params.Environment, config.Environment)
 
 	params.Environment["WOODPECKER_AGENT_LABELS"] = genExtraAgentLabels(config.ExtraAgentLabels)
 

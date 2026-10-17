@@ -34,7 +34,7 @@ steps:
     when: *when
 
   - name: lint-editorconfig
-    image: docker.io/woodpeckerci/plugin-editorconfig-checker:0.3.3
+    image: docker.io/woodpeckerci/plugin-editorconfig-checker:0.3.4
     depends_on: []
 
   - name: test
@@ -42,4 +42,11 @@ steps:
     depends_on: [vendor]
     commands:
       - make test
+    when: *when
+
+  - name: test-e2e
+    image: *golang_image
+    depends_on: [vendor]
+    commands:
+      - make test-e2e
     when: *when

@@ -17,7 +17,6 @@ import (
 	"go.woodpecker-ci.org/autoscaler/engine/types"
 	"go.woodpecker-ci.org/autoscaler/providers/aws"
 	"go.woodpecker-ci.org/autoscaler/providers/digitalocean"
-	"go.woodpecker-ci.org/autoscaler/providers/equinixmetal"
 	"go.woodpecker-ci.org/autoscaler/providers/hetznercloud"
 	"go.woodpecker-ci.org/autoscaler/providers/linode"
 	"go.woodpecker-ci.org/autoscaler/providers/openstack"
@@ -35,8 +34,6 @@ func setupProvider(ctx context.Context, cmd *cli.Command, config *config.Config)
 		return digitalocean.New(ctx, cmd, config)
 	case "hetznercloud":
 		return hetznercloud.New(ctx, cmd, config)
-	case "equinixmetal":
-		return equinixmetal.New(ctx, cmd, config)
 	case "linode":
 		return linode.New(ctx, cmd, config)
 	case "vultr":
@@ -102,11 +99,14 @@ func run(ctx context.Context, cmd *cli.Command) error {
 	}
 	config.BillingModel = provider.BillingModel()
 
-	autoscaler := engine.NewAutoscaler(provider, client, config)
-
 	config.AgentInactivityTimeout, err = time.ParseDuration(cmd.String("agent-inactivity-timeout"))
 	if err != nil {
 		return fmt.Errorf("can't parse agent-inactivity-timeout: %w", err)
+	}
+
+	config.AgentCreationTimeout, err = time.ParseDuration(cmd.String("agent-creation-timeout"))
+	if err != nil {
+		return fmt.Errorf("can't parse agent-creation-timeout: %w", err)
 	}
 
 	config.AgentIdleTimeout, err = time.ParseDuration(cmd.String("agent-idle-timeout"))
@@ -124,6 +124,11 @@ func run(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("can't parse reconciliation-interval: %w", err)
 	}
 	config.ReconciliationInterval = reconciliationInterval
+
+	autoscaler, err := engine.NewAutoscaler(ctx, provider, client, config)
+	if err != nil {
+		return fmt.Errorf("could not create autoscaler: %w", err)
+	}
 
 	if config.BillingModel == types.BillingHourlyRoundUp {
 		log.Info().
@@ -173,7 +178,6 @@ func main() {
 	}
 
 	app.Flags = append(app.Flags, hetznercloud.ProviderFlags...)
-	app.Flags = append(app.Flags, equinixmetal.ProviderFlags...)
 	app.Flags = append(app.Flags, scaleway.ProviderFlags...)
 	app.Flags = append(app.Flags, linode.ProviderFlags...)
 	app.Flags = append(app.Flags, aws.ProviderFlags...)
