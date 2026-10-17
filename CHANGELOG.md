@@ -41,6 +41,7 @@
 
 ### 📦️ Dependency
 
+- Update dependency golangci/golangci-lint to v2.15.0 [[#772](https://github.com/woodpecker-ci/autoscaler/pull/772)]
 - Update pre-commit hook golangci/golangci-lint to v2.15.0 [[#773](https://github.com/woodpecker-ci/autoscaler/pull/773)]
 - Update golang deps non-major [[#769](https://github.com/woodpecker-ci/autoscaler/pull/769)]
 - Update module github.com/hetznercloud/hcloud-go/v2 to v2.52.0 [[#768](https://github.com/woodpecker-ci/autoscaler/pull/768)]
