@@ -64,9 +64,20 @@ Both `USERNAME`/`PASSWORD` authentication and application credentials via `APPLI
 Credentials can also be read from files, to do so append `_FILE` to the appropriate variable name and set it to the file path.
 
 You can select the flavor and image for the agent instances via `FLAVOR/IMAGE_NAME` or UUID reference (`FLAVOR/IMAGE_REF`).
+The agent platform is taken from the image's `hw_architecture` (or `architecture`) property. Without it the platform is unknown, and workflows that set a `platform` label do not trigger scaling.
 If you set `VOLUME_SIZE`, block storage volumes are used.
 
 You can add your OpenStack SSH keypair via `KEYPAIR`.
+
+## Server type fallbacks
+
+Hetzner Cloud (`WOODPECKER_HETZNERCLOUD_SERVER_TYPE`), AWS (`WOODPECKER_AWS_INSTANCE_TYPE`) and Scaleway (`WOODPECKER_SCALEWAY_SERVER_TYPES`) take an ordered list of server types. If a type is out of capacity, the next type of the same architecture is tried; any other error fails the deploy.
+
+Limits:
+
+- There is no fallback across architectures: x86 and arm types are separate pools, each with its own fallback order.
+- Workflows without a `platform` label are deployed on the architecture of the first listed type.
+- Workflows that ask for a platform none of the types provides do not trigger scaling.
 
 ## Teardown policy
 
@@ -98,4 +109,4 @@ The billing model is selected automatically by the provider, so no extra configu
   - [ ] Remove agents which have not connected for a long time
 - [x] Release as container image
 - [x] Add docs
-- [ ] Support agent deployment with specific attributes (e.g. platforms, architectures, etc.)
+- [x] Support agent deployment with specific attributes (e.g. platforms, architectures, etc.)

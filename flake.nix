@@ -21,7 +21,6 @@
             buildInputs = [
               gnumake
               go
-              glibc.static
               gofumpt
               golangci-lint
               go-mockery
