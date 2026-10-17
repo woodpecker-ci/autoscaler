@@ -590,6 +590,26 @@ func Test_cleanupDanglingAgents(t *testing.T) {
 		err := autoscaler.cleanupDanglingAgents(ctx)
 		assert.NoError(t, err)
 	})
+
+	t.Run("should keep the agents that are still deployed in the pool list", func(t *testing.T) {
+		client := mocks_server.NewMockClient(t)
+		provider := mocks_provider.NewMockProvider(t)
+		survivor := &woodpecker.Agent{ID: 2, Name: "pool-1-agent-2"}
+		autoscaler := Autoscaler{
+			agents: map[string]*woodpecker.Agent{
+				"pool-1-agent-1": {ID: 1, Name: "pool-1-agent-1"},
+				survivor.Name:    survivor,
+			},
+			provider: provider,
+			client:   client,
+		}
+
+		provider.On("ListDeployedAgentNames", mock.Anything).Return([]string{survivor.Name}, nil).Once()
+		client.On("AgentDelete", int64(1)).Return(nil).Once()
+
+		require.NoError(t, autoscaler.cleanupDanglingAgents(t.Context()))
+		assert.Equal(t, map[string]*woodpecker.Agent{survivor.Name: survivor}, autoscaler.agents)
+	})
 }
 
 func Test_cleanupStaleAgents(t *testing.T) {
