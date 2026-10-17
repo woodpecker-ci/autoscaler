@@ -1,6 +1,7 @@
 package e2e_test
 
 import (
+	"errors"
 	"testing"
 	"time"
 
@@ -35,20 +36,41 @@ func TestHourlyBillingKeepsPaidCapacity(t *testing.T) {
 }
 
 // TestDrainedAgentInFreshPaidHourStaysWarm checks that a drained hourly agent
-// that already entered a new paid hour is kept.
+// that entered a new paid hour becomes schedulable again, with zero, one or two
+// pending workflows triggering only the missing capacity.
 func TestDrainedAgentInFreshPaidHourStaysWarm(t *testing.T) {
 	t.Parallel()
 
-	h := newHarness(t, hourlyConfig(), dockerAMD64)
-	agent := h.addConnectedAgent(t, "pool-e2e-agent-drained", dockerAMD64)
-	agent.NoSchedule = true
-	agent.Created = time.Now().Add(-61 * time.Minute).Unix()
-	h.woodpecker.put(agent)
+	for _, tc := range []struct {
+		name                string
+		pending, wantAgents int
+	}{
+		{name: "without demand", wantAgents: 1},
+		{name: "one pending workflow", pending: 1, wantAgents: 1},
+		{name: "two pending workflows", pending: 2, wantAgents: 2},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 
-	h.reconcile(t)
+			cfg := hourlyConfig()
+			cfg.MaxAgents = 2
+			h := newHarness(t, cfg, dockerAMD64)
+			agent := h.addConnectedAgent(t, "pool-e2e-agent-drained", dockerAMD64)
+			agent.NoSchedule = true
+			agent.Created = time.Now().Add(-65 * time.Minute).Unix()
+			h.woodpecker.put(agent)
+			h.woodpecker.queue.Pending = []woodpecker.Task{
+				realWorkflowTask("build-1", "linux/amd64"),
+				realWorkflowTask("build-2", "linux/amd64"),
+			}[:tc.pending]
 
-	require.Len(t, h.provider.deployed, 1)
-	require.Len(t, h.woodpecker.agents, 1)
+			h.reconcile(t)
+
+			require.False(t, h.woodpecker.agentByName(t, agent.Name).NoSchedule)
+			require.Len(t, h.provider.deployed, tc.wantAgents)
+			require.Len(t, h.woodpecker.agents, tc.wantAgents)
+		})
+	}
 }
 
 // TestHourlyTeardownWindows checks that the teardown window repeats every hour
@@ -113,20 +135,32 @@ func TestBusyHourlyAgentSurvivesMissedWindow(t *testing.T) {
 	h.woodpecker.queue.Running = []woodpecker.Task{runningOn(realWorkflowTask("build", "linux/amd64"), agent.ID)}
 	h.reconcile(t)
 	require.Contains(t, h.provider.deployed, agent.Name)
+	require.True(t, h.woodpecker.agentByName(t, agent.Name).NoSchedule)
 
-	t.Run("finished work retains the newly paid hour", func(t *testing.T) {
-		h.woodpecker.queue.Running = nil
-		agent.Created = time.Now().Add(-61 * time.Minute).Unix()
-		h.woodpecker.put(agent)
+	t.Run("the next paid hour restores scheduling while work is running", func(t *testing.T) {
+		current := h.woodpecker.agentByName(t, agent.Name)
+		current.Created = time.Now().Add(-61 * time.Minute).Unix()
+		h.woodpecker.put(current)
 		h.reconcile(t)
 		require.Contains(t, h.provider.deployed, agent.Name)
+		require.False(t, h.woodpecker.agentByName(t, agent.Name).NoSchedule)
 
-		t.Run("the next teardown window removes it", func(t *testing.T) {
-			agent.Created = time.Now().Add(-119 * time.Minute).Unix()
-			h.woodpecker.put(agent)
+		t.Run("finished work keeps the agent schedulable without another update", func(t *testing.T) {
+			h.woodpecker.queue.Running = nil
+			h.woodpecker.updateErr = errors.New("unexpected scheduling update")
 			h.reconcile(t)
-			require.Empty(t, h.provider.deployed)
-			require.Empty(t, h.woodpecker.agents)
+			h.woodpecker.updateErr = nil
+			require.Contains(t, h.provider.deployed, agent.Name)
+			require.False(t, h.woodpecker.agentByName(t, agent.Name).NoSchedule)
+
+			t.Run("the next teardown window removes it", func(t *testing.T) {
+				current := h.woodpecker.agentByName(t, agent.Name)
+				current.Created = time.Now().Add(-119 * time.Minute).Unix()
+				h.woodpecker.put(current)
+				h.reconcile(t)
+				require.Empty(t, h.provider.deployed)
+				require.Empty(t, h.woodpecker.agents)
+			})
 		})
 	})
 }

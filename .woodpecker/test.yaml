@@ -41,7 +41,7 @@ steps:
     image: *golang_image
     depends_on: [vendor]
     commands:
-      - make test
+      - make test-autoscaler
     when: *when
 
   - name: test-e2e
