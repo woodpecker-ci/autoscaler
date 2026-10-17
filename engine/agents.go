@@ -268,15 +268,31 @@ func (a *Autoscaler) removeAgent(ctx context.Context, agent *woodpecker.Agent, r
 }
 
 func (a *Autoscaler) removeDrainedAgents(ctx context.Context) error {
+	var buckets []agentBucket
+	if a.config.BillingModel == types.BillingHourlyRoundUp {
+		buckets = a.agentBuckets()
+	}
+
 	for _, agent := range a.agents {
 		if !agent.NoSchedule {
 			continue
 		}
 
-		// hourly-round-up: a drained agent that rolled into a fresh paid hour
-		// (e.g. it was busy at the boundary) stays up until its next teardown
-		// window rather than wasting the hour just bought.
+		// Restore paid-hour capacity after demand-driven scaling has had a
+		// chance to reuse it. Agents retired for config drift stay drained.
 		if a.config.BillingModel == types.BillingHourlyRoundUp && !a.inTeardownWindow(agent) {
+			if agent.Created == 0 || time.Since(time.Unix(agent.Created, 0)) < time.Hour ||
+				matchAgentToBucket(agent, buckets) < 0 {
+				continue
+			}
+
+			updated := *agent
+			updated.NoSchedule = false
+			if _, err := a.client.AgentUpdate(&updated); err != nil {
+				return fmt.Errorf("client.AgentUpdate: %w", err)
+			}
+			*agent = updated
+			log.Info().Str("agent", agent.Name).Msg("reactivate agent for paid hour")
 			continue
 		}
 
