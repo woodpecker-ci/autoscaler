@@ -8,6 +8,7 @@
 
 ### 💥 Breaking changes
 
+- Rewrite scheduler to respect labels and capabilities of providers [[#581](https://github.com/woodpecker-ci/autoscaler/pull/581)]
 - For Linode and Scaleway use tags to identify agents with their pool [[#720](https://github.com/woodpecker-ci/autoscaler/pull/720)]
 - AWS resolve config on start and use defaults [[#637](https://github.com/woodpecker-ci/autoscaler/pull/637)]
 - Scaleway resolve config on startup [[#636](https://github.com/woodpecker-ci/autoscaler/pull/636)]
