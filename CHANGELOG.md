@@ -40,10 +40,6 @@
 - Fix RandomString returning identical values within one clock tick [[#719](https://github.com/woodpecker-ci/autoscaler/pull/719)]
 - fix(engine): stop double-subtracting pool size in calcAgents [[#674](https://github.com/woodpecker-ci/autoscaler/pull/674)]
 
-### 📦️ Dependency
-
-- Update golang deps non-major [[#741](https://github.com/woodpecker-ci/autoscaler/pull/741)]
-
 ### Misc
 
 - ci: publish preview image for labeled pull requests [[#743](https://github.com/woodpecker-ci/autoscaler/pull/743)]
