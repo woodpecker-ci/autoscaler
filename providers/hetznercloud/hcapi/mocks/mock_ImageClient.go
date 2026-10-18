@@ -17,10 +17,19 @@ func NewMockImageClient(t interface {
 	mock.TestingT
 	Cleanup(func())
 }) *MockImageClient {
+	if helper, ok := t.(interface{ Helper() }); ok {
+		helper.Helper()
+	}
+
 	mock := &MockImageClient{}
 	mock.Mock.Test(t)
 
-	t.Cleanup(func() { mock.AssertExpectations(t) })
+	t.Cleanup(func() {
+		if helper, ok := t.(interface{ Helper() }); ok {
+			helper.Helper()
+		}
+		mock.AssertExpectations(t)
+	})
 
 	return mock
 }
@@ -73,7 +82,7 @@ type MockImageClient_All_Call struct {
 
 // All is a helper method to define mock.On call
 //   - ctx context.Context
-func (_e *MockImageClient_Expecter) All(ctx interface{}) *MockImageClient_All_Call {
+func (_e *MockImageClient_Expecter) All(ctx any) *MockImageClient_All_Call {
 	return &MockImageClient_All_Call{Call: _e.mock.On("All", ctx)}
 }
 
@@ -136,7 +145,7 @@ type MockImageClient_AllWithOpts_Call struct {
 // AllWithOpts is a helper method to define mock.On call
 //   - ctx context.Context
 //   - opts hcloud.ImageListOpts
-func (_e *MockImageClient_Expecter) AllWithOpts(ctx interface{}, opts interface{}) *MockImageClient_AllWithOpts_Call {
+func (_e *MockImageClient_Expecter) AllWithOpts(ctx any, opts any) *MockImageClient_AllWithOpts_Call {
 	return &MockImageClient_AllWithOpts_Call{Call: _e.mock.On("AllWithOpts", ctx, opts)}
 }
 
@@ -213,7 +222,7 @@ type MockImageClient_ChangeProtection_Call struct {
 //   - ctx context.Context
 //   - image *hcloud.Image
 //   - opts hcloud.ImageChangeProtectionOpts
-func (_e *MockImageClient_Expecter) ChangeProtection(ctx interface{}, image interface{}, opts interface{}) *MockImageClient_ChangeProtection_Call {
+func (_e *MockImageClient_Expecter) ChangeProtection(ctx any, image any, opts any) *MockImageClient_ChangeProtection_Call {
 	return &MockImageClient_ChangeProtection_Call{Call: _e.mock.On("ChangeProtection", ctx, image, opts)}
 }
 
@@ -286,7 +295,7 @@ type MockImageClient_Delete_Call struct {
 // Delete is a helper method to define mock.On call
 //   - ctx context.Context
 //   - image *hcloud.Image
-func (_e *MockImageClient_Expecter) Delete(ctx interface{}, image interface{}) *MockImageClient_Delete_Call {
+func (_e *MockImageClient_Expecter) Delete(ctx any, image any) *MockImageClient_Delete_Call {
 	return &MockImageClient_Delete_Call{Call: _e.mock.On("Delete", ctx, image)}
 }
 
@@ -362,7 +371,7 @@ type MockImageClient_Get_Call struct {
 // Get is a helper method to define mock.On call
 //   - ctx context.Context
 //   - idOrName string
-func (_e *MockImageClient_Expecter) Get(ctx interface{}, idOrName interface{}) *MockImageClient_Get_Call {
+func (_e *MockImageClient_Expecter) Get(ctx any, idOrName any) *MockImageClient_Get_Call {
 	return &MockImageClient_Get_Call{Call: _e.mock.On("Get", ctx, idOrName)}
 }
 
@@ -438,7 +447,7 @@ type MockImageClient_GetByID_Call struct {
 // GetByID is a helper method to define mock.On call
 //   - ctx context.Context
 //   - id int64
-func (_e *MockImageClient_Expecter) GetByID(ctx interface{}, id interface{}) *MockImageClient_GetByID_Call {
+func (_e *MockImageClient_Expecter) GetByID(ctx any, id any) *MockImageClient_GetByID_Call {
 	return &MockImageClient_GetByID_Call{Call: _e.mock.On("GetByID", ctx, id)}
 }
 
@@ -514,7 +523,7 @@ type MockImageClient_GetByName_Call struct {
 // GetByName is a helper method to define mock.On call
 //   - ctx context.Context
 //   - name string
-func (_e *MockImageClient_Expecter) GetByName(ctx interface{}, name interface{}) *MockImageClient_GetByName_Call {
+func (_e *MockImageClient_Expecter) GetByName(ctx any, name any) *MockImageClient_GetByName_Call {
 	return &MockImageClient_GetByName_Call{Call: _e.mock.On("GetByName", ctx, name)}
 }
 
@@ -591,7 +600,7 @@ type MockImageClient_GetByNameAndArchitecture_Call struct {
 //   - ctx context.Context
 //   - name string
 //   - architecture hcloud.Architecture
-func (_e *MockImageClient_Expecter) GetByNameAndArchitecture(ctx interface{}, name interface{}, architecture interface{}) *MockImageClient_GetByNameAndArchitecture_Call {
+func (_e *MockImageClient_Expecter) GetByNameAndArchitecture(ctx any, name any, architecture any) *MockImageClient_GetByNameAndArchitecture_Call {
 	return &MockImageClient_GetByNameAndArchitecture_Call{Call: _e.mock.On("GetByNameAndArchitecture", ctx, name, architecture)}
 }
 
@@ -673,7 +682,7 @@ type MockImageClient_GetForArchitecture_Call struct {
 //   - ctx context.Context
 //   - idOrName string
 //   - architecture hcloud.Architecture
-func (_e *MockImageClient_Expecter) GetForArchitecture(ctx interface{}, idOrName interface{}, architecture interface{}) *MockImageClient_GetForArchitecture_Call {
+func (_e *MockImageClient_Expecter) GetForArchitecture(ctx any, idOrName any, architecture any) *MockImageClient_GetForArchitecture_Call {
 	return &MockImageClient_GetForArchitecture_Call{Call: _e.mock.On("GetForArchitecture", ctx, idOrName, architecture)}
 }
 
@@ -754,7 +763,7 @@ type MockImageClient_List_Call struct {
 // List is a helper method to define mock.On call
 //   - ctx context.Context
 //   - opts hcloud.ImageListOpts
-func (_e *MockImageClient_Expecter) List(ctx interface{}, opts interface{}) *MockImageClient_List_Call {
+func (_e *MockImageClient_Expecter) List(ctx any, opts any) *MockImageClient_List_Call {
 	return &MockImageClient_List_Call{Call: _e.mock.On("List", ctx, opts)}
 }
 
@@ -831,7 +840,7 @@ type MockImageClient_Update_Call struct {
 //   - ctx context.Context
 //   - image *hcloud.Image
 //   - opts hcloud.ImageUpdateOpts
-func (_e *MockImageClient_Expecter) Update(ctx interface{}, image interface{}, opts interface{}) *MockImageClient_Update_Call {
+func (_e *MockImageClient_Expecter) Update(ctx any, image any, opts any) *MockImageClient_Update_Call {
 	return &MockImageClient_Update_Call{Call: _e.mock.On("Update", ctx, image, opts)}
 }
 

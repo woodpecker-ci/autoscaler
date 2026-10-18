@@ -17,10 +17,19 @@ func NewMockSSHKeyClient(t interface {
 	mock.TestingT
 	Cleanup(func())
 }) *MockSSHKeyClient {
+	if helper, ok := t.(interface{ Helper() }); ok {
+		helper.Helper()
+	}
+
 	mock := &MockSSHKeyClient{}
 	mock.Mock.Test(t)
 
-	t.Cleanup(func() { mock.AssertExpectations(t) })
+	t.Cleanup(func() {
+		if helper, ok := t.(interface{ Helper() }); ok {
+			helper.Helper()
+		}
+		mock.AssertExpectations(t)
+	})
 
 	return mock
 }
@@ -73,7 +82,7 @@ type MockSSHKeyClient_All_Call struct {
 
 // All is a helper method to define mock.On call
 //   - ctx context.Context
-func (_e *MockSSHKeyClient_Expecter) All(ctx interface{}) *MockSSHKeyClient_All_Call {
+func (_e *MockSSHKeyClient_Expecter) All(ctx any) *MockSSHKeyClient_All_Call {
 	return &MockSSHKeyClient_All_Call{Call: _e.mock.On("All", ctx)}
 }
 
@@ -136,7 +145,7 @@ type MockSSHKeyClient_AllWithOpts_Call struct {
 // AllWithOpts is a helper method to define mock.On call
 //   - ctx context.Context
 //   - opts hcloud.SSHKeyListOpts
-func (_e *MockSSHKeyClient_Expecter) AllWithOpts(ctx interface{}, opts interface{}) *MockSSHKeyClient_AllWithOpts_Call {
+func (_e *MockSSHKeyClient_Expecter) AllWithOpts(ctx any, opts any) *MockSSHKeyClient_AllWithOpts_Call {
 	return &MockSSHKeyClient_AllWithOpts_Call{Call: _e.mock.On("AllWithOpts", ctx, opts)}
 }
 
@@ -212,7 +221,7 @@ type MockSSHKeyClient_Create_Call struct {
 // Create is a helper method to define mock.On call
 //   - ctx context.Context
 //   - opts hcloud.SSHKeyCreateOpts
-func (_e *MockSSHKeyClient_Expecter) Create(ctx interface{}, opts interface{}) *MockSSHKeyClient_Create_Call {
+func (_e *MockSSHKeyClient_Expecter) Create(ctx any, opts any) *MockSSHKeyClient_Create_Call {
 	return &MockSSHKeyClient_Create_Call{Call: _e.mock.On("Create", ctx, opts)}
 }
 
@@ -280,7 +289,7 @@ type MockSSHKeyClient_Delete_Call struct {
 // Delete is a helper method to define mock.On call
 //   - ctx context.Context
 //   - sshKey *hcloud.SSHKey
-func (_e *MockSSHKeyClient_Expecter) Delete(ctx interface{}, sshKey interface{}) *MockSSHKeyClient_Delete_Call {
+func (_e *MockSSHKeyClient_Expecter) Delete(ctx any, sshKey any) *MockSSHKeyClient_Delete_Call {
 	return &MockSSHKeyClient_Delete_Call{Call: _e.mock.On("Delete", ctx, sshKey)}
 }
 
@@ -356,7 +365,7 @@ type MockSSHKeyClient_Get_Call struct {
 // Get is a helper method to define mock.On call
 //   - ctx context.Context
 //   - idOrName string
-func (_e *MockSSHKeyClient_Expecter) Get(ctx interface{}, idOrName interface{}) *MockSSHKeyClient_Get_Call {
+func (_e *MockSSHKeyClient_Expecter) Get(ctx any, idOrName any) *MockSSHKeyClient_Get_Call {
 	return &MockSSHKeyClient_Get_Call{Call: _e.mock.On("Get", ctx, idOrName)}
 }
 
@@ -432,7 +441,7 @@ type MockSSHKeyClient_GetByFingerprint_Call struct {
 // GetByFingerprint is a helper method to define mock.On call
 //   - ctx context.Context
 //   - fingerprint string
-func (_e *MockSSHKeyClient_Expecter) GetByFingerprint(ctx interface{}, fingerprint interface{}) *MockSSHKeyClient_GetByFingerprint_Call {
+func (_e *MockSSHKeyClient_Expecter) GetByFingerprint(ctx any, fingerprint any) *MockSSHKeyClient_GetByFingerprint_Call {
 	return &MockSSHKeyClient_GetByFingerprint_Call{Call: _e.mock.On("GetByFingerprint", ctx, fingerprint)}
 }
 
@@ -508,7 +517,7 @@ type MockSSHKeyClient_GetByID_Call struct {
 // GetByID is a helper method to define mock.On call
 //   - ctx context.Context
 //   - id int64
-func (_e *MockSSHKeyClient_Expecter) GetByID(ctx interface{}, id interface{}) *MockSSHKeyClient_GetByID_Call {
+func (_e *MockSSHKeyClient_Expecter) GetByID(ctx any, id any) *MockSSHKeyClient_GetByID_Call {
 	return &MockSSHKeyClient_GetByID_Call{Call: _e.mock.On("GetByID", ctx, id)}
 }
 
@@ -584,7 +593,7 @@ type MockSSHKeyClient_GetByName_Call struct {
 // GetByName is a helper method to define mock.On call
 //   - ctx context.Context
 //   - name string
-func (_e *MockSSHKeyClient_Expecter) GetByName(ctx interface{}, name interface{}) *MockSSHKeyClient_GetByName_Call {
+func (_e *MockSSHKeyClient_Expecter) GetByName(ctx any, name any) *MockSSHKeyClient_GetByName_Call {
 	return &MockSSHKeyClient_GetByName_Call{Call: _e.mock.On("GetByName", ctx, name)}
 }
 
@@ -660,7 +669,7 @@ type MockSSHKeyClient_List_Call struct {
 // List is a helper method to define mock.On call
 //   - ctx context.Context
 //   - opts hcloud.SSHKeyListOpts
-func (_e *MockSSHKeyClient_Expecter) List(ctx interface{}, opts interface{}) *MockSSHKeyClient_List_Call {
+func (_e *MockSSHKeyClient_Expecter) List(ctx any, opts any) *MockSSHKeyClient_List_Call {
 	return &MockSSHKeyClient_List_Call{Call: _e.mock.On("List", ctx, opts)}
 }
 
@@ -737,7 +746,7 @@ type MockSSHKeyClient_Update_Call struct {
 //   - ctx context.Context
 //   - sshKey *hcloud.SSHKey
 //   - opts hcloud.SSHKeyUpdateOpts
-func (_e *MockSSHKeyClient_Expecter) Update(ctx interface{}, sshKey interface{}, opts interface{}) *MockSSHKeyClient_Update_Call {
+func (_e *MockSSHKeyClient_Expecter) Update(ctx any, sshKey any, opts any) *MockSSHKeyClient_Update_Call {
 	return &MockSSHKeyClient_Update_Call{Call: _e.mock.On("Update", ctx, sshKey, opts)}
 }
 

@@ -17,10 +17,19 @@ func NewMockFirewallClient(t interface {
 	mock.TestingT
 	Cleanup(func())
 }) *MockFirewallClient {
+	if helper, ok := t.(interface{ Helper() }); ok {
+		helper.Helper()
+	}
+
 	mock := &MockFirewallClient{}
 	mock.Mock.Test(t)
 
-	t.Cleanup(func() { mock.AssertExpectations(t) })
+	t.Cleanup(func() {
+		if helper, ok := t.(interface{ Helper() }); ok {
+			helper.Helper()
+		}
+		mock.AssertExpectations(t)
+	})
 
 	return mock
 }
@@ -73,7 +82,7 @@ type MockFirewallClient_All_Call struct {
 
 // All is a helper method to define mock.On call
 //   - ctx context.Context
-func (_e *MockFirewallClient_Expecter) All(ctx interface{}) *MockFirewallClient_All_Call {
+func (_e *MockFirewallClient_Expecter) All(ctx any) *MockFirewallClient_All_Call {
 	return &MockFirewallClient_All_Call{Call: _e.mock.On("All", ctx)}
 }
 
@@ -136,7 +145,7 @@ type MockFirewallClient_AllWithOpts_Call struct {
 // AllWithOpts is a helper method to define mock.On call
 //   - ctx context.Context
 //   - opts hcloud.FirewallListOpts
-func (_e *MockFirewallClient_Expecter) AllWithOpts(ctx interface{}, opts interface{}) *MockFirewallClient_AllWithOpts_Call {
+func (_e *MockFirewallClient_Expecter) AllWithOpts(ctx any, opts any) *MockFirewallClient_AllWithOpts_Call {
 	return &MockFirewallClient_AllWithOpts_Call{Call: _e.mock.On("AllWithOpts", ctx, opts)}
 }
 
@@ -213,7 +222,7 @@ type MockFirewallClient_ApplyResources_Call struct {
 //   - ctx context.Context
 //   - firewall *hcloud.Firewall
 //   - resources []hcloud.FirewallResource
-func (_e *MockFirewallClient_Expecter) ApplyResources(ctx interface{}, firewall interface{}, resources interface{}) *MockFirewallClient_ApplyResources_Call {
+func (_e *MockFirewallClient_Expecter) ApplyResources(ctx any, firewall any, resources any) *MockFirewallClient_ApplyResources_Call {
 	return &MockFirewallClient_ApplyResources_Call{Call: _e.mock.On("ApplyResources", ctx, firewall, resources)}
 }
 
@@ -292,7 +301,7 @@ type MockFirewallClient_Create_Call struct {
 // Create is a helper method to define mock.On call
 //   - ctx context.Context
 //   - opts hcloud.FirewallCreateOpts
-func (_e *MockFirewallClient_Expecter) Create(ctx interface{}, opts interface{}) *MockFirewallClient_Create_Call {
+func (_e *MockFirewallClient_Expecter) Create(ctx any, opts any) *MockFirewallClient_Create_Call {
 	return &MockFirewallClient_Create_Call{Call: _e.mock.On("Create", ctx, opts)}
 }
 
@@ -360,7 +369,7 @@ type MockFirewallClient_Delete_Call struct {
 // Delete is a helper method to define mock.On call
 //   - ctx context.Context
 //   - firewall *hcloud.Firewall
-func (_e *MockFirewallClient_Expecter) Delete(ctx interface{}, firewall interface{}) *MockFirewallClient_Delete_Call {
+func (_e *MockFirewallClient_Expecter) Delete(ctx any, firewall any) *MockFirewallClient_Delete_Call {
 	return &MockFirewallClient_Delete_Call{Call: _e.mock.On("Delete", ctx, firewall)}
 }
 
@@ -436,7 +445,7 @@ type MockFirewallClient_Get_Call struct {
 // Get is a helper method to define mock.On call
 //   - ctx context.Context
 //   - idOrName string
-func (_e *MockFirewallClient_Expecter) Get(ctx interface{}, idOrName interface{}) *MockFirewallClient_Get_Call {
+func (_e *MockFirewallClient_Expecter) Get(ctx any, idOrName any) *MockFirewallClient_Get_Call {
 	return &MockFirewallClient_Get_Call{Call: _e.mock.On("Get", ctx, idOrName)}
 }
 
@@ -512,7 +521,7 @@ type MockFirewallClient_GetByID_Call struct {
 // GetByID is a helper method to define mock.On call
 //   - ctx context.Context
 //   - id int64
-func (_e *MockFirewallClient_Expecter) GetByID(ctx interface{}, id interface{}) *MockFirewallClient_GetByID_Call {
+func (_e *MockFirewallClient_Expecter) GetByID(ctx any, id any) *MockFirewallClient_GetByID_Call {
 	return &MockFirewallClient_GetByID_Call{Call: _e.mock.On("GetByID", ctx, id)}
 }
 
@@ -588,7 +597,7 @@ type MockFirewallClient_GetByName_Call struct {
 // GetByName is a helper method to define mock.On call
 //   - ctx context.Context
 //   - name string
-func (_e *MockFirewallClient_Expecter) GetByName(ctx interface{}, name interface{}) *MockFirewallClient_GetByName_Call {
+func (_e *MockFirewallClient_Expecter) GetByName(ctx any, name any) *MockFirewallClient_GetByName_Call {
 	return &MockFirewallClient_GetByName_Call{Call: _e.mock.On("GetByName", ctx, name)}
 }
 
@@ -664,7 +673,7 @@ type MockFirewallClient_List_Call struct {
 // List is a helper method to define mock.On call
 //   - ctx context.Context
 //   - opts hcloud.FirewallListOpts
-func (_e *MockFirewallClient_Expecter) List(ctx interface{}, opts interface{}) *MockFirewallClient_List_Call {
+func (_e *MockFirewallClient_Expecter) List(ctx any, opts any) *MockFirewallClient_List_Call {
 	return &MockFirewallClient_List_Call{Call: _e.mock.On("List", ctx, opts)}
 }
 
@@ -741,7 +750,7 @@ type MockFirewallClient_RemoveResources_Call struct {
 //   - ctx context.Context
 //   - firewall *hcloud.Firewall
 //   - resources []hcloud.FirewallResource
-func (_e *MockFirewallClient_Expecter) RemoveResources(ctx interface{}, firewall interface{}, resources interface{}) *MockFirewallClient_RemoveResources_Call {
+func (_e *MockFirewallClient_Expecter) RemoveResources(ctx any, firewall any, resources any) *MockFirewallClient_RemoveResources_Call {
 	return &MockFirewallClient_RemoveResources_Call{Call: _e.mock.On("RemoveResources", ctx, firewall, resources)}
 }
 
@@ -823,7 +832,7 @@ type MockFirewallClient_SetRules_Call struct {
 //   - ctx context.Context
 //   - firewall *hcloud.Firewall
 //   - opts hcloud.FirewallSetRulesOpts
-func (_e *MockFirewallClient_Expecter) SetRules(ctx interface{}, firewall interface{}, opts interface{}) *MockFirewallClient_SetRules_Call {
+func (_e *MockFirewallClient_Expecter) SetRules(ctx any, firewall any, opts any) *MockFirewallClient_SetRules_Call {
 	return &MockFirewallClient_SetRules_Call{Call: _e.mock.On("SetRules", ctx, firewall, opts)}
 }
 
@@ -905,7 +914,7 @@ type MockFirewallClient_Update_Call struct {
 //   - ctx context.Context
 //   - firewall *hcloud.Firewall
 //   - opts hcloud.FirewallUpdateOpts
-func (_e *MockFirewallClient_Expecter) Update(ctx interface{}, firewall interface{}, opts interface{}) *MockFirewallClient_Update_Call {
+func (_e *MockFirewallClient_Expecter) Update(ctx any, firewall any, opts any) *MockFirewallClient_Update_Call {
 	return &MockFirewallClient_Update_Call{Call: _e.mock.On("Update", ctx, firewall, opts)}
 }
 

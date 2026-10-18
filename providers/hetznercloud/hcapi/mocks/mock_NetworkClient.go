@@ -17,10 +17,19 @@ func NewMockNetworkClient(t interface {
 	mock.TestingT
 	Cleanup(func())
 }) *MockNetworkClient {
+	if helper, ok := t.(interface{ Helper() }); ok {
+		helper.Helper()
+	}
+
 	mock := &MockNetworkClient{}
 	mock.Mock.Test(t)
 
-	t.Cleanup(func() { mock.AssertExpectations(t) })
+	t.Cleanup(func() {
+		if helper, ok := t.(interface{ Helper() }); ok {
+			helper.Helper()
+		}
+		mock.AssertExpectations(t)
+	})
 
 	return mock
 }
@@ -83,7 +92,7 @@ type MockNetworkClient_AddRoute_Call struct {
 //   - ctx context.Context
 //   - network *hcloud.Network
 //   - opts hcloud.NetworkAddRouteOpts
-func (_e *MockNetworkClient_Expecter) AddRoute(ctx interface{}, network interface{}, opts interface{}) *MockNetworkClient_AddRoute_Call {
+func (_e *MockNetworkClient_Expecter) AddRoute(ctx any, network any, opts any) *MockNetworkClient_AddRoute_Call {
 	return &MockNetworkClient_AddRoute_Call{Call: _e.mock.On("AddRoute", ctx, network, opts)}
 }
 
@@ -165,7 +174,7 @@ type MockNetworkClient_AddSubnet_Call struct {
 //   - ctx context.Context
 //   - network *hcloud.Network
 //   - opts hcloud.NetworkAddSubnetOpts
-func (_e *MockNetworkClient_Expecter) AddSubnet(ctx interface{}, network interface{}, opts interface{}) *MockNetworkClient_AddSubnet_Call {
+func (_e *MockNetworkClient_Expecter) AddSubnet(ctx any, network any, opts any) *MockNetworkClient_AddSubnet_Call {
 	return &MockNetworkClient_AddSubnet_Call{Call: _e.mock.On("AddSubnet", ctx, network, opts)}
 }
 
@@ -237,7 +246,7 @@ type MockNetworkClient_All_Call struct {
 
 // All is a helper method to define mock.On call
 //   - ctx context.Context
-func (_e *MockNetworkClient_Expecter) All(ctx interface{}) *MockNetworkClient_All_Call {
+func (_e *MockNetworkClient_Expecter) All(ctx any) *MockNetworkClient_All_Call {
 	return &MockNetworkClient_All_Call{Call: _e.mock.On("All", ctx)}
 }
 
@@ -260,6 +269,148 @@ func (_c *MockNetworkClient_All_Call) Return(networks []*hcloud.Network, err err
 }
 
 func (_c *MockNetworkClient_All_Call) RunAndReturn(run func(ctx context.Context) ([]*hcloud.Network, error)) *MockNetworkClient_All_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// AllMembers provides a mock function for the type MockNetworkClient
+func (_mock *MockNetworkClient) AllMembers(ctx context.Context, network *hcloud.Network) ([]*hcloud.NetworkMember, error) {
+	ret := _mock.Called(ctx, network)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AllMembers")
+	}
+
+	var r0 []*hcloud.NetworkMember
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *hcloud.Network) ([]*hcloud.NetworkMember, error)); ok {
+		return returnFunc(ctx, network)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *hcloud.Network) []*hcloud.NetworkMember); ok {
+		r0 = returnFunc(ctx, network)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*hcloud.NetworkMember)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, *hcloud.Network) error); ok {
+		r1 = returnFunc(ctx, network)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockNetworkClient_AllMembers_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AllMembers'
+type MockNetworkClient_AllMembers_Call struct {
+	*mock.Call
+}
+
+// AllMembers is a helper method to define mock.On call
+//   - ctx context.Context
+//   - network *hcloud.Network
+func (_e *MockNetworkClient_Expecter) AllMembers(ctx any, network any) *MockNetworkClient_AllMembers_Call {
+	return &MockNetworkClient_AllMembers_Call{Call: _e.mock.On("AllMembers", ctx, network)}
+}
+
+func (_c *MockNetworkClient_AllMembers_Call) Run(run func(ctx context.Context, network *hcloud.Network)) *MockNetworkClient_AllMembers_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 *hcloud.Network
+		if args[1] != nil {
+			arg1 = args[1].(*hcloud.Network)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockNetworkClient_AllMembers_Call) Return(networkMembers []*hcloud.NetworkMember, err error) *MockNetworkClient_AllMembers_Call {
+	_c.Call.Return(networkMembers, err)
+	return _c
+}
+
+func (_c *MockNetworkClient_AllMembers_Call) RunAndReturn(run func(ctx context.Context, network *hcloud.Network) ([]*hcloud.NetworkMember, error)) *MockNetworkClient_AllMembers_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// AllMembersWithOpts provides a mock function for the type MockNetworkClient
+func (_mock *MockNetworkClient) AllMembersWithOpts(ctx context.Context, network *hcloud.Network, opts hcloud.NetworkMemberListOpts) ([]*hcloud.NetworkMember, error) {
+	ret := _mock.Called(ctx, network, opts)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AllMembersWithOpts")
+	}
+
+	var r0 []*hcloud.NetworkMember
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *hcloud.Network, hcloud.NetworkMemberListOpts) ([]*hcloud.NetworkMember, error)); ok {
+		return returnFunc(ctx, network, opts)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *hcloud.Network, hcloud.NetworkMemberListOpts) []*hcloud.NetworkMember); ok {
+		r0 = returnFunc(ctx, network, opts)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*hcloud.NetworkMember)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, *hcloud.Network, hcloud.NetworkMemberListOpts) error); ok {
+		r1 = returnFunc(ctx, network, opts)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockNetworkClient_AllMembersWithOpts_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AllMembersWithOpts'
+type MockNetworkClient_AllMembersWithOpts_Call struct {
+	*mock.Call
+}
+
+// AllMembersWithOpts is a helper method to define mock.On call
+//   - ctx context.Context
+//   - network *hcloud.Network
+//   - opts hcloud.NetworkMemberListOpts
+func (_e *MockNetworkClient_Expecter) AllMembersWithOpts(ctx any, network any, opts any) *MockNetworkClient_AllMembersWithOpts_Call {
+	return &MockNetworkClient_AllMembersWithOpts_Call{Call: _e.mock.On("AllMembersWithOpts", ctx, network, opts)}
+}
+
+func (_c *MockNetworkClient_AllMembersWithOpts_Call) Run(run func(ctx context.Context, network *hcloud.Network, opts hcloud.NetworkMemberListOpts)) *MockNetworkClient_AllMembersWithOpts_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 *hcloud.Network
+		if args[1] != nil {
+			arg1 = args[1].(*hcloud.Network)
+		}
+		var arg2 hcloud.NetworkMemberListOpts
+		if args[2] != nil {
+			arg2 = args[2].(hcloud.NetworkMemberListOpts)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *MockNetworkClient_AllMembersWithOpts_Call) Return(networkMembers []*hcloud.NetworkMember, err error) *MockNetworkClient_AllMembersWithOpts_Call {
+	_c.Call.Return(networkMembers, err)
+	return _c
+}
+
+func (_c *MockNetworkClient_AllMembersWithOpts_Call) RunAndReturn(run func(ctx context.Context, network *hcloud.Network, opts hcloud.NetworkMemberListOpts) ([]*hcloud.NetworkMember, error)) *MockNetworkClient_AllMembersWithOpts_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -300,7 +451,7 @@ type MockNetworkClient_AllWithOpts_Call struct {
 // AllWithOpts is a helper method to define mock.On call
 //   - ctx context.Context
 //   - opts hcloud.NetworkListOpts
-func (_e *MockNetworkClient_Expecter) AllWithOpts(ctx interface{}, opts interface{}) *MockNetworkClient_AllWithOpts_Call {
+func (_e *MockNetworkClient_Expecter) AllWithOpts(ctx any, opts any) *MockNetworkClient_AllWithOpts_Call {
 	return &MockNetworkClient_AllWithOpts_Call{Call: _e.mock.On("AllWithOpts", ctx, opts)}
 }
 
@@ -377,7 +528,7 @@ type MockNetworkClient_ChangeIPRange_Call struct {
 //   - ctx context.Context
 //   - network *hcloud.Network
 //   - opts hcloud.NetworkChangeIPRangeOpts
-func (_e *MockNetworkClient_Expecter) ChangeIPRange(ctx interface{}, network interface{}, opts interface{}) *MockNetworkClient_ChangeIPRange_Call {
+func (_e *MockNetworkClient_Expecter) ChangeIPRange(ctx any, network any, opts any) *MockNetworkClient_ChangeIPRange_Call {
 	return &MockNetworkClient_ChangeIPRange_Call{Call: _e.mock.On("ChangeIPRange", ctx, network, opts)}
 }
 
@@ -459,7 +610,7 @@ type MockNetworkClient_ChangeProtection_Call struct {
 //   - ctx context.Context
 //   - network *hcloud.Network
 //   - opts hcloud.NetworkChangeProtectionOpts
-func (_e *MockNetworkClient_Expecter) ChangeProtection(ctx interface{}, network interface{}, opts interface{}) *MockNetworkClient_ChangeProtection_Call {
+func (_e *MockNetworkClient_Expecter) ChangeProtection(ctx any, network any, opts any) *MockNetworkClient_ChangeProtection_Call {
 	return &MockNetworkClient_ChangeProtection_Call{Call: _e.mock.On("ChangeProtection", ctx, network, opts)}
 }
 
@@ -540,7 +691,7 @@ type MockNetworkClient_Create_Call struct {
 // Create is a helper method to define mock.On call
 //   - ctx context.Context
 //   - opts hcloud.NetworkCreateOpts
-func (_e *MockNetworkClient_Expecter) Create(ctx interface{}, opts interface{}) *MockNetworkClient_Create_Call {
+func (_e *MockNetworkClient_Expecter) Create(ctx any, opts any) *MockNetworkClient_Create_Call {
 	return &MockNetworkClient_Create_Call{Call: _e.mock.On("Create", ctx, opts)}
 }
 
@@ -608,7 +759,7 @@ type MockNetworkClient_Delete_Call struct {
 // Delete is a helper method to define mock.On call
 //   - ctx context.Context
 //   - network *hcloud.Network
-func (_e *MockNetworkClient_Expecter) Delete(ctx interface{}, network interface{}) *MockNetworkClient_Delete_Call {
+func (_e *MockNetworkClient_Expecter) Delete(ctx any, network any) *MockNetworkClient_Delete_Call {
 	return &MockNetworkClient_Delete_Call{Call: _e.mock.On("Delete", ctx, network)}
 }
 
@@ -685,7 +836,7 @@ type MockNetworkClient_DeleteRoute_Call struct {
 //   - ctx context.Context
 //   - network *hcloud.Network
 //   - opts hcloud.NetworkDeleteRouteOpts
-func (_e *MockNetworkClient_Expecter) DeleteRoute(ctx interface{}, network interface{}, opts interface{}) *MockNetworkClient_DeleteRoute_Call {
+func (_e *MockNetworkClient_Expecter) DeleteRoute(ctx any, network any, opts any) *MockNetworkClient_DeleteRoute_Call {
 	return &MockNetworkClient_DeleteRoute_Call{Call: _e.mock.On("DeleteRoute", ctx, network, opts)}
 }
 
@@ -767,7 +918,7 @@ type MockNetworkClient_DeleteSubnet_Call struct {
 //   - ctx context.Context
 //   - network *hcloud.Network
 //   - opts hcloud.NetworkDeleteSubnetOpts
-func (_e *MockNetworkClient_Expecter) DeleteSubnet(ctx interface{}, network interface{}, opts interface{}) *MockNetworkClient_DeleteSubnet_Call {
+func (_e *MockNetworkClient_Expecter) DeleteSubnet(ctx any, network any, opts any) *MockNetworkClient_DeleteSubnet_Call {
 	return &MockNetworkClient_DeleteSubnet_Call{Call: _e.mock.On("DeleteSubnet", ctx, network, opts)}
 }
 
@@ -848,7 +999,7 @@ type MockNetworkClient_Get_Call struct {
 // Get is a helper method to define mock.On call
 //   - ctx context.Context
 //   - idOrName string
-func (_e *MockNetworkClient_Expecter) Get(ctx interface{}, idOrName interface{}) *MockNetworkClient_Get_Call {
+func (_e *MockNetworkClient_Expecter) Get(ctx any, idOrName any) *MockNetworkClient_Get_Call {
 	return &MockNetworkClient_Get_Call{Call: _e.mock.On("Get", ctx, idOrName)}
 }
 
@@ -924,7 +1075,7 @@ type MockNetworkClient_GetByID_Call struct {
 // GetByID is a helper method to define mock.On call
 //   - ctx context.Context
 //   - id int64
-func (_e *MockNetworkClient_Expecter) GetByID(ctx interface{}, id interface{}) *MockNetworkClient_GetByID_Call {
+func (_e *MockNetworkClient_Expecter) GetByID(ctx any, id any) *MockNetworkClient_GetByID_Call {
 	return &MockNetworkClient_GetByID_Call{Call: _e.mock.On("GetByID", ctx, id)}
 }
 
@@ -1000,7 +1151,7 @@ type MockNetworkClient_GetByName_Call struct {
 // GetByName is a helper method to define mock.On call
 //   - ctx context.Context
 //   - name string
-func (_e *MockNetworkClient_Expecter) GetByName(ctx interface{}, name interface{}) *MockNetworkClient_GetByName_Call {
+func (_e *MockNetworkClient_Expecter) GetByName(ctx any, name any) *MockNetworkClient_GetByName_Call {
 	return &MockNetworkClient_GetByName_Call{Call: _e.mock.On("GetByName", ctx, name)}
 }
 
@@ -1076,7 +1227,7 @@ type MockNetworkClient_List_Call struct {
 // List is a helper method to define mock.On call
 //   - ctx context.Context
 //   - opts hcloud.NetworkListOpts
-func (_e *MockNetworkClient_Expecter) List(ctx interface{}, opts interface{}) *MockNetworkClient_List_Call {
+func (_e *MockNetworkClient_Expecter) List(ctx any, opts any) *MockNetworkClient_List_Call {
 	return &MockNetworkClient_List_Call{Call: _e.mock.On("List", ctx, opts)}
 }
 
@@ -1104,6 +1255,88 @@ func (_c *MockNetworkClient_List_Call) Return(networks []*hcloud.Network, respon
 }
 
 func (_c *MockNetworkClient_List_Call) RunAndReturn(run func(ctx context.Context, opts hcloud.NetworkListOpts) ([]*hcloud.Network, *hcloud.Response, error)) *MockNetworkClient_List_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ListMembers provides a mock function for the type MockNetworkClient
+func (_mock *MockNetworkClient) ListMembers(ctx context.Context, network *hcloud.Network, opts hcloud.NetworkMemberListOpts) ([]*hcloud.NetworkMember, *hcloud.Response, error) {
+	ret := _mock.Called(ctx, network, opts)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListMembers")
+	}
+
+	var r0 []*hcloud.NetworkMember
+	var r1 *hcloud.Response
+	var r2 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *hcloud.Network, hcloud.NetworkMemberListOpts) ([]*hcloud.NetworkMember, *hcloud.Response, error)); ok {
+		return returnFunc(ctx, network, opts)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *hcloud.Network, hcloud.NetworkMemberListOpts) []*hcloud.NetworkMember); ok {
+		r0 = returnFunc(ctx, network, opts)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*hcloud.NetworkMember)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, *hcloud.Network, hcloud.NetworkMemberListOpts) *hcloud.Response); ok {
+		r1 = returnFunc(ctx, network, opts)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*hcloud.Response)
+		}
+	}
+	if returnFunc, ok := ret.Get(2).(func(context.Context, *hcloud.Network, hcloud.NetworkMemberListOpts) error); ok {
+		r2 = returnFunc(ctx, network, opts)
+	} else {
+		r2 = ret.Error(2)
+	}
+	return r0, r1, r2
+}
+
+// MockNetworkClient_ListMembers_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ListMembers'
+type MockNetworkClient_ListMembers_Call struct {
+	*mock.Call
+}
+
+// ListMembers is a helper method to define mock.On call
+//   - ctx context.Context
+//   - network *hcloud.Network
+//   - opts hcloud.NetworkMemberListOpts
+func (_e *MockNetworkClient_Expecter) ListMembers(ctx any, network any, opts any) *MockNetworkClient_ListMembers_Call {
+	return &MockNetworkClient_ListMembers_Call{Call: _e.mock.On("ListMembers", ctx, network, opts)}
+}
+
+func (_c *MockNetworkClient_ListMembers_Call) Run(run func(ctx context.Context, network *hcloud.Network, opts hcloud.NetworkMemberListOpts)) *MockNetworkClient_ListMembers_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 *hcloud.Network
+		if args[1] != nil {
+			arg1 = args[1].(*hcloud.Network)
+		}
+		var arg2 hcloud.NetworkMemberListOpts
+		if args[2] != nil {
+			arg2 = args[2].(hcloud.NetworkMemberListOpts)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *MockNetworkClient_ListMembers_Call) Return(networkMembers []*hcloud.NetworkMember, response *hcloud.Response, err error) *MockNetworkClient_ListMembers_Call {
+	_c.Call.Return(networkMembers, response, err)
+	return _c
+}
+
+func (_c *MockNetworkClient_ListMembers_Call) RunAndReturn(run func(ctx context.Context, network *hcloud.Network, opts hcloud.NetworkMemberListOpts) ([]*hcloud.NetworkMember, *hcloud.Response, error)) *MockNetworkClient_ListMembers_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1153,7 +1386,7 @@ type MockNetworkClient_Update_Call struct {
 //   - ctx context.Context
 //   - network *hcloud.Network
 //   - opts hcloud.NetworkUpdateOpts
-func (_e *MockNetworkClient_Expecter) Update(ctx interface{}, network interface{}, opts interface{}) *MockNetworkClient_Update_Call {
+func (_e *MockNetworkClient_Expecter) Update(ctx any, network any, opts any) *MockNetworkClient_Update_Call {
 	return &MockNetworkClient_Update_Call{Call: _e.mock.On("Update", ctx, network, opts)}
 }
 
