@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -49,6 +50,24 @@ func setupProvider(ctx context.Context, cmd *cli.Command, config *config.Config)
 	return nil, fmt.Errorf("unknown provider: %s", cmd.String("provider"))
 }
 
+// reservedAgentEnv lists agent environment variables the autoscaler sets
+// itself, each with the autoscaler option to use instead.
+var reservedAgentEnv = []struct{ env, option string }{
+	{env: "WOODPECKER_AGENT_LABELS", option: "agent-labels"},
+}
+
+// checkAgentEnv rejects agent environment variables that are managed by an
+// autoscaler option, as the engine relies on what that option configures.
+func checkAgentEnv(agentEnv map[string]string) error {
+	var err error
+	for _, r := range reservedAgentEnv {
+		if _, ok := agentEnv[r.env]; ok {
+			err = errors.Join(err, fmt.Errorf("setting %s via WOODPECKER_AGENT_ENV is forbidden, use the autoscaler option --%s instead", r.env, r.option))
+		}
+	}
+	return err
+}
+
 func run(ctx context.Context, cmd *cli.Command) error {
 	log.Log().Msgf("starting autoscaler with version '%s'", version.String())
 
@@ -75,9 +94,8 @@ func run(ctx context.Context, cmd *cli.Command) error {
 		agentLabels[before] = after
 	}
 
-	if _, exist := agentEnvironment["WOODPECKER_AGENT_LABELS"]; exist {
-		log.Error().Msg("setting WOODPECKER_AGENT_LABELS via WOODPECKER_AGENT_ENV is forbidden, use native autoscaler setting for that")
-		return fmt.Errorf("'WOODPECKER_AGENT_ENV' has forbidden env var set: \"WOODPECKER_AGENT_LABELS\"")
+	if err := checkAgentEnv(agentEnvironment); err != nil {
+		return err
 	}
 
 	config := &config.Config{
