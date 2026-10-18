@@ -17,10 +17,19 @@ func NewMockClient(t interface {
 	mock.TestingT
 	Cleanup(func())
 }) *MockClient {
+	if helper, ok := t.(interface{ Helper() }); ok {
+		helper.Helper()
+	}
+
 	mock := &MockClient{}
 	mock.Mock.Test(t)
 
-	t.Cleanup(func() { mock.AssertExpectations(t) })
+	t.Cleanup(func() {
+		if helper, ok := t.(interface{ Helper() }); ok {
+			helper.Helper()
+		}
+		mock.AssertExpectations(t)
+	})
 
 	return mock
 }
@@ -81,9 +90,9 @@ type MockClient_DescribeImages_Call struct {
 //   - ctx context.Context
 //   - params *ec2.DescribeImagesInput
 //   - optFns ...func(*ec2.Options)
-func (_e *MockClient_Expecter) DescribeImages(ctx interface{}, params interface{}, optFns ...interface{}) *MockClient_DescribeImages_Call {
+func (_e *MockClient_Expecter) DescribeImages(ctx any, params any, optFns ...any) *MockClient_DescribeImages_Call {
 	return &MockClient_DescribeImages_Call{Call: _e.mock.On("DescribeImages",
-		append([]interface{}{ctx, params}, optFns...)...)}
+		append([]any{ctx, params}, optFns...)...)}
 }
 
 func (_c *MockClient_DescribeImages_Call) Run(run func(ctx context.Context, params *ec2.DescribeImagesInput, optFns ...func(*ec2.Options))) *MockClient_DescribeImages_Call {
@@ -164,9 +173,9 @@ type MockClient_DescribeInstanceTypes_Call struct {
 //   - ctx context.Context
 //   - params *ec2.DescribeInstanceTypesInput
 //   - optFns ...func(*ec2.Options)
-func (_e *MockClient_Expecter) DescribeInstanceTypes(ctx interface{}, params interface{}, optFns ...interface{}) *MockClient_DescribeInstanceTypes_Call {
+func (_e *MockClient_Expecter) DescribeInstanceTypes(ctx any, params any, optFns ...any) *MockClient_DescribeInstanceTypes_Call {
 	return &MockClient_DescribeInstanceTypes_Call{Call: _e.mock.On("DescribeInstanceTypes",
-		append([]interface{}{ctx, params}, optFns...)...)}
+		append([]any{ctx, params}, optFns...)...)}
 }
 
 func (_c *MockClient_DescribeInstanceTypes_Call) Run(run func(ctx context.Context, params *ec2.DescribeInstanceTypesInput, optFns ...func(*ec2.Options))) *MockClient_DescribeInstanceTypes_Call {
@@ -247,9 +256,9 @@ type MockClient_DescribeInstances_Call struct {
 //   - ctx context.Context
 //   - params *ec2.DescribeInstancesInput
 //   - optFns ...func(*ec2.Options)
-func (_e *MockClient_Expecter) DescribeInstances(ctx interface{}, params interface{}, optFns ...interface{}) *MockClient_DescribeInstances_Call {
+func (_e *MockClient_Expecter) DescribeInstances(ctx any, params any, optFns ...any) *MockClient_DescribeInstances_Call {
 	return &MockClient_DescribeInstances_Call{Call: _e.mock.On("DescribeInstances",
-		append([]interface{}{ctx, params}, optFns...)...)}
+		append([]any{ctx, params}, optFns...)...)}
 }
 
 func (_c *MockClient_DescribeInstances_Call) Run(run func(ctx context.Context, params *ec2.DescribeInstancesInput, optFns ...func(*ec2.Options))) *MockClient_DescribeInstances_Call {
@@ -330,9 +339,9 @@ type MockClient_DescribeSecurityGroups_Call struct {
 //   - ctx context.Context
 //   - params *ec2.DescribeSecurityGroupsInput
 //   - optFns ...func(*ec2.Options)
-func (_e *MockClient_Expecter) DescribeSecurityGroups(ctx interface{}, params interface{}, optFns ...interface{}) *MockClient_DescribeSecurityGroups_Call {
+func (_e *MockClient_Expecter) DescribeSecurityGroups(ctx any, params any, optFns ...any) *MockClient_DescribeSecurityGroups_Call {
 	return &MockClient_DescribeSecurityGroups_Call{Call: _e.mock.On("DescribeSecurityGroups",
-		append([]interface{}{ctx, params}, optFns...)...)}
+		append([]any{ctx, params}, optFns...)...)}
 }
 
 func (_c *MockClient_DescribeSecurityGroups_Call) Run(run func(ctx context.Context, params *ec2.DescribeSecurityGroupsInput, optFns ...func(*ec2.Options))) *MockClient_DescribeSecurityGroups_Call {
@@ -413,9 +422,9 @@ type MockClient_DescribeSubnets_Call struct {
 //   - ctx context.Context
 //   - params *ec2.DescribeSubnetsInput
 //   - optFns ...func(*ec2.Options)
-func (_e *MockClient_Expecter) DescribeSubnets(ctx interface{}, params interface{}, optFns ...interface{}) *MockClient_DescribeSubnets_Call {
+func (_e *MockClient_Expecter) DescribeSubnets(ctx any, params any, optFns ...any) *MockClient_DescribeSubnets_Call {
 	return &MockClient_DescribeSubnets_Call{Call: _e.mock.On("DescribeSubnets",
-		append([]interface{}{ctx, params}, optFns...)...)}
+		append([]any{ctx, params}, optFns...)...)}
 }
 
 func (_c *MockClient_DescribeSubnets_Call) Run(run func(ctx context.Context, params *ec2.DescribeSubnetsInput, optFns ...func(*ec2.Options))) *MockClient_DescribeSubnets_Call {
@@ -496,9 +505,9 @@ type MockClient_RunInstances_Call struct {
 //   - ctx context.Context
 //   - params *ec2.RunInstancesInput
 //   - optFns ...func(*ec2.Options)
-func (_e *MockClient_Expecter) RunInstances(ctx interface{}, params interface{}, optFns ...interface{}) *MockClient_RunInstances_Call {
+func (_e *MockClient_Expecter) RunInstances(ctx any, params any, optFns ...any) *MockClient_RunInstances_Call {
 	return &MockClient_RunInstances_Call{Call: _e.mock.On("RunInstances",
-		append([]interface{}{ctx, params}, optFns...)...)}
+		append([]any{ctx, params}, optFns...)...)}
 }
 
 func (_c *MockClient_RunInstances_Call) Run(run func(ctx context.Context, params *ec2.RunInstancesInput, optFns ...func(*ec2.Options))) *MockClient_RunInstances_Call {
@@ -579,9 +588,9 @@ type MockClient_TerminateInstances_Call struct {
 //   - ctx context.Context
 //   - params *ec2.TerminateInstancesInput
 //   - optFns ...func(*ec2.Options)
-func (_e *MockClient_Expecter) TerminateInstances(ctx interface{}, params interface{}, optFns ...interface{}) *MockClient_TerminateInstances_Call {
+func (_e *MockClient_Expecter) TerminateInstances(ctx any, params any, optFns ...any) *MockClient_TerminateInstances_Call {
 	return &MockClient_TerminateInstances_Call{Call: _e.mock.On("TerminateInstances",
-		append([]interface{}{ctx, params}, optFns...)...)}
+		append([]any{ctx, params}, optFns...)...)}
 }
 
 func (_c *MockClient_TerminateInstances_Call) Run(run func(ctx context.Context, params *ec2.TerminateInstancesInput, optFns ...func(*ec2.Options))) *MockClient_TerminateInstances_Call {

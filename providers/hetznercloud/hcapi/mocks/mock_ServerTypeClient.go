@@ -17,10 +17,19 @@ func NewMockServerTypeClient(t interface {
 	mock.TestingT
 	Cleanup(func())
 }) *MockServerTypeClient {
+	if helper, ok := t.(interface{ Helper() }); ok {
+		helper.Helper()
+	}
+
 	mock := &MockServerTypeClient{}
 	mock.Mock.Test(t)
 
-	t.Cleanup(func() { mock.AssertExpectations(t) })
+	t.Cleanup(func() {
+		if helper, ok := t.(interface{ Helper() }); ok {
+			helper.Helper()
+		}
+		mock.AssertExpectations(t)
+	})
 
 	return mock
 }
@@ -73,7 +82,7 @@ type MockServerTypeClient_All_Call struct {
 
 // All is a helper method to define mock.On call
 //   - ctx context.Context
-func (_e *MockServerTypeClient_Expecter) All(ctx interface{}) *MockServerTypeClient_All_Call {
+func (_e *MockServerTypeClient_Expecter) All(ctx any) *MockServerTypeClient_All_Call {
 	return &MockServerTypeClient_All_Call{Call: _e.mock.On("All", ctx)}
 }
 
@@ -136,7 +145,7 @@ type MockServerTypeClient_AllWithOpts_Call struct {
 // AllWithOpts is a helper method to define mock.On call
 //   - ctx context.Context
 //   - opts hcloud.ServerTypeListOpts
-func (_e *MockServerTypeClient_Expecter) AllWithOpts(ctx interface{}, opts interface{}) *MockServerTypeClient_AllWithOpts_Call {
+func (_e *MockServerTypeClient_Expecter) AllWithOpts(ctx any, opts any) *MockServerTypeClient_AllWithOpts_Call {
 	return &MockServerTypeClient_AllWithOpts_Call{Call: _e.mock.On("AllWithOpts", ctx, opts)}
 }
 
@@ -212,7 +221,7 @@ type MockServerTypeClient_Get_Call struct {
 // Get is a helper method to define mock.On call
 //   - ctx context.Context
 //   - idOrName string
-func (_e *MockServerTypeClient_Expecter) Get(ctx interface{}, idOrName interface{}) *MockServerTypeClient_Get_Call {
+func (_e *MockServerTypeClient_Expecter) Get(ctx any, idOrName any) *MockServerTypeClient_Get_Call {
 	return &MockServerTypeClient_Get_Call{Call: _e.mock.On("Get", ctx, idOrName)}
 }
 
@@ -288,7 +297,7 @@ type MockServerTypeClient_GetByID_Call struct {
 // GetByID is a helper method to define mock.On call
 //   - ctx context.Context
 //   - id int64
-func (_e *MockServerTypeClient_Expecter) GetByID(ctx interface{}, id interface{}) *MockServerTypeClient_GetByID_Call {
+func (_e *MockServerTypeClient_Expecter) GetByID(ctx any, id any) *MockServerTypeClient_GetByID_Call {
 	return &MockServerTypeClient_GetByID_Call{Call: _e.mock.On("GetByID", ctx, id)}
 }
 
@@ -364,7 +373,7 @@ type MockServerTypeClient_GetByName_Call struct {
 // GetByName is a helper method to define mock.On call
 //   - ctx context.Context
 //   - name string
-func (_e *MockServerTypeClient_Expecter) GetByName(ctx interface{}, name interface{}) *MockServerTypeClient_GetByName_Call {
+func (_e *MockServerTypeClient_Expecter) GetByName(ctx any, name any) *MockServerTypeClient_GetByName_Call {
 	return &MockServerTypeClient_GetByName_Call{Call: _e.mock.On("GetByName", ctx, name)}
 }
 
@@ -440,7 +449,7 @@ type MockServerTypeClient_List_Call struct {
 // List is a helper method to define mock.On call
 //   - ctx context.Context
 //   - opts hcloud.ServerTypeListOpts
-func (_e *MockServerTypeClient_Expecter) List(ctx interface{}, opts interface{}) *MockServerTypeClient_List_Call {
+func (_e *MockServerTypeClient_Expecter) List(ctx any, opts any) *MockServerTypeClient_List_Call {
 	return &MockServerTypeClient_List_Call{Call: _e.mock.On("List", ctx, opts)}
 }
 

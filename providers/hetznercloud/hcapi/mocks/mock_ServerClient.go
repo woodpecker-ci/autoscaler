@@ -17,10 +17,19 @@ func NewMockServerClient(t interface {
 	mock.TestingT
 	Cleanup(func())
 }) *MockServerClient {
+	if helper, ok := t.(interface{ Helper() }); ok {
+		helper.Helper()
+	}
+
 	mock := &MockServerClient{}
 	mock.Mock.Test(t)
 
-	t.Cleanup(func() { mock.AssertExpectations(t) })
+	t.Cleanup(func() {
+		if helper, ok := t.(interface{ Helper() }); ok {
+			helper.Helper()
+		}
+		mock.AssertExpectations(t)
+	})
 
 	return mock
 }
@@ -83,7 +92,7 @@ type MockServerClient_AddToPlacementGroup_Call struct {
 //   - ctx context.Context
 //   - server *hcloud.Server
 //   - placementGroup *hcloud.PlacementGroup
-func (_e *MockServerClient_Expecter) AddToPlacementGroup(ctx interface{}, server interface{}, placementGroup interface{}) *MockServerClient_AddToPlacementGroup_Call {
+func (_e *MockServerClient_Expecter) AddToPlacementGroup(ctx any, server any, placementGroup any) *MockServerClient_AddToPlacementGroup_Call {
 	return &MockServerClient_AddToPlacementGroup_Call{Call: _e.mock.On("AddToPlacementGroup", ctx, server, placementGroup)}
 }
 
@@ -155,7 +164,7 @@ type MockServerClient_All_Call struct {
 
 // All is a helper method to define mock.On call
 //   - ctx context.Context
-func (_e *MockServerClient_Expecter) All(ctx interface{}) *MockServerClient_All_Call {
+func (_e *MockServerClient_Expecter) All(ctx any) *MockServerClient_All_Call {
 	return &MockServerClient_All_Call{Call: _e.mock.On("All", ctx)}
 }
 
@@ -218,7 +227,7 @@ type MockServerClient_AllWithOpts_Call struct {
 // AllWithOpts is a helper method to define mock.On call
 //   - ctx context.Context
 //   - opts hcloud.ServerListOpts
-func (_e *MockServerClient_Expecter) AllWithOpts(ctx interface{}, opts interface{}) *MockServerClient_AllWithOpts_Call {
+func (_e *MockServerClient_Expecter) AllWithOpts(ctx any, opts any) *MockServerClient_AllWithOpts_Call {
 	return &MockServerClient_AllWithOpts_Call{Call: _e.mock.On("AllWithOpts", ctx, opts)}
 }
 
@@ -295,7 +304,7 @@ type MockServerClient_AttachISO_Call struct {
 //   - ctx context.Context
 //   - server *hcloud.Server
 //   - iso *hcloud.ISO
-func (_e *MockServerClient_Expecter) AttachISO(ctx interface{}, server interface{}, iso interface{}) *MockServerClient_AttachISO_Call {
+func (_e *MockServerClient_Expecter) AttachISO(ctx any, server any, iso any) *MockServerClient_AttachISO_Call {
 	return &MockServerClient_AttachISO_Call{Call: _e.mock.On("AttachISO", ctx, server, iso)}
 }
 
@@ -377,7 +386,7 @@ type MockServerClient_AttachToNetwork_Call struct {
 //   - ctx context.Context
 //   - server *hcloud.Server
 //   - opts hcloud.ServerAttachToNetworkOpts
-func (_e *MockServerClient_Expecter) AttachToNetwork(ctx interface{}, server interface{}, opts interface{}) *MockServerClient_AttachToNetwork_Call {
+func (_e *MockServerClient_Expecter) AttachToNetwork(ctx any, server any, opts any) *MockServerClient_AttachToNetwork_Call {
 	return &MockServerClient_AttachToNetwork_Call{Call: _e.mock.On("AttachToNetwork", ctx, server, opts)}
 }
 
@@ -459,7 +468,7 @@ type MockServerClient_ChangeAliasIPs_Call struct {
 //   - ctx context.Context
 //   - server *hcloud.Server
 //   - opts hcloud.ServerChangeAliasIPsOpts
-func (_e *MockServerClient_Expecter) ChangeAliasIPs(ctx interface{}, server interface{}, opts interface{}) *MockServerClient_ChangeAliasIPs_Call {
+func (_e *MockServerClient_Expecter) ChangeAliasIPs(ctx any, server any, opts any) *MockServerClient_ChangeAliasIPs_Call {
 	return &MockServerClient_ChangeAliasIPs_Call{Call: _e.mock.On("ChangeAliasIPs", ctx, server, opts)}
 }
 
@@ -542,7 +551,7 @@ type MockServerClient_ChangeDNSPtr_Call struct {
 //   - server *hcloud.Server
 //   - ip string
 //   - ptr *string
-func (_e *MockServerClient_Expecter) ChangeDNSPtr(ctx interface{}, server interface{}, ip interface{}, ptr interface{}) *MockServerClient_ChangeDNSPtr_Call {
+func (_e *MockServerClient_Expecter) ChangeDNSPtr(ctx any, server any, ip any, ptr any) *MockServerClient_ChangeDNSPtr_Call {
 	return &MockServerClient_ChangeDNSPtr_Call{Call: _e.mock.On("ChangeDNSPtr", ctx, server, ip, ptr)}
 }
 
@@ -629,7 +638,7 @@ type MockServerClient_ChangeProtection_Call struct {
 //   - ctx context.Context
 //   - server *hcloud.Server
 //   - opts hcloud.ServerChangeProtectionOpts
-func (_e *MockServerClient_Expecter) ChangeProtection(ctx interface{}, server interface{}, opts interface{}) *MockServerClient_ChangeProtection_Call {
+func (_e *MockServerClient_Expecter) ChangeProtection(ctx any, server any, opts any) *MockServerClient_ChangeProtection_Call {
 	return &MockServerClient_ChangeProtection_Call{Call: _e.mock.On("ChangeProtection", ctx, server, opts)}
 }
 
@@ -711,7 +720,7 @@ type MockServerClient_ChangeType_Call struct {
 //   - ctx context.Context
 //   - server *hcloud.Server
 //   - opts hcloud.ServerChangeTypeOpts
-func (_e *MockServerClient_Expecter) ChangeType(ctx interface{}, server interface{}, opts interface{}) *MockServerClient_ChangeType_Call {
+func (_e *MockServerClient_Expecter) ChangeType(ctx any, server any, opts any) *MockServerClient_ChangeType_Call {
 	return &MockServerClient_ChangeType_Call{Call: _e.mock.On("ChangeType", ctx, server, opts)}
 }
 
@@ -790,7 +799,7 @@ type MockServerClient_Create_Call struct {
 // Create is a helper method to define mock.On call
 //   - ctx context.Context
 //   - opts hcloud.ServerCreateOpts
-func (_e *MockServerClient_Expecter) Create(ctx interface{}, opts interface{}) *MockServerClient_Create_Call {
+func (_e *MockServerClient_Expecter) Create(ctx any, opts any) *MockServerClient_Create_Call {
 	return &MockServerClient_Create_Call{Call: _e.mock.On("Create", ctx, opts)}
 }
 
@@ -865,7 +874,7 @@ type MockServerClient_CreateImage_Call struct {
 //   - ctx context.Context
 //   - server *hcloud.Server
 //   - opts *hcloud.ServerCreateImageOpts
-func (_e *MockServerClient_Expecter) CreateImage(ctx interface{}, server interface{}, opts interface{}) *MockServerClient_CreateImage_Call {
+func (_e *MockServerClient_Expecter) CreateImage(ctx any, server any, opts any) *MockServerClient_CreateImage_Call {
 	return &MockServerClient_CreateImage_Call{Call: _e.mock.On("CreateImage", ctx, server, opts)}
 }
 
@@ -938,7 +947,7 @@ type MockServerClient_Delete_Call struct {
 // Delete is a helper method to define mock.On call
 //   - ctx context.Context
 //   - server *hcloud.Server
-func (_e *MockServerClient_Expecter) Delete(ctx interface{}, server interface{}) *MockServerClient_Delete_Call {
+func (_e *MockServerClient_Expecter) Delete(ctx any, server any) *MockServerClient_Delete_Call {
 	return &MockServerClient_Delete_Call{Call: _e.mock.On("Delete", ctx, server)}
 }
 
@@ -1014,7 +1023,7 @@ type MockServerClient_DeleteWithResult_Call struct {
 // DeleteWithResult is a helper method to define mock.On call
 //   - ctx context.Context
 //   - server *hcloud.Server
-func (_e *MockServerClient_Expecter) DeleteWithResult(ctx interface{}, server interface{}) *MockServerClient_DeleteWithResult_Call {
+func (_e *MockServerClient_Expecter) DeleteWithResult(ctx any, server any) *MockServerClient_DeleteWithResult_Call {
 	return &MockServerClient_DeleteWithResult_Call{Call: _e.mock.On("DeleteWithResult", ctx, server)}
 }
 
@@ -1091,7 +1100,7 @@ type MockServerClient_DetachFromNetwork_Call struct {
 //   - ctx context.Context
 //   - server *hcloud.Server
 //   - opts hcloud.ServerDetachFromNetworkOpts
-func (_e *MockServerClient_Expecter) DetachFromNetwork(ctx interface{}, server interface{}, opts interface{}) *MockServerClient_DetachFromNetwork_Call {
+func (_e *MockServerClient_Expecter) DetachFromNetwork(ctx any, server any, opts any) *MockServerClient_DetachFromNetwork_Call {
 	return &MockServerClient_DetachFromNetwork_Call{Call: _e.mock.On("DetachFromNetwork", ctx, server, opts)}
 }
 
@@ -1172,7 +1181,7 @@ type MockServerClient_DetachISO_Call struct {
 // DetachISO is a helper method to define mock.On call
 //   - ctx context.Context
 //   - server *hcloud.Server
-func (_e *MockServerClient_Expecter) DetachISO(ctx interface{}, server interface{}) *MockServerClient_DetachISO_Call {
+func (_e *MockServerClient_Expecter) DetachISO(ctx any, server any) *MockServerClient_DetachISO_Call {
 	return &MockServerClient_DetachISO_Call{Call: _e.mock.On("DetachISO", ctx, server)}
 }
 
@@ -1248,7 +1257,7 @@ type MockServerClient_DisableBackup_Call struct {
 // DisableBackup is a helper method to define mock.On call
 //   - ctx context.Context
 //   - server *hcloud.Server
-func (_e *MockServerClient_Expecter) DisableBackup(ctx interface{}, server interface{}) *MockServerClient_DisableBackup_Call {
+func (_e *MockServerClient_Expecter) DisableBackup(ctx any, server any) *MockServerClient_DisableBackup_Call {
 	return &MockServerClient_DisableBackup_Call{Call: _e.mock.On("DisableBackup", ctx, server)}
 }
 
@@ -1324,7 +1333,7 @@ type MockServerClient_DisableRescue_Call struct {
 // DisableRescue is a helper method to define mock.On call
 //   - ctx context.Context
 //   - server *hcloud.Server
-func (_e *MockServerClient_Expecter) DisableRescue(ctx interface{}, server interface{}) *MockServerClient_DisableRescue_Call {
+func (_e *MockServerClient_Expecter) DisableRescue(ctx any, server any) *MockServerClient_DisableRescue_Call {
 	return &MockServerClient_DisableRescue_Call{Call: _e.mock.On("DisableRescue", ctx, server)}
 }
 
@@ -1401,7 +1410,7 @@ type MockServerClient_EnableBackup_Call struct {
 //   - ctx context.Context
 //   - server *hcloud.Server
 //   - window string
-func (_e *MockServerClient_Expecter) EnableBackup(ctx interface{}, server interface{}, window interface{}) *MockServerClient_EnableBackup_Call {
+func (_e *MockServerClient_Expecter) EnableBackup(ctx any, server any, window any) *MockServerClient_EnableBackup_Call {
 	return &MockServerClient_EnableBackup_Call{Call: _e.mock.On("EnableBackup", ctx, server, window)}
 }
 
@@ -1481,7 +1490,7 @@ type MockServerClient_EnableRescue_Call struct {
 //   - ctx context.Context
 //   - server *hcloud.Server
 //   - opts hcloud.ServerEnableRescueOpts
-func (_e *MockServerClient_Expecter) EnableRescue(ctx interface{}, server interface{}, opts interface{}) *MockServerClient_EnableRescue_Call {
+func (_e *MockServerClient_Expecter) EnableRescue(ctx any, server any, opts any) *MockServerClient_EnableRescue_Call {
 	return &MockServerClient_EnableRescue_Call{Call: _e.mock.On("EnableRescue", ctx, server, opts)}
 }
 
@@ -1562,7 +1571,7 @@ type MockServerClient_Get_Call struct {
 // Get is a helper method to define mock.On call
 //   - ctx context.Context
 //   - idOrName string
-func (_e *MockServerClient_Expecter) Get(ctx interface{}, idOrName interface{}) *MockServerClient_Get_Call {
+func (_e *MockServerClient_Expecter) Get(ctx any, idOrName any) *MockServerClient_Get_Call {
 	return &MockServerClient_Get_Call{Call: _e.mock.On("Get", ctx, idOrName)}
 }
 
@@ -1638,7 +1647,7 @@ type MockServerClient_GetByID_Call struct {
 // GetByID is a helper method to define mock.On call
 //   - ctx context.Context
 //   - id int64
-func (_e *MockServerClient_Expecter) GetByID(ctx interface{}, id interface{}) *MockServerClient_GetByID_Call {
+func (_e *MockServerClient_Expecter) GetByID(ctx any, id any) *MockServerClient_GetByID_Call {
 	return &MockServerClient_GetByID_Call{Call: _e.mock.On("GetByID", ctx, id)}
 }
 
@@ -1714,7 +1723,7 @@ type MockServerClient_GetByName_Call struct {
 // GetByName is a helper method to define mock.On call
 //   - ctx context.Context
 //   - name string
-func (_e *MockServerClient_Expecter) GetByName(ctx interface{}, name interface{}) *MockServerClient_GetByName_Call {
+func (_e *MockServerClient_Expecter) GetByName(ctx any, name any) *MockServerClient_GetByName_Call {
 	return &MockServerClient_GetByName_Call{Call: _e.mock.On("GetByName", ctx, name)}
 }
 
@@ -1791,7 +1800,7 @@ type MockServerClient_GetMetrics_Call struct {
 //   - ctx context.Context
 //   - server *hcloud.Server
 //   - opts hcloud.ServerGetMetricsOpts
-func (_e *MockServerClient_Expecter) GetMetrics(ctx interface{}, server interface{}, opts interface{}) *MockServerClient_GetMetrics_Call {
+func (_e *MockServerClient_Expecter) GetMetrics(ctx any, server any, opts any) *MockServerClient_GetMetrics_Call {
 	return &MockServerClient_GetMetrics_Call{Call: _e.mock.On("GetMetrics", ctx, server, opts)}
 }
 
@@ -1872,7 +1881,7 @@ type MockServerClient_List_Call struct {
 // List is a helper method to define mock.On call
 //   - ctx context.Context
 //   - opts hcloud.ServerListOpts
-func (_e *MockServerClient_Expecter) List(ctx interface{}, opts interface{}) *MockServerClient_List_Call {
+func (_e *MockServerClient_Expecter) List(ctx any, opts any) *MockServerClient_List_Call {
 	return &MockServerClient_List_Call{Call: _e.mock.On("List", ctx, opts)}
 }
 
@@ -1948,7 +1957,7 @@ type MockServerClient_Poweroff_Call struct {
 // Poweroff is a helper method to define mock.On call
 //   - ctx context.Context
 //   - server *hcloud.Server
-func (_e *MockServerClient_Expecter) Poweroff(ctx interface{}, server interface{}) *MockServerClient_Poweroff_Call {
+func (_e *MockServerClient_Expecter) Poweroff(ctx any, server any) *MockServerClient_Poweroff_Call {
 	return &MockServerClient_Poweroff_Call{Call: _e.mock.On("Poweroff", ctx, server)}
 }
 
@@ -2024,7 +2033,7 @@ type MockServerClient_Poweron_Call struct {
 // Poweron is a helper method to define mock.On call
 //   - ctx context.Context
 //   - server *hcloud.Server
-func (_e *MockServerClient_Expecter) Poweron(ctx interface{}, server interface{}) *MockServerClient_Poweron_Call {
+func (_e *MockServerClient_Expecter) Poweron(ctx any, server any) *MockServerClient_Poweron_Call {
 	return &MockServerClient_Poweron_Call{Call: _e.mock.On("Poweron", ctx, server)}
 }
 
@@ -2100,7 +2109,7 @@ type MockServerClient_Reboot_Call struct {
 // Reboot is a helper method to define mock.On call
 //   - ctx context.Context
 //   - server *hcloud.Server
-func (_e *MockServerClient_Expecter) Reboot(ctx interface{}, server interface{}) *MockServerClient_Reboot_Call {
+func (_e *MockServerClient_Expecter) Reboot(ctx any, server any) *MockServerClient_Reboot_Call {
 	return &MockServerClient_Reboot_Call{Call: _e.mock.On("Reboot", ctx, server)}
 }
 
@@ -2177,7 +2186,7 @@ type MockServerClient_Rebuild_Call struct {
 //   - ctx context.Context
 //   - server *hcloud.Server
 //   - opts hcloud.ServerRebuildOpts
-func (_e *MockServerClient_Expecter) Rebuild(ctx interface{}, server interface{}, opts interface{}) *MockServerClient_Rebuild_Call {
+func (_e *MockServerClient_Expecter) Rebuild(ctx any, server any, opts any) *MockServerClient_Rebuild_Call {
 	return &MockServerClient_Rebuild_Call{Call: _e.mock.On("Rebuild", ctx, server, opts)}
 }
 
@@ -2257,7 +2266,7 @@ type MockServerClient_RebuildWithResult_Call struct {
 //   - ctx context.Context
 //   - server *hcloud.Server
 //   - opts hcloud.ServerRebuildOpts
-func (_e *MockServerClient_Expecter) RebuildWithResult(ctx interface{}, server interface{}, opts interface{}) *MockServerClient_RebuildWithResult_Call {
+func (_e *MockServerClient_Expecter) RebuildWithResult(ctx any, server any, opts any) *MockServerClient_RebuildWithResult_Call {
 	return &MockServerClient_RebuildWithResult_Call{Call: _e.mock.On("RebuildWithResult", ctx, server, opts)}
 }
 
@@ -2338,7 +2347,7 @@ type MockServerClient_RemoveFromPlacementGroup_Call struct {
 // RemoveFromPlacementGroup is a helper method to define mock.On call
 //   - ctx context.Context
 //   - server *hcloud.Server
-func (_e *MockServerClient_Expecter) RemoveFromPlacementGroup(ctx interface{}, server interface{}) *MockServerClient_RemoveFromPlacementGroup_Call {
+func (_e *MockServerClient_Expecter) RemoveFromPlacementGroup(ctx any, server any) *MockServerClient_RemoveFromPlacementGroup_Call {
 	return &MockServerClient_RemoveFromPlacementGroup_Call{Call: _e.mock.On("RemoveFromPlacementGroup", ctx, server)}
 }
 
@@ -2412,7 +2421,7 @@ type MockServerClient_RequestConsole_Call struct {
 // RequestConsole is a helper method to define mock.On call
 //   - ctx context.Context
 //   - server *hcloud.Server
-func (_e *MockServerClient_Expecter) RequestConsole(ctx interface{}, server interface{}) *MockServerClient_RequestConsole_Call {
+func (_e *MockServerClient_Expecter) RequestConsole(ctx any, server any) *MockServerClient_RequestConsole_Call {
 	return &MockServerClient_RequestConsole_Call{Call: _e.mock.On("RequestConsole", ctx, server)}
 }
 
@@ -2488,7 +2497,7 @@ type MockServerClient_Reset_Call struct {
 // Reset is a helper method to define mock.On call
 //   - ctx context.Context
 //   - server *hcloud.Server
-func (_e *MockServerClient_Expecter) Reset(ctx interface{}, server interface{}) *MockServerClient_Reset_Call {
+func (_e *MockServerClient_Expecter) Reset(ctx any, server any) *MockServerClient_Reset_Call {
 	return &MockServerClient_Reset_Call{Call: _e.mock.On("Reset", ctx, server)}
 }
 
@@ -2562,7 +2571,7 @@ type MockServerClient_ResetPassword_Call struct {
 // ResetPassword is a helper method to define mock.On call
 //   - ctx context.Context
 //   - server *hcloud.Server
-func (_e *MockServerClient_Expecter) ResetPassword(ctx interface{}, server interface{}) *MockServerClient_ResetPassword_Call {
+func (_e *MockServerClient_Expecter) ResetPassword(ctx any, server any) *MockServerClient_ResetPassword_Call {
 	return &MockServerClient_ResetPassword_Call{Call: _e.mock.On("ResetPassword", ctx, server)}
 }
 
@@ -2638,7 +2647,7 @@ type MockServerClient_Shutdown_Call struct {
 // Shutdown is a helper method to define mock.On call
 //   - ctx context.Context
 //   - server *hcloud.Server
-func (_e *MockServerClient_Expecter) Shutdown(ctx interface{}, server interface{}) *MockServerClient_Shutdown_Call {
+func (_e *MockServerClient_Expecter) Shutdown(ctx any, server any) *MockServerClient_Shutdown_Call {
 	return &MockServerClient_Shutdown_Call{Call: _e.mock.On("Shutdown", ctx, server)}
 }
 
@@ -2715,7 +2724,7 @@ type MockServerClient_Update_Call struct {
 //   - ctx context.Context
 //   - server *hcloud.Server
 //   - opts hcloud.ServerUpdateOpts
-func (_e *MockServerClient_Expecter) Update(ctx interface{}, server interface{}, opts interface{}) *MockServerClient_Update_Call {
+func (_e *MockServerClient_Expecter) Update(ctx any, server any, opts any) *MockServerClient_Update_Call {
 	return &MockServerClient_Update_Call{Call: _e.mock.On("Update", ctx, server, opts)}
 }
 

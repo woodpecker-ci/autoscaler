@@ -18,10 +18,19 @@ func NewMockProvider(t interface {
 	mock.TestingT
 	Cleanup(func())
 }) *MockProvider {
+	if helper, ok := t.(interface{ Helper() }); ok {
+		helper.Helper()
+	}
+
 	mock := &MockProvider{}
 	mock.Mock.Test(t)
 
-	t.Cleanup(func() { mock.AssertExpectations(t) })
+	t.Cleanup(func() {
+		if helper, ok := t.(interface{ Helper() }); ok {
+			helper.Helper()
+		}
+		mock.AssertExpectations(t)
+	})
 
 	return mock
 }
@@ -118,7 +127,7 @@ type MockProvider_Capabilities_Call struct {
 
 // Capabilities is a helper method to define mock.On call
 //   - ctx context.Context
-func (_e *MockProvider_Expecter) Capabilities(ctx interface{}) *MockProvider_Capabilities_Call {
+func (_e *MockProvider_Expecter) Capabilities(ctx any) *MockProvider_Capabilities_Call {
 	return &MockProvider_Capabilities_Call{Call: _e.mock.On("Capabilities", ctx)}
 }
 
@@ -171,7 +180,7 @@ type MockProvider_DeployAgent_Call struct {
 //   - context1 context.Context
 //   - agent *woodpecker.Agent
 //   - capability types.Capability
-func (_e *MockProvider_Expecter) DeployAgent(context1 interface{}, agent interface{}, capability interface{}) *MockProvider_DeployAgent_Call {
+func (_e *MockProvider_Expecter) DeployAgent(context1 any, agent any, capability any) *MockProvider_DeployAgent_Call {
 	return &MockProvider_DeployAgent_Call{Call: _e.mock.On("DeployAgent", context1, agent, capability)}
 }
 
@@ -243,7 +252,7 @@ type MockProvider_ListDeployedAgentNames_Call struct {
 
 // ListDeployedAgentNames is a helper method to define mock.On call
 //   - context1 context.Context
-func (_e *MockProvider_Expecter) ListDeployedAgentNames(context1 interface{}) *MockProvider_ListDeployedAgentNames_Call {
+func (_e *MockProvider_Expecter) ListDeployedAgentNames(context1 any) *MockProvider_ListDeployedAgentNames_Call {
 	return &MockProvider_ListDeployedAgentNames_Call{Call: _e.mock.On("ListDeployedAgentNames", context1)}
 }
 
@@ -295,7 +304,7 @@ type MockProvider_RemoveAgent_Call struct {
 // RemoveAgent is a helper method to define mock.On call
 //   - context1 context.Context
 //   - agent *woodpecker.Agent
-func (_e *MockProvider_Expecter) RemoveAgent(context1 interface{}, agent interface{}) *MockProvider_RemoveAgent_Call {
+func (_e *MockProvider_Expecter) RemoveAgent(context1 any, agent any) *MockProvider_RemoveAgent_Call {
 	return &MockProvider_RemoveAgent_Call{Call: _e.mock.On("RemoveAgent", context1, agent)}
 }
 
