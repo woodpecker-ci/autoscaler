@@ -25,6 +25,7 @@ type Config struct {
 	AgentCreationTimeout time.Duration
 	UserData             string // cloudinit template
 	ExtraAgentLabels     map[string]string
+	AgentSingleWorkflow  bool
 
 	// BillingModel is taken from the selected provider and selects the teardown
 	// policy the engine applies to idle agents.

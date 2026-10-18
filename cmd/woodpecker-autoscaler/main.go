@@ -54,6 +54,7 @@ func setupProvider(ctx context.Context, cmd *cli.Command, config *config.Config)
 // itself, each with the autoscaler option to use instead.
 var reservedAgentEnv = []struct{ env, option string }{
 	{env: "WOODPECKER_AGENT_LABELS", option: "agent-labels"},
+	{env: "WOODPECKER_AGENT_SINGLE_WORKFLOW", option: "agent-single-workflow"},
 }
 
 // checkAgentEnv rejects agent environment variables that are managed by an
@@ -98,17 +99,26 @@ func run(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
+	workflowsPerAgent := cmd.Int("workflows-per-agent")
+	oneshotAgent := cmd.Bool("agent-single-workflow")
+
+	if oneshotAgent && workflowsPerAgent > 1 {
+		log.Warn().Msgf("workflows-per-agent forced from %d to 1 due to agent-single-workflow", workflowsPerAgent)
+		workflowsPerAgent = 1
+	}
+
 	config := &config.Config{
-		MinAgents:         cmd.Int("min-agents"),
-		MaxAgents:         cmd.Int("max-agents"),
-		WorkflowsPerAgent: cmd.Int("workflows-per-agent"),
-		PoolID:            cmd.String("pool-id"),
-		GRPCAddress:       cmd.String("grpc-addr"),
-		GRPCSecure:        cmd.Bool("grpc-secure"),
-		Image:             cmd.String("agent-image"),
-		UserData:          cmd.String("cloudinit-template"),
-		ExtraAgentLabels:  agentLabels,
-		Environment:       agentEnvironment,
+		MinAgents:           cmd.Int("min-agents"),
+		MaxAgents:           cmd.Int("max-agents"),
+		WorkflowsPerAgent:   workflowsPerAgent,
+		PoolID:              cmd.String("pool-id"),
+		GRPCAddress:         cmd.String("grpc-addr"),
+		GRPCSecure:          cmd.Bool("grpc-secure"),
+		Image:               cmd.String("agent-image"),
+		UserData:            cmd.String("cloudinit-template"),
+		ExtraAgentLabels:    agentLabels,
+		Environment:         agentEnvironment,
+		AgentSingleWorkflow: oneshotAgent,
 	}
 
 	provider, err := setupProvider(ctx, cmd, config)
