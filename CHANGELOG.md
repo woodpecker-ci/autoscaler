@@ -1,6 +1,6 @@
 # Changelog
 
-## [2.0.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.1) - 2026-10-17
+## [2.0.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.1) - 2026-10-18
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -13,6 +13,10 @@
 ### 🧪 Tests
 
 - Test retain surviving agents during cleanup [[#737](https://github.com/woodpecker-ci/autoscaler/pull/737)]
+
+### 📦️ Dependency
+
+- Update golang deps non-major [[#770](https://github.com/woodpecker-ci/autoscaler/pull/770)]
 
 ## [2.0.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.0) - 2026-10-17
 
