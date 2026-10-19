@@ -93,11 +93,13 @@ var ProviderFlags = []cli.Flag{
 		Sources:  cli.EnvVars("WOODPECKER_ORACLE_AVAILABILITY_DOMAINS"),
 		Category: category,
 	},
-	&cli.StringFlag{
-		Name:     "oracle-shape",
-		Usage:    "Compute shape of the agents",
-		Sources:  cli.EnvVars("WOODPECKER_ORACLE_SHAPE"),
-		Value:    "VM.Standard.E4.Flex",
+	&cli.StringSliceFlag{
+		Name: "oracle-shapes",
+		Usage: "Ordered list of compute shapes for the agents (e.g. \"VM.Standard.E4.Flex\", \"VM.Standard.A1.Flex\"). " +
+			"Architecture is inferred from the shape. When every availability domain is out of capacity " +
+			"for a shape, the next shape of the same architecture is tried.",
+		Sources:  cli.EnvVars("WOODPECKER_ORACLE_SHAPES"),
+		Value:    []string{"VM.Standard.E4.Flex"},
 		Category: category,
 	},
 	&cli.Float32Flag{
@@ -116,7 +118,7 @@ var ProviderFlags = []cli.Flag{
 	},
 	&cli.StringFlag{
 		Name:     "oracle-image-ocid",
-		Usage:    "OCID of the image to boot from, skips image lookup by operating system",
+		Usage:    "OCID of the image to boot from, skips image lookup by operating system; it must boot on every configured shape",
 		Sources:  cli.EnvVars("WOODPECKER_ORACLE_IMAGE_OCID"),
 		Category: category,
 	},

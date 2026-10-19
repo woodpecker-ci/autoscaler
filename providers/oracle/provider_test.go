@@ -23,6 +23,21 @@ var (
 	testCapability = types.Capability{Platform: "linux/amd64", Backend: types.BackendDocker}
 )
 
+func testShape() shapeCandidate {
+	return shapeCandidate{
+		name:     "VM.Standard.E4.Flex",
+		flexible: true,
+		platform: "linux/amd64",
+		imageID:  "ocid1.image.oc1..image",
+	}
+}
+
+func launchShape(shape, availabilityDomain string) func(core.LaunchInstanceRequest) bool {
+	return func(r core.LaunchInstanceRequest) bool {
+		return *r.Shape == shape && *r.AvailabilityDomain == availabilityDomain
+	}
+}
+
 func launchIn(availabilityDomain string) func(core.LaunchInstanceRequest) bool {
 	return func(r core.LaunchInstanceRequest) bool {
 		return *r.AvailabilityDomain == availabilityDomain
@@ -60,7 +75,7 @@ func TestDeployAgent(t *testing.T) {
 			Return(core.LaunchInstanceResponse{}, outOfCapacity()).Twice()
 
 		p := testProvider(compute, mocks.NewMockIdentityClient(t))
-		assert.ErrorIs(t, p.DeployAgent(t.Context(), testAgent, testCapability), ErrAllAvailabilityDomainsOut)
+		assert.ErrorIs(t, p.DeployAgent(t.Context(), testAgent, testCapability), ErrNoCapacity)
 	})
 
 	t.Run("NonCapacityErrorDoesNotRetry", func(t *testing.T) {
@@ -75,14 +90,54 @@ func TestDeployAgent(t *testing.T) {
 		p := testProvider(compute, mocks.NewMockIdentityClient(t))
 		err := p.DeployAgent(t.Context(), testAgent, testCapability)
 		require.Error(t, err)
-		assert.NotErrorIs(t, err, ErrAllAvailabilityDomainsOut)
+		assert.NotErrorIs(t, err, ErrNoCapacity)
 	})
 
-	t.Run("RejectsUnsupportedCapability", func(t *testing.T) {
+	t.Run("FallsBackToNextShapeOfTheSamePlatform", func(t *testing.T) {
+		compute := mocks.NewMockComputeClient(t)
+		compute.On("LaunchInstance", mock.Anything, mock.MatchedBy(launchShape("VM.Standard.E4.Flex", "AD-1"))).
+			Return(core.LaunchInstanceResponse{}, outOfCapacity()).Once()
+		compute.On("LaunchInstance", mock.Anything, mock.MatchedBy(launchShape("VM.Standard.E4.Flex", "AD-2"))).
+			Return(core.LaunchInstanceResponse{}, outOfCapacity()).Once()
+		compute.On("LaunchInstance", mock.Anything, mock.MatchedBy(launchShape("VM.Standard.E5.Flex", "AD-1"))).
+			Return(core.LaunchInstanceResponse{}, nil).Once()
+
+		p := testProvider(compute, mocks.NewMockIdentityClient(t))
+		p.shapes = []shapeCandidate{
+			testShape(),
+			{name: "VM.Standard.A1.Flex", flexible: true, platform: "linux/arm64", imageID: "ocid1.image.oc1..arm"},
+			{name: "VM.Standard.E5.Flex", flexible: true, platform: "linux/amd64", imageID: "ocid1.image.oc1..image"},
+		}
+		require.NoError(t, p.DeployAgent(t.Context(), testAgent, testCapability))
+	})
+
+	t.Run("PlatformWithoutShapeIsRejected", func(t *testing.T) {
 		p := testProvider(mocks.NewMockComputeClient(t), mocks.NewMockIdentityClient(t))
 		arm := types.Capability{Platform: "linux/arm64", Backend: types.BackendDocker}
-		require.Error(t, p.DeployAgent(t.Context(), testAgent, arm))
+		assert.ErrorIs(t, p.DeployAgent(t.Context(), testAgent, arm), ErrNoMatchingShape)
 	})
+
+	t.Run("NonDockerBackendIsRejected", func(t *testing.T) {
+		p := testProvider(mocks.NewMockComputeClient(t), mocks.NewMockIdentityClient(t))
+		local := types.Capability{Platform: "linux/amd64", Backend: types.BackendLocal}
+		require.Error(t, p.DeployAgent(t.Context(), testAgent, local))
+	})
+}
+
+func TestCapabilities(t *testing.T) {
+	p := testProvider(mocks.NewMockComputeClient(t), mocks.NewMockIdentityClient(t))
+	p.shapes = []shapeCandidate{
+		testShape(),
+		{name: "VM.Standard.A1.Flex", platform: "linux/arm64"},
+		{name: "VM.Standard.E5.Flex", platform: "linux/amd64"},
+	}
+
+	caps, err := p.Capabilities(t.Context())
+	require.NoError(t, err)
+	assert.Equal(t, []types.Capability{
+		{Platform: "linux/amd64", Backend: types.BackendDocker},
+		{Platform: "linux/arm64", Backend: types.BackendDocker},
+	}, caps)
 }
 
 func TestLaunchDetails(t *testing.T) {
@@ -103,7 +158,7 @@ func TestLaunchDetails(t *testing.T) {
 
 	assert.Equal(t, testAgent.Name, *captured.DisplayName)
 	assert.Equal(t, p.compartmentID, *captured.CompartmentId)
-	assert.Equal(t, p.shape, *captured.Shape)
+	assert.Equal(t, "VM.Standard.E4.Flex", *captured.Shape)
 	assert.Equal(t, p.subnetID, *captured.CreateVnicDetails.SubnetId)
 	assert.True(t, *captured.CreateVnicDetails.AssignPublicIp)
 	assert.Equal(t, "1", captured.FreeformTags[poolTagKey()])
@@ -112,7 +167,7 @@ func TestLaunchDetails(t *testing.T) {
 
 	source, ok := captured.SourceDetails.(core.InstanceSourceViaImageDetails)
 	require.True(t, ok)
-	assert.Equal(t, p.imageID, *source.ImageId)
+	assert.Equal(t, "ocid1.image.oc1..image", *source.ImageId)
 	assert.Equal(t, int64(minBootVolumeGB), *source.BootVolumeSizeInGBs)
 
 	require.NotNil(t, captured.ShapeConfig)
@@ -132,8 +187,8 @@ func TestFixedShapeGetsNoShapeConfig(t *testing.T) {
 		Return(core.LaunchInstanceResponse{}, nil).Once()
 
 	p := testProvider(compute, mocks.NewMockIdentityClient(t))
-	p.shape = "VM.Standard.E2.1.Micro"
-	p.shapeIsFlexible = false
+	p.shapes[0].name = "VM.Standard.E2.1.Micro"
+	p.shapes[0].flexible = false
 	require.NoError(t, p.DeployAgent(t.Context(), testAgent, testCapability))
 
 	assert.Nil(t, captured.ShapeConfig)

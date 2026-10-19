@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/oracle/oci-go-sdk/v65/common"
@@ -14,7 +15,6 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"go.woodpecker-ci.org/autoscaler/engine"
-	"go.woodpecker-ci.org/autoscaler/engine/types"
 )
 
 func stringValue(value *string) string {
@@ -120,33 +120,66 @@ func (p *provider) resolveAvailabilityDomains(ctx context.Context, configured []
 	return nil
 }
 
-func (p *provider) resolveShape(ctx context.Context) error {
+func (p *provider) resolveSubnet(ctx context.Context) error {
+	res, err := p.networkClient.GetSubnet(ctx, core.GetSubnetRequest{SubnetId: common.String(p.subnetID)})
+	if err != nil {
+		return fmt.Errorf("%s: GetSubnet: %w", p.name, err)
+	}
+
+	if p.assignPublicIP && res.ProhibitPublicIpOnVnic != nil && *res.ProhibitPublicIpOnVnic {
+		return fmt.Errorf("%s: %w: %s is private, set WOODPECKER_ORACLE_ASSIGN_PUBLIC_IP=false",
+			p.name, ErrPublicIPProhibited, p.subnetID)
+	}
+
+	// An AD-specific subnet only launches in its own availability domain.
+	if ad := stringValue(res.AvailabilityDomain); ad != "" {
+		if !slices.Contains(p.availabilityDomains, ad) {
+			return fmt.Errorf("%s: %w: %s is bound to %s", p.name, ErrSubnetAvailabilityDomain, p.subnetID, ad)
+		}
+		p.availabilityDomains = []string{ad}
+	}
+
+	return nil
+}
+
+func (p *provider) resolveShapes(ctx context.Context, names []string) error {
+	if len(names) == 0 {
+		return fmt.Errorf("%s: %w", p.name, ErrNoShapes)
+	}
+
+	flexible := map[string]bool{}
 	request := core.ListShapesRequest{
 		CompartmentId: common.String(p.compartmentID),
 		Limit:         common.Int(listPageLimit),
 	}
-
 	for {
 		res, err := p.computeClient.ListShapes(ctx, request)
 		if err != nil {
 			return fmt.Errorf("%s: ListShapes: %w", p.name, err)
 		}
 		for _, shape := range res.Items {
-			if stringValue(shape.Shape) != p.shape {
-				continue
-			}
-			p.shapeIsFlexible = shape.IsFlexible != nil && *shape.IsFlexible
-			p.capability = types.Capability{
-				Platform: "linux/" + shapeArch(p.shape),
-				Backend:  types.BackendDocker,
-			}
-			return nil
+			flexible[stringValue(shape.Shape)] = shape.IsFlexible != nil && *shape.IsFlexible
 		}
 		if res.OpcNextPage == nil {
-			return fmt.Errorf("%s: %w: %s", p.name, ErrShapeNotFound, p.shape)
+			break
 		}
 		request.Page = res.OpcNextPage
 	}
+
+	p.shapes = make([]shapeCandidate, 0, len(names))
+	for _, name := range names {
+		isFlexible, found := flexible[name]
+		if !found {
+			return fmt.Errorf("%s: %w: %s", p.name, ErrShapeNotFound, name)
+		}
+		p.shapes = append(p.shapes, shapeCandidate{
+			name:     name,
+			flexible: isFlexible,
+			platform: "linux/" + shapeArch(name),
+		})
+	}
+
+	return nil
 }
 
 // shapeArch maps an OCI shape name to a Go architecture: the A-series
@@ -160,37 +193,39 @@ func shapeArch(shape string) string {
 	return "amd64"
 }
 
-func (p *provider) resolveImage(ctx context.Context, imageID, operatingSystem, operatingSystemVersion string) error {
-	if imageID != "" {
-		p.imageID = imageID
-		return nil
-	}
+func (p *provider) resolveImages(ctx context.Context, imageID, operatingSystem, operatingSystemVersion string) error {
+	for i := range p.shapes {
+		shape := &p.shapes[i]
+		if imageID != "" {
+			shape.imageID = imageID
+			continue
+		}
 
-	res, err := p.computeClient.ListImages(ctx, core.ListImagesRequest{
-		CompartmentId:          common.String(p.compartmentID),
-		OperatingSystem:        common.String(operatingSystem),
-		OperatingSystemVersion: common.String(operatingSystemVersion),
-		Shape:                  common.String(p.shape),
-		LifecycleState:         core.ImageLifecycleStateAvailable,
-		SortBy:                 core.ListImagesSortByTimecreated,
-		SortOrder:              core.ListImagesSortOrderDesc,
-		Limit:                  common.Int(1),
-	})
-	if err != nil {
-		return fmt.Errorf("%s: ListImages: %w", p.name, err)
-	}
-	if len(res.Items) == 0 || res.Items[0].Id == nil {
-		return fmt.Errorf("%s: %w: %s %s for shape %s",
-			p.name, ErrImageNotFound, operatingSystem, operatingSystemVersion, p.shape)
-	}
+		res, err := p.computeClient.ListImages(ctx, core.ListImagesRequest{
+			CompartmentId:          common.String(p.compartmentID),
+			OperatingSystem:        common.String(operatingSystem),
+			OperatingSystemVersion: common.String(operatingSystemVersion),
+			Shape:                  common.String(shape.name),
+			LifecycleState:         core.ImageLifecycleStateAvailable,
+			SortBy:                 core.ListImagesSortByTimecreated,
+			SortOrder:              core.ListImagesSortOrderDesc,
+			Limit:                  common.Int(1),
+		})
+		if err != nil {
+			return fmt.Errorf("%s: ListImages: %w", p.name, err)
+		}
+		if len(res.Items) == 0 || res.Items[0].Id == nil {
+			return fmt.Errorf("%s: %w: %s %s for shape %s",
+				p.name, ErrImageNotFound, operatingSystem, operatingSystemVersion, shape.name)
+		}
 
-	image := res.Items[0]
-	p.imageID = *image.Id
-	log.Info().
-		Str("image", stringValue(image.DisplayName)).
-		Str("image_id", p.imageID).
-		Str("shape", p.shape).
-		Msgf("%s: resolved image", p.name)
+		shape.imageID = *res.Items[0].Id
+		log.Info().
+			Str("image", stringValue(res.Items[0].DisplayName)).
+			Str("image_id", shape.imageID).
+			Str("shape", shape.name).
+			Msgf("%s: resolved image", p.name)
+	}
 
 	return nil
 }

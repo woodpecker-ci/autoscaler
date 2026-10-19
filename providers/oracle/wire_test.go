@@ -93,12 +93,9 @@ func newWireTestProvider(t *testing.T, respond func(*recordedRequest) (int, stri
 		compartmentID:       "ocid1.compartment.oc1..compartment",
 		subnetID:            "ocid1.subnet.oc1..subnet",
 		availabilityDomains: []string{"Uocm:PHX-AD-1"},
-		shape:               "VM.Standard.E4.Flex",
-		shapeIsFlexible:     true,
-		capability:          testCapability,
+		shapes:              []shapeCandidate{testShape()},
 		ocpus:               2,
 		memoryInGBs:         16,
-		imageID:             "ocid1.image.oc1..image",
 		bootVolumeSizeInGBs: minBootVolumeGB,
 		assignPublicIP:      true,
 		tags:                map[string]string{poolTagKey(): "1"},
@@ -161,8 +158,8 @@ func TestWireFixedShapeOmitsShapeConfig(t *testing.T) {
 	p, recorded := newWireTestProvider(t, func(*recordedRequest) (int, string) {
 		return http.StatusOK, `{"id":"ocid1.instance.oc1..new"}`
 	})
-	p.shape = "VM.Standard.E2.1.Micro"
-	p.shapeIsFlexible = false
+	p.shapes[0].name = "VM.Standard.E2.1.Micro"
+	p.shapes[0].flexible = false
 
 	require.NoError(t, p.DeployAgent(t.Context(), testAgent, testCapability))
 	require.Len(t, *recorded, 1)
@@ -228,13 +225,14 @@ func TestWireResolveShapeAndImageRequests(t *testing.T) {
 			"timeCreated": "2026-09-01T00:00:00.000Z"
 		}]`
 	})
-	p.shapeIsFlexible = false
+	p.shapes = nil
 
-	require.NoError(t, p.resolveShape(t.Context()))
-	assert.True(t, p.shapeIsFlexible)
+	require.NoError(t, p.resolveShapes(t.Context(), []string{"VM.Standard.E4.Flex"}))
+	require.Len(t, p.shapes, 1)
+	assert.True(t, p.shapes[0].flexible)
 
-	require.NoError(t, p.resolveImage(t.Context(), "", "Canonical Ubuntu", "24.04"))
-	assert.Equal(t, "ocid1.image.oc1..resolved", p.imageID)
+	require.NoError(t, p.resolveImages(t.Context(), "", "Canonical Ubuntu", "24.04"))
+	assert.Equal(t, "ocid1.image.oc1..resolved", p.shapes[0].imageID)
 
 	require.Len(t, *recorded, 2)
 	assert.Equal(t, []string{"ocid1.compartment.oc1..compartment"}, (*recorded)[0].query["compartmentId"])

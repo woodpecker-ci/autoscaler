@@ -39,12 +39,9 @@ func testProvider(compute *mocks.MockComputeClient, identityClient *mocks.MockId
 		compartmentID:       "ocid1.compartment.oc1..compartment",
 		subnetID:            "ocid1.subnet.oc1..subnet",
 		availabilityDomains: []string{"AD-1", "AD-2"},
-		shape:               "VM.Standard.E4.Flex",
-		shapeIsFlexible:     true,
-		capability:          testCapability,
+		shapes:              []shapeCandidate{testShape()},
 		ocpus:               1,
 		memoryInGBs:         8,
-		imageID:             "ocid1.image.oc1..image",
 		bootVolumeSizeInGBs: minBootVolumeGB,
 		assignPublicIP:      true,
 		tags:                map[string]string{poolTagKey(): "1"},
@@ -159,36 +156,22 @@ func TestResolveAvailabilityDomains(t *testing.T) {
 	})
 }
 
-func TestResolveShape(t *testing.T) {
-	t.Run("FlexibleShapeIsDetected", func(t *testing.T) {
+func TestResolveShapes(t *testing.T) {
+	t.Run("KeepsConfigOrderWithFlexibilityAndPlatform", func(t *testing.T) {
 		compute := mocks.NewMockComputeClient(t)
 		compute.On("ListShapes", mock.Anything, mock.Anything).
 			Return(core.ListShapesResponse{Items: []core.Shape{
 				{Shape: common.String("VM.Standard.E2.1.Micro"), IsFlexible: common.Bool(false)},
+				{Shape: common.String("VM.Standard.A1.Flex"), IsFlexible: common.Bool(true)},
 				{Shape: common.String("VM.Standard.E4.Flex"), IsFlexible: common.Bool(true)},
 			}}, nil).Once()
 
 		p := testProvider(compute, mocks.NewMockIdentityClient(t))
-		p.shapeIsFlexible = false
-
-		require.NoError(t, p.resolveShape(t.Context()))
-		assert.True(t, p.shapeIsFlexible)
-		assert.Equal(t, testCapability, p.capability)
-	})
-
-	t.Run("FixedShapeIsDetected", func(t *testing.T) {
-		compute := mocks.NewMockComputeClient(t)
-		compute.On("ListShapes", mock.Anything, mock.Anything).
-			Return(core.ListShapesResponse{Items: []core.Shape{
-				{Shape: common.String("VM.Standard.E2.1.Micro"), IsFlexible: common.Bool(false)},
-			}}, nil).Once()
-
-		p := testProvider(compute, mocks.NewMockIdentityClient(t))
-		p.shape = "VM.Standard.E2.1.Micro"
-		p.shapeIsFlexible = true
-
-		require.NoError(t, p.resolveShape(t.Context()))
-		assert.False(t, p.shapeIsFlexible)
+		require.NoError(t, p.resolveShapes(t.Context(), []string{"VM.Standard.A1.Flex", "VM.Standard.E2.1.Micro"}))
+		assert.Equal(t, []shapeCandidate{
+			{name: "VM.Standard.A1.Flex", flexible: true, platform: "linux/arm64"},
+			{name: "VM.Standard.E2.1.Micro", flexible: false, platform: "linux/amd64"},
+		}, p.shapes)
 	})
 
 	t.Run("FollowsPaginationAndFailsOnUnknownShape", func(t *testing.T) {
@@ -206,9 +189,12 @@ func TestResolveShape(t *testing.T) {
 		}, nil).Once()
 
 		p := testProvider(compute, mocks.NewMockIdentityClient(t))
-		p.shape = "VM.Standard.Nonexistent"
+		assert.ErrorIs(t, p.resolveShapes(t.Context(), []string{"VM.Standard.A1.Flex", "VM.Standard.Nonexistent"}), ErrShapeNotFound)
+	})
 
-		assert.ErrorIs(t, p.resolveShape(t.Context()), ErrShapeNotFound)
+	t.Run("EmptyListIsAnError", func(t *testing.T) {
+		p := testProvider(mocks.NewMockComputeClient(t), mocks.NewMockIdentityClient(t))
+		assert.ErrorIs(t, p.resolveShapes(t.Context(), nil), ErrNoShapes)
 	})
 }
 
@@ -225,33 +211,36 @@ func TestShapeArch(t *testing.T) {
 	}
 }
 
-func TestResolveImage(t *testing.T) {
+func TestResolveImages(t *testing.T) {
 	t.Run("ExplicitImageSkipsLookup", func(t *testing.T) {
-		compute := mocks.NewMockComputeClient(t)
-		p := testProvider(compute, mocks.NewMockIdentityClient(t))
+		p := testProvider(mocks.NewMockComputeClient(t), mocks.NewMockIdentityClient(t))
 
-		require.NoError(t, p.resolveImage(t.Context(), "ocid1.image.oc1..explicit", "Canonical Ubuntu", "24.04"))
-		assert.Equal(t, "ocid1.image.oc1..explicit", p.imageID)
+		require.NoError(t, p.resolveImages(t.Context(), "ocid1.image.oc1..explicit", "Canonical Ubuntu", "24.04"))
+		assert.Equal(t, "ocid1.image.oc1..explicit", p.shapes[0].imageID)
 	})
 
-	t.Run("PicksMostRecentImageForShape", func(t *testing.T) {
+	t.Run("PicksMostRecentImageForEachShape", func(t *testing.T) {
 		compute := mocks.NewMockComputeClient(t)
-		compute.On("ListImages", mock.Anything, mock.MatchedBy(func(r core.ListImagesRequest) bool {
-			return *r.OperatingSystem == "Canonical Ubuntu" &&
-				*r.OperatingSystemVersion == "24.04" &&
-				*r.Shape == "VM.Standard.E4.Flex" &&
-				r.SortBy == core.ListImagesSortByTimecreated &&
-				r.SortOrder == core.ListImagesSortOrderDesc
-		})).Return(core.ListImagesResponse{
-			Items: []core.Image{{
-				Id:          common.String("ocid1.image.oc1..newest"),
-				DisplayName: common.String("Canonical-Ubuntu-24.04-2026.09.01-0"),
-			}},
-		}, nil).Once()
+		for shape, image := range map[string]string{
+			"VM.Standard.E4.Flex": "ocid1.image.oc1..x86",
+			"VM.Standard.A1.Flex": "ocid1.image.oc1..arm",
+		} {
+			compute.On("ListImages", mock.Anything, mock.MatchedBy(func(r core.ListImagesRequest) bool {
+				return *r.OperatingSystem == "Canonical Ubuntu" &&
+					*r.OperatingSystemVersion == "24.04" &&
+					*r.Shape == shape &&
+					r.SortBy == core.ListImagesSortByTimecreated &&
+					r.SortOrder == core.ListImagesSortOrderDesc
+			})).Return(core.ListImagesResponse{
+				Items: []core.Image{{Id: common.String(image)}},
+			}, nil).Once()
+		}
 
 		p := testProvider(compute, mocks.NewMockIdentityClient(t))
-		require.NoError(t, p.resolveImage(t.Context(), "", "Canonical Ubuntu", "24.04"))
-		assert.Equal(t, "ocid1.image.oc1..newest", p.imageID)
+		p.shapes = append(p.shapes, shapeCandidate{name: "VM.Standard.A1.Flex", platform: "linux/arm64"})
+		require.NoError(t, p.resolveImages(t.Context(), "", "Canonical Ubuntu", "24.04"))
+		assert.Equal(t, "ocid1.image.oc1..x86", p.shapes[0].imageID)
+		assert.Equal(t, "ocid1.image.oc1..arm", p.shapes[1].imageID)
 	})
 
 	t.Run("NoImageIsAnError", func(t *testing.T) {
@@ -260,7 +249,52 @@ func TestResolveImage(t *testing.T) {
 			Return(core.ListImagesResponse{}, nil).Once()
 
 		p := testProvider(compute, mocks.NewMockIdentityClient(t))
-		assert.ErrorIs(t, p.resolveImage(t.Context(), "", "Canonical Ubuntu", "24.04"), ErrImageNotFound)
+		assert.ErrorIs(t, p.resolveImages(t.Context(), "", "Canonical Ubuntu", "24.04"), ErrImageNotFound)
+	})
+}
+
+func TestResolveSubnet(t *testing.T) {
+	subnet := func(t *testing.T, s core.Subnet) *mocks.MockNetworkClient {
+		t.Helper()
+		network := mocks.NewMockNetworkClient(t)
+		network.On("GetSubnet", mock.Anything, mock.MatchedBy(func(r core.GetSubnetRequest) bool {
+			return *r.SubnetId == "ocid1.subnet.oc1..subnet"
+		})).Return(core.GetSubnetResponse{Subnet: s}, nil).Once()
+		return network
+	}
+
+	t.Run("RegionalSubnetKeepsAvailabilityDomains", func(t *testing.T) {
+		p := testProvider(mocks.NewMockComputeClient(t), mocks.NewMockIdentityClient(t))
+		p.networkClient = subnet(t, core.Subnet{ProhibitPublicIpOnVnic: common.Bool(false)})
+
+		require.NoError(t, p.resolveSubnet(t.Context()))
+		assert.Equal(t, []string{"AD-1", "AD-2"}, p.availabilityDomains)
+	})
+
+	t.Run("AvailabilityDomainSubnetNarrowsTheList", func(t *testing.T) {
+		p := testProvider(mocks.NewMockComputeClient(t), mocks.NewMockIdentityClient(t))
+		p.networkClient = subnet(t, core.Subnet{AvailabilityDomain: common.String("AD-2")})
+
+		require.NoError(t, p.resolveSubnet(t.Context()))
+		assert.Equal(t, []string{"AD-2"}, p.availabilityDomains)
+	})
+
+	t.Run("AvailabilityDomainSubnetOutsideTheListIsAnError", func(t *testing.T) {
+		p := testProvider(mocks.NewMockComputeClient(t), mocks.NewMockIdentityClient(t))
+		p.networkClient = subnet(t, core.Subnet{AvailabilityDomain: common.String("AD-3")})
+
+		assert.ErrorIs(t, p.resolveSubnet(t.Context()), ErrSubnetAvailabilityDomain)
+	})
+
+	t.Run("PrivateSubnetRejectsPublicIP", func(t *testing.T) {
+		p := testProvider(mocks.NewMockComputeClient(t), mocks.NewMockIdentityClient(t))
+		p.networkClient = subnet(t, core.Subnet{ProhibitPublicIpOnVnic: common.Bool(true)})
+
+		assert.ErrorIs(t, p.resolveSubnet(t.Context()), ErrPublicIPProhibited)
+
+		p.networkClient = subnet(t, core.Subnet{ProhibitPublicIpOnVnic: common.Bool(true)})
+		p.assignPublicIP = false
+		require.NoError(t, p.resolveSubnet(t.Context()))
 	})
 }
 

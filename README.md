@@ -71,7 +71,7 @@ You can add your OpenStack SSH keypair via `KEYPAIR`.
 
 ## Server type fallbacks
 
-Hetzner Cloud (`WOODPECKER_HETZNERCLOUD_SERVER_TYPE`), AWS (`WOODPECKER_AWS_INSTANCE_TYPE`) and Scaleway (`WOODPECKER_SCALEWAY_SERVER_TYPES`) take an ordered list of server types. If a type is out of capacity, the next type of the same architecture is tried; any other error fails the deploy.
+Hetzner Cloud (`WOODPECKER_HETZNERCLOUD_SERVER_TYPE`), AWS (`WOODPECKER_AWS_INSTANCE_TYPE`), Scaleway (`WOODPECKER_SCALEWAY_SERVER_TYPES`) and Oracle Cloud (`WOODPECKER_ORACLE_SHAPES`) take an ordered list of server types. If a type is out of capacity, the next type of the same architecture is tried; any other error fails the deploy.
 
 Limits:
 
@@ -92,10 +92,10 @@ Oracle Cloud support is currently experimental: it has not been tested by the pr
 Useful optional settings:
 
 - `WOODPECKER_ORACLE_AVAILABILITY_DOMAINS` (default: every availability domain of the compartment; the agents are launched in the first one that has capacity, in the given order)
-- `WOODPECKER_ORACLE_SHAPE` (default: `VM.Standard.E4.Flex`; the shape is looked up at startup, so a name that does not exist in the compartment fails immediately)
+- `WOODPECKER_ORACLE_SHAPES` (default: `VM.Standard.E4.Flex`; ordered list, the Ampere A-series shapes such as `VM.Standard.A1.Flex` are arm64 and every other shape is amd64; each shape is looked up at startup, so a name that does not exist in the compartment fails immediately)
 - `WOODPECKER_ORACLE_OCPUS` (default: `1`, only sent for flexible shapes)
 - `WOODPECKER_ORACLE_MEMORY_IN_GBS` (default: `8`, only sent for flexible shapes)
-- `WOODPECKER_ORACLE_IMAGE_OCID` (default: the most recent image matching the operating system settings below for the configured shape)
+- `WOODPECKER_ORACLE_IMAGE_OCID` (default: the most recent image matching the operating system settings below, looked up per shape; an explicit image must boot on every configured shape)
 - `WOODPECKER_ORACLE_IMAGE_OPERATING_SYSTEM` (default: `Canonical Ubuntu`)
 - `WOODPECKER_ORACLE_IMAGE_OPERATING_SYSTEM_VERSION` (default: `24.04`)
 - `WOODPECKER_ORACLE_BOOT_VOLUME_SIZE` (default: `50`, Oracle Cloud rejects smaller boot volumes)
@@ -103,7 +103,9 @@ Useful optional settings:
 - `WOODPECKER_ORACLE_SSH_KEY`
 - `WOODPECKER_ORACLE_TAGS` (comma separated `key=value` freeform tags; Oracle Cloud allows 10 per instance and the autoscaler already uses one of them to mark its pool)
 
-Capacity is the common failure mode on Oracle Cloud, in particular for the free `VM.Standard.A1.Flex` shape. If a launch fails with an out-of-capacity error the next availability domain is tried, so listing more than one is worthwhile.
+Capacity is the common failure mode on Oracle Cloud, in particular for the free `VM.Standard.A1.Flex` shape. If a launch fails with an out-of-capacity error the next availability domain is tried, then the next shape of the same architecture, so listing more than one is worthwhile.
+
+The subnet is checked at startup: a subnet bound to one availability domain limits the agents to that domain, and a private subnet requires `WOODPECKER_ORACLE_ASSIGN_PUBLIC_IP=false`.
 
 The agents blackhole the instance metadata service (`169.254.169.254`) before the workflow steps start, so a step cannot read the agent token back out of `user_data`.
 

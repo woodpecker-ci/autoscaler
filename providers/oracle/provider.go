@@ -5,6 +5,7 @@ import (
 	b64 "encoding/base64"
 	"errors"
 	"fmt"
+	"slices"
 
 	"github.com/oracle/oci-go-sdk/v65/common"
 	"github.com/oracle/oci-go-sdk/v65/core"
@@ -29,19 +30,24 @@ type provider struct {
 	config              *config.Config
 	computeClient       ociapi.ComputeClient
 	identityClient      ociapi.IdentityClient
+	networkClient       ociapi.NetworkClient
 	compartmentID       string
 	subnetID            string
 	availabilityDomains []string
-	shape               string
-	shapeIsFlexible     bool
-	capability          types.Capability
+	shapes              []shapeCandidate
 	ocpus               float32
 	memoryInGBs         float32
-	imageID             string
 	bootVolumeSizeInGBs int64
 	assignPublicIP      bool
 	sshKey              string
 	tags                map[string]string
+}
+
+type shapeCandidate struct {
+	name     string
+	flexible bool
+	platform string
+	imageID  string
 }
 
 func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Provider, error) {
@@ -50,7 +56,6 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 		config:              config,
 		compartmentID:       c.String("oracle-compartment-ocid"),
 		subnetID:            c.String("oracle-subnet-ocid"),
-		shape:               c.String("oracle-shape"),
 		ocpus:               c.Float32("oracle-ocpus"),
 		memoryInGBs:         c.Float32("oracle-memory-in-gbs"),
 		bootVolumeSizeInGBs: c.Int64("oracle-boot-volume-size"),
@@ -100,13 +105,22 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 	}
 	p.identityClient = identityClient
 
+	networkClient, err := core.NewVirtualNetworkClientWithConfigurationProvider(configProvider)
+	if err != nil {
+		return nil, fmt.Errorf("%s: NewVirtualNetworkClientWithConfigurationProvider: %w", p.name, err)
+	}
+	p.networkClient = networkClient
+
 	if err := p.resolveAvailabilityDomains(ctx, c.StringSlice("oracle-availability-domains")); err != nil {
 		return nil, err
 	}
-	if err := p.resolveShape(ctx); err != nil {
+	if err := p.resolveSubnet(ctx); err != nil {
 		return nil, err
 	}
-	if err := p.resolveImage(ctx,
+	if err := p.resolveShapes(ctx, c.StringSlice("oracle-shapes")); err != nil {
+		return nil, err
+	}
+	if err := p.resolveImages(ctx,
 		c.String("oracle-image-ocid"),
 		c.String("oracle-image-operating-system"),
 		c.String("oracle-image-operating-system-version"),
@@ -114,20 +128,24 @@ func New(ctx context.Context, c *cli.Command, config *config.Config) (types.Prov
 		return nil, err
 	}
 
+	for _, shape := range p.shapes {
+		log.Info().
+			Str("shape", shape.name).
+			Bool("flexible", shape.flexible).
+			Str("platform", shape.platform).
+			Str("image_id", shape.imageID).
+			Msgf("%s: shape ready", p.name)
+	}
 	log.Info().
 		Strs("availability_domains", p.availabilityDomains).
-		Str("shape", p.shape).
-		Bool("shape_is_flexible", p.shapeIsFlexible).
-		Str("platform", p.capability.Platform).
-		Str("image_id", p.imageID).
 		Msgf("%s: provider ready", p.name)
 
 	return p, nil
 }
 
 func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, capability types.Capability) error {
-	if capability != p.capability {
-		return fmt.Errorf("%s: unsupported capability: platform=%s backend=%s", p.name, capability.Platform, capability.Backend)
+	if capability.Backend != types.BackendDocker {
+		return fmt.Errorf("%s: only the docker backend is supported, got %q", p.name, capability.Backend)
 	}
 
 	metadata, err := p.instanceMetadata(agent)
@@ -135,26 +153,37 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cap
 		return err
 	}
 
+	matched := false
 	var errs []error
-	for _, availabilityDomain := range p.availabilityDomains {
-		_, err := p.computeClient.LaunchInstance(ctx, core.LaunchInstanceRequest{
-			LaunchInstanceDetails: p.launchDetails(agent, availabilityDomain, metadata),
-		})
-		if err == nil {
-			log.Info().Str("availability_domain", availabilityDomain).
-				Msgf("%s: create agent %s", p.name, agent.Name)
-			return nil
+	for _, shape := range p.shapes {
+		if shape.platform != capability.Platform {
+			continue
 		}
-		if !isCapacityError(err) {
-			return fmt.Errorf("%s: LaunchInstance: %w", p.name, err)
-		}
+		matched = true
 
-		log.Warn().Str("availability_domain", availabilityDomain).
-			Msgf("%s: no capacity for shape %s, trying next availability domain: %s", p.name, p.shape, err)
-		errs = append(errs, err)
+		for _, availabilityDomain := range p.availabilityDomains {
+			_, err := p.computeClient.LaunchInstance(ctx, core.LaunchInstanceRequest{
+				LaunchInstanceDetails: p.launchDetails(agent, shape, availabilityDomain, metadata),
+			})
+			if err == nil {
+				log.Info().Str("shape", shape.name).Str("availability_domain", availabilityDomain).
+					Msgf("%s: create agent %s", p.name, agent.Name)
+				return nil
+			}
+			if !isCapacityError(err) {
+				return fmt.Errorf("%s: LaunchInstance: %w", p.name, err)
+			}
+
+			log.Warn().Str("shape", shape.name).Str("availability_domain", availabilityDomain).
+				Msgf("%s: no capacity, trying next candidate: %s", p.name, err)
+			errs = append(errs, err)
+		}
+	}
+	if !matched {
+		return fmt.Errorf("%s: %w: %s", p.name, ErrNoMatchingShape, capability.Platform)
 	}
 
-	return fmt.Errorf("%s: %w: %w", p.name, ErrAllAvailabilityDomainsOut, errors.Join(errs...))
+	return fmt.Errorf("%s: %w: %w", p.name, ErrNoCapacity, errors.Join(errs...))
 }
 
 func (p *provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) error {
@@ -193,7 +222,14 @@ func (p *provider) ListDeployedAgentNames(ctx context.Context) ([]string, error)
 }
 
 func (p *provider) Capabilities(_ context.Context) ([]types.Capability, error) {
-	return []types.Capability{p.capability}, nil
+	var caps []types.Capability
+	for _, shape := range p.shapes {
+		capability := types.Capability{Platform: shape.platform, Backend: types.BackendDocker}
+		if !slices.Contains(caps, capability) {
+			caps = append(caps, capability)
+		}
+	}
+	return caps, nil
 }
 
 func (p *provider) BillingModel() types.BillingModel {
@@ -218,12 +254,12 @@ func (p *provider) instanceMetadata(agent *woodpecker.Agent) (map[string]string,
 	return metadata, nil
 }
 
-func (p *provider) launchDetails(agent *woodpecker.Agent, availabilityDomain string, metadata map[string]string) core.LaunchInstanceDetails {
+func (p *provider) launchDetails(agent *woodpecker.Agent, shape shapeCandidate, availabilityDomain string, metadata map[string]string) core.LaunchInstanceDetails {
 	details := core.LaunchInstanceDetails{
 		AvailabilityDomain: common.String(availabilityDomain),
 		CompartmentId:      common.String(p.compartmentID),
 		DisplayName:        common.String(agent.Name),
-		Shape:              common.String(p.shape),
+		Shape:              common.String(shape.name),
 		FreeformTags:       p.tags,
 		Metadata:           metadata,
 		CreateVnicDetails: &core.CreateVnicDetails{
@@ -231,12 +267,12 @@ func (p *provider) launchDetails(agent *woodpecker.Agent, availabilityDomain str
 			AssignPublicIp: common.Bool(p.assignPublicIP),
 		},
 		SourceDetails: core.InstanceSourceViaImageDetails{
-			ImageId:             common.String(p.imageID),
+			ImageId:             common.String(shape.imageID),
 			BootVolumeSizeInGBs: common.Int64(p.bootVolumeSizeInGBs),
 		},
 	}
 
-	if p.shapeIsFlexible {
+	if shape.flexible {
 		details.ShapeConfig = &core.LaunchInstanceShapeConfigDetails{
 			Ocpus:       common.Float32(p.ocpus),
 			MemoryInGBs: common.Float32(p.memoryInGBs),

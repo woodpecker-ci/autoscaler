@@ -15,6 +15,10 @@ type ComputeClient interface {
 	ListShapes(ctx context.Context, request core.ListShapesRequest) (core.ListShapesResponse, error)
 }
 
+type NetworkClient interface {
+	GetSubnet(ctx context.Context, request core.GetSubnetRequest) (core.GetSubnetResponse, error)
+}
+
 type IdentityClient interface {
 	ListAvailabilityDomains(ctx context.Context, request identity.ListAvailabilityDomainsRequest) (identity.ListAvailabilityDomainsResponse, error)
 }
