@@ -15,7 +15,6 @@ var ProviderFlags = []cli.Flag{
 		Usage: "Oracle Cloud tenancy OCID",
 		Sources: cli.NewValueSourceChain(
 			cli.EnvVar("WOODPECKER_ORACLE_TENANCY_OCID"),
-			cli.EnvVar("OCI_TENANCY_OCID"),
 			cli.File(os.Getenv("WOODPECKER_ORACLE_TENANCY_OCID_FILE")),
 		),
 		Category: category,
@@ -25,7 +24,6 @@ var ProviderFlags = []cli.Flag{
 		Usage: "Oracle Cloud user OCID the API key belongs to",
 		Sources: cli.NewValueSourceChain(
 			cli.EnvVar("WOODPECKER_ORACLE_USER_OCID"),
-			cli.EnvVar("OCI_USER_OCID"),
 			cli.File(os.Getenv("WOODPECKER_ORACLE_USER_OCID_FILE")),
 		),
 		Category: category,
@@ -35,7 +33,6 @@ var ProviderFlags = []cli.Flag{
 		Usage: "Fingerprint of the uploaded API signing key",
 		Sources: cli.NewValueSourceChain(
 			cli.EnvVar("WOODPECKER_ORACLE_FINGERPRINT"),
-			cli.EnvVar("OCI_FINGERPRINT"),
 			cli.File(os.Getenv("WOODPECKER_ORACLE_FINGERPRINT_FILE")),
 		),
 		Category: category,
@@ -70,7 +67,7 @@ var ProviderFlags = []cli.Flag{
 			"Required for API signing key authentication, defaults to the region of the autoscaler instance otherwise.",
 		Sources: cli.NewValueSourceChain(
 			cli.EnvVar("WOODPECKER_ORACLE_REGION"),
-			cli.EnvVar("OCI_REGION"),
+			cli.EnvVar("OCI_REGION"), // oci sdk official naming
 		),
 		Category: category,
 	},

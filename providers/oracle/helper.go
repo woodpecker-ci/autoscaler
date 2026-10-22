@@ -182,13 +182,17 @@ func (p *provider) resolveShapes(ctx context.Context, names []string) error {
 	return nil
 }
 
-// shapeArch maps an OCI shape name to a Go architecture: the A-series
+// shapeArch maps an OCI shape name to a Go architecture: the Standard A-series
 // (VM.Standard.A1.Flex, BM.Standard.A1.160, ...) is Ampere arm64, the rest x86.
+// GPU shapes such as VM.GPU.A10.1 name the GPU, not the CPU, so they stay x86.
 func shapeArch(shape string) string {
-	for _, part := range strings.Split(shape, ".") {
-		if len(part) > 1 && part[0] == 'A' && strings.Trim(part[1:], "0123456789") == "" {
-			return "arm64"
-		}
+	parts := strings.Split(shape, ".")
+	if len(parts) < 3 || parts[1] != "Standard" {
+		return "amd64"
+	}
+	series := parts[2]
+	if len(series) > 1 && series[0] == 'A' && strings.Trim(series[1:], "0123456789") == "" {
+		return "arm64"
 	}
 	return "amd64"
 }

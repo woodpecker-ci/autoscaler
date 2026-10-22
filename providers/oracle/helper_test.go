@@ -206,6 +206,8 @@ func TestShapeArch(t *testing.T) {
 		"VM.Standard.A1.Flex":    "arm64",
 		"VM.Standard.A2.Flex":    "arm64",
 		"BM.Standard.A1.160":     "arm64",
+		"VM.GPU.A10.1":           "amd64",
+		"BM.GPU.A10.4":           "amd64",
 	} {
 		assert.Equal(t, arch, shapeArch(shape), shape)
 	}
