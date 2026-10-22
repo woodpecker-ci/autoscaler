@@ -8,10 +8,10 @@ require (
 	github.com/aws/aws-sdk-go-v2 v1.47.3
 	github.com/aws/aws-sdk-go-v2/config v1.33.9
 	github.com/aws/aws-sdk-go-v2/credentials v1.20.9
-	github.com/aws/aws-sdk-go-v2/service/ec2 v1.339.0
+	github.com/aws/aws-sdk-go-v2/service/ec2 v1.340.0
 	github.com/aws/aws-sdk-go-v2/service/sts v1.51.4
-	github.com/aws/smithy-go v1.28.5
-	github.com/digitalocean/godo v1.229.0
+	github.com/aws/smithy-go v1.28.6
+	github.com/digitalocean/godo v1.230.0
 	github.com/docker/go-units v0.5.0
 	github.com/gophercloud/gophercloud/v2 v2.15.0
 	github.com/hetznercloud/hcloud-go/v2 v2.52.0
