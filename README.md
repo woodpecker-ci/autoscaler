@@ -90,6 +90,14 @@ How idle agents are torn down depends on how the selected provider bills:
 
 The billing model is selected automatically by the provider, so no extra configuration is required to benefit from this.
 
+## Single-workflow agents
+
+Set `WOODPECKER_AGENT_SINGLE_WORKFLOW=true` to give every workflow a fresh machine. The agents then run in the one-shot mode of the woodpecker agent (requires woodpecker >= 3.14.0): each agent runs exactly one workflow and exits. Once its workflow is done, the agent is removed on the next reconciliation, whatever the billing model, and the next workflow gets a new agent.
+
+- `WOODPECKER_WORKFLOWS_PER_AGENT` is forced to `1`.
+- The default cloud-init template does not restart the exited agent. A custom `WOODPECKER_CLOUDINIT_TEMPLATE` should do the same, for example with `{{ if .SingleWorkflow }}`.
+- Setting `WOODPECKER_AGENT_SINGLE_WORKFLOW` (or `WOODPECKER_AGENT_LABELS`) through `WOODPECKER_AGENT_ENV` is rejected; use the autoscaler option instead.
+
 ## Roadmap
 
 - [ ] Add support for multiple providers
