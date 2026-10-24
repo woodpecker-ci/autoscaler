@@ -21,8 +21,11 @@ import (
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
 
-var blackholeMetadataAPI = []string{
-	"ip -4 route add blackhole 169.254.169.254/32",
+// OCI also serves DNS and NTP on 169.254.169.254, so only TCP outside port 53 is
+// dropped. The raw table runs before docker's FORWARD rules, so steps are covered too.
+var blockMetadataAPI = []string{
+	"iptables -t raw -A PREROUTING -d 169.254.169.254/32 -p tcp ! --dport 53 -j DROP",
+	"iptables -t raw -A OUTPUT -d 169.254.169.254/32 -p tcp ! --dport 53 -j DROP",
 }
 
 type provider struct {
@@ -238,7 +241,7 @@ func (p *provider) BillingModel() types.BillingModel {
 
 func (p *provider) instanceMetadata(agent *woodpecker.Agent) (map[string]string, error) {
 	userData, err := cloudinit.RenderUserDataTemplate(p.config, agent, cloudinit.RenderOption{
-		PreExec: blackholeMetadataAPI,
+		PreExec: blockMetadataAPI,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("%s: cloudinit.RenderUserDataTemplate: %w", p.name, err)

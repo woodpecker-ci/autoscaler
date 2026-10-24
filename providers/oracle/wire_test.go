@@ -148,7 +148,7 @@ func TestWireLaunchInstanceRequest(t *testing.T) {
 	require.True(t, ok)
 	decoded, err := b64.StdEncoding.DecodeString(userData)
 	require.NoError(t, err)
-	assert.Contains(t, string(decoded), "ip -4 route add blackhole 169.254.169.254/32")
+	assert.Contains(t, string(decoded), "iptables -t raw -A OUTPUT -d 169.254.169.254/32 -p tcp ! --dport 53 -j DROP")
 
 	assert.Contains(t, request.authorization, "Signature")
 	assert.Contains(t, request.authorization, "keyId=")

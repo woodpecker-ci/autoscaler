@@ -194,7 +194,7 @@ func TestFixedShapeGetsNoShapeConfig(t *testing.T) {
 	assert.Nil(t, captured.ShapeConfig)
 }
 
-func TestUserDataIsBase64EncodedAndBlackholesTheMetadataService(t *testing.T) {
+func TestUserDataIsBase64EncodedAndBlocksTheMetadataService(t *testing.T) {
 	compute := mocks.NewMockComputeClient(t)
 	var captured core.LaunchInstanceDetails
 	compute.On("LaunchInstance", mock.Anything, mock.Anything).
@@ -213,7 +213,9 @@ func TestUserDataIsBase64EncodedAndBlackholesTheMetadataService(t *testing.T) {
 
 	userData := string(decoded)
 	assert.True(t, strings.HasPrefix(userData, "#cloud-config"))
-	assert.Contains(t, userData, "ip -4 route add blackhole 169.254.169.254/32")
+	assert.Contains(t, userData, "iptables -t raw -A PREROUTING -d 169.254.169.254/32 -p tcp ! --dport 53 -j DROP")
+	assert.Contains(t, userData, "iptables -t raw -A OUTPUT -d 169.254.169.254/32 -p tcp ! --dport 53 -j DROP")
+	assert.NotContains(t, userData, "route add blackhole")
 	assert.Contains(t, userData, testAgent.Token)
 }
 
