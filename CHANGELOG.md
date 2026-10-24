@@ -1,6 +1,6 @@
 # Changelog
 
-## [2.0.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.1) - 2026-10-23
+## [2.0.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.1) - 2026-10-24
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -16,6 +16,7 @@
 
 ### 📦️ Dependency
 
+- Update module github.com/digitalocean/godo to v1.232.0 [[#781](https://github.com/woodpecker-ci/autoscaler/pull/781)]
 - Update golang deps non-major [[#780](https://github.com/woodpecker-ci/autoscaler/pull/780)]
 - Update golang deps non-major [[#779](https://github.com/woodpecker-ci/autoscaler/pull/779)]
 - Update golang deps non-major [[#778](https://github.com/woodpecker-ci/autoscaler/pull/778)]
