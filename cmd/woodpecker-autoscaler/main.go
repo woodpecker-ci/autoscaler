@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -49,6 +50,25 @@ func setupProvider(ctx context.Context, cmd *cli.Command, config *config.Config)
 	return nil, fmt.Errorf("unknown provider: %s", cmd.String("provider"))
 }
 
+// reservedAgentEnv lists agent environment variables the autoscaler sets
+// itself, each with the autoscaler option to use instead.
+var reservedAgentEnv = []struct{ env, option string }{
+	{env: "WOODPECKER_AGENT_LABELS", option: "agent-labels"},
+	{env: "WOODPECKER_AGENT_SINGLE_WORKFLOW", option: "agent-single-workflow"},
+}
+
+// checkAgentEnv rejects agent environment variables that are managed by an
+// autoscaler option, as the engine relies on what that option configures.
+func checkAgentEnv(agentEnv map[string]string) error {
+	var err error
+	for _, r := range reservedAgentEnv {
+		if _, ok := agentEnv[r.env]; ok {
+			err = errors.Join(err, fmt.Errorf("setting %s via WOODPECKER_AGENT_ENV is forbidden, use the autoscaler option --%s instead", r.env, r.option))
+		}
+	}
+	return err
+}
+
 func run(ctx context.Context, cmd *cli.Command) error {
 	log.Log().Msgf("starting autoscaler with version '%s'", version.String())
 
@@ -75,22 +95,30 @@ func run(ctx context.Context, cmd *cli.Command) error {
 		agentLabels[before] = after
 	}
 
-	if _, exist := agentEnvironment["WOODPECKER_AGENT_LABELS"]; exist {
-		log.Error().Msg("setting WOODPECKER_AGENT_LABELS via WOODPECKER_AGENT_ENV is forbidden, use native autoscaler setting for that")
-		return fmt.Errorf("'WOODPECKER_AGENT_ENV' has forbidden env var set: \"WOODPECKER_AGENT_LABELS\"")
+	if err := checkAgentEnv(agentEnvironment); err != nil {
+		return err
+	}
+
+	workflowsPerAgent := cmd.Int("workflows-per-agent")
+	oneshotAgent := cmd.Bool("agent-single-workflow")
+
+	if oneshotAgent && workflowsPerAgent > 1 {
+		log.Warn().Msgf("workflows-per-agent forced from %d to 1 due to agent-single-workflow", workflowsPerAgent)
+		workflowsPerAgent = 1
 	}
 
 	config := &config.Config{
-		MinAgents:         cmd.Int("min-agents"),
-		MaxAgents:         cmd.Int("max-agents"),
-		WorkflowsPerAgent: cmd.Int("workflows-per-agent"),
-		PoolID:            cmd.String("pool-id"),
-		GRPCAddress:       cmd.String("grpc-addr"),
-		GRPCSecure:        cmd.Bool("grpc-secure"),
-		Image:             cmd.String("agent-image"),
-		UserData:          cmd.String("cloudinit-template"),
-		ExtraAgentLabels:  agentLabels,
-		Environment:       agentEnvironment,
+		MinAgents:           cmd.Int("min-agents"),
+		MaxAgents:           cmd.Int("max-agents"),
+		WorkflowsPerAgent:   workflowsPerAgent,
+		PoolID:              cmd.String("pool-id"),
+		GRPCAddress:         cmd.String("grpc-addr"),
+		GRPCSecure:          cmd.Bool("grpc-secure"),
+		Image:               cmd.String("agent-image"),
+		UserData:            cmd.String("cloudinit-template"),
+		ExtraAgentLabels:    agentLabels,
+		Environment:         agentEnvironment,
+		AgentSingleWorkflow: oneshotAgent,
 	}
 
 	provider, err := setupProvider(ctx, cmd, config)
