@@ -114,8 +114,9 @@ var ProviderFlags = []cli.Flag{
 		Category: category,
 	},
 	&cli.StringFlag{
-		Name:     "oracle-image-ocid",
-		Usage:    "OCID of the image to boot from, skips image lookup by operating system; it must boot on every configured shape",
+		Name: "oracle-image-ocid",
+		Usage: "OCID of the image to boot from, it must boot on every configured shape. " +
+			"Defaults to the most recent Canonical Ubuntu 24.04 image for each shape, see the operating system flags below",
 		Sources:  cli.EnvVars("WOODPECKER_ORACLE_IMAGE_OCID"),
 		Category: category,
 	},
