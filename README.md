@@ -107,7 +107,7 @@ Capacity is the common failure mode on Oracle Cloud, in particular for the free 
 
 The subnet is checked at startup: a subnet bound to one availability domain limits the agents to that domain, and a private subnet requires `WOODPECKER_ORACLE_ASSIGN_PUBLIC_IP=false`.
 
-The agents block the instance metadata service (`169.254.169.254`) before the workflow steps start, so a step cannot read the agent token back out of `user_data`. Oracle Cloud also serves DNS (port 53) and NTP (UDP port 123) on that address, so instead of a blackhole route only TCP to ports other than 53 is dropped: the metadata API on port 80 is blocked, DNS and NTP keep working.
+The agents block the instance metadata service (`169.254.169.254`) before the workflow steps start, so a step cannot read the agent token back out of `user_data`. Oracle Cloud also serves DNS (port 53) and NTP (UDP port 123) on that address, so instead of a blackhole route DNS and NTP are let through and every other packet to that address is dropped, which blocks the metadata API on port 80.
 
 Only virtual machine shapes are billed per second with a one-minute minimum; bare metal shapes carry a one-hour minimum, which the per-second teardown policy below does not account for.
 

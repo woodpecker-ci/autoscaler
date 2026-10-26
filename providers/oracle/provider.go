@@ -21,12 +21,18 @@ import (
 	"go.woodpecker-ci.org/woodpecker/v3/woodpecker-go/woodpecker"
 )
 
-// 169.254.169.254 is also OCI's DNS (53) and NTP (UDP 123): only TCP to other ports is
-// dropped, so the metadata API on 80 is blocked and UDP plus TCP 53 stay open.
-// The raw table runs before docker's FORWARD rules, so steps are covered too.
+// 169.254.169.254 is also OCI's DNS (53) and NTP (UDP 123): those pass, every other
+// packet to it is dropped. The raw table runs before docker's FORWARD rules, so steps
+// are covered too.
 var blockMetadataAPI = []string{
-	"iptables -t raw -A PREROUTING -d 169.254.169.254/32 -p tcp ! --dport 53 -j DROP",
-	"iptables -t raw -A OUTPUT -d 169.254.169.254/32 -p tcp ! --dport 53 -j DROP",
+	"iptables -t raw -A PREROUTING -d 169.254.169.254/32 -p udp --dport 53 -j ACCEPT",
+	"iptables -t raw -A PREROUTING -d 169.254.169.254/32 -p tcp --dport 53 -j ACCEPT",
+	"iptables -t raw -A PREROUTING -d 169.254.169.254/32 -p udp --dport 123 -j ACCEPT",
+	"iptables -t raw -A PREROUTING -d 169.254.169.254/32 -j DROP",
+	"iptables -t raw -A OUTPUT -d 169.254.169.254/32 -p udp --dport 53 -j ACCEPT",
+	"iptables -t raw -A OUTPUT -d 169.254.169.254/32 -p tcp --dport 53 -j ACCEPT",
+	"iptables -t raw -A OUTPUT -d 169.254.169.254/32 -p udp --dport 123 -j ACCEPT",
+	"iptables -t raw -A OUTPUT -d 169.254.169.254/32 -j DROP",
 }
 
 type provider struct {

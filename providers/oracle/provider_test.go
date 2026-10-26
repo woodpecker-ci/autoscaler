@@ -213,8 +213,10 @@ func TestUserDataIsBase64EncodedAndBlocksTheMetadataService(t *testing.T) {
 
 	userData := string(decoded)
 	assert.True(t, strings.HasPrefix(userData, "#cloud-config"))
-	assert.Contains(t, userData, "iptables -t raw -A PREROUTING -d 169.254.169.254/32 -p tcp ! --dport 53 -j DROP")
-	assert.Contains(t, userData, "iptables -t raw -A OUTPUT -d 169.254.169.254/32 -p tcp ! --dport 53 -j DROP")
+	for _, rule := range blockMetadataAPI {
+		assert.Contains(t, userData, rule)
+	}
+	assert.Less(t, strings.Index(userData, "--dport 123 -j ACCEPT"), strings.Index(userData, "PREROUTING -d 169.254.169.254/32 -j DROP"))
 	assert.NotContains(t, userData, "route add blackhole")
 	assert.Contains(t, userData, testAgent.Token)
 }
