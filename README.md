@@ -71,13 +71,45 @@ You can add your OpenStack SSH keypair via `KEYPAIR`.
 
 ## Server type fallbacks
 
-Hetzner Cloud (`WOODPECKER_HETZNERCLOUD_SERVER_TYPE`), AWS (`WOODPECKER_AWS_INSTANCE_TYPE`) and Scaleway (`WOODPECKER_SCALEWAY_SERVER_TYPES`) take an ordered list of server types. If a type is out of capacity, the next type of the same architecture is tried; any other error fails the deploy.
+Hetzner Cloud (`WOODPECKER_HETZNERCLOUD_SERVER_TYPE`), AWS (`WOODPECKER_AWS_INSTANCE_TYPE`), Scaleway (`WOODPECKER_SCALEWAY_SERVER_TYPES`) and Oracle Cloud (`WOODPECKER_ORACLE_SHAPES`) take an ordered list of server types. If a type is out of capacity, the next type of the same architecture is tried; any other error fails the deploy.
 
 Limits:
 
 - There is no fallback across architectures: x86 and arm types are separate pools, each with its own fallback order.
 - Workflows without a `platform` label are deployed on the architecture of the first listed type.
 - Workflows that ask for a platform none of the types provides do not trigger scaling.
+
+## Oracle Cloud
+
+Set `WOODPECKER_PROVIDER=oracle` and configure at least:
+
+- `WOODPECKER_ORACLE_COMPARTMENT_OCID`
+- `WOODPECKER_ORACLE_SUBNET_OCID`
+- credentials, either an API signing key (`WOODPECKER_ORACLE_TENANCY_OCID`, `WOODPECKER_ORACLE_USER_OCID`, `WOODPECKER_ORACLE_REGION`, `WOODPECKER_ORACLE_FINGERPRINT`, `WOODPECKER_ORACLE_PRIVATE_KEY`) or `WOODPECKER_ORACLE_USE_INSTANCE_PRINCIPAL=true` when the autoscaler itself runs on an Oracle Cloud instance
+
+Oracle Cloud support is currently experimental: it has not been tested by the project maintainers, as none of them have real provider access.
+
+Useful optional settings:
+
+- `WOODPECKER_ORACLE_AVAILABILITY_DOMAINS` (default: every availability domain of the compartment; the agents are launched in the first one that has capacity, in the given order)
+- `WOODPECKER_ORACLE_SHAPES` (default: `VM.Standard.E4.Flex`; ordered list, the Ampere A-series shapes such as `VM.Standard.A1.Flex` are arm64 and every other shape is amd64; each shape is looked up at startup, so a name that does not exist in the compartment fails immediately)
+- `WOODPECKER_ORACLE_OCPUS` (default: `1`, only sent for flexible shapes)
+- `WOODPECKER_ORACLE_MEMORY_IN_GBS` (default: `8`, only sent for flexible shapes)
+- `WOODPECKER_ORACLE_IMAGE_OCID` (default: the most recent image matching the operating system settings below, looked up per shape; an explicit image must boot on every configured shape)
+- `WOODPECKER_ORACLE_IMAGE_OPERATING_SYSTEM` (default: `Canonical Ubuntu`)
+- `WOODPECKER_ORACLE_IMAGE_OPERATING_SYSTEM_VERSION` (default: `24.04`)
+- `WOODPECKER_ORACLE_BOOT_VOLUME_SIZE` (default: `50`, Oracle Cloud rejects smaller boot volumes)
+- `WOODPECKER_ORACLE_ASSIGN_PUBLIC_IP` (default: `true`; set to `false` for a private subnet that reaches the server through a NAT gateway)
+- `WOODPECKER_ORACLE_SSH_KEY`
+- `WOODPECKER_ORACLE_TAGS` (comma separated `key=value` freeform tags; Oracle Cloud allows 10 per instance and the autoscaler already uses one of them to mark its pool)
+
+Capacity is the common failure mode on Oracle Cloud, in particular for the free `VM.Standard.A1.Flex` shape. If a launch fails with an out-of-capacity error the next availability domain is tried, then the next shape of the same architecture, so listing more than one is worthwhile.
+
+The subnet is checked at startup: a subnet bound to one availability domain limits the agents to that domain, and a private subnet requires `WOODPECKER_ORACLE_ASSIGN_PUBLIC_IP=false`.
+
+The agents block the instance metadata service (`169.254.169.254`) before the workflow steps start, so a step cannot read the agent token back out of `user_data`. Oracle Cloud also serves DNS (port 53) and NTP (UDP port 123) on that address, so instead of a blackhole route DNS and NTP are let through and every other packet to that address is dropped, which blocks the metadata API on port 80.
+
+Only virtual machine shapes are billed per second with a one-minute minimum; bare metal shapes carry a one-hour minimum, which the per-second teardown policy below does not account for.
 
 ## Teardown policy
 
@@ -100,7 +132,7 @@ The billing model is selected automatically by the provider, so no extra configu
   - [x] Digital Ocean **[experimental]** (untested by the maintainers against real provider access, see [above](#digitalocean))
   - [x] Linode
   - [x] OpenStack **[experimental]**
-  - [ ] Oracle Cloud
+  - [x] Oracle Cloud **[experimental]** (untested by the maintainers against real provider access, see [above](#oracle-cloud))
   - [x] Vultr
   - [x] Scaleway
 - [ ] Cleanup agents
