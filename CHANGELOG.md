@@ -1,6 +1,6 @@
 # Changelog
 
-## [2.0.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.1) - 2026-10-25
+## [2.0.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.1) - 2026-10-27
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -16,6 +16,7 @@
 
 ### 📦️ Dependency
 
+- Update golang deps non-major [[#783](https://github.com/woodpecker-ci/autoscaler/pull/783)]
 - Update pre-commit hook igorshubovych/markdownlint-cli to v0.50.0 [[#782](https://github.com/woodpecker-ci/autoscaler/pull/782)]
 - Update module github.com/digitalocean/godo to v1.232.0 [[#781](https://github.com/woodpecker-ci/autoscaler/pull/781)]
 - Update golang deps non-major [[#780](https://github.com/woodpecker-ci/autoscaler/pull/780)]
