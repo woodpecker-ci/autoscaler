@@ -1,6 +1,6 @@
 # Changelog
 
-## [2.0.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.1) - 2026-10-28
+## [2.0.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.1) - 2026-10-31
 
 ### ❤️ Thanks to all contributors! ❤️
 
@@ -16,6 +16,7 @@
 
 ### 📦️ Dependency
 
+- Update docker.io/woodpeckerci/plugin-ready-release-go Docker tag to v4.1.3 [[#788](https://github.com/woodpecker-ci/autoscaler/pull/788)]
 - Update golang deps non-major [[#785](https://github.com/woodpecker-ci/autoscaler/pull/785)]
 - Update golang deps non-major [[#783](https://github.com/woodpecker-ci/autoscaler/pull/783)]
 - Update pre-commit hook igorshubovych/markdownlint-cli to v0.50.0 [[#782](https://github.com/woodpecker-ci/autoscaler/pull/782)]
