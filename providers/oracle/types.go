@@ -24,7 +24,6 @@ var capacityErrorCodes = []string{
 	"OutOfCapacity",
 	"OutOfHostCapacity",
 	"LimitExceeded",
-	"TooManyRequests",
 }
 
 const (

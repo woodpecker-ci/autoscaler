@@ -103,8 +103,13 @@ func TestIsCapacityError(t *testing.T) {
 	})
 
 	t.Run("WrappedError", func(t *testing.T) {
-		err := stubServiceError{code: "TooManyRequests", message: "slow down", status: 429}
+		err := stubServiceError{code: "OutOfHostCapacity", message: "no hosts", status: 500}
 		assert.True(t, isCapacityError(errors.Join(errors.New("launch failed"), err)))
+	})
+
+	t.Run("ThrottlingIsNotCapacity", func(t *testing.T) {
+		err := stubServiceError{code: "TooManyRequests", message: "User-rate limit exceeded.", status: 429}
+		assert.False(t, isCapacityError(err))
 	})
 
 	t.Run("UnrelatedServiceError", func(t *testing.T) {
@@ -243,6 +248,22 @@ func TestResolveImages(t *testing.T) {
 		require.NoError(t, p.resolveImages(t.Context(), "", "Canonical Ubuntu", "24.04"))
 		assert.Equal(t, "ocid1.image.oc1..x86", p.shapes[0].imageID)
 		assert.Equal(t, "ocid1.image.oc1..arm", p.shapes[1].imageID)
+	})
+
+	t.Run("EmptyPageFollowsNextPage", func(t *testing.T) {
+		compute := mocks.NewMockComputeClient(t)
+		compute.On("ListImages", mock.Anything, mock.MatchedBy(func(r core.ListImagesRequest) bool {
+			return r.Page == nil
+		})).Return(core.ListImagesResponse{OpcNextPage: common.String("page-2")}, nil).Once()
+		compute.On("ListImages", mock.Anything, mock.MatchedBy(func(r core.ListImagesRequest) bool {
+			return r.Page != nil && *r.Page == "page-2"
+		})).Return(core.ListImagesResponse{
+			Items: []core.Image{{Id: common.String("ocid1.image.oc1..second-page")}},
+		}, nil).Once()
+
+		p := testProvider(compute, mocks.NewMockIdentityClient(t))
+		require.NoError(t, p.resolveImages(t.Context(), "", "Canonical Ubuntu", "24.04"))
+		assert.Equal(t, "ocid1.image.oc1..second-page", p.shapes[0].imageID)
 	})
 
 	t.Run("NoImageIsAnError", func(t *testing.T) {

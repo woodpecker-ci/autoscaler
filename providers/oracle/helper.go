@@ -205,7 +205,7 @@ func (p *provider) resolveImages(ctx context.Context, imageID, operatingSystem, 
 			continue
 		}
 
-		res, err := p.computeClient.ListImages(ctx, core.ListImagesRequest{
+		request := core.ListImagesRequest{
 			CompartmentId:          common.String(p.compartmentID),
 			OperatingSystem:        common.String(operatingSystem),
 			OperatingSystemVersion: common.String(operatingSystemVersion),
@@ -214,18 +214,31 @@ func (p *provider) resolveImages(ctx context.Context, imageID, operatingSystem, 
 			SortBy:                 core.ListImagesSortByTimecreated,
 			SortOrder:              core.ListImagesSortOrderDesc,
 			Limit:                  common.Int(1),
-		})
-		if err != nil {
-			return fmt.Errorf("%s: ListImages: %w", p.name, err)
 		}
-		if len(res.Items) == 0 || res.Items[0].Id == nil {
+		var image *core.Image
+		for {
+			res, err := p.computeClient.ListImages(ctx, request)
+			if err != nil {
+				return fmt.Errorf("%s: ListImages: %w", p.name, err)
+			}
+			// OCI may return an empty page while opc-next-page says more remain.
+			if len(res.Items) > 0 {
+				image = &res.Items[0]
+				break
+			}
+			if res.OpcNextPage == nil {
+				break
+			}
+			request.Page = res.OpcNextPage
+		}
+		if image == nil || image.Id == nil {
 			return fmt.Errorf("%s: %w: %s %s for shape %s",
 				p.name, ErrImageNotFound, operatingSystem, operatingSystemVersion, shape.name)
 		}
 
-		shape.imageID = *res.Items[0].Id
+		shape.imageID = *image.Id
 		log.Info().
-			Str("image", stringValue(res.Items[0].DisplayName)).
+			Str("image", stringValue(image.DisplayName)).
 			Str("image_id", shape.imageID).
 			Str("shape", shape.name).
 			Msgf("%s: resolved image", p.name)
