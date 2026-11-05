@@ -1,10 +1,10 @@
 # Changelog
 
-## [2.0.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.1) - 2026-10-31
+## [2.0.1](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.1) - 2026-11-05
 
 ### ❤️ Thanks to all contributors! ❤️
 
-@LaGrunge, @menelike
+@LaGrunge, @menelike, @singhharsh1708
 
 ### 🐛 Bug Fixes
 
@@ -25,6 +25,10 @@
 - Update golang deps non-major [[#779](https://github.com/woodpecker-ci/autoscaler/pull/779)]
 - Update golang deps non-major [[#778](https://github.com/woodpecker-ci/autoscaler/pull/778)]
 - Update golang deps non-major [[#770](https://github.com/woodpecker-ci/autoscaler/pull/770)]
+
+### Misc
+
+- Add Oracle Cloud provider support to autoscaler [[#734](https://github.com/woodpecker-ci/autoscaler/pull/734)]
 
 ## [2.0.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.0) - 2026-10-17
 
