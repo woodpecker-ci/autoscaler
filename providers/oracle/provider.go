@@ -33,6 +33,14 @@ var blockMetadataAPI = []string{
 	"iptables -t raw -A OUTPUT -d 169.254.169.254/32 -p tcp --dport 53 -j ACCEPT",
 	"iptables -t raw -A OUTPUT -d 169.254.169.254/32 -p udp --dport 123 -j ACCEPT",
 	"iptables -t raw -A OUTPUT -d 169.254.169.254/32 -j DROP",
+	"ip6tables -t raw -A PREROUTING -d fd00:c1::a9fe:a9fe/128 -p udp --dport 53 -j ACCEPT",
+	"ip6tables -t raw -A PREROUTING -d fd00:c1::a9fe:a9fe/128 -p tcp --dport 53 -j ACCEPT",
+	"ip6tables -t raw -A PREROUTING -d fd00:c1::a9fe:a9fe/128 -p udp --dport 123 -j ACCEPT",
+	"ip6tables -t raw -A PREROUTING -d fd00:c1::a9fe:a9fe/128 -j DROP",
+	"ip6tables -t raw -A OUTPUT -d fd00:c1::a9fe:a9fe/128 -p udp --dport 53 -j ACCEPT",
+	"ip6tables -t raw -A OUTPUT -d fd00:c1::a9fe:a9fe/128 -p tcp --dport 53 -j ACCEPT",
+	"ip6tables -t raw -A OUTPUT -d fd00:c1::a9fe:a9fe/128 -p udp --dport 123 -j ACCEPT",
+	"ip6tables -t raw -A OUTPUT -d fd00:c1::a9fe:a9fe/128 -j DROP",
 }
 
 type provider struct {

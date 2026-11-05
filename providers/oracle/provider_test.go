@@ -217,6 +217,7 @@ func TestUserDataIsBase64EncodedAndBlocksTheMetadataService(t *testing.T) {
 		assert.Contains(t, userData, rule)
 	}
 	assert.Less(t, strings.Index(userData, "--dport 123 -j ACCEPT"), strings.Index(userData, "PREROUTING -d 169.254.169.254/32 -j DROP"))
+	assert.Contains(t, userData, "ip6tables -t raw -A OUTPUT -d fd00:c1::a9fe:a9fe/128 -j DROP")
 	assert.NotContains(t, userData, "route add blackhole")
 	assert.Contains(t, userData, testAgent.Token)
 }
