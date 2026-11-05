@@ -92,7 +92,7 @@ Oracle Cloud support is currently experimental: it has not been tested by the pr
 Useful optional settings:
 
 - `WOODPECKER_ORACLE_AVAILABILITY_DOMAINS` (default: every availability domain of the compartment; the agents are launched in the first one that has capacity, in the given order)
-- `WOODPECKER_ORACLE_SHAPES` (default: `VM.Standard.E4.Flex`; ordered list, the Ampere A-series shapes such as `VM.Standard.A1.Flex` are arm64 and every other shape is amd64; each shape is looked up at startup, so a name that does not exist in the compartment fails immediately)
+- `WOODPECKER_ORACLE_SHAPES` (default: `VM.Standard.E4.Flex`; ordered list, shapes with an Ampere or NVIDIA Grace processor such as `VM.Standard.A1.Flex` are arm64 and every other shape is amd64; each shape is looked up at startup, so a name that does not exist in the compartment fails immediately)
 - `WOODPECKER_ORACLE_OCPUS` (default: `1`, only sent for flexible shapes)
 - `WOODPECKER_ORACLE_MEMORY_IN_GBS` (default: `8`, only sent for flexible shapes)
 - `WOODPECKER_ORACLE_IMAGE_OCID` (default: the most recent image matching the operating system settings below, looked up per shape; an explicit image must boot on every configured shape)

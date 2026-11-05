@@ -166,16 +166,18 @@ func TestResolveShapes(t *testing.T) {
 		compute := mocks.NewMockComputeClient(t)
 		compute.On("ListShapes", mock.Anything, mock.Anything).
 			Return(core.ListShapesResponse{Items: []core.Shape{
-				{Shape: common.String("VM.Standard.E2.1.Micro"), IsFlexible: common.Bool(false)},
-				{Shape: common.String("VM.Standard.A1.Flex"), IsFlexible: common.Bool(true)},
-				{Shape: common.String("VM.Standard.E4.Flex"), IsFlexible: common.Bool(true)},
+				{Shape: common.String("VM.Standard.E2.1.Micro"), IsFlexible: common.Bool(false), ProcessorDescription: common.String("2.0 GHz AMD EPYC™ 7551 (Naples)")},
+				{Shape: common.String("VM.Standard.A1.Flex"), IsFlexible: common.Bool(true), ProcessorDescription: common.String("3.0 GHz Ampere® Altra™")},
+				{Shape: common.String("VM.Standard.E4.Flex"), IsFlexible: common.Bool(true), ProcessorDescription: common.String("2.55 GHz AMD EPYC™ 7J13 (Milan)")},
+				{Shape: common.String("BM.GPU.GB200.4"), IsFlexible: common.Bool(false), ProcessorDescription: common.String("72-core NVIDIA Grace")},
 			}}, nil).Once()
 
 		p := testProvider(compute, mocks.NewMockIdentityClient(t))
-		require.NoError(t, p.resolveShapes(t.Context(), []string{"VM.Standard.A1.Flex", "VM.Standard.E2.1.Micro"}))
+		require.NoError(t, p.resolveShapes(t.Context(), []string{"VM.Standard.A1.Flex", "VM.Standard.E2.1.Micro", "BM.GPU.GB200.4"}))
 		assert.Equal(t, []shapeCandidate{
 			{name: "VM.Standard.A1.Flex", flexible: true, platform: "linux/arm64"},
 			{name: "VM.Standard.E2.1.Micro", flexible: false, platform: "linux/amd64"},
+			{name: "BM.GPU.GB200.4", flexible: false, platform: "linux/arm64"},
 		}, p.shapes)
 	})
 
@@ -204,17 +206,15 @@ func TestResolveShapes(t *testing.T) {
 }
 
 func TestShapeArch(t *testing.T) {
-	for shape, arch := range map[string]string{
-		"VM.Standard.E4.Flex":    "amd64",
-		"VM.Standard.E2.1.Micro": "amd64",
-		"VM.Standard3.Flex":      "amd64",
-		"VM.Standard.A1.Flex":    "arm64",
-		"VM.Standard.A2.Flex":    "arm64",
-		"BM.Standard.A1.160":     "arm64",
-		"VM.GPU.A10.1":           "amd64",
-		"BM.GPU.A10.4":           "amd64",
+	for processor, arch := range map[string]string{
+		"2.55 GHz AMD EPYC™ 7J13 (Milan)":               "amd64",
+		"2.6 GHz Intel® Xeon® Platinum 8358 (Ice Lake)": "amd64",
+		"3.0 GHz Ampere® Altra™":                        "arm64",
+		"Ampere AmpereOne A160-30":                      "arm64",
+		"2 x 72-core NVIDIA Grace":                      "arm64",
+		"":                                              "amd64",
 	} {
-		assert.Equal(t, arch, shapeArch(shape), shape)
+		assert.Equal(t, arch, shapeArch(processor), processor)
 	}
 }
 

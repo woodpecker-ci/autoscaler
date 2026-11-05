@@ -147,7 +147,7 @@ func (p *provider) resolveShapes(ctx context.Context, names []string) error {
 		return fmt.Errorf("%s: %w", p.name, ErrNoShapes)
 	}
 
-	flexible := map[string]bool{}
+	known := map[string]shapeCandidate{}
 	request := core.ListShapesRequest{
 		CompartmentId: common.String(p.compartmentID),
 		Limit:         common.Int(listPageLimit),
@@ -158,7 +158,12 @@ func (p *provider) resolveShapes(ctx context.Context, names []string) error {
 			return fmt.Errorf("%s: ListShapes: %w", p.name, err)
 		}
 		for _, shape := range res.Items {
-			flexible[stringValue(shape.Shape)] = shape.IsFlexible != nil && *shape.IsFlexible
+			name := stringValue(shape.Shape)
+			known[name] = shapeCandidate{
+				name:     name,
+				flexible: shape.IsFlexible != nil && *shape.IsFlexible,
+				platform: "linux/" + shapeArch(stringValue(shape.ProcessorDescription)),
+			}
 		}
 		if res.OpcNextPage == nil {
 			break
@@ -168,30 +173,20 @@ func (p *provider) resolveShapes(ctx context.Context, names []string) error {
 
 	p.shapes = make([]shapeCandidate, 0, len(names))
 	for _, name := range names {
-		isFlexible, found := flexible[name]
+		shape, found := known[name]
 		if !found {
 			return fmt.Errorf("%s: %w: %s", p.name, ErrShapeNotFound, name)
 		}
-		p.shapes = append(p.shapes, shapeCandidate{
-			name:     name,
-			flexible: isFlexible,
-			platform: "linux/" + shapeArch(name),
-		})
+		p.shapes = append(p.shapes, shape)
 	}
 
 	return nil
 }
 
-// shapeArch maps an OCI shape name to a Go architecture: the Standard A-series
-// (VM.Standard.A1.Flex, BM.Standard.A1.160, ...) is Ampere arm64, the rest x86.
-// GPU shapes such as VM.GPU.A10.1 name the GPU, not the CPU, so they stay x86.
-func shapeArch(shape string) string {
-	parts := strings.Split(shape, ".")
-	if len(parts) < 3 || parts[1] != "Standard" {
-		return "amd64"
-	}
-	series := parts[2]
-	if len(series) > 1 && series[0] == 'A' && strings.Trim(series[1:], "0123456789") == "" {
+// shapeArch maps the processor description of an OCI shape to a Go architecture:
+// Ampere (Altra, AmpereOne) and NVIDIA Grace are arm64, the rest x86.
+func shapeArch(processor string) string {
+	if strings.Contains(processor, "Ampere") || strings.Contains(processor, "Grace") {
 		return "arm64"
 	}
 	return "amd64"
