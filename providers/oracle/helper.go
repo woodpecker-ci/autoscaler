@@ -46,6 +46,10 @@ func parseTags(raw []string) ([]string, map[string]string, error) {
 			return nil, nil, fmt.Errorf("%w: %q is not in \"key=value\" format", ErrInvalidTag, entry)
 		}
 		key = sanitizeTagKey(key)
+		// Oracle Cloud only accepts printable ASCII without spaces in tag keys.
+		if strings.ContainsFunc(key, func(r rune) bool { return r <= ' ' || r > '~' }) {
+			return nil, nil, fmt.Errorf("%w: key %q may only hold printable ASCII without spaces", ErrInvalidTag, key)
+		}
 		sanitized = append(sanitized, key+"="+value)
 		tags[key] = value
 	}

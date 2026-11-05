@@ -83,6 +83,13 @@ func TestParseTags(t *testing.T) {
 		assert.ErrorIs(t, err, ErrInvalidTag)
 	})
 
+	t.Run("RejectsKeyOracleCloudDoesNotAccept", func(t *testing.T) {
+		for _, entry := range []string{"my tag=x", "tab\tkey=x", "größe=x"} {
+			_, _, err := parseTags([]string{entry})
+			assert.ErrorIs(t, err, ErrInvalidTag, entry)
+		}
+	})
+
 	t.Run("SanitizesKeySoReservedPrefixCannotBeSmuggledIn", func(t *testing.T) {
 		sanitized, tags, err := parseTags([]string{engine.LabelPool + "=42"})
 		require.NoError(t, err)
