@@ -16,6 +16,7 @@
 
 ### 📦️ Dependency
 
+- Remove unused Node.js [[#787](https://github.com/woodpecker-ci/autoscaler/pull/787)]
 - Update docker.io/woodpeckerci/plugin-ready-release-go Docker tag to v4.1.3 [[#788](https://github.com/woodpecker-ci/autoscaler/pull/788)]
 - Update golang deps non-major [[#785](https://github.com/woodpecker-ci/autoscaler/pull/785)]
 - Update golang deps non-major [[#783](https://github.com/woodpecker-ci/autoscaler/pull/783)]
