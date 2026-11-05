@@ -92,6 +92,10 @@ func (a *Autoscaler) Reconcile(ctx context.Context) error {
 		Int("running", len(queueInfo.Running)).
 		Msg("queue snapshot")
 
+	if err := a.removeSpentAgents(ctx, queueInfo.Running); err != nil {
+		return fmt.Errorf("removing spent single-workflow agents failed: %w", err)
+	}
+
 	// planScaling already logs the per-bucket plan at debug level — we
 	// just dispatch. A bucket that fails to scale (e.g. its capability is out
 	// of stock) must neither starve the other buckets nor skip the cleanup

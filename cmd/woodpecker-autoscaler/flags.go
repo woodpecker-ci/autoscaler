@@ -124,4 +124,9 @@ var flags = []cli.Flag{
 		Usage:   "add additional labels the agent will report to the server. list with key=value pairs",
 		Sources: cli.EnvVars("WOODPECKER_AGENT_LABELS"),
 	},
+	&cli.BoolFlag{
+		Name:    "agent-single-workflow",
+		Usage:   "deploy one-shot agents that exit after their first workflow and get removed afterwards, forces workflows-per-agent to 1",
+		Sources: cli.EnvVars("WOODPECKER_AGENT_SINGLE_WORKFLOW"),
+	},
 }
