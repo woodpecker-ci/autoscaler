@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/gophercloud/gophercloud/v2"
 	"github.com/gophercloud/gophercloud/v2/openstack/image/v2/images"
 	th "github.com/gophercloud/gophercloud/v2/testhelper"
 	fakeclient "github.com/gophercloud/gophercloud/v2/testhelper/client"
@@ -64,6 +65,7 @@ func newTestProvider(t *testing.T) (*provider, *http.ServeMux) {
 	p := &provider{
 		name:          "openstack",
 		config:        &config.Config{PoolID: "pool-7"},
+		authOptions:   &gophercloud.AuthOptions{},
 		computeClient: fakeclient.ServiceClient(fakeServer),
 		imageClient:   fakeclient.ServiceClient(fakeServer),
 		capability:    &dockerAMD64Capability,

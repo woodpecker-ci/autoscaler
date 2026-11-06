@@ -45,6 +45,7 @@ type provider struct {
 	keypair        string
 	metadata       map[string]string
 	config         *config.Config
+	authOptions    *gophercloud.AuthOptions
 	computeClient  *gophercloud.ServiceClient
 	imageClient    *gophercloud.ServiceClient
 	image          *images.Image
@@ -87,8 +88,8 @@ func New(ctx context.Context, c *cli.Command, cfg *config.Config) (types.Provide
 		labelPool: cfg.PoolID,
 	}
 
-	// Authenticate with OpenStack
-	opts := gophercloud.AuthOptions{
+	// Prepare OpenStack authentication
+	p.authOptions = &gophercloud.AuthOptions{
 		IdentityEndpoint:            c.String("openstack-auth-url"),
 		Username:                    c.String("openstack-username"),
 		Password:                    c.String("openstack-password"),
@@ -99,26 +100,9 @@ func New(ctx context.Context, c *cli.Command, cfg *config.Config) (types.Provide
 		DomainName:                  c.String("openstack-domain-name"),
 	}
 
-	provider, err := openstack.AuthenticatedClient(ctx, opts)
-	if err != nil {
-		return nil, fmt.Errorf("%s: openstack.AuthenticatedClient: %w", p.name, err)
+	if err := p.refreshClients(ctx); err != nil {
+		return nil, err
 	}
-
-	computeClient, err := openstack.NewComputeV2(provider, gophercloud.EndpointOpts{
-		Region: p.region,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("%s: openstack.NewComputeV2: %w", p.name, err)
-	}
-	p.computeClient = computeClient
-
-	imageClient, err := openstack.NewImageV2(provider, gophercloud.EndpointOpts{
-		Region: p.region,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("%s: openstack.NewImageV2: %w", p.name, err)
-	}
-	p.imageClient = imageClient
 
 	if err := p.resolveFlavor(ctx); err != nil {
 		return nil, err
@@ -130,7 +114,38 @@ func New(ctx context.Context, c *cli.Command, cfg *config.Config) (types.Provide
 	return p, nil
 }
 
+// This has to be called at the start of every public method to ensure valid authentication
+func (p *provider) refreshClients(ctx context.Context) error {
+	client, err := openstack.AuthenticatedClient(ctx, *p.authOptions)
+	if err != nil {
+		return fmt.Errorf("%s: openstack.AuthenticatedClient: %w", p.name, err)
+	}
+
+	computeClient, err := openstack.NewComputeV2(client, gophercloud.EndpointOpts{
+		Region: p.region,
+	})
+	if err != nil {
+		return fmt.Errorf("%s: openstack.NewComputeV2: %w", p.name, err)
+	}
+	p.computeClient = computeClient
+
+	imageClient, err := openstack.NewImageV2(client, gophercloud.EndpointOpts{
+		Region: p.region,
+	})
+	if err != nil {
+		return fmt.Errorf("%s: openstack.NewImageV2: %w", p.name, err)
+	}
+	p.imageClient = imageClient
+
+	return nil
+}
+
 func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, capability types.Capability) error {
+	err := p.refreshClients(ctx)
+	if err != nil {
+		return fmt.Errorf("%s: refreshClients: %w", p.name, err)
+	}
+
 	if capability != *p.capability {
 		return fmt.Errorf("%s: unsupported capability: platform=%s backend=%s", p.name, capability.Platform, capability.Backend)
 	}
@@ -198,6 +213,11 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cap
 }
 
 func (p *provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) error {
+	err := p.refreshClients(ctx)
+	if err != nil {
+		return fmt.Errorf("%s: refreshClients: %w", p.name, err)
+	}
+
 	// Find the server by name
 	serverID, err := p.findServerIDByName(ctx, agent.Name)
 	if err != nil {
@@ -217,6 +237,11 @@ func (p *provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) err
 }
 
 func (p *provider) ListDeployedAgentNames(ctx context.Context) ([]string, error) {
+	err := p.refreshClients(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("%s: refreshClients: %w", p.name, err)
+	}
+
 	var names []string
 
 	allPages, err := servers.List(p.computeClient, servers.ListOpts{}).AllPages(ctx)
