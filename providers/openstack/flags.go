@@ -106,16 +106,16 @@ var ProviderFlags = []cli.Flag{
 		Sources:  cli.EnvVars("WOODPECKER_OPENSTACK_IMAGE_NAME"),
 		Category: category,
 	},
-	&cli.StringFlag{
+	&cli.IntFlag{
 		Name:     "openstack-volume-size",
 		Usage:    "Size in GiB for the agent instance volumes. If not set, ephemeral storage based on the selected flavor will be used.",
 		Sources:  cli.EnvVars("WOODPECKER_OPENSTACK_VOLUME_SIZE"),
 		Category: category,
 	},
 	&cli.StringFlag{
-		Name:     "openstack-network",
-		Usage:    "OpenStack network name or ID to attach the instances to",
-		Sources:  cli.EnvVars("WOODPECKER_OPENSTACK_NETWORK"),
+		Name:     "openstack-network-ref",
+		Usage:    "OpenStack network UUID to attach the agent instances to",
+		Sources:  cli.EnvVars("WOODPECKER_OPENSTACK_NETWORK_REF"),
 		Category: category,
 	},
 	&cli.StringSliceFlag{
