@@ -250,9 +250,15 @@ func (a *Autoscaler) removeAgent(ctx context.Context, agent *woodpecker.Agent, r
 		return nil
 	}
 
+	return a.deleteAgent(ctx, agent, reason)
+}
+
+// deleteAgent tears an agent down on the provider and the woodpecker server
+// without checking whether it is idle.
+func (a *Autoscaler) deleteAgent(ctx context.Context, agent *woodpecker.Agent, reason string) error {
 	log.Info().Str("agent", agent.Name).Str("reason", reason).Msgf("removing agent")
 
-	err = a.provider.RemoveAgent(ctx, agent)
+	err := a.provider.RemoveAgent(ctx, agent)
 	if err != nil {
 		return err
 	}
@@ -263,6 +269,40 @@ func (a *Autoscaler) removeAgent(ctx context.Context, agent *woodpecker.Agent, r
 	}
 
 	delete(a.agents, agent.Name)
+
+	return nil
+}
+
+// agentGoneAfter is how long a single-workflow agent may stay silent before
+// it counts as exited. A running agent reports to the server every 10s.
+const agentGoneAfter = time.Minute
+
+// removeSpentAgents tears down single-workflow agents whose process exited.
+// They are never restarted, so they must neither count as capacity nor wait
+// for a timeout.
+func (a *Autoscaler) removeSpentAgents(ctx context.Context, running []woodpecker.Task) error {
+	if !a.config.AgentSingleWorkflow {
+		return nil
+	}
+
+	busy := make(map[int64]struct{}, len(running))
+	for _, task := range running {
+		busy[task.AgentID] = struct{}{}
+	}
+
+	for _, agent := range a.agents {
+		// LastWork does not tell: the server also sets it for an agent that
+		// only marked a skipped workflow as done.
+		if agent.LastContact == 0 || time.Since(time.Unix(agent.LastContact, 0)) < agentGoneAfter {
+			continue
+		}
+		if _, ok := busy[agent.ID]; ok {
+			continue
+		}
+		if err := a.deleteAgent(ctx, agent, "single-workflow agent exited"); err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
