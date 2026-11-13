@@ -2,6 +2,7 @@ package engine
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -285,6 +286,7 @@ func (a *Autoscaler) removeSpentAgents(ctx context.Context, running []woodpecker
 		return nil
 	}
 
+	var err error
 	busy := make(map[int64]struct{}, len(running))
 	for _, task := range running {
 		busy[task.AgentID] = struct{}{}
@@ -299,12 +301,10 @@ func (a *Autoscaler) removeSpentAgents(ctx context.Context, running []woodpecker
 		if _, ok := busy[agent.ID]; ok {
 			continue
 		}
-		if err := a.deleteAgent(ctx, agent, "single-workflow agent exited"); err != nil {
-			return err
-		}
+		err = errors.Join(err, a.deleteAgent(ctx, agent, "single-workflow agent exited"))
 	}
 
-	return nil
+	return err
 }
 
 func (a *Autoscaler) removeDrainedAgents(ctx context.Context) error {

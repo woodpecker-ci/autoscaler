@@ -1,6 +1,7 @@
 package e2e_test
 
 import (
+	"errors"
 	"testing"
 	"time"
 
@@ -95,4 +96,27 @@ func TestSingleWorkflowAgentThatExitedWithoutWorkIsReplaced(t *testing.T) {
 
 	require.Len(t, h.provider.deployed, 1)
 	require.NotContains(t, h.provider.deployed, agent.Name)
+}
+
+// TestSingleWorkflowAgentRemovalFailureDoesNotBlockScaling checks that a spent
+// agent the provider fails to remove does not stop the pool from scaling up.
+func TestSingleWorkflowAgentRemovalFailureDoesNotBlockScaling(t *testing.T) {
+	t.Parallel()
+
+	cfg := testConfig(0, 2)
+	cfg.AgentSingleWorkflow = true
+	h := newHarness(t, cfg, dockerAMD64)
+	agent := h.addConnectedAgent(t, "pool-e2e-agent-spent", dockerAMD64)
+	agent.LastContact = time.Now().Add(-2 * time.Minute).Unix()
+	h.woodpecker.put(agent)
+	h.provider.removeErr = errors.New("provider unavailable")
+	h.woodpecker.queue.Pending = []woodpecker.Task{
+		realWorkflowTask("build-1", "linux/amd64"),
+		realWorkflowTask("build-2", "linux/amd64"),
+	}
+
+	require.ErrorIs(t, h.autoscaler.Reconcile(t.Context()), h.provider.removeErr)
+
+	// the spent agent still holds its slot, the other one gets a new agent
+	require.Len(t, h.provider.deployed, 2)
 }
