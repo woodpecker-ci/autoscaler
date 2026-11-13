@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/gophercloud/gophercloud/v2"
 	"github.com/gophercloud/gophercloud/v2/openstack/compute/v2/flavors"
 	"github.com/gophercloud/gophercloud/v2/openstack/compute/v2/servers"
 	"github.com/gophercloud/gophercloud/v2/openstack/image/v2/images"
@@ -35,20 +34,6 @@ func (p *provider) findServerIDsByName(ctx context.Context, name string) ([]stri
 	}
 
 	return serverIDs, nil
-}
-
-// waitForActive fails on ERROR, a server in that state never gets ACTIVE.
-func (p *provider) waitForActive(ctx context.Context, serverID string) error {
-	return gophercloud.WaitFor(ctx, func(ctx context.Context) (bool, error) {
-		server, err := servers.Get(ctx, p.computeClient, serverID).Extract()
-		if err != nil {
-			return false, err
-		}
-		if server.Status == "ERROR" {
-			return false, fmt.Errorf("server entered ERROR status: %s", server.Fault.Message)
-		}
-		return server.Status == "ACTIVE", nil
-	})
 }
 
 func (p *provider) resolveFlavor(ctx context.Context) error {
