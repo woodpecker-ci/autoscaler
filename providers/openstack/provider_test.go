@@ -86,7 +86,7 @@ func writeJSON(w http.ResponseWriter, status int, body string) {
 }
 
 // handleWaitActive registers a GET handler for the server so that
-// servers.WaitForStatus observes an ACTIVE server immediately.
+// waitForActive observes an ACTIVE server immediately.
 func handleWaitActive(mux *http.ServeMux, id string) { //nolint:unparam
 	mux.HandleFunc("GET /servers/"+id, func(w http.ResponseWriter, _ *http.Request) {
 		writeJSON(w, http.StatusOK, `{"server":{"id":"`+id+`","status":"ACTIVE"}}`)
@@ -503,27 +503,50 @@ func TestDeployAgentCreateError(t *testing.T) {
 }
 
 func TestDeployAgentRemovesServerWhenWaitFails(t *testing.T) {
-	p, mux := newTestProvider(t)
-	p.flavorRef = "flavor-123"
-	p.imageRef = "image-456"
+	tests := []struct {
+		name    string
+		status  int
+		body    string
+		wantErr string
+	}{
+		{
+			name:    "status request fails",
+			status:  http.StatusInternalServerError,
+			body:    `{"error":"boom"}`,
+			wantErr: "waitForActive",
+		},
+		{
+			name:    "server enters ERROR",
+			status:  http.StatusOK,
+			body:    `{"server":{"id":"srv-1","status":"ERROR","fault":{"message":"No valid host was found"}}}`,
+			wantErr: "No valid host was found",
+		},
+	}
 
-	mux.HandleFunc("POST /servers", func(w http.ResponseWriter, _ *http.Request) {
-		writeJSON(w, http.StatusAccepted, `{"server":{"id":"srv-1","status":"BUILD"}}`)
-	})
-	mux.HandleFunc("GET /servers/srv-1", func(w http.ResponseWriter, _ *http.Request) {
-		writeJSON(w, http.StatusInternalServerError, `{"error":"boom"}`)
-	})
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			p, mux := newTestProvider(t)
+			p.flavorRef = "flavor-123"
+			p.imageRef = "image-456"
 
-	deleted := false
-	mux.HandleFunc("DELETE /servers/srv-1", func(w http.ResponseWriter, _ *http.Request) {
-		deleted = true
-		w.WriteHeader(http.StatusNoContent)
-	})
+			mux.HandleFunc("POST /servers", func(w http.ResponseWriter, _ *http.Request) {
+				writeJSON(w, http.StatusAccepted, `{"server":{"id":"srv-1","status":"BUILD"}}`)
+			})
+			mux.HandleFunc("GET /servers/srv-1", func(w http.ResponseWriter, _ *http.Request) {
+				writeJSON(w, tt.status, tt.body)
+			})
 
-	err := p.DeployAgent(t.Context(), &woodpecker.Agent{Name: "agent-1"}, dockerAMD64Capability)
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "servers.WaitForStatus")
-	assert.True(t, deleted, "server should be deleted after waiting for ACTIVE fails")
+			deleted := false
+			mux.HandleFunc("DELETE /servers/srv-1", func(w http.ResponseWriter, _ *http.Request) {
+				deleted = true
+				w.WriteHeader(http.StatusNoContent)
+			})
+
+			err := p.DeployAgent(t.Context(), &woodpecker.Agent{Name: "agent-1"}, dockerAMD64Capability)
+			require.ErrorContains(t, err, tt.wantErr)
+			assert.True(t, deleted, "server should be deleted after waiting for ACTIVE fails")
+		})
+	}
 }
 
 func TestListDeployedAgentNames(t *testing.T) {
