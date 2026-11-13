@@ -255,7 +255,7 @@ func TestDeployAgentWithRefs(t *testing.T) {
 	p, mux := newTestProvider(t)
 	p.flavorRef = "flavor-123"
 	p.imageRef = "image-456"
-	p.network = "net-789"
+	p.networkRef = "net-789"
 	p.securityGroups = []string{"default", "web"}
 	p.metadata = map[string]string{labelPool: "pool-7", "team": "ci"}
 

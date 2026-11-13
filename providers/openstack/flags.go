@@ -114,8 +114,8 @@ var ProviderFlags = []cli.Flag{
 	},
 	&cli.StringFlag{
 		Name:     "openstack-network",
-		Usage:    "OpenStack network name or ID to attach the instances to",
-		Sources:  cli.EnvVars("WOODPECKER_OPENSTACK_NETWORK"),
+		Usage:    "OpenStack network UUID to attach the agent instances to",
+		Sources:  cli.EnvVars("WOODPECKER_OPENSTACK_NETWORK_REF"),
 		Category: category,
 	},
 	&cli.StringSliceFlag{

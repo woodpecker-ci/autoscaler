@@ -40,7 +40,7 @@ type provider struct {
 	imageRef       string
 	imageName      string
 	volumeSize     int
-	network        string
+	networkRef     string
 	securityGroups []string
 	keypair        string
 	metadata       map[string]string
@@ -69,7 +69,7 @@ func New(ctx context.Context, c *cli.Command, cfg *config.Config) (types.Provide
 		imageRef:       c.String("openstack-image-ref"),
 		imageName:      c.String("openstack-image-name"),
 		volumeSize:     numericVolumeSize,
-		network:        c.String("openstack-network"),
+		networkRef:     c.String("openstack-network-ref"),
 		securityGroups: c.StringSlice("openstack-security-groups"),
 		keypair:        c.String("openstack-keypair"),
 		config:         cfg,
@@ -142,20 +142,16 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cap
 		return fmt.Errorf("%s: cloudinit.RenderUserDataTemplate: %w", p.name, err)
 	}
 
-	var networks []servers.Network
-	if p.network != "" {
-		networks = []servers.Network{
-			{UUID: p.network},
-		}
-	}
-
 	createOpts := servers.CreateOpts{
 		Name:           agent.Name,
 		FlavorRef:      p.flavorRef,
-		Networks:       networks,
 		SecurityGroups: p.securityGroups,
 		Metadata:       p.metadata,
 		UserData:       []byte(userData),
+	}
+
+	if p.networkRef != "" {
+		createOpts.Networks = []servers.Network{{UUID: p.networkRef}}
 	}
 
 	if p.volumeSize != 0 {
