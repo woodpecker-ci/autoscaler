@@ -97,8 +97,9 @@ func (p *provider) resolveImage(ctx context.Context) (*images.Image, error) {
 	}
 
 	listOpts := images.ListOpts{
-		Name: p.imageName,
-		Sort: "created_at:desc",
+		Name:   p.imageName,
+		Status: images.ImageStatusActive,
+		Sort:   "created_at:desc",
 	}
 
 	allPages, err := images.List(p.imageClient, listOpts).AllPages(ctx)

@@ -455,7 +455,8 @@ func TestResolveImageName(t *testing.T) {
 	p, mux := newTestProvider(t)
 	p.imageName = "ubuntu-24.04"
 
-	mux.HandleFunc("GET /images", func(w http.ResponseWriter, _ *http.Request) {
+	mux.HandleFunc("GET /images", func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "active", r.URL.Query().Get("status"), "images still uploading must be skipped")
 		// Newest first; the provider takes the first entry. No "next" field
 		// means this is the only page.
 		writeJSON(w, http.StatusOK, `{"images":[
