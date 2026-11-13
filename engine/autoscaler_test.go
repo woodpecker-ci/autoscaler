@@ -1163,12 +1163,13 @@ func Test_isAgentIdle_hourlyRoundUp(t *testing.T) {
 
 func Test_removeSpentAgents(t *testing.T) {
 	now := time.Now().Unix()
+	gone := time.Now().Add(-2 * time.Minute).Unix()
 	agents := func() map[string]*woodpecker.Agent {
 		return map[string]*woodpecker.Agent{
 			"pool-1-agent-fresh":   {ID: 1, Name: "pool-1-agent-fresh", LastContact: now},
 			"pool-1-agent-busy":    {ID: 2, Name: "pool-1-agent-busy", LastContact: now, LastWork: now},
-			"pool-1-agent-done":    {ID: 3, Name: "pool-1-agent-done", LastContact: now, LastWork: now},
-			"pool-1-agent-drained": {ID: 4, Name: "pool-1-agent-drained", LastContact: now, LastWork: now, NoSchedule: true},
+			"pool-1-agent-done":    {ID: 3, Name: "pool-1-agent-done", LastContact: gone, LastWork: now},
+			"pool-1-agent-drained": {ID: 4, Name: "pool-1-agent-drained", LastContact: gone, LastWork: now, NoSchedule: true},
 		}
 	}
 	running := []woodpecker.Task{{ID: "1", AgentID: 2}}
@@ -1209,7 +1210,7 @@ func Test_removeSpentAgents(t *testing.T) {
 	t.Run("returns provider errors", func(t *testing.T) {
 		provider := mocks_provider.NewMockProvider(t)
 		autoscaler := Autoscaler{
-			agents:   map[string]*woodpecker.Agent{"pool-1-agent-done": {ID: 3, Name: "pool-1-agent-done", LastWork: now}},
+			agents:   map[string]*woodpecker.Agent{"pool-1-agent-done": {ID: 3, Name: "pool-1-agent-done", LastContact: gone, LastWork: now}},
 			provider: provider,
 			client:   mocks_server.NewMockClient(t),
 			config:   &config.Config{AgentSingleWorkflow: true},

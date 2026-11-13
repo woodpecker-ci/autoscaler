@@ -38,6 +38,7 @@ func TestSingleWorkflowAgentIsReplacedAfterItsWorkflow(t *testing.T) {
 			h.woodpecker.queue.Running = nil
 			h.woodpecker.queue.Pending = []woodpecker.Task{realWorkflowTask("build-2", "linux/amd64")}
 			agent.LastWork = time.Now().Unix()
+			agent.LastContact = time.Now().Add(-2 * time.Minute).Unix()
 			h.woodpecker.put(agent)
 			h.reconcile(t)
 			require.Len(t, h.provider.deployed, 1)
@@ -63,4 +64,35 @@ func TestSingleWorkflowAgentWaitsForItsWorkflow(t *testing.T) {
 
 	require.Contains(t, h.provider.deployed, agent.Name)
 	require.Len(t, h.woodpecker.agents, 1)
+
+	// The server also sets LastWork when a polling agent only marks a skipped
+	// workflow as done.
+	t.Run("marking a skipped workflow done keeps the agent", func(t *testing.T) {
+		agent.LastWork = time.Now().Unix()
+		h.woodpecker.put(agent)
+
+		h.reconcile(t)
+
+		require.Contains(t, h.provider.deployed, agent.Name)
+	})
+}
+
+// TestSingleWorkflowAgentThatExitedWithoutWorkIsReplaced checks that a one-shot
+// agent that exited before it ran a workflow, e.g. on a lost connection, does
+// not stay around as capacity.
+func TestSingleWorkflowAgentThatExitedWithoutWorkIsReplaced(t *testing.T) {
+	t.Parallel()
+
+	cfg := testConfig(1, 1)
+	cfg.AgentSingleWorkflow = true
+	h := newHarness(t, cfg, dockerAMD64)
+	agent := h.addConnectedAgent(t, "pool-e2e-agent-gone", dockerAMD64)
+	agent.LastWork = 0
+	agent.LastContact = time.Now().Add(-2 * time.Minute).Unix()
+	h.woodpecker.put(agent)
+
+	h.reconcile(t)
+
+	require.Len(t, h.provider.deployed, 1)
+	require.NotContains(t, h.provider.deployed, agent.Name)
 }
