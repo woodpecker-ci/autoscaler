@@ -678,7 +678,7 @@ func TestRemoveAgentIgnoresServerFromOtherPool(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestRemoveAgentRejectsAmbiguousServers(t *testing.T) {
+func TestRemoveAgentRemovesDuplicateServers(t *testing.T) {
 	p, mux := newTestProvider(t)
 
 	mux.HandleFunc("GET /servers/detail", func(w http.ResponseWriter, _ *http.Request) {
@@ -688,9 +688,15 @@ func TestRemoveAgentRejectsAmbiguousServers(t *testing.T) {
 		]}`)
 	})
 
+	var deleted []string
+	mux.HandleFunc("DELETE /servers/{id}", func(w http.ResponseWriter, r *http.Request) {
+		deleted = append(deleted, r.PathValue("id"))
+		w.WriteHeader(http.StatusNoContent)
+	})
+
 	err := p.RemoveAgent(t.Context(), &woodpecker.Agent{Name: "agent-1"})
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "multiple servers")
+	require.NoError(t, err)
+	assert.Equal(t, []string{"srv-1", "srv-2"}, deleted)
 }
 
 func TestRemoveAgentNotFound(t *testing.T) {
@@ -715,7 +721,7 @@ func TestRemoveAgentListError(t *testing.T) {
 
 	err := p.RemoveAgent(t.Context(), &woodpecker.Agent{Name: "agent-1"})
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "findServerIDByName")
+	assert.Contains(t, err.Error(), "findServerIDsByName")
 }
 
 func TestFindServerIDByNameNoClientSideMatch(t *testing.T) {
@@ -730,7 +736,7 @@ func TestFindServerIDByNameNoClientSideMatch(t *testing.T) {
 		]}`)
 	})
 
-	id, err := p.findServerIDByName(t.Context(), "agent-1")
+	id, err := p.findServerIDsByName(t.Context(), "agent-1")
 	require.NoError(t, err)
 	assert.Empty(t, id, "partial name matches must be rejected")
 }

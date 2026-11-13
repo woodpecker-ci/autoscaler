@@ -183,19 +183,16 @@ func (p *provider) DeployAgent(ctx context.Context, agent *woodpecker.Agent, cap
 }
 
 func (p *provider) RemoveAgent(ctx context.Context, agent *woodpecker.Agent) error {
-	// Find the server by name
-	serverID, err := p.findServerIDByName(ctx, agent.Name)
+	// Names are not unique in OpenStack, remove every server carrying it
+	serverIDs, err := p.findServerIDsByName(ctx, agent.Name)
 	if err != nil {
-		return fmt.Errorf("%s: findServerIDByName: %w", p.name, err)
+		return fmt.Errorf("%s: findServerIDsByName: %w", p.name, err)
 	}
 
-	if serverID == "" {
-		// Server not found, nothing to do
-		return nil
-	}
-
-	if err := servers.Delete(ctx, p.computeClient, serverID).ExtractErr(); err != nil {
-		return fmt.Errorf("%s: servers.Delete: %w", p.name, err)
+	for _, serverID := range serverIDs {
+		if err := servers.Delete(ctx, p.computeClient, serverID).ExtractErr(); err != nil {
+			return fmt.Errorf("%s: servers.Delete: %w", p.name, err)
+		}
 	}
 
 	return nil

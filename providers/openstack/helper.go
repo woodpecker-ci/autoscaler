@@ -13,31 +13,28 @@ import (
 	"go.woodpecker-ci.org/autoscaler/engine/types"
 )
 
-func (p *provider) findServerIDByName(ctx context.Context, name string) (string, error) {
+func (p *provider) findServerIDsByName(ctx context.Context, name string) ([]string, error) {
 	allPages, err := servers.List(p.computeClient, servers.ListOpts{
 		Name: fmt.Sprintf("^%s$", name),
 	}).AllPages(ctx)
 	if err != nil {
-		return "", fmt.Errorf("servers.List: %w", err)
+		return nil, fmt.Errorf("servers.List: %w", err)
 	}
 
 	allServers, err := servers.ExtractServers(allPages)
 	if err != nil {
-		return "", fmt.Errorf("servers.ExtractServers: %w", err)
+		return nil, fmt.Errorf("servers.ExtractServers: %w", err)
 	}
 
-	serverID := ""
+	var serverIDs []string
 	for _, s := range allServers {
 		if s.Name != name || s.Metadata[labelPool] != p.config.PoolID {
 			continue
 		}
-		if serverID != "" {
-			return "", fmt.Errorf("multiple servers found with name %q in pool %q", name, p.config.PoolID)
-		}
-		serverID = s.ID
+		serverIDs = append(serverIDs, s.ID)
 	}
 
-	return serverID, nil
+	return serverIDs, nil
 }
 
 // waitForActive fails on ERROR, a server in that state never gets ACTIVE.
