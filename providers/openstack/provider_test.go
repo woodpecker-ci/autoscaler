@@ -3,6 +3,7 @@ package openstack
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"testing"
 
@@ -248,6 +249,55 @@ func TestNewFailsIfVolumeSizeNotInt(t *testing.T) {
 	})
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "invalid value")
+}
+
+func TestNewReauthenticatesOnExpiredToken(t *testing.T) {
+	fakeServer := th.SetupHTTP()
+	t.Cleanup(fakeServer.Teardown)
+	mux := fakeServer.Mux
+
+	tokens := 0
+	mux.HandleFunc("POST /v3/auth/tokens", func(w http.ResponseWriter, _ *http.Request) {
+		tokens++
+		w.Header().Set("X-Subject-Token", fmt.Sprintf("token-%d", tokens))
+		writeJSON(w, http.StatusCreated, `{"token":{"catalog":[
+			{"type":"compute","endpoints":[{"interface":"public","url":"`+fakeServer.Endpoint()+`"}]},
+			{"type":"image","endpoints":[{"interface":"public","url":"`+fakeServer.Endpoint()+`"}]}
+		]}}`)
+	})
+	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, _ *http.Request) {
+		writeJSON(w, http.StatusOK, `{"versions":[{"id":"v2.1","status":"CURRENT"}]}`)
+	})
+	mux.HandleFunc("GET /flavors/f-1", func(w http.ResponseWriter, _ *http.Request) {
+		writeJSON(w, http.StatusOK, `{"flavor":{"id":"f-1"}}`)
+	})
+	mux.HandleFunc("GET /v2/images/i-1", func(w http.ResponseWriter, _ *http.Request) {
+		writeJSON(w, http.StatusOK, `{"id":"i-1","hw_architecture":"x86_64"}`)
+	})
+	mux.HandleFunc("GET /servers/detail", func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("X-Auth-Token") == "token-1" {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		writeJSON(w, http.StatusOK, `{"servers":[]}`)
+	})
+
+	c, err := newTestCommand(t, map[string]string{
+		"openstack-auth-url":    fakeServer.Endpoint() + "v3",
+		"openstack-username":    "user",
+		"openstack-password":    "secret",
+		"openstack-domain-name": "Default",
+		"openstack-flavor-ref":  "f-1",
+		"openstack-image-ref":   "i-1",
+	}, nil)
+	require.NoError(t, err)
+
+	p, err := New(t.Context(), c, &config.Config{PoolID: "pool-7"})
+	require.NoError(t, err)
+
+	_, err = p.ListDeployedAgentNames(t.Context())
+	require.NoError(t, err, "an expired token must be renewed")
+	assert.Equal(t, 2, tokens)
 }
 
 func TestDeployAgentInvalidUserData(t *testing.T) {

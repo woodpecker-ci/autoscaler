@@ -85,6 +85,7 @@ func New(ctx context.Context, c *cli.Command, cfg *config.Config) (types.Provide
 		ApplicationCredentialSecret: c.String("openstack-application-credential-secret"),
 		TenantName:                  c.String("openstack-project-name"),
 		DomainName:                  c.String("openstack-domain-name"),
+		AllowReauth:                 true,
 	}
 
 	provider, err := openstack.AuthenticatedClient(ctx, opts)
