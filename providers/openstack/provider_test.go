@@ -27,13 +27,17 @@ var dockerAMD64Capability = types.Capability{
 // so provider constructors that read configuration through the CLI can be
 // exercised in isolation. Only the supplied flags are defined; any others read
 // by the code under test resolve to their zero value.
-func newTestCommand(t *testing.T, flags map[string]string) *cli.Command {
+func newTestCommand(t *testing.T, stringFlags, intFlags map[string]string) (*cli.Command, error) {
 	t.Helper()
 
-	defs := make([]cli.Flag, 0, len(flags))
+	defs := make([]cli.Flag, 0, len(stringFlags)+len(intFlags))
 	args := []string{"autoscaler"}
-	for name, value := range flags {
+	for name, value := range stringFlags {
 		defs = append(defs, &cli.StringFlag{Name: name})
+		args = append(args, "--"+name, value)
+	}
+	for name, value := range intFlags {
+		defs = append(defs, &cli.IntFlag{Name: name})
 		args = append(args, "--"+name, value)
 	}
 
@@ -47,9 +51,11 @@ func newTestCommand(t *testing.T, flags map[string]string) *cli.Command {
 		},
 	}
 
-	require.NoError(t, cmd.Run(t.Context(), args))
+	if err := cmd.Run(t.Context(), args); err != nil {
+		return nil, err
+	}
 	require.NotNil(t, captured)
-	return captured
+	return captured, nil
 }
 
 // newTestProvider wires a provider up to an in-memory HTTP server that stands
@@ -191,55 +197,57 @@ func TestDeployAgentRejectsUnsupportedCapability(t *testing.T) {
 }
 
 func TestNewRejectsFlavorRefAndName(t *testing.T) {
-	c := newTestCommand(t, map[string]string{
+	c, err := newTestCommand(t, map[string]string{
 		"openstack-flavor-ref":  "f-1",
 		"openstack-flavor-name": "m1.small",
 		"openstack-auth-url":    "https://example.com",
-	})
+	}, nil)
+	assert.NoError(t, err)
 
-	_, err := New(t.Context(), c, &config.Config{})
+	_, err = New(t.Context(), c, &config.Config{})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "Flavor")
 }
 
 func TestNewRejectsImageRefAndName(t *testing.T) {
-	c := newTestCommand(t, map[string]string{
+	c, err := newTestCommand(t, map[string]string{
 		"openstack-flavor-ref": "f-1",
 		"openstack-image-ref":  "i-1",
 		"openstack-image-name": "ubuntu",
-	})
+	}, nil)
+	assert.NoError(t, err)
 
-	_, err := New(t.Context(), c, &config.Config{})
+	_, err = New(t.Context(), c, &config.Config{})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "Image")
 }
 
 func TestNewRequiresFlavor(t *testing.T) {
-	c := newTestCommand(t, map[string]string{
+	c, err := newTestCommand(t, map[string]string{
 		"openstack-image-ref": "i-1",
-	})
+	}, nil)
+	assert.NoError(t, err)
 
-	_, err := New(t.Context(), c, &config.Config{})
+	_, err = New(t.Context(), c, &config.Config{})
 	require.ErrorContains(t, err, "Flavor")
 }
 
 func TestNewRequiresImage(t *testing.T) {
-	c := newTestCommand(t, map[string]string{
+	c, err := newTestCommand(t, map[string]string{
 		"openstack-flavor-ref": "f-1",
-	})
+	}, nil)
+	assert.NoError(t, err)
 
-	_, err := New(t.Context(), c, &config.Config{})
+	_, err = New(t.Context(), c, &config.Config{})
 	require.ErrorContains(t, err, "Image")
 }
 
 func TestNewFailsIfVolumeSizeNotInt(t *testing.T) {
-	c := newTestCommand(t, map[string]string{
+	_, err := newTestCommand(t, nil, map[string]string{
 		"openstack-volume-size": "Not a number",
 	})
-
-	_, err := New(t.Context(), c, &config.Config{})
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "integer")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid value")
 }
 
 func TestDeployAgentInvalidUserData(t *testing.T) {

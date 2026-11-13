@@ -106,7 +106,7 @@ var ProviderFlags = []cli.Flag{
 		Sources:  cli.EnvVars("WOODPECKER_OPENSTACK_IMAGE_NAME"),
 		Category: category,
 	},
-	&cli.StringFlag{
+	&cli.IntFlag{
 		Name:     "openstack-volume-size",
 		Usage:    "Size in GiB for the agent instance volumes. If not set, ephemeral storage based on the selected flavor will be used.",
 		Sources:  cli.EnvVars("WOODPECKER_OPENSTACK_VOLUME_SIZE"),
