@@ -1,5 +1,28 @@
 # Changelog
 
+## [2.1.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.1.0) - 2026-11-16
+
+### ❤️ Thanks to all contributors! ❤️
+
+@LaGrunge, @menelike, @singhharsh1708, @toothstone
+
+### ✨ Features
+
+- Add experimental Oracle Cloud provider support to autoscaler [[#734](https://github.com/woodpecker-ci/autoscaler/pull/734)]
+
+### 🐛 Bug Fixes
+
+- Fix OpenStack network option and harden provider [[#793](https://github.com/woodpecker-ci/autoscaler/pull/793)]
+- Reactivate hourly agents after billing rollover [[#751](https://github.com/woodpecker-ci/autoscaler/pull/751)]
+
+### 🧪 Tests
+
+- Test retain surviving agents during cleanup [[#737](https://github.com/woodpecker-ci/autoscaler/pull/737)]
+
+### 📦️ Dependency
+
+- Update golang deps non-major [[#786](https://github.com/woodpecker-ci/autoscaler/pull/786)]
+
 ## [2.0.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.0) - 2026-10-17
 
 ### ❤️ Thanks to all contributors! ❤️
