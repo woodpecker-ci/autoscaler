@@ -21,7 +21,7 @@
 
 ### 📦️ Dependency
 
-- Update module github.com/digitalocean/godo to v1.232.0 [[#781](https://github.com/woodpecker-ci/autoscaler/pull/781)]
+- Update golang deps non-major [[#786](https://github.com/woodpecker-ci/autoscaler/pull/786)]
 
 ## [2.0.0](https://github.com/woodpecker-ci/autoscaler/releases/tag/2.0.0) - 2026-10-17
 
