@@ -8,7 +8,7 @@
 
 ### ✨ Features
 
-- Add Oracle Cloud provider support to autoscaler [[#734](https://github.com/woodpecker-ci/autoscaler/pull/734)]
+- Add experimental Oracle Cloud provider support to autoscaler [[#734](https://github.com/woodpecker-ci/autoscaler/pull/734)]
 
 ### 🐛 Bug Fixes
 
