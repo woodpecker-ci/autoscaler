@@ -3,6 +3,7 @@ package openstack
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"testing"
 
@@ -27,13 +28,17 @@ var dockerAMD64Capability = types.Capability{
 // so provider constructors that read configuration through the CLI can be
 // exercised in isolation. Only the supplied flags are defined; any others read
 // by the code under test resolve to their zero value.
-func newTestCommand(t *testing.T, flags map[string]string) *cli.Command {
+func newTestCommand(t *testing.T, stringFlags, intFlags map[string]string) (*cli.Command, error) {
 	t.Helper()
 
-	defs := make([]cli.Flag, 0, len(flags))
+	defs := make([]cli.Flag, 0, len(stringFlags)+len(intFlags))
 	args := []string{"autoscaler"}
-	for name, value := range flags {
+	for name, value := range stringFlags {
 		defs = append(defs, &cli.StringFlag{Name: name})
+		args = append(args, "--"+name, value)
+	}
+	for name, value := range intFlags {
+		defs = append(defs, &cli.IntFlag{Name: name})
 		args = append(args, "--"+name, value)
 	}
 
@@ -47,9 +52,11 @@ func newTestCommand(t *testing.T, flags map[string]string) *cli.Command {
 		},
 	}
 
-	require.NoError(t, cmd.Run(t.Context(), args))
+	if err := cmd.Run(t.Context(), args); err != nil {
+		return nil, err
+	}
 	require.NotNil(t, captured)
-	return captured
+	return captured, nil
 }
 
 // newTestProvider wires a provider up to an in-memory HTTP server that stands
@@ -191,55 +198,106 @@ func TestDeployAgentRejectsUnsupportedCapability(t *testing.T) {
 }
 
 func TestNewRejectsFlavorRefAndName(t *testing.T) {
-	c := newTestCommand(t, map[string]string{
+	c, err := newTestCommand(t, map[string]string{
 		"openstack-flavor-ref":  "f-1",
 		"openstack-flavor-name": "m1.small",
 		"openstack-auth-url":    "https://example.com",
-	})
+	}, nil)
+	assert.NoError(t, err)
 
-	_, err := New(t.Context(), c, &config.Config{})
+	_, err = New(t.Context(), c, &config.Config{})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "Flavor")
 }
 
 func TestNewRejectsImageRefAndName(t *testing.T) {
-	c := newTestCommand(t, map[string]string{
+	c, err := newTestCommand(t, map[string]string{
 		"openstack-flavor-ref": "f-1",
 		"openstack-image-ref":  "i-1",
 		"openstack-image-name": "ubuntu",
-	})
+	}, nil)
+	assert.NoError(t, err)
 
-	_, err := New(t.Context(), c, &config.Config{})
+	_, err = New(t.Context(), c, &config.Config{})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "Image")
 }
 
 func TestNewRequiresFlavor(t *testing.T) {
-	c := newTestCommand(t, map[string]string{
+	c, err := newTestCommand(t, map[string]string{
 		"openstack-image-ref": "i-1",
-	})
+	}, nil)
+	assert.NoError(t, err)
 
-	_, err := New(t.Context(), c, &config.Config{})
+	_, err = New(t.Context(), c, &config.Config{})
 	require.ErrorContains(t, err, "Flavor")
 }
 
 func TestNewRequiresImage(t *testing.T) {
-	c := newTestCommand(t, map[string]string{
+	c, err := newTestCommand(t, map[string]string{
 		"openstack-flavor-ref": "f-1",
-	})
+	}, nil)
+	assert.NoError(t, err)
 
-	_, err := New(t.Context(), c, &config.Config{})
+	_, err = New(t.Context(), c, &config.Config{})
 	require.ErrorContains(t, err, "Image")
 }
 
 func TestNewFailsIfVolumeSizeNotInt(t *testing.T) {
-	c := newTestCommand(t, map[string]string{
+	_, err := newTestCommand(t, nil, map[string]string{
 		"openstack-volume-size": "Not a number",
 	})
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid value")
+}
 
-	_, err := New(t.Context(), c, &config.Config{})
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "integer")
+func TestNewReauthenticatesOnExpiredToken(t *testing.T) {
+	fakeServer := th.SetupHTTP()
+	t.Cleanup(fakeServer.Teardown)
+	mux := fakeServer.Mux
+
+	tokens := 0
+	mux.HandleFunc("POST /v3/auth/tokens", func(w http.ResponseWriter, _ *http.Request) {
+		tokens++
+		w.Header().Set("X-Subject-Token", fmt.Sprintf("token-%d", tokens))
+		writeJSON(w, http.StatusCreated, `{"token":{"catalog":[
+			{"type":"compute","endpoints":[{"interface":"public","url":"`+fakeServer.Endpoint()+`"}]},
+			{"type":"image","endpoints":[{"interface":"public","url":"`+fakeServer.Endpoint()+`"}]}
+		]}}`)
+	})
+	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, _ *http.Request) {
+		writeJSON(w, http.StatusOK, `{"versions":[{"id":"v2.1","status":"CURRENT"}]}`)
+	})
+	mux.HandleFunc("GET /flavors/f-1", func(w http.ResponseWriter, _ *http.Request) {
+		writeJSON(w, http.StatusOK, `{"flavor":{"id":"f-1"}}`)
+	})
+	mux.HandleFunc("GET /v2/images/i-1", func(w http.ResponseWriter, _ *http.Request) {
+		writeJSON(w, http.StatusOK, `{"id":"i-1","hw_architecture":"x86_64"}`)
+	})
+	mux.HandleFunc("GET /servers/detail", func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("X-Auth-Token") == "token-1" {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		writeJSON(w, http.StatusOK, `{"servers":[]}`)
+	})
+
+	c, err := newTestCommand(t, map[string]string{
+		"openstack-auth-url":    fakeServer.Endpoint() + "v3",
+		"openstack-username":    "user",
+		"openstack-password":    "secret",
+		"openstack-domain-name": "Default",
+		"openstack-flavor-ref":  "f-1",
+		"openstack-image-ref":   "i-1",
+	}, nil)
+	require.NoError(t, err)
+
+	p, err := New(t.Context(), c, &config.Config{PoolID: "pool-7"})
+	require.NoError(t, err)
+
+	_, err = p.ListDeployedAgentNames(t.Context())
+	require.NoError(t, err, "an expired token must be renewed")
+	assert.Equal(t, 2, tokens)
 }
 
 func TestDeployAgentInvalidUserData(t *testing.T) {
@@ -255,7 +313,7 @@ func TestDeployAgentWithRefs(t *testing.T) {
 	p, mux := newTestProvider(t)
 	p.flavorRef = "flavor-123"
 	p.imageRef = "image-456"
-	p.network = "net-789"
+	p.networkRef = "net-789"
 	p.securityGroups = []string{"default", "web"}
 	p.metadata = map[string]string{labelPool: "pool-7", "team": "ci"}
 
@@ -397,7 +455,8 @@ func TestResolveImageName(t *testing.T) {
 	p, mux := newTestProvider(t)
 	p.imageName = "ubuntu-24.04"
 
-	mux.HandleFunc("GET /images", func(w http.ResponseWriter, _ *http.Request) {
+	mux.HandleFunc("GET /images", func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "active", r.URL.Query().Get("status"), "images still uploading must be skipped")
 		// Newest first; the provider takes the first entry. No "next" field
 		// means this is the only page.
 		writeJSON(w, http.StatusOK, `{"images":[
@@ -596,7 +655,7 @@ func TestRemoveAgentIgnoresServerFromOtherPool(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestRemoveAgentRejectsAmbiguousServers(t *testing.T) {
+func TestRemoveAgentRemovesDuplicateServers(t *testing.T) {
 	p, mux := newTestProvider(t)
 
 	mux.HandleFunc("GET /servers/detail", func(w http.ResponseWriter, _ *http.Request) {
@@ -606,9 +665,15 @@ func TestRemoveAgentRejectsAmbiguousServers(t *testing.T) {
 		]}`)
 	})
 
+	var deleted []string
+	mux.HandleFunc("DELETE /servers/{id}", func(w http.ResponseWriter, r *http.Request) {
+		deleted = append(deleted, r.PathValue("id"))
+		w.WriteHeader(http.StatusNoContent)
+	})
+
 	err := p.RemoveAgent(t.Context(), &woodpecker.Agent{Name: "agent-1"})
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "multiple servers")
+	require.NoError(t, err)
+	assert.Equal(t, []string{"srv-1", "srv-2"}, deleted)
 }
 
 func TestRemoveAgentNotFound(t *testing.T) {
@@ -633,7 +698,7 @@ func TestRemoveAgentListError(t *testing.T) {
 
 	err := p.RemoveAgent(t.Context(), &woodpecker.Agent{Name: "agent-1"})
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "findServerIDByName")
+	assert.Contains(t, err.Error(), "findServerIDsByName")
 }
 
 func TestFindServerIDByNameNoClientSideMatch(t *testing.T) {
@@ -648,7 +713,7 @@ func TestFindServerIDByNameNoClientSideMatch(t *testing.T) {
 		]}`)
 	})
 
-	id, err := p.findServerIDByName(t.Context(), "agent-1")
+	id, err := p.findServerIDsByName(t.Context(), "agent-1")
 	require.NoError(t, err)
 	assert.Empty(t, id, "partial name matches must be rejected")
 }
