@@ -32,10 +32,11 @@ func RenderUserDataTemplate(config *config.Config, agent *woodpecker.Agent, r Re
 	}
 
 	params := struct {
-		Image       string
-		Environment map[string]string
-		PreExec     []string
-		PostExec    []string
+		Image          string
+		Environment    map[string]string
+		PreExec        []string
+		PostExec       []string
+		SingleWorkflow bool
 	}{
 		Image: config.Image,
 		Environment: map[string]string{
@@ -43,8 +44,9 @@ func RenderUserDataTemplate(config *config.Config, agent *woodpecker.Agent, r Re
 			"WOODPECKER_AGENT_SECRET":  agent.Token,
 			"WOODPECKER_MAX_WORKFLOWS": fmt.Sprintf("%d", config.WorkflowsPerAgent),
 		},
-		PreExec:  r.PreExec,
-		PostExec: r.PostExec,
+		PreExec:        r.PreExec,
+		PostExec:       r.PostExec,
+		SingleWorkflow: config.AgentSingleWorkflow,
 	}
 
 	if config.GRPCSecure {
@@ -54,6 +56,9 @@ func RenderUserDataTemplate(config *config.Config, agent *woodpecker.Agent, r Re
 	maps.Copy(params.Environment, config.Environment)
 
 	params.Environment["WOODPECKER_AGENT_LABELS"] = genExtraAgentLabels(config.ExtraAgentLabels)
+	if config.AgentSingleWorkflow {
+		params.Environment["WOODPECKER_AGENT_SINGLE_WORKFLOW"] = "true"
+	}
 
 	var userData bytes.Buffer
 	if err := tmpl.Execute(&userData, params); err != nil {
@@ -109,7 +114,7 @@ write_files:
     services:
       woodpecker-agent:
         image: {{ .Image }}
-        restart: always
+        restart: {{ if .SingleWorkflow }}"no"{{ else }}always{{ end }}
         volumes:
           - /var/run/docker.sock:/var/run/docker.sock
         environment:
