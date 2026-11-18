@@ -8,16 +8,16 @@ require (
 	github.com/aws/aws-sdk-go-v2 v1.48.0
 	github.com/aws/aws-sdk-go-v2/config v1.33.19
 	github.com/aws/aws-sdk-go-v2/credentials v1.21.1
-	github.com/aws/aws-sdk-go-v2/service/ec2 v1.348.0
+	github.com/aws/aws-sdk-go-v2/service/ec2 v1.349.0
 	github.com/aws/aws-sdk-go-v2/service/sts v1.52.0
 	github.com/aws/smithy-go v1.28.9
-	github.com/digitalocean/godo v1.241.0
+	github.com/digitalocean/godo v1.243.0
 	github.com/docker/go-units v0.5.0
 	github.com/gophercloud/gophercloud/v2 v2.16.0
 	github.com/hetznercloud/hcloud-go/v2 v2.53.0
 	github.com/joho/godotenv v1.5.1
 	github.com/linode/linodego/v2 v2.11.0
-	github.com/oracle/oci-go-sdk/v65 v65.130.0
+	github.com/oracle/oci-go-sdk/v65 v65.131.0
 	github.com/rs/zerolog v1.35.1
 	github.com/scaleway/scaleway-sdk-go v1.39.0
 	github.com/stretchr/testify v1.12.1
@@ -25,7 +25,7 @@ require (
 	github.com/vultr/govultr/v3 v3.34.0
 	go.woodpecker-ci.org/woodpecker/v3 v3.20.1
 	golang.org/x/crypto v0.59.0
-	golang.org/x/net v0.62.0
+	golang.org/x/net v0.63.0
 	golang.org/x/oauth2 v0.38.0
 )
 
