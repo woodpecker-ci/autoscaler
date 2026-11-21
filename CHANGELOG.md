@@ -4,6 +4,7 @@
 
 ### 📦️ Dependency
 
+- Update golang deps non-major [[#798](https://github.com/woodpecker-ci/autoscaler/pull/798)]
 - Update docker.io/woodpeckerci/plugin-ready-release-go Docker tag to v4.1.4 [[#797](https://github.com/woodpecker-ci/autoscaler/pull/797)]
 - Update golang deps non-major [[#796](https://github.com/woodpecker-ci/autoscaler/pull/796)]
 - Update golang deps non-major [[#794](https://github.com/woodpecker-ci/autoscaler/pull/794)]
