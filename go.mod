@@ -11,7 +11,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ec2 v1.350.0
 	github.com/aws/aws-sdk-go-v2/service/sts v1.53.0
 	github.com/aws/smithy-go v1.28.9
-	github.com/digitalocean/godo v1.244.0
+	github.com/digitalocean/godo v1.245.0
 	github.com/docker/go-units v0.5.0
 	github.com/gophercloud/gophercloud/v2 v2.16.0
 	github.com/hetznercloud/hcloud-go/v2 v2.53.0
@@ -19,7 +19,7 @@ require (
 	github.com/linode/linodego/v2 v2.11.0
 	github.com/oracle/oci-go-sdk/v65 v65.131.0
 	github.com/rs/zerolog v1.35.1
-	github.com/scaleway/scaleway-sdk-go v1.39.0
+	github.com/scaleway/scaleway-sdk-go v1.40.0
 	github.com/stretchr/testify v1.12.1
 	github.com/urfave/cli/v3 v3.14.0
 	github.com/vultr/govultr/v3 v3.34.0
@@ -61,5 +61,5 @@ require (
 	golang.org/x/time v0.16.0 // indirect
 	google.golang.org/protobuf v1.36.12 // indirect
 	gopkg.in/ini.v1 v1.67.3 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
