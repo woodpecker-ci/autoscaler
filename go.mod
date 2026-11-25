@@ -10,16 +10,16 @@ require (
 	github.com/aws/aws-sdk-go-v2/credentials v1.21.3
 	github.com/aws/aws-sdk-go-v2/service/ec2 v1.350.0
 	github.com/aws/aws-sdk-go-v2/service/sts v1.53.0
-	github.com/aws/smithy-go v1.28.9
+	github.com/aws/smithy-go v1.28.10
 	github.com/digitalocean/godo v1.245.0
 	github.com/docker/go-units v0.5.0
 	github.com/gophercloud/gophercloud/v2 v2.16.0
 	github.com/hetznercloud/hcloud-go/v2 v2.53.0
 	github.com/joho/godotenv v1.5.1
 	github.com/linode/linodego/v2 v2.11.0
-	github.com/oracle/oci-go-sdk/v65 v65.131.0
+	github.com/oracle/oci-go-sdk/v65 v65.132.0
 	github.com/rs/zerolog v1.35.1
-	github.com/scaleway/scaleway-sdk-go v1.40.0
+	github.com/scaleway/scaleway-sdk-go v1.40.1
 	github.com/stretchr/testify v1.12.1
 	github.com/urfave/cli/v3 v3.14.0
 	github.com/vultr/govultr/v3 v3.34.0
