@@ -148,3 +148,19 @@ runcmd:
 final_message: "The system is finally up, after $UPTIME seconds"`, conf)
 	// editorconfig-checker-enable
 }
+
+func TestRenderUserDataTemplate_SingleWorkflow(t *testing.T) {
+	userData, err := cloudinit.RenderUserDataTemplate(&config.Config{}, &woodpecker.Agent{}, cloudinit.RenderOption{})
+	assert.NoError(t, err)
+	assert.Contains(t, userData, "restart: always")
+	assert.NotContains(t, userData, "WOODPECKER_AGENT_SINGLE_WORKFLOW")
+
+	userData, err = cloudinit.RenderUserDataTemplate(&config.Config{
+		AgentSingleWorkflow: true,
+		Environment:         map[string]string{"WOODPECKER_AGENT_SINGLE_WORKFLOW": "false"},
+	}, &woodpecker.Agent{}, cloudinit.RenderOption{})
+	assert.NoError(t, err)
+	// a restarted agent would pick up another workflow
+	assert.Contains(t, userData, `restart: "no"`)
+	assert.Contains(t, userData, "- WOODPECKER_AGENT_SINGLE_WORKFLOW=true\n")
+}
